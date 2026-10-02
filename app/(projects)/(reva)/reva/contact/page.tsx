@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import { toast } from "sonner"
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 import {
   Form,
@@ -12,47 +12,47 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Button } from '@/components/ui/button'
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 // Schema for contact form validation
 const formSchema = z.object({
   name: z
     .string()
-    .min(2, { message: 'Name must be at least 2 characters long' }),
-  email: z.string().email({ message: 'Invalid email address' }),
+    .min(2, { message: "Name must be at least 2 characters long" }),
+  email: z.string().email({ message: "Invalid email address" }),
   message: z
     .string()
-    .min(10, { message: 'Message must be at least 10 characters long' }),
-})
+    .min(10, { message: "Message must be at least 10 characters long" }),
+});
 
 export default function ContactFormPreview() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      message: '',
+      name: "",
+      email: "",
+      message: "",
     },
-  })
+  });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       // Simulate a successful contact form submission
-      console.log(values)
-      toast.success('Your message has been sent successfully!')
+      console.log(values);
+      toast.success("Your message has been sent successfully!");
     } catch (error) {
-      console.error('Error submitting contact form', error)
-      toast.error('Failed to send your message. Please try again.')
+      console.error("Error submitting contact form", error);
+      toast.error("Failed to send your message. Please try again.");
     }
   }
 
@@ -140,6 +140,5 @@ export default function ContactFormPreview() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-

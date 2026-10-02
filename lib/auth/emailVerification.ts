@@ -38,7 +38,8 @@ export async function issueAndSendVerificationEmail(
     },
   });
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com";
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com";
   const verifyUrl = `${siteUrl}${verifyPath(platform)}?token=${rawToken}`;
 
   await sendVerificationEmail({

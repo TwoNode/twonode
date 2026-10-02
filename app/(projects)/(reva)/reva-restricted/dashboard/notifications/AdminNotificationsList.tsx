@@ -40,13 +40,7 @@ import { useServerList } from "@/hooks/useServerList";
 import { Pagination } from "@/components/ui/pagination";
 
 type NotificationType =
-  | "INFO"
-  | "SUCCESS"
-  | "WARNING"
-  | "ERROR"
-  | "SYSTEM"
-  | "PAYMENT"
-  | "PROPERTY";
+  "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "SYSTEM" | "PAYMENT" | "PROPERTY";
 
 type Notification = {
   id: string;
@@ -94,7 +88,7 @@ interface NotificationFilters {
 
 export default function AdminNotificationsList() {
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>(
-    [],
+    []
   );
   const [adminUserId, setAdminUserId] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
@@ -137,7 +131,7 @@ export default function AdminNotificationsList() {
         },
       };
     },
-    { initialFilters: { type: "ALL", status: "ALL", showDismissed: false } },
+    { initialFilters: { type: "ALL", status: "ALL", showDismissed: false } }
   );
 
   const typeFilter = filters.type;
@@ -446,7 +440,7 @@ export default function AdminNotificationsList() {
                           ]);
                         } else {
                           setSelectedNotifications((prev) =>
-                            prev.filter((id) => id !== notif.id),
+                            prev.filter((id) => id !== notif.id)
                           );
                         }
                       }}
@@ -490,7 +484,7 @@ export default function AdminNotificationsList() {
                           >
                             {format(
                               new Date(notif.createdAt),
-                              "dd MMM, hh:mm a",
+                              "dd MMM, hh:mm a"
                             )}
                           </Badge>
                           <Badge

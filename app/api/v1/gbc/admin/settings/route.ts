@@ -20,10 +20,17 @@ const patchSchema = z
 export const PATCH = withAuth<GBCRole>(
   async (req, ctx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const patch = await validateBody(req, patchSchema);
-    const data = await updateSettings(patch, ctx.session.sub, req.nextUrl.searchParams.get("edition") || undefined);
+    const data = await updateSettings(
+      patch,
+      ctx.session.sub,
+      req.nextUrl.searchParams.get("edition") || undefined
+    );
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.GBC, roles: [GBCRole.ADMIN, GBCRole.SUPERADMIN] }

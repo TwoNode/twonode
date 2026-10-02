@@ -65,8 +65,15 @@ export const MDA_ROLES: MDARole[] = [
 ];
 
 /** The 3 roles whose locking is batch-level rather than plan-level. */
-export type BatchLockRole = Extract<SurfboardRole, "ACCOUNTS" | "INTAKE" | "RECORDS_II">;
-export const BATCH_LOCK_ROLES: BatchLockRole[] = [SurfboardRole.ACCOUNTS, SurfboardRole.INTAKE, SurfboardRole.RECORDS_II];
+export type BatchLockRole = Extract<
+  SurfboardRole,
+  "ACCOUNTS" | "INTAKE" | "RECORDS_II"
+>;
+export const BATCH_LOCK_ROLES: BatchLockRole[] = [
+  SurfboardRole.ACCOUNTS,
+  SurfboardRole.INTAKE,
+  SurfboardRole.RECORDS_II,
+];
 
 // ---------------------------------------------------------------------------
 // Plan-level locking (ACCOUNTS/CHARTING/SURCON/RECORDS_I/ARCHIVE) — INTAKE
@@ -89,14 +96,23 @@ export async function acquirePlanLock(
 
   const plan = await prisma.surfboardPlan.findUnique({
     where: { id: planId },
-    select: { [lockedByField]: true, [lockExpiresAtField]: true, batchId: true },
+    select: {
+      [lockedByField]: true,
+      [lockExpiresAtField]: true,
+      batchId: true,
+    },
   });
   if (!plan) throw new NotFoundError("Plan");
 
   const currentLock = (plan as any)[lockedByField];
   const currentExpiry = (plan as any)[lockExpiresAtField];
 
-  if (currentLock && currentLock !== userId && currentExpiry && new Date(currentExpiry) > now) {
+  if (
+    currentLock &&
+    currentLock !== userId &&
+    currentExpiry &&
+    new Date(currentExpiry) > now
+  ) {
     // Original also returned {locked:false, lockedBy: currentLock} alongside
     // this failure — callers needing that detail call getPlanLockStatus.
     throw new ConflictError("Plan is currently being reviewed by another user");
@@ -113,21 +129,33 @@ export async function acquirePlanLock(
       const bpLock = (bp as any)[lockedByField];
       const bpExpiry = (bp as any)[lockExpiresAtField];
       if (bpLock && bpLock !== userId && bpExpiry && new Date(bpExpiry) > now) {
-        throw new ConflictError("Another plan in this batch is being reviewed by another user");
+        throw new ConflictError(
+          "Another plan in this batch is being reviewed by another user"
+        );
       }
     }
 
-    const batchLockExpiry = new Date(now.getTime() + 3 * batchPlans.length * 60000);
+    const batchLockExpiry = new Date(
+      now.getTime() + 3 * batchPlans.length * 60000
+    );
     await prisma.surfboardPlan.updateMany({
       where: { batchId: plan.batchId, deleted: false },
-      data: { [lockedByField]: userId, [lockedAtField]: now, [lockExpiresAtField]: batchLockExpiry },
+      data: {
+        [lockedByField]: userId,
+        [lockedAtField]: now,
+        [lockExpiresAtField]: batchLockExpiry,
+      },
     });
     return { locked: true };
   }
 
   await prisma.surfboardPlan.update({
     where: { id: planId },
-    data: { [lockedByField]: userId, [lockedAtField]: now, [lockExpiresAtField]: lockExpiry },
+    data: {
+      [lockedByField]: userId,
+      [lockedAtField]: now,
+      [lockExpiresAtField]: lockExpiry,
+    },
   });
   return { locked: true };
 }
@@ -143,11 +171,18 @@ export async function releasePlanLock(
   const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
 
   if (role === "INTAKE" || role === "RECORDS_II") {
-    const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId }, select: { batchId: true } });
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId },
+      select: { batchId: true },
+    });
     if (plan?.batchId) {
       await prisma.surfboardPlan.updateMany({
         where: { batchId: plan.batchId, [lockedByField]: userId },
-        data: { [lockedByField]: null, [lockedAtField]: null, [lockExpiresAtField]: null },
+        data: {
+          [lockedByField]: null,
+          [lockedAtField]: null,
+          [lockExpiresAtField]: null,
+        },
       });
       return { released: true };
     }
@@ -155,7 +190,11 @@ export async function releasePlanLock(
 
   await prisma.surfboardPlan.updateMany({
     where: { id: planId, [lockedByField]: userId },
-    data: { [lockedByField]: null, [lockedAtField]: null, [lockExpiresAtField]: null },
+    data: {
+      [lockedByField]: null,
+      [lockedAtField]: null,
+      [lockExpiresAtField]: null,
+    },
   });
   return { released: true };
 }
@@ -164,7 +203,12 @@ export async function getPlanLockStatus(
   planId: string,
   role: MDARole,
   userId: string
-): Promise<{ isLocked: boolean; lockedByMe: boolean; lockedBy: string | null; lockExpiresAt: Date | null }> {
+): Promise<{
+  isLocked: boolean;
+  lockedByMe: boolean;
+  lockedBy: string | null;
+  lockExpiresAt: Date | null;
+}> {
   const now = new Date();
   const rolePrefix = getRoleFieldPrefix(role);
   const lockedByField = `${rolePrefix}LockedBy` as any;
@@ -208,7 +252,8 @@ export async function canWorkOnPlan(
     where: { id: planId },
     select: { redCopySubmittedAt: true, planNumber: true },
   });
-  if (!targetPlan || !targetPlan.redCopySubmittedAt) throw new NotFoundError("Plan (or not yet submitted)");
+  if (!targetPlan || !targetPlan.redCopySubmittedAt)
+    throw new NotFoundError("Plan (or not yet submitted)");
 
   const now = new Date();
   const oldestPlan = await prisma.surfboardPlan.findFirst({
@@ -216,7 +261,11 @@ export async function canWorkOnPlan(
       redCopyStatus: "SUBMITTED",
       [statusField]: "PENDING",
       deleted: false,
-      OR: [{ [lockedByField]: null }, { [lockedByField]: userId }, { [lockExpiresAtField]: { lt: now } }],
+      OR: [
+        { [lockedByField]: null },
+        { [lockedByField]: userId },
+        { [lockExpiresAtField]: { lt: now } },
+      ],
     },
     select: { id: true, planNumber: true, redCopySubmittedAt: true },
     orderBy: { redCopySubmittedAt: "asc" },
@@ -241,7 +290,10 @@ export async function canWorkOnPlan(
   };
 }
 
-export async function releaseAllLocksForUser(role: MDARole, userId: string): Promise<{ releasedCount: number }> {
+export async function releaseAllLocksForUser(
+  role: MDARole,
+  userId: string
+): Promise<{ releasedCount: number }> {
   const rolePrefix = getRoleFieldPrefix(role);
   const lockedByField = `${rolePrefix}LockedBy` as any;
   const lockedAtField = `${rolePrefix}LockedAt` as any;
@@ -249,7 +301,11 @@ export async function releaseAllLocksForUser(role: MDARole, userId: string): Pro
 
   const result = await prisma.surfboardPlan.updateMany({
     where: { [lockedByField]: userId },
-    data: { [lockedByField]: null, [lockedAtField]: null, [lockExpiresAtField]: null },
+    data: {
+      [lockedByField]: null,
+      [lockedAtField]: null,
+      [lockExpiresAtField]: null,
+    },
   });
   return { releasedCount: result.count };
 }
@@ -257,7 +313,16 @@ export async function releaseAllLocksForUser(role: MDARole, userId: string): Pro
 const ROLE_SPECIFIC_CRITERIA: Record<MDARole, any> = {
   INTAKE: {
     physicalCopySubmitted: true,
-    batch: { paymentStatus: { in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"] } },
+    batch: {
+      paymentStatus: {
+        in: [
+          "LASG_PAID",
+          "ACCOUNTS_APPROVED",
+          "ACCOUNTS_DISAPPROVED",
+          "COMPLETED",
+        ],
+      },
+    },
   },
   RECORDS_II: {
     accountsStatus: "APPROVED",
@@ -265,11 +330,53 @@ const ROLE_SPECIFIC_CRITERIA: Record<MDARole, any> = {
     surconStatus: "APPROVED",
     recordsIStatus: "APPROVED",
     intakeStatus: "APPROVED",
-    batch: { paymentStatus: { in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"] } },
+    batch: {
+      paymentStatus: {
+        in: [
+          "LASG_PAID",
+          "ACCOUNTS_APPROVED",
+          "ACCOUNTS_DISAPPROVED",
+          "COMPLETED",
+        ],
+      },
+    },
   },
-  RECORDS_I: { batch: { paymentStatus: { in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"] } } },
-  SURCON: { batch: { paymentStatus: { in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"] } } },
-  CHARTING: { batch: { paymentStatus: { in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"] } } },
+  RECORDS_I: {
+    batch: {
+      paymentStatus: {
+        in: [
+          "LASG_PAID",
+          "ACCOUNTS_APPROVED",
+          "ACCOUNTS_DISAPPROVED",
+          "COMPLETED",
+        ],
+      },
+    },
+  },
+  SURCON: {
+    batch: {
+      paymentStatus: {
+        in: [
+          "LASG_PAID",
+          "ACCOUNTS_APPROVED",
+          "ACCOUNTS_DISAPPROVED",
+          "COMPLETED",
+        ],
+      },
+    },
+  },
+  CHARTING: {
+    batch: {
+      paymentStatus: {
+        in: [
+          "LASG_PAID",
+          "ACCOUNTS_APPROVED",
+          "ACCOUNTS_DISAPPROVED",
+          "COMPLETED",
+        ],
+      },
+    },
+  },
   ACCOUNTS: {},
   ARCHIVE: {},
   MDA_SUPERADMIN: {},
@@ -278,7 +385,12 @@ const ROLE_SPECIFIC_CRITERIA: Record<MDARole, any> = {
 export async function getAndLockOldestAvailablePlan(
   role: MDARole,
   userId: string
-): Promise<{ planId: string | null; planNumber: string | null; locked: boolean; lockExpiresAt: Date | null }> {
+): Promise<{
+  planId: string | null;
+  planNumber: string | null;
+  locked: boolean;
+  lockExpiresAt: Date | null;
+}> {
   const now = new Date();
   const lockExpiry = new Date(now.getTime() + LOCK_DURATION_MINUTES * 60000);
 
@@ -289,7 +401,11 @@ export async function getAndLockOldestAvailablePlan(
   const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
 
   const existingLock = await prisma.surfboardPlan.findFirst({
-    where: { [lockedByField]: userId, [lockExpiresAtField]: { gt: now }, deleted: false },
+    where: {
+      [lockedByField]: userId,
+      [lockExpiresAtField]: { gt: now },
+      deleted: false,
+    },
     select: { id: true, planNumber: true, [lockExpiresAtField]: true },
   });
   if (existingLock) {
@@ -310,19 +426,35 @@ export async function getAndLockOldestAvailablePlan(
       OR: [{ [lockedByField]: null }, { [lockExpiresAtField]: { lt: now } }],
     },
     select: { id: true, planNumber: true },
-    orderBy: role === "INTAKE" ? { physicalCopySubmittedAt: "asc" } : { redCopySubmittedAt: "asc" },
+    orderBy:
+      role === "INTAKE"
+        ? { physicalCopySubmittedAt: "asc" }
+        : { redCopySubmittedAt: "asc" },
   });
 
   if (!availablePlan) {
-    return { planId: null, planNumber: null, locked: false, lockExpiresAt: null };
+    return {
+      planId: null,
+      planNumber: null,
+      locked: false,
+      lockExpiresAt: null,
+    };
   }
 
   const lockResult = await prisma.surfboardPlan.updateMany({
     where: {
       id: availablePlan.id,
-      OR: [{ [lockedByField]: null }, { [lockedByField]: userId }, { [lockExpiresAtField]: { lt: now } }],
+      OR: [
+        { [lockedByField]: null },
+        { [lockedByField]: userId },
+        { [lockExpiresAtField]: { lt: now } },
+      ],
     },
-    data: { [lockedByField]: userId, [lockedAtField]: now, [lockExpiresAtField]: lockExpiry },
+    data: {
+      [lockedByField]: userId,
+      [lockedAtField]: now,
+      [lockExpiresAtField]: lockExpiry,
+    },
   });
 
   if (lockResult.count === 0) {
@@ -330,7 +462,12 @@ export async function getAndLockOldestAvailablePlan(
     return getAndLockOldestAvailablePlan(role, userId);
   }
 
-  return { planId: availablePlan.id, planNumber: availablePlan.planNumber, locked: true, lockExpiresAt: lockExpiry };
+  return {
+    planId: availablePlan.id,
+    planNumber: availablePlan.planNumber,
+    locked: true,
+    lockExpiresAt: lockExpiry,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -348,17 +485,33 @@ type BatchLockResult = {
   lockExpiresAt: Date | null;
 };
 
-export async function getAndLockBatchForAccounts(userId: string): Promise<BatchLockResult> {
+export async function getAndLockBatchForAccounts(
+  userId: string
+): Promise<BatchLockResult> {
   const now = new Date();
   const lockExpiry = new Date(now.getTime() + 3 * 60000);
 
   const existingLock = await prisma.surfboardPlan.findFirst({
-    where: { accountsLockedBy: userId, accountsLockExpiresAt: { gt: now }, deleted: false },
-    select: { id: true, batchId: true, accountsLockExpiresAt: true, batch: { select: { id: true, batchCode: true } } },
+    where: {
+      accountsLockedBy: userId,
+      accountsLockExpiresAt: { gt: now },
+      deleted: false,
+    },
+    select: {
+      id: true,
+      batchId: true,
+      accountsLockExpiresAt: true,
+      batch: { select: { id: true, batchCode: true } },
+    },
   });
   if (existingLock && existingLock.batch) {
     const lockedCount = await prisma.surfboardPlan.count({
-      where: { batchId: existingLock.batchId!, accountsLockedBy: userId, accountsLockExpiresAt: { gt: now }, deleted: false },
+      where: {
+        batchId: existingLock.batchId!,
+        accountsLockedBy: userId,
+        accountsLockExpiresAt: { gt: now },
+        deleted: false,
+      },
     });
     return {
       batchId: existingLock.batch.id,
@@ -375,17 +528,30 @@ export async function getAndLockBatchForAccounts(userId: string): Promise<BatchL
         some: {
           deleted: false,
           accountsStatus: "PENDING",
-          OR: [{ accountsLockedBy: null }, { accountsLockExpiresAt: { lt: now } }],
+          OR: [
+            { accountsLockedBy: null },
+            { accountsLockExpiresAt: { lt: now } },
+          ],
         },
       },
-      paymentStatus: { in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"] },
+      paymentStatus: {
+        in: [
+          "LASG_PAID",
+          "ACCOUNTS_APPROVED",
+          "ACCOUNTS_DISAPPROVED",
+          "COMPLETED",
+        ],
+      },
     },
     include: {
       plans: {
         where: {
           deleted: false,
           accountsStatus: "PENDING",
-          OR: [{ accountsLockedBy: null }, { accountsLockExpiresAt: { lt: now } }],
+          OR: [
+            { accountsLockedBy: null },
+            { accountsLockExpiresAt: { lt: now } },
+          ],
         },
         select: { id: true },
       },
@@ -394,41 +560,83 @@ export async function getAndLockBatchForAccounts(userId: string): Promise<BatchL
   });
 
   if (!availableBatch || availableBatch.plans.length === 0) {
-    return { batchId: null, batchCode: null, planCount: 0, locked: false, lockExpiresAt: null };
+    return {
+      batchId: null,
+      batchCode: null,
+      planCount: 0,
+      locked: false,
+      lockExpiresAt: null,
+    };
   }
 
   const planIdsToLock = availableBatch.plans.map((p) => p.id);
   const lockResult = await prisma.surfboardPlan.updateMany({
     where: {
       id: { in: planIdsToLock },
-      OR: [{ accountsLockedBy: null }, { accountsLockedBy: userId }, { accountsLockExpiresAt: { lt: now } }],
+      OR: [
+        { accountsLockedBy: null },
+        { accountsLockedBy: userId },
+        { accountsLockExpiresAt: { lt: now } },
+      ],
     },
-    data: { accountsLockedBy: userId, accountsLockedAt: now, accountsLockExpiresAt: lockExpiry },
+    data: {
+      accountsLockedBy: userId,
+      accountsLockedAt: now,
+      accountsLockExpiresAt: lockExpiry,
+    },
   });
 
   if (lockResult.count === 0) return getAndLockBatchForAccounts(userId);
 
-  return { batchId: availableBatch.id, batchCode: availableBatch.batchCode, planCount: lockResult.count, locked: true, lockExpiresAt: lockExpiry };
+  return {
+    batchId: availableBatch.id,
+    batchCode: availableBatch.batchCode,
+    planCount: lockResult.count,
+    locked: true,
+    lockExpiresAt: lockExpiry,
+  };
 }
 
-export async function releaseBatchLockForAccounts(userId: string): Promise<{ success: true }> {
+export async function releaseBatchLockForAccounts(
+  userId: string
+): Promise<{ success: true }> {
   await prisma.surfboardPlan.updateMany({
     where: { accountsLockedBy: userId },
-    data: { accountsLockedBy: null, accountsLockedAt: null, accountsLockExpiresAt: null },
+    data: {
+      accountsLockedBy: null,
+      accountsLockedAt: null,
+      accountsLockExpiresAt: null,
+    },
   });
   return { success: true };
 }
 
-export async function getAndLockBatchForIntake(userId: string): Promise<BatchLockResult> {
+export async function getAndLockBatchForIntake(
+  userId: string
+): Promise<BatchLockResult> {
   const now = new Date();
 
   const existingLock = await prisma.surfboardPlan.findFirst({
-    where: { intakeLockedBy: userId, intakeLockExpiresAt: { gt: now }, deleted: false },
-    select: { id: true, batchId: true, intakeLockExpiresAt: true, batch: { select: { id: true, batchCode: true } } },
+    where: {
+      intakeLockedBy: userId,
+      intakeLockExpiresAt: { gt: now },
+      deleted: false,
+    },
+    select: {
+      id: true,
+      batchId: true,
+      intakeLockExpiresAt: true,
+      batch: { select: { id: true, batchCode: true } },
+    },
   });
   if (existingLock && existingLock.batch) {
     const lockedCount = await prisma.surfboardPlan.count({
-      where: { batchId: existingLock.batchId!, intakeLockedBy: userId, intakeLockExpiresAt: { gt: now }, deleted: false },
+      where: {
+        batchId: existingLock.batchId!,
+        intakeLockedBy: userId,
+        intakeLockExpiresAt: { gt: now },
+        deleted: false,
+      },
     });
     return {
       batchId: existingLock.batch.id,
@@ -450,7 +658,14 @@ export async function getAndLockBatchForIntake(userId: string): Promise<BatchLoc
           OR: [{ intakeLockedBy: null }, { intakeLockExpiresAt: { lt: now } }],
         },
       },
-      paymentStatus: { in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"] },
+      paymentStatus: {
+        in: [
+          "LASG_PAID",
+          "ACCOUNTS_APPROVED",
+          "ACCOUNTS_DISAPPROVED",
+          "COMPLETED",
+        ],
+      },
     },
     include: {
       plans: {
@@ -468,7 +683,13 @@ export async function getAndLockBatchForIntake(userId: string): Promise<BatchLoc
   });
 
   if (!availableBatch || availableBatch.plans.length === 0) {
-    return { batchId: null, batchCode: null, planCount: 0, locked: false, lockExpiresAt: null };
+    return {
+      batchId: null,
+      batchCode: null,
+      planCount: 0,
+      locked: false,
+      lockExpiresAt: null,
+    };
   }
 
   const planCount = availableBatch.plans.length;
@@ -477,30 +698,62 @@ export async function getAndLockBatchForIntake(userId: string): Promise<BatchLoc
 
   await prisma.surfboardPlan.updateMany({
     where: { id: { in: planIdsToLock } },
-    data: { intakeLockedBy: userId, intakeLockedAt: now, intakeLockExpiresAt: lockExpiresAt },
+    data: {
+      intakeLockedBy: userId,
+      intakeLockedAt: now,
+      intakeLockExpiresAt: lockExpiresAt,
+    },
   });
 
-  return { batchId: availableBatch.id, batchCode: availableBatch.batchCode, planCount, locked: true, lockExpiresAt };
+  return {
+    batchId: availableBatch.id,
+    batchCode: availableBatch.batchCode,
+    planCount,
+    locked: true,
+    lockExpiresAt,
+  };
 }
 
-export async function releaseBatchLockForIntake(userId: string): Promise<{ success: true }> {
+export async function releaseBatchLockForIntake(
+  userId: string
+): Promise<{ success: true }> {
   await prisma.surfboardPlan.updateMany({
     where: { intakeLockedBy: userId },
-    data: { intakeLockedBy: null, intakeLockedAt: null, intakeLockExpiresAt: null },
+    data: {
+      intakeLockedBy: null,
+      intakeLockedAt: null,
+      intakeLockExpiresAt: null,
+    },
   });
   return { success: true };
 }
 
-export async function getAndLockBatchForRecordsII(userId: string): Promise<BatchLockResult> {
+export async function getAndLockBatchForRecordsII(
+  userId: string
+): Promise<BatchLockResult> {
   const now = new Date();
 
   const existingLock = await prisma.surfboardPlan.findFirst({
-    where: { recordsIILockedBy: userId, recordsIILockExpiresAt: { gt: now }, deleted: false },
-    select: { id: true, batchId: true, recordsIILockExpiresAt: true, batch: { select: { id: true, batchCode: true } } },
+    where: {
+      recordsIILockedBy: userId,
+      recordsIILockExpiresAt: { gt: now },
+      deleted: false,
+    },
+    select: {
+      id: true,
+      batchId: true,
+      recordsIILockExpiresAt: true,
+      batch: { select: { id: true, batchCode: true } },
+    },
   });
   if (existingLock && existingLock.batch) {
     const lockedCount = await prisma.surfboardPlan.count({
-      where: { batchId: existingLock.batchId!, recordsIILockedBy: userId, recordsIILockExpiresAt: { gt: now }, deleted: false },
+      where: {
+        batchId: existingLock.batchId!,
+        recordsIILockedBy: userId,
+        recordsIILockExpiresAt: { gt: now },
+        deleted: false,
+      },
     });
     return {
       batchId: existingLock.batch.id,
@@ -523,7 +776,10 @@ export async function getAndLockBatchForRecordsII(userId: string): Promise<Batch
           recordsIStatus: "APPROVED",
           intakeStatus: "APPROVED",
           recordsIIStatus: "PENDING",
-          OR: [{ recordsIILockedBy: null }, { recordsIILockExpiresAt: { lt: now } }],
+          OR: [
+            { recordsIILockedBy: null },
+            { recordsIILockExpiresAt: { lt: now } },
+          ],
         },
       },
     },
@@ -538,7 +794,10 @@ export async function getAndLockBatchForRecordsII(userId: string): Promise<Batch
           recordsIStatus: "APPROVED",
           intakeStatus: "APPROVED",
           recordsIIStatus: "PENDING",
-          OR: [{ recordsIILockedBy: null }, { recordsIILockExpiresAt: { lt: now } }],
+          OR: [
+            { recordsIILockedBy: null },
+            { recordsIILockExpiresAt: { lt: now } },
+          ],
         },
         select: { id: true, intakeApprovedAt: true },
         orderBy: { intakeApprovedAt: "asc" },
@@ -548,30 +807,58 @@ export async function getAndLockBatchForRecordsII(userId: string): Promise<Batch
   });
 
   if (!availableBatch || availableBatch.plans.length === 0) {
-    return { batchId: null, batchCode: null, planCount: 0, locked: false, lockExpiresAt: null };
+    return {
+      batchId: null,
+      batchCode: null,
+      planCount: 0,
+      locked: false,
+      lockExpiresAt: null,
+    };
   }
 
   const planCount = availableBatch.plans.length;
-  const lockExpiry = new Date(now.getTime() + RECORDS_II_LOCK_MINUTES_PER_PLAN * planCount * 60000);
+  const lockExpiry = new Date(
+    now.getTime() + RECORDS_II_LOCK_MINUTES_PER_PLAN * planCount * 60000
+  );
   const planIds = availableBatch.plans.map((p) => p.id);
 
   const lockResult = await prisma.surfboardPlan.updateMany({
     where: {
       id: { in: planIds },
-      OR: [{ recordsIILockedBy: null }, { recordsIILockedBy: userId }, { recordsIILockExpiresAt: { lt: now } }],
+      OR: [
+        { recordsIILockedBy: null },
+        { recordsIILockedBy: userId },
+        { recordsIILockExpiresAt: { lt: now } },
+      ],
     },
-    data: { recordsIILockedBy: userId, recordsIILockedAt: now, recordsIILockExpiresAt: lockExpiry },
+    data: {
+      recordsIILockedBy: userId,
+      recordsIILockedAt: now,
+      recordsIILockExpiresAt: lockExpiry,
+    },
   });
 
   if (lockResult.count === 0) return getAndLockBatchForRecordsII(userId);
 
-  return { batchId: availableBatch.id, batchCode: availableBatch.batchCode, planCount: lockResult.count, locked: true, lockExpiresAt: lockExpiry };
+  return {
+    batchId: availableBatch.id,
+    batchCode: availableBatch.batchCode,
+    planCount: lockResult.count,
+    locked: true,
+    lockExpiresAt: lockExpiry,
+  };
 }
 
-export async function releaseBatchLockForRecordsII(userId: string): Promise<{ releasedCount: number }> {
+export async function releaseBatchLockForRecordsII(
+  userId: string
+): Promise<{ releasedCount: number }> {
   const result = await prisma.surfboardPlan.updateMany({
     where: { recordsIILockedBy: userId },
-    data: { recordsIILockedBy: null, recordsIILockedAt: null, recordsIILockExpiresAt: null },
+    data: {
+      recordsIILockedBy: null,
+      recordsIILockedAt: null,
+      recordsIILockExpiresAt: null,
+    },
   });
   return { releasedCount: result.count };
 }

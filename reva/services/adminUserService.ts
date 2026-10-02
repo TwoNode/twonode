@@ -1,5 +1,11 @@
 import prisma from "@/lib/prisma";
-import { ApiError, ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
+import {
+  ApiError,
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from "@/lib/api/errors";
 import { sendMail, sendEmailToAllSuperAdmins } from "@/utils/email";
 import { writeAudit } from "@/lib/audit";
 import { Platform } from "@/utils/platform";
@@ -26,9 +32,20 @@ function assertNotDevAccount(email: string) {
  * (or a stale tab) would otherwise demote, lock out or delete the person
  * doing it. Another superadmin can, and that is audited like any other change.
  */
-function assertNotSelf(actorId: string, targetId: string, action: "remove your own admin privileges" | "deactivate your own account" | "delete your own account") {
+function assertNotSelf(
+  actorId: string,
+  targetId: string,
+  action:
+    | "remove your own admin privileges"
+    | "deactivate your own account"
+    | "delete your own account"
+) {
   if (actorId === targetId) {
-    throw new ApiError(403, "SELF_ACTION_FORBIDDEN", `You can't ${action}. Ask another superadmin to do it.`);
+    throw new ApiError(
+      403,
+      "SELF_ACTION_FORBIDDEN",
+      `You can't ${action}. Ask another superadmin to do it.`
+    );
   }
 }
 
@@ -39,18 +56,28 @@ function assertNotSelf(actorId: string, targetId: string, action: "remove your o
  * this covers two superadmins acting on each other at the same moment, or an
  * actor whose account was deactivated after they signed in.
  */
-async function assertNotLastActiveSuperadmin(target: { id: string; role: string; is_active: boolean }) {
+async function assertNotLastActiveSuperadmin(target: {
+  id: string;
+  role: string;
+  is_active: boolean;
+}) {
   if (target.role !== "SUPERADMIN" || !target.is_active) return;
   const others = await prisma.revaUser.count({
     where: { role: "SUPERADMIN", is_active: true, id: { not: target.id } },
   });
   if (others === 0) {
-    throw new ConflictError("This is the only active superadmin. Promote or reactivate another superadmin first.");
+    throw new ConflictError(
+      "This is the only active superadmin. Promote or reactivate another superadmin first."
+    );
   }
 }
 
 const escapeHtml = (value: string) =>
-  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 
 /**
  * Admins are no longer created directly: a superadmin invites them
@@ -58,7 +85,12 @@ const escapeHtml = (value: string) =>
  * This is the team notification createAdminUser used to send, now fired at
  * that moment. The invitation email replaces the old "account created" mail.
  */
-export async function announceAdminJoined(data: { email: string; firstName: string; lastName: string; role: string }) {
+export async function announceAdminJoined(data: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}) {
   const name = `${data.firstName} ${data.lastName}`.trim();
   try {
     await notifySystemAlert(
@@ -71,7 +103,10 @@ export async function announceAdminJoined(data: { email: string; firstName: stri
       html: `<p>A new <b>${escapeHtml(data.role)}</b> (<b>${escapeHtml(name)}</b>, <b>${escapeHtml(data.email)}</b>) accepted their invitation and joined.<br>You can manage admin users in the Super Admin dashboard.</p>`,
     });
   } catch (error) {
-    console.warn("[adminUserService] notification/email for admin joining failed:", error);
+    console.warn(
+      "[adminUserService] notification/email for admin joining failed:",
+      error
+    );
   }
 }
 
@@ -93,7 +128,9 @@ export async function getAllUsers() {
     orderBy: { createdAt: "desc" },
   });
 
-  const admins = allUsers.filter((user) => user.role === "ADMIN" || user.role === "SUPERADMIN");
+  const admins = allUsers.filter(
+    (user) => user.role === "ADMIN" || user.role === "SUPERADMIN"
+  );
   const regularUsers = allUsers.filter((user) => user.role === "USER");
 
   return { allUsers, admins, regularUsers };
@@ -139,7 +176,11 @@ export async function getAllUsersPaginated(params: GetAllUsersPaginatedParams) {
   return paginatedResult(rows, total, page, pageSize);
 }
 
-export async function makeUserAdmin(actorId: string, userId: string, role: "ADMIN" | "SUPERADMIN") {
+export async function makeUserAdmin(
+  actorId: string,
+  userId: string,
+  role: "ADMIN" | "SUPERADMIN"
+) {
   const user = await prisma.revaUser.findUnique({ where: { id: userId } });
   if (!user) throw new NotFoundError("User");
   assertNotDevAccount(user.email);
@@ -158,7 +199,11 @@ export async function makeUserAdmin(actorId: string, userId: string, role: "ADMI
     action: "PROMOTE_TO_ADMIN",
     entity: "RevaUser",
     entityId: userId,
-    changes: { before: { role: user.role }, after: { role }, userEmail: user.email },
+    changes: {
+      before: { role: user.role },
+      after: { role },
+      userEmail: user.email,
+    },
   });
 
   try {
@@ -178,7 +223,10 @@ export async function makeUserAdmin(actorId: string, userId: string, role: "ADMI
       html: `<p>Hello <b>${user.firstName || ""}</b>,<br><br>Congratulations! You have been promoted to <b>${role}</b> on the REVA platform. You now have access to admin features.<br><br>Best regards,<br>The REVA Team</p>`,
     });
   } catch (error) {
-    console.warn("[adminUserService] notification/email for admin promotion failed:", error);
+    console.warn(
+      "[adminUserService] notification/email for admin promotion failed:",
+      error
+    );
   }
 
   return updatedUser;
@@ -189,18 +237,26 @@ export async function removeAdminPrivileges(actorId: string, userId: string) {
   if (!user) throw new NotFoundError("User");
   assertNotDevAccount(user.email);
 
-  if (user.role === "USER") throw new ValidationError({ role: "User is not an admin" });
+  if (user.role === "USER")
+    throw new ValidationError({ role: "User is not an admin" });
   assertNotSelf(actorId, userId, "remove your own admin privileges");
   await assertNotLastActiveSuperadmin(user);
 
-  const updated = await prisma.revaUser.update({ where: { id: userId }, data: { role: "USER" } });
+  const updated = await prisma.revaUser.update({
+    where: { id: userId },
+    data: { role: "USER" },
+  });
 
   await writeAudit(Platform.REVA, {
     userId: actorId,
     action: "REMOVE_ADMIN_PRIVILEGES",
     entity: "RevaUser",
     entityId: userId,
-    changes: { before: { role: user.role }, after: { role: "USER" }, userEmail: user.email },
+    changes: {
+      before: { role: user.role },
+      after: { role: "USER" },
+      userEmail: user.email,
+    },
   });
 
   return updated;
@@ -215,7 +271,10 @@ export async function deactivateUser(actorId: string, userId: string) {
   assertNotSelf(actorId, userId, "deactivate your own account");
   await assertNotLastActiveSuperadmin(user);
 
-  const updated = await prisma.revaUser.update({ where: { id: userId }, data: { is_active: false } });
+  const updated = await prisma.revaUser.update({
+    where: { id: userId },
+    data: { is_active: false },
+  });
 
   await writeAudit(Platform.REVA, {
     userId: actorId,
@@ -235,7 +294,10 @@ export async function reactivateUser(actorId: string, userId: string) {
 
   if (user.is_active) throw new ConflictError("User is already active");
 
-  const updated = await prisma.revaUser.update({ where: { id: userId }, data: { is_active: true } });
+  const updated = await prisma.revaUser.update({
+    where: { id: userId },
+    data: { is_active: true },
+  });
 
   await writeAudit(Platform.REVA, {
     userId: actorId,

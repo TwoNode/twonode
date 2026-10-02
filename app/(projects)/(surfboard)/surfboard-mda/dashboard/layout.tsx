@@ -46,7 +46,11 @@ export default async function MDADashboardLayout({
       group="mda"
       user={
         user?.name || userData?.name
-          ? { picture: user?.picture, name: user?.name || userData?.name, email: userData?.email }
+          ? {
+              picture: user?.picture,
+              name: user?.name || userData?.name,
+              email: userData?.email,
+            }
           : undefined
       }
     >

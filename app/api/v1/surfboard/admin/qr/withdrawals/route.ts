@@ -8,8 +8,14 @@ export const GET = withAuth<SurfboardRole>(
   async (req) => {
     const params = req.nextUrl.searchParams;
     const pagination = parsePagination(params);
-    const data = await getAdminPendingWithdrawals({ ...pagination, search: params.get("search") || undefined });
+    const data = await getAdminPendingWithdrawals({
+      ...pagination,
+      search: params.get("search") || undefined,
+    });
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN] }
+  {
+    platform: Platform.SURFBOARD,
+    roles: [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN],
+  }
 );

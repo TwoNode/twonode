@@ -1,8 +1,16 @@
 import prisma from "@/lib/prisma";
-import { ConflictError, NotFoundError, ValidationError } from "@/lib/api/errors";
+import {
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+} from "@/lib/api/errors";
 import { writeAudit } from "@/lib/audit";
 import { Platform } from "@/utils/platform";
-import { isTierSize, sortTiers, tierKeyFromName } from "@/gbc/utils/sponsorTiers";
+import {
+  isTierSize,
+  sortTiers,
+  tierKeyFromName,
+} from "@/gbc/utils/sponsorTiers";
 
 /**
  * Sponsorship levels (Headline, Impact, ...) are admin-managed rows. A tier's
@@ -29,7 +37,10 @@ function cleanName(name: string) {
 
 function cleanSize(size?: string) {
   if (size === undefined) return undefined;
-  if (!isTierSize(size)) throw new ValidationError({ size: "Size must be FEATURED, STANDARD or COMPACT" });
+  if (!isTierSize(size))
+    throw new ValidationError({
+      size: "Size must be FEATURED, STANDARD or COMPACT",
+    });
   return size;
 }
 
@@ -39,24 +50,44 @@ export async function getSponsorTiers() {
 
 /** Tiers with how many sponsors sit in each — for the admin "Manage tiers" dialog. */
 export async function getSponsorTiersWithCounts() {
-  const rows = await prisma.gBCSponsorTier.findMany({ include: { _count: { select: { sponsors: true } } } });
-  return sortTiers(rows).map(({ _count, ...tier }) => ({ ...tier, sponsorCount: _count.sponsors }));
+  const rows = await prisma.gBCSponsorTier.findMany({
+    include: { _count: { select: { sponsors: true } } },
+  });
+  return sortTiers(rows).map(({ _count, ...tier }) => ({
+    ...tier,
+    sponsorCount: _count.sponsors,
+  }));
 }
 
-export async function createSponsorTier(input: SponsorTierInput, actorId?: string) {
+export async function createSponsorTier(
+  input: SponsorTierInput,
+  actorId?: string
+) {
   const name = cleanName(input.name);
   const size = cleanSize(input.size) ?? "STANDARD";
   const key = tierKeyFromName(name);
-  if (!key) throw new ValidationError({ name: "Tier name must contain letters or numbers" });
+  if (!key)
+    throw new ValidationError({
+      name: "Tier name must contain letters or numbers",
+    });
 
   if (await prisma.gBCSponsorTier.findUnique({ where: { key } })) {
     throw new ConflictError(`A tier called "${name}" already exists`);
   }
 
   // New tiers go last.
-  const last = await prisma.gBCSponsorTier.findFirst({ orderBy: { order: "desc" }, select: { order: true } });
+  const last = await prisma.gBCSponsorTier.findFirst({
+    orderBy: { order: "desc" },
+    select: { order: true },
+  });
   const tier = await prisma.gBCSponsorTier.create({
-    data: { key, name, size, description: input.description?.trim() || null, order: (last?.order ?? -1) + 1 },
+    data: {
+      key,
+      name,
+      size,
+      description: input.description?.trim() || null,
+      order: (last?.order ?? -1) + 1,
+    },
   });
 
   await writeAudit(Platform.GBC, {
@@ -69,13 +100,20 @@ export async function createSponsorTier(input: SponsorTierInput, actorId?: strin
   return tier;
 }
 
-export async function updateSponsorTier(key: string, patch: Partial<SponsorTierInput>, actorId?: string) {
-  if (!(await prisma.gBCSponsorTier.findUnique({ where: { key } }))) throw new NotFoundError("Sponsor tier");
+export async function updateSponsorTier(
+  key: string,
+  patch: Partial<SponsorTierInput>,
+  actorId?: string
+) {
+  if (!(await prisma.gBCSponsorTier.findUnique({ where: { key } })))
+    throw new NotFoundError("Sponsor tier");
 
-  const data: { name?: string; size?: string; description?: string | null } = {};
+  const data: { name?: string; size?: string; description?: string | null } =
+    {};
   if (patch.name !== undefined) data.name = cleanName(patch.name);
   if (patch.size !== undefined) data.size = cleanSize(patch.size);
-  if (patch.description !== undefined) data.description = patch.description?.trim() || null;
+  if (patch.description !== undefined)
+    data.description = patch.description?.trim() || null;
 
   const tier = await prisma.gBCSponsorTier.update({ where: { key }, data });
   await writeAudit(Platform.GBC, {
@@ -90,14 +128,24 @@ export async function updateSponsorTier(key: string, patch: Partial<SponsorTierI
 
 /** Sets the display order to the order of `keys`. Every tier must be listed exactly once. */
 export async function reorderSponsorTiers(keys: string[], actorId?: string) {
-  const existing = await prisma.gBCSponsorTier.findMany({ select: { key: true } });
+  const existing = await prisma.gBCSponsorTier.findMany({
+    select: { key: true },
+  });
   const known = new Set(existing.map((t) => t.key));
   const unique = new Set(keys);
-  if (unique.size !== keys.length || keys.length !== known.size || !keys.every((k) => known.has(k))) {
+  if (
+    unique.size !== keys.length ||
+    keys.length !== known.size ||
+    !keys.every((k) => known.has(k))
+  ) {
     throw new ValidationError({ keys: "List every tier exactly once" });
   }
 
-  await prisma.$transaction(keys.map((key, order) => prisma.gBCSponsorTier.update({ where: { key }, data: { order } })));
+  await prisma.$transaction(
+    keys.map((key, order) =>
+      prisma.gBCSponsorTier.update({ where: { key }, data: { order } })
+    )
+  );
   await writeAudit(Platform.GBC, {
     userId: actorId,
     action: "REORDER_SPONSOR_TIERS",
@@ -108,7 +156,8 @@ export async function reorderSponsorTiers(keys: string[], actorId?: string) {
 }
 
 export async function deleteSponsorTier(key: string, actorId?: string) {
-  if (!(await prisma.gBCSponsorTier.findUnique({ where: { key } }))) throw new NotFoundError("Sponsor tier");
+  if (!(await prisma.gBCSponsorTier.findUnique({ where: { key } })))
+    throw new NotFoundError("Sponsor tier");
 
   const inUse = await prisma.gBCSponsor.count({ where: { tier: key } });
   if (inUse > 0) {
@@ -128,7 +177,12 @@ export async function deleteSponsorTier(key: string, actorId?: string) {
 
 /** Throws a field error if `key` is not a real tier — used when saving a sponsor. */
 export async function assertSponsorTierExists(key: string) {
-  if (!(await prisma.gBCSponsorTier.findUnique({ where: { key }, select: { key: true } }))) {
+  if (
+    !(await prisma.gBCSponsorTier.findUnique({
+      where: { key },
+      select: { key: true },
+    }))
+  ) {
     throw new ValidationError({ tier: "Choose one of the existing tiers" });
   }
 }

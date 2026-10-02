@@ -8,7 +8,10 @@ import {
   notifyPlanQueried,
   notifyReadyForPhysicalSubmission,
 } from "@/surfboard/services/notificationService";
-import { logAuditAction, createChangeLog } from "@/app/(projects)/(surfboard)/utils/auditLogger";
+import {
+  logAuditAction,
+  createChangeLog,
+} from "@/app/(projects)/(surfboard)/utils/auditLogger";
 import { verifyQueryPaymentLinks } from "@/surfboard/services/remitaVerificationService";
 import { getCodSubmissionSettings } from "@/surfboard/services/settingsService";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
@@ -32,7 +35,12 @@ import { NotFoundError, ValidationError } from "@/lib/api/errors";
 // Approval chain
 // ---------------------------------------------------------------------------
 
-export async function updateAccountsApproval(userId: string, batchId: string, approved: boolean, comment?: string) {
+export async function updateAccountsApproval(
+  userId: string,
+  batchId: string,
+  approved: boolean,
+  comment?: string
+) {
   const batch = await prisma.certificateOfDepositBatch.update({
     where: { id: batchId },
     data: {
@@ -47,7 +55,16 @@ export async function updateAccountsApproval(userId: string, batchId: string, ap
 
   const batchPlans = await prisma.surfboardPlan.findMany({
     where: { batchId },
-    select: { id: true, userId: true, planNumber: true, accountsStatus: true, chartingStatus: true, surconStatus: true, recordsIStatus: true, recordsIIStatus: true },
+    select: {
+      id: true,
+      userId: true,
+      planNumber: true,
+      accountsStatus: true,
+      chartingStatus: true,
+      surconStatus: true,
+      recordsIStatus: true,
+      recordsIIStatus: true,
+    },
   });
 
   await prisma.surfboardPlan.updateMany({
@@ -64,7 +81,12 @@ export async function updateAccountsApproval(userId: string, batchId: string, ap
   });
 
   if (!approved) {
-    await notifyAccountsDisapproval({ batchId, batchCode: batch.batchCode, comment, sendEmail: true });
+    await notifyAccountsDisapproval({
+      batchId,
+      batchCode: batch.batchCode,
+      comment,
+      sendEmail: true,
+    });
   }
 
   await logAuditAction({
@@ -72,14 +94,28 @@ export async function updateAccountsApproval(userId: string, batchId: string, ap
     action: approved ? "APPROVE_ACCOUNTS" : "DISAPPROVE_ACCOUNTS",
     entity: "CertificateOfDepositBatch",
     entityId: batchId,
-    changes: createChangeLog({ batchCode: batch.batchCode, approved, comment: comment || null, paymentStatus: approved ? "ACCOUNTS_APPROVED" : "ACCOUNTS_DISAPPROVED" }),
+    changes: createChangeLog({
+      batchCode: batch.batchCode,
+      approved,
+      comment: comment || null,
+      paymentStatus: approved ? "ACCOUNTS_APPROVED" : "ACCOUNTS_DISAPPROVED",
+    }),
   });
 
   for (const plan of batchPlans) {
     if (approved) {
-      const allFourApproved = plan.chartingStatus === "APPROVED" && plan.surconStatus === "APPROVED" && plan.recordsIStatus === "APPROVED" && plan.recordsIIStatus === "PENDING";
+      const allFourApproved =
+        plan.chartingStatus === "APPROVED" &&
+        plan.surconStatus === "APPROVED" &&
+        plan.recordsIStatus === "APPROVED" &&
+        plan.recordsIIStatus === "PENDING";
       if (allFourApproved && plan.userId) {
-        await notifyReadyForPhysicalSubmission({ userId: plan.userId, planId: plan.id, planNumber: plan.planNumber, sendEmail: true });
+        await notifyReadyForPhysicalSubmission({
+          userId: plan.userId,
+          planId: plan.id,
+          planNumber: plan.planNumber,
+          sendEmail: true,
+        });
       }
     }
     await checkAndDispatchQueries(plan.id);
@@ -88,7 +124,12 @@ export async function updateAccountsApproval(userId: string, batchId: string, ap
   return { success: true };
 }
 
-export async function updateChartingStatus(userId: string, planId: string, mode: "APPROVE" | "QUERY", comment?: string) {
+export async function updateChartingStatus(
+  userId: string,
+  planId: string,
+  mode: "APPROVE" | "QUERY",
+  comment?: string
+) {
   const approved = mode === "APPROVE";
 
   const plan = await prisma.surfboardPlan.update({
@@ -103,7 +144,14 @@ export async function updateChartingStatus(userId: string, planId: string, mode:
       chartingLockedAt: null,
       chartingLockExpiresAt: null,
     },
-    select: { userId: true, planNumber: true, accountsStatus: true, surconStatus: true, recordsIStatus: true, recordsIIStatus: true },
+    select: {
+      userId: true,
+      planNumber: true,
+      accountsStatus: true,
+      surconStatus: true,
+      recordsIStatus: true,
+      recordsIIStatus: true,
+    },
   });
 
   await logAuditAction({
@@ -111,13 +159,27 @@ export async function updateChartingStatus(userId: string, planId: string, mode:
     action: approved ? "APPROVE_CHARTING" : "QUERY_CHARTING",
     entity: "SurfboardPlan",
     entityId: planId,
-    changes: createChangeLog({ planNumber: plan.planNumber, approved, comment: comment || null, chartingStatus: approved ? "APPROVED" : "QUERIED" }),
+    changes: createChangeLog({
+      planNumber: plan.planNumber,
+      approved,
+      comment: comment || null,
+      chartingStatus: approved ? "APPROVED" : "QUERIED",
+    }),
   });
 
   if (approved) {
-    const allFourApproved = plan.accountsStatus === "APPROVED" && plan.surconStatus === "APPROVED" && plan.recordsIStatus === "APPROVED" && plan.recordsIIStatus === "PENDING";
+    const allFourApproved =
+      plan.accountsStatus === "APPROVED" &&
+      plan.surconStatus === "APPROVED" &&
+      plan.recordsIStatus === "APPROVED" &&
+      plan.recordsIIStatus === "PENDING";
     if (allFourApproved && plan.userId) {
-      await notifyReadyForPhysicalSubmission({ userId: plan.userId, planId, planNumber: plan.planNumber, sendEmail: true });
+      await notifyReadyForPhysicalSubmission({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        sendEmail: true,
+      });
     }
   }
 
@@ -125,7 +187,12 @@ export async function updateChartingStatus(userId: string, planId: string, mode:
   return { success: true };
 }
 
-export async function updateSurconStatus(userId: string, planId: string, approved: boolean, comment?: string) {
+export async function updateSurconStatus(
+  userId: string,
+  planId: string,
+  approved: boolean,
+  comment?: string
+) {
   const plan = await prisma.surfboardPlan.update({
     where: { id: planId },
     data: {
@@ -137,7 +204,14 @@ export async function updateSurconStatus(userId: string, planId: string, approve
       surconLockedAt: null,
       surconLockExpiresAt: null,
     },
-    select: { userId: true, planNumber: true, accountsStatus: true, chartingStatus: true, recordsIStatus: true, recordsIIStatus: true },
+    select: {
+      userId: true,
+      planNumber: true,
+      accountsStatus: true,
+      chartingStatus: true,
+      recordsIStatus: true,
+      recordsIIStatus: true,
+    },
   });
 
   await logAuditAction({
@@ -145,13 +219,27 @@ export async function updateSurconStatus(userId: string, planId: string, approve
     action: approved ? "APPROVE_SURCON" : "QUERY_SURCON",
     entity: "SurfboardPlan",
     entityId: planId,
-    changes: createChangeLog({ planNumber: plan.planNumber, approved, comment: comment || null, surconStatus: approved ? "APPROVED" : "QUERIED" }),
+    changes: createChangeLog({
+      planNumber: plan.planNumber,
+      approved,
+      comment: comment || null,
+      surconStatus: approved ? "APPROVED" : "QUERIED",
+    }),
   });
 
   if (approved) {
-    const allFourApproved = plan.accountsStatus === "APPROVED" && plan.chartingStatus === "APPROVED" && plan.recordsIStatus === "APPROVED" && plan.recordsIIStatus === "PENDING";
+    const allFourApproved =
+      plan.accountsStatus === "APPROVED" &&
+      plan.chartingStatus === "APPROVED" &&
+      plan.recordsIStatus === "APPROVED" &&
+      plan.recordsIIStatus === "PENDING";
     if (allFourApproved && plan.userId) {
-      await notifyReadyForPhysicalSubmission({ userId: plan.userId, planId, planNumber: plan.planNumber, sendEmail: true });
+      await notifyReadyForPhysicalSubmission({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        sendEmail: true,
+      });
     }
   }
 
@@ -159,7 +247,12 @@ export async function updateSurconStatus(userId: string, planId: string, approve
   return { success: true };
 }
 
-export async function updateRecordsIStatus(userId: string, planId: string, approved: boolean, comment?: string) {
+export async function updateRecordsIStatus(
+  userId: string,
+  planId: string,
+  approved: boolean,
+  comment?: string
+) {
   const plan = await prisma.surfboardPlan.update({
     where: { id: planId },
     data: {
@@ -171,7 +264,14 @@ export async function updateRecordsIStatus(userId: string, planId: string, appro
       recordsILockedAt: null,
       recordsILockExpiresAt: null,
     },
-    select: { userId: true, planNumber: true, accountsStatus: true, chartingStatus: true, surconStatus: true, recordsIIStatus: true },
+    select: {
+      userId: true,
+      planNumber: true,
+      accountsStatus: true,
+      chartingStatus: true,
+      surconStatus: true,
+      recordsIIStatus: true,
+    },
   });
 
   await logAuditAction({
@@ -179,13 +279,27 @@ export async function updateRecordsIStatus(userId: string, planId: string, appro
     action: approved ? "APPROVE_RECORDS_I" : "QUERY_RECORDS_I",
     entity: "SurfboardPlan",
     entityId: planId,
-    changes: createChangeLog({ planNumber: plan.planNumber, approved, comment: comment || null, recordsIStatus: approved ? "APPROVED" : "QUERIED" }),
+    changes: createChangeLog({
+      planNumber: plan.planNumber,
+      approved,
+      comment: comment || null,
+      recordsIStatus: approved ? "APPROVED" : "QUERIED",
+    }),
   });
 
   if (approved) {
-    const allFourApproved = plan.accountsStatus === "APPROVED" && plan.chartingStatus === "APPROVED" && plan.surconStatus === "APPROVED" && plan.recordsIIStatus === "PENDING";
+    const allFourApproved =
+      plan.accountsStatus === "APPROVED" &&
+      plan.chartingStatus === "APPROVED" &&
+      plan.surconStatus === "APPROVED" &&
+      plan.recordsIIStatus === "PENDING";
     if (allFourApproved && plan.userId) {
-      await notifyReadyForPhysicalSubmission({ userId: plan.userId, planId, planNumber: plan.planNumber, sendEmail: true });
+      await notifyReadyForPhysicalSubmission({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        sendEmail: true,
+      });
     }
   }
 
@@ -193,15 +307,32 @@ export async function updateRecordsIStatus(userId: string, planId: string, appro
   return { success: true };
 }
 
-export async function updateIntakeStatus(userId: string, planId: string, approved: boolean, comment?: string) {
+export async function updateIntakeStatus(
+  userId: string,
+  planId: string,
+  approved: boolean,
+  comment?: string
+) {
   const planCheck = await prisma.surfboardPlan.findUnique({
     where: { id: planId },
-    select: { accountsStatus: true, chartingStatus: true, surconStatus: true, recordsIStatus: true },
+    select: {
+      accountsStatus: true,
+      chartingStatus: true,
+      surconStatus: true,
+      recordsIStatus: true,
+    },
   });
   if (!planCheck) throw new NotFoundError("Plan");
 
-  if (planCheck.accountsStatus !== "APPROVED" || planCheck.chartingStatus !== "APPROVED" || planCheck.surconStatus !== "APPROVED" || planCheck.recordsIStatus !== "APPROVED") {
-    throw new ValidationError({ status: "Parallel reviews must be completed before Intake Admin can act." });
+  if (
+    planCheck.accountsStatus !== "APPROVED" ||
+    planCheck.chartingStatus !== "APPROVED" ||
+    planCheck.surconStatus !== "APPROVED" ||
+    planCheck.recordsIStatus !== "APPROVED"
+  ) {
+    throw new ValidationError({
+      status: "Parallel reviews must be completed before Intake Admin can act.",
+    });
   }
 
   const plan = await prisma.surfboardPlan.update({
@@ -223,22 +354,50 @@ export async function updateIntakeStatus(userId: string, planId: string, approve
     action: approved ? "APPROVE_INTAKE" : "QUERY_INTAKE",
     entity: "SurfboardPlan",
     entityId: planId,
-    changes: createChangeLog({ planNumber: plan.planNumber, approved, comment: comment || null, intakeStatus: approved ? "APPROVED" : "QUERIED" }),
+    changes: createChangeLog({
+      planNumber: plan.planNumber,
+      approved,
+      comment: comment || null,
+      intakeStatus: approved ? "APPROVED" : "QUERIED",
+    }),
   });
 
   if (!approved && plan.userId) {
-    await prisma.surfboardPlan.update({ where: { id: planId }, data: { redCopyStatus: "QUERIED" } });
-    await notifyConsolidatedQueries({ userId: plan.userId, planId, planNumber: plan.planNumber, queries: [{ role: "Intake", comment: comment || undefined }], sendEmail: true });
+    await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: { redCopyStatus: "QUERIED" },
+    });
+    await notifyConsolidatedQueries({
+      userId: plan.userId,
+      planId,
+      planNumber: plan.planNumber,
+      queries: [{ role: "Intake", comment: comment || undefined }],
+      sendEmail: true,
+    });
   }
 
   return { success: true };
 }
 
-export async function updateIntakeBatchStatus(userId: string, batchId: string, approved: boolean, comment?: string) {
+export async function updateIntakeBatchStatus(
+  userId: string,
+  batchId: string,
+  approved: boolean,
+  comment?: string
+) {
   const batch = await prisma.certificateOfDepositBatch.findUnique({
     where: { id: batchId },
     include: {
-      plans: { where: { accountsStatus: "APPROVED", chartingStatus: "APPROVED", surconStatus: "APPROVED", recordsIStatus: "APPROVED", intakeStatus: "PENDING", deleted: false } },
+      plans: {
+        where: {
+          accountsStatus: "APPROVED",
+          chartingStatus: "APPROVED",
+          surconStatus: "APPROVED",
+          recordsIStatus: "APPROVED",
+          intakeStatus: "PENDING",
+          deleted: false,
+        },
+      },
     },
   });
   if (!batch || batch.plans.length === 0) {
@@ -267,7 +426,13 @@ export async function updateIntakeBatchStatus(userId: string, batchId: string, a
           entity: "SurfboardPlan",
           entityId: p.id,
           ipAddress: "System",
-          changes: JSON.stringify(createChangeLog({ planNumber: p.planNumber, approved, intakeStatus: approved ? "APPROVED" : "QUERIED" })),
+          changes: JSON.stringify(
+            createChangeLog({
+              planNumber: p.planNumber,
+              approved,
+              intakeStatus: approved ? "APPROVED" : "QUERIED",
+            })
+          ),
         },
       });
     }
@@ -275,17 +440,35 @@ export async function updateIntakeBatchStatus(userId: string, batchId: string, a
 
   if (!approved && batch.submittedBy) {
     for (const p of batch.plans) {
-      await notifyConsolidatedQueries({ userId: batch.submittedBy, planId: p.id, planNumber: p.planNumber, queries: [{ role: "Intake", comment: comment || undefined }], sendEmail: true });
+      await notifyConsolidatedQueries({
+        userId: batch.submittedBy,
+        planId: p.id,
+        planNumber: p.planNumber,
+        queries: [{ role: "Intake", comment: comment || undefined }],
+        sendEmail: true,
+      });
     }
   }
 
   return { success: true, updatedCount: planIds.length };
 }
 
-export async function updateRecordsIIStatus(userId: string, planId: string, approved: boolean, comment?: string) {
+export async function updateRecordsIIStatus(
+  userId: string,
+  planId: string,
+  approved: boolean,
+  comment?: string
+) {
   const planCheck = await prisma.surfboardPlan.findUnique({
     where: { id: planId },
-    select: { accountsStatus: true, chartingStatus: true, surconStatus: true, recordsIStatus: true, intakeStatus: true, batchId: true },
+    select: {
+      accountsStatus: true,
+      chartingStatus: true,
+      surconStatus: true,
+      recordsIStatus: true,
+      intakeStatus: true,
+      batchId: true,
+    },
   });
   if (!planCheck) throw new NotFoundError("Plan");
 
@@ -296,7 +479,9 @@ export async function updateRecordsIIStatus(userId: string, planId: string, appr
     planCheck.recordsIStatus !== "APPROVED" ||
     planCheck.intakeStatus !== "APPROVED"
   ) {
-    throw new ValidationError({ status: "All other approvals (including Intake) must be completed first" });
+    throw new ValidationError({
+      status: "All other approvals (including Intake) must be completed first",
+    });
   }
 
   const plan = await prisma.surfboardPlan.update({
@@ -310,9 +495,21 @@ export async function updateRecordsIIStatus(userId: string, planId: string, appr
       recordsIILockedAt: null,
       recordsIILockExpiresAt: null,
       ...(!approved
-        ? { accountsStatus: "PENDING", chartingStatus: "PENDING", surconStatus: "PENDING", recordsIStatus: "PENDING", intakeStatus: "PENDING" }
+        ? {
+            accountsStatus: "PENDING",
+            chartingStatus: "PENDING",
+            surconStatus: "PENDING",
+            recordsIStatus: "PENDING",
+            intakeStatus: "PENDING",
+          }
         : {}),
-      ...(approved ? { status: "LODGED", redCopyStatus: "APPROVED", dateLodged: new Date() } : {}),
+      ...(approved
+        ? {
+            status: "LODGED",
+            redCopyStatus: "APPROVED",
+            dateLodged: new Date(),
+          }
+        : {}),
     },
     include: { user: true, batch: { select: { batchCode: true } } },
   });
@@ -320,10 +517,23 @@ export async function updateRecordsIIStatus(userId: string, planId: string, appr
   if (approved) {
     await transmitToOSSG(plan, plan.user);
     if (plan.userId) {
-      await notifyPlanApproved({ userId: plan.userId, planId, planNumber: plan.planNumber, batchCode: plan.batch?.batchCode, sendEmail: true });
+      await notifyPlanApproved({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        batchCode: plan.batch?.batchCode,
+        sendEmail: true,
+      });
     }
   } else if (plan.userId) {
-    await notifyPlanQueried({ userId: plan.userId, planId, planNumber: plan.planNumber, queriedBy: "Records II", comment, sendEmail: true });
+    await notifyPlanQueried({
+      userId: plan.userId,
+      planId,
+      planNumber: plan.planNumber,
+      queriedBy: "Records II",
+      comment,
+      sendEmail: true,
+    });
   }
 
   await logAuditAction({
@@ -331,13 +541,22 @@ export async function updateRecordsIIStatus(userId: string, planId: string, appr
     action: approved ? "APPROVE_RECORDS_II" : "QUERY_RECORDS_II",
     entity: "SurfboardPlan",
     entityId: planId,
-    changes: createChangeLog({ planNumber: plan.planNumber, approved, comment: comment || null, recordsIIStatus: approved ? "APPROVED" : "QUERIED" }),
+    changes: createChangeLog({
+      planNumber: plan.planNumber,
+      approved,
+      comment: comment || null,
+      recordsIIStatus: approved ? "APPROVED" : "QUERIED",
+    }),
   });
 
   return { success: true };
 }
 
-export async function markPlanArchived(userId: string, planId: string, notes?: string) {
+export async function markPlanArchived(
+  userId: string,
+  planId: string,
+  notes?: string
+) {
   const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId } });
   if (!plan) throw new NotFoundError("Plan");
 
@@ -349,12 +568,18 @@ export async function markPlanArchived(userId: string, planId: string, notes?: s
     plan.recordsIIStatus !== "APPROVED" ||
     plan.accountsStatus !== "APPROVED"
   ) {
-    throw new ValidationError({ status: "Plan is not fully approved by all MDAs yet" });
+    throw new ValidationError({
+      status: "Plan is not fully approved by all MDAs yet",
+    });
   }
 
   const updated = await prisma.surfboardPlan.update({
     where: { id: planId },
-    data: { archiveReceivedBy: userId, archiveReceivedAt: new Date(), archiveNotes: notes || null },
+    data: {
+      archiveReceivedBy: userId,
+      archiveReceivedAt: new Date(),
+      archiveNotes: notes || null,
+    },
   });
 
   await logAuditAction({
@@ -362,7 +587,10 @@ export async function markPlanArchived(userId: string, planId: string, notes?: s
     action: "MARK_PLAN_ARCHIVED",
     entity: "SurfboardPlan",
     entityId: planId,
-    changes: createChangeLog({ archiveReceivedAt: updated.archiveReceivedAt, archiveNotes: notes }),
+    changes: createChangeLog({
+      archiveReceivedAt: updated.archiveReceivedAt,
+      archiveNotes: notes,
+    }),
   });
 
   return { success: true };
@@ -375,12 +603,32 @@ export async function markPlanArchived(userId: string, planId: string, notes?: s
 export async function getAccountsBatches() {
   return prisma.certificateOfDepositBatch.findMany({
     where: {
-      paymentStatus: { in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"] },
-      OR: [{ accountsApprovedBy: null }, { plans: { some: { accountsStatus: "PENDING" } } }],
+      paymentStatus: {
+        in: [
+          "LASG_PAID",
+          "ACCOUNTS_APPROVED",
+          "ACCOUNTS_DISAPPROVED",
+          "COMPLETED",
+        ],
+      },
+      OR: [
+        { accountsApprovedBy: null },
+        { plans: { some: { accountsStatus: "PENDING" } } },
+      ],
     },
     include: {
       submitter: { select: { firstName: true, lastName: true, email: true } },
-      plans: { select: { id: true, planNumber: true, planType: true, lga: true, deededArea: true, queryLasgReceiptUrls: true, queryRemitaReceiptUrls: true } },
+      plans: {
+        select: {
+          id: true,
+          planNumber: true,
+          planType: true,
+          lga: true,
+          deededArea: true,
+          queryLasgReceiptUrls: true,
+          queryRemitaReceiptUrls: true,
+        },
+      },
     },
     orderBy: { createdAt: "asc" },
   });
@@ -392,19 +640,43 @@ export async function getAccountsHistory() {
     include: {
       submitter: { select: { firstName: true, lastName: true, email: true } },
       accountsApprovedByUser: { select: { firstName: true, lastName: true } },
-      plans: { select: { id: true, planNumber: true, planType: true, lga: true, deededArea: true, queryLasgReceiptUrls: true, queryRemitaReceiptUrls: true } },
+      plans: {
+        select: {
+          id: true,
+          planNumber: true,
+          planType: true,
+          lga: true,
+          deededArea: true,
+          queryLasgReceiptUrls: true,
+          queryRemitaReceiptUrls: true,
+        },
+      },
     },
     orderBy: { accountsApprovedAt: "desc" },
     take: 100,
   });
 }
 
-async function getPlansWithLockStatus(where: any, lockField: "chartingLockedBy" | "surconLockedBy" | "recordsILockedBy", lockExpiresField: "chartingLockExpiresAt" | "surconLockExpiresAt" | "recordsILockExpiresAt", include: any, orderBy: any) {
+async function getPlansWithLockStatus(
+  where: any,
+  lockField: "chartingLockedBy" | "surconLockedBy" | "recordsILockedBy",
+  lockExpiresField:
+    "chartingLockExpiresAt" | "surconLockExpiresAt" | "recordsILockExpiresAt",
+  include: any,
+  orderBy: any
+) {
   const now = new Date();
-  const plans = await prisma.surfboardPlan.findMany({ where, include, orderBy });
+  const plans = await prisma.surfboardPlan.findMany({
+    where,
+    include,
+    orderBy,
+  });
   return plans.map((plan: any) => ({
     ...plan,
-    isLocked: plan[lockField] && plan[lockExpiresField] && new Date(plan[lockExpiresField]) > now,
+    isLocked:
+      plan[lockField] &&
+      plan[lockExpiresField] &&
+      new Date(plan[lockExpiresField]) > now,
     lockExpiresAt: plan[lockExpiresField],
   }));
 }
@@ -418,18 +690,40 @@ const BATCH_PAID_STATUSES: BatchPaymentStatus[] = [
 
 export async function getChartingPlans() {
   return getPlansWithLockStatus(
-    { redCopyStatus: "SUBMITTED", chartingStatus: "PENDING", deleted: false, batch: { paymentStatus: { in: BATCH_PAID_STATUSES } } },
+    {
+      redCopyStatus: "SUBMITTED",
+      chartingStatus: "PENDING",
+      deleted: false,
+      batch: { paymentStatus: { in: BATCH_PAID_STATUSES } },
+    },
     "chartingLockedBy",
     "chartingLockExpiresAt",
-    { batch: { select: { batchCode: true, paymentStatus: true } }, user: { select: { firstName: true, lastName: true, email: true, phoneNumber: true } } },
+    {
+      batch: { select: { batchCode: true, paymentStatus: true } },
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+        },
+      },
+    },
     { redCopySubmittedAt: "asc" }
   );
 }
 
 export async function getChartingHistory() {
   return prisma.surfboardPlan.findMany({
-    where: { redCopyStatus: "SUBMITTED", chartingStatus: "APPROVED", deleted: false },
-    include: { batch: { select: { batchCode: true, paymentStatus: true } }, chartingApprovedByUser: { select: { firstName: true, lastName: true } } },
+    where: {
+      redCopyStatus: "SUBMITTED",
+      chartingStatus: "APPROVED",
+      deleted: false,
+    },
+    include: {
+      batch: { select: { batchCode: true, paymentStatus: true } },
+      chartingApprovedByUser: { select: { firstName: true, lastName: true } },
+    },
     orderBy: { chartingApprovedAt: "desc" },
     take: 100,
   });
@@ -437,21 +731,52 @@ export async function getChartingHistory() {
 
 export async function getSurconPlans() {
   return getPlansWithLockStatus(
-    { redCopyStatus: "SUBMITTED", surconStatus: { in: ["PENDING"] }, deleted: false, batch: { paymentStatus: { in: BATCH_PAID_STATUSES } } },
+    {
+      redCopyStatus: "SUBMITTED",
+      surconStatus: { in: ["PENDING"] },
+      deleted: false,
+      batch: { paymentStatus: { in: BATCH_PAID_STATUSES } },
+    },
     "surconLockedBy",
     "surconLockExpiresAt",
-    { batch: { select: { batchCode: true, paymentStatus: true } }, user: { select: { firstName: true, lastName: true, email: true, surconRegNumber: true, companyName: true, surconRegName: true, phoneNumber: true } } },
+    {
+      batch: { select: { batchCode: true, paymentStatus: true } },
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          surconRegNumber: true,
+          companyName: true,
+          surconRegName: true,
+          phoneNumber: true,
+        },
+      },
+    },
     { redCopySubmittedAt: "asc" }
   );
 }
 
 export async function getSurconHistory() {
   return prisma.surfboardPlan.findMany({
-    where: { surconStatus: { in: ["APPROVED", "QUERIED"] }, surconApprovedAt: { not: null }, deleted: false },
+    where: {
+      surconStatus: { in: ["APPROVED", "QUERIED"] },
+      surconApprovedAt: { not: null },
+      deleted: false,
+    },
     include: {
       batch: { select: { batchCode: true, paymentStatus: true } },
       surconApprovedByUser: { select: { firstName: true, lastName: true } },
-      user: { select: { firstName: true, lastName: true, email: true, phoneNumber: true, surconRegNumber: true, companyName: true } },
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+          surconRegNumber: true,
+          companyName: true,
+        },
+      },
     },
     orderBy: { surconApprovedAt: "desc" },
     take: 100,
@@ -460,21 +785,51 @@ export async function getSurconHistory() {
 
 export async function getRecordsIPlans() {
   return getPlansWithLockStatus(
-    { redCopyStatus: "SUBMITTED", recordsIStatus: { in: ["PENDING"] }, deleted: false, batch: { paymentStatus: { in: BATCH_PAID_STATUSES } } },
+    {
+      redCopyStatus: "SUBMITTED",
+      recordsIStatus: { in: ["PENDING"] },
+      deleted: false,
+      batch: { paymentStatus: { in: BATCH_PAID_STATUSES } },
+    },
     "recordsILockedBy",
     "recordsILockExpiresAt",
-    { batch: { select: { batchCode: true, paymentStatus: true } }, user: { select: { firstName: true, lastName: true, email: true, phoneNumber: true, surconRegNumber: true, companyName: true } } },
+    {
+      batch: { select: { batchCode: true, paymentStatus: true } },
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+          surconRegNumber: true,
+          companyName: true,
+        },
+      },
+    },
     { redCopySubmittedAt: "asc" }
   );
 }
 
 export async function getRecordsIHistory() {
   return prisma.surfboardPlan.findMany({
-    where: { recordsIStatus: { in: ["APPROVED", "QUERIED"] }, recordsIApprovedAt: { not: null }, deleted: false },
+    where: {
+      recordsIStatus: { in: ["APPROVED", "QUERIED"] },
+      recordsIApprovedAt: { not: null },
+      deleted: false,
+    },
     include: {
       batch: { select: { batchCode: true, paymentStatus: true } },
       recordsIApprovedByUser: { select: { firstName: true, lastName: true } },
-      user: { select: { firstName: true, lastName: true, email: true, phoneNumber: true, surconRegNumber: true, companyName: true } },
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+          surconRegNumber: true,
+          companyName: true,
+        },
+      },
     },
     orderBy: { recordsIApprovedAt: "desc" },
     take: 100,
@@ -496,26 +851,54 @@ export async function getRecordsIIPlans() {
       batch: { paymentStatus: { in: BATCH_PAID_STATUSES } },
     },
     include: {
-      batch: { select: { batchCode: true, paymentStatus: true, planCount: true } },
-      user: { select: { firstName: true, lastName: true, email: true, phoneNumber: true, surconRegNumber: true, companyName: true } },
+      batch: {
+        select: { batchCode: true, paymentStatus: true, planCount: true },
+      },
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+          surconRegNumber: true,
+          companyName: true,
+        },
+      },
     },
     orderBy: { intakeApprovedAt: "asc" },
   });
 
   return plans.map((plan) => ({
     ...plan,
-    isLocked: Boolean(plan.recordsIILockedBy && plan.recordsIILockExpiresAt && new Date(plan.recordsIILockExpiresAt) > now),
+    isLocked: Boolean(
+      plan.recordsIILockedBy &&
+      plan.recordsIILockExpiresAt &&
+      new Date(plan.recordsIILockExpiresAt) > now
+    ),
     lockExpiresAt: plan.recordsIILockExpiresAt,
   }));
 }
 
 export async function getRecordsIIHistory() {
   return prisma.surfboardPlan.findMany({
-    where: { recordsIIStatus: { in: ["APPROVED", "QUERIED"] }, recordsIIApprovedAt: { not: null }, deleted: false },
+    where: {
+      recordsIIStatus: { in: ["APPROVED", "QUERIED"] },
+      recordsIIApprovedAt: { not: null },
+      deleted: false,
+    },
     include: {
       batch: { select: { batchCode: true, paymentStatus: true } },
       recordsIIApprovedByUser: { select: { firstName: true, lastName: true } },
-      user: { select: { firstName: true, lastName: true, email: true, phoneNumber: true, surconRegNumber: true, companyName: true } },
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+          surconRegNumber: true,
+          companyName: true,
+        },
+      },
     },
     orderBy: { recordsIIApprovedAt: "desc" },
     take: 100,
@@ -523,14 +906,50 @@ export async function getRecordsIIHistory() {
 }
 
 export async function getIntakeBatches() {
-  const criteria = { redCopyStatus: "SUBMITTED" as const, deleted: false, physicalCopySubmitted: true, intakeStatus: "PENDING" as const, accountsStatus: "APPROVED" as const, chartingStatus: "APPROVED" as const, recordsIStatus: "APPROVED" as const, surconStatus: "APPROVED" as const };
+  const criteria = {
+    redCopyStatus: "SUBMITTED" as const,
+    deleted: false,
+    physicalCopySubmitted: true,
+    intakeStatus: "PENDING" as const,
+    accountsStatus: "APPROVED" as const,
+    chartingStatus: "APPROVED" as const,
+    recordsIStatus: "APPROVED" as const,
+    surconStatus: "APPROVED" as const,
+  };
   return prisma.certificateOfDepositBatch.findMany({
-    where: { plans: { some: criteria }, paymentStatus: { in: BATCH_PAID_STATUSES } },
+    where: {
+      plans: { some: criteria },
+      paymentStatus: { in: BATCH_PAID_STATUSES },
+    },
     include: {
-      submitter: { select: { firstName: true, lastName: true, email: true, surconRegNumber: true, companyName: true, phoneNumber: true } },
+      submitter: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          surconRegNumber: true,
+          companyName: true,
+          phoneNumber: true,
+        },
+      },
       plans: {
         where: criteria,
-        select: { id: true, planNumber: true, surveyTitle: true, lga: true, ward: true, lcda: true, deededArea: true, redCopyFileUrl: true, intakeStatus: true, intakeLockedBy: true, intakeLockExpiresAt: true, physicalCopySubmittedAt: true, recordCopyVerdict: true, recordCopyVerificationData: true },
+        select: {
+          id: true,
+          planNumber: true,
+          surveyTitle: true,
+          lga: true,
+          ward: true,
+          lcda: true,
+          deededArea: true,
+          redCopyFileUrl: true,
+          intakeStatus: true,
+          intakeLockedBy: true,
+          intakeLockExpiresAt: true,
+          physicalCopySubmittedAt: true,
+          recordCopyVerdict: true,
+          recordCopyVerificationData: true,
+        },
         orderBy: { physicalCopySubmittedAt: "asc" },
       },
     },
@@ -539,12 +958,34 @@ export async function getIntakeBatches() {
 }
 
 export async function getIntakeHistoryBatches() {
-  const criteria = { intakeStatus: { in: [ApprovalStatus.APPROVED, ApprovalStatus.QUERIED] }, accountsStatus: ApprovalStatus.APPROVED, chartingStatus: ApprovalStatus.APPROVED, recordsIStatus: ApprovalStatus.APPROVED, surconStatus: ApprovalStatus.APPROVED };
+  const criteria = {
+    intakeStatus: { in: [ApprovalStatus.APPROVED, ApprovalStatus.QUERIED] },
+    accountsStatus: ApprovalStatus.APPROVED,
+    chartingStatus: ApprovalStatus.APPROVED,
+    recordsIStatus: ApprovalStatus.APPROVED,
+    surconStatus: ApprovalStatus.APPROVED,
+  };
   return prisma.certificateOfDepositBatch.findMany({
     where: { plans: { some: criteria } },
     include: {
-      submitter: { select: { firstName: true, lastName: true, email: true, surconRegNumber: true, companyName: true, phoneNumber: true } },
-      plans: { where: criteria, include: { intakeApprovedByUser: { select: { id: true, firstName: true, lastName: true } } } },
+      submitter: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          surconRegNumber: true,
+          companyName: true,
+          phoneNumber: true,
+        },
+      },
+      plans: {
+        where: criteria,
+        include: {
+          intakeApprovedByUser: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+        },
+      },
     },
     orderBy: { updatedAt: "desc" },
     take: 50,
@@ -553,15 +994,51 @@ export async function getIntakeHistoryBatches() {
 
 export async function getRecordsIIBatches(userId: string) {
   const now = new Date();
-  const criteria = { redCopyStatus: "SUBMITTED" as const, deleted: false, accountsStatus: "APPROVED" as const, chartingStatus: "APPROVED" as const, surconStatus: "APPROVED" as const, recordsIStatus: "APPROVED" as const, intakeStatus: "APPROVED" as const, recordsIIStatus: "PENDING" as const };
+  const criteria = {
+    redCopyStatus: "SUBMITTED" as const,
+    deleted: false,
+    accountsStatus: "APPROVED" as const,
+    chartingStatus: "APPROVED" as const,
+    surconStatus: "APPROVED" as const,
+    recordsIStatus: "APPROVED" as const,
+    intakeStatus: "APPROVED" as const,
+    recordsIIStatus: "PENDING" as const,
+  };
 
   const batches = await prisma.certificateOfDepositBatch.findMany({
     where: { plans: { some: criteria } },
     include: {
-      submitter: { select: { firstName: true, lastName: true, email: true, phoneNumber: true, surconRegNumber: true, companyName: true } },
+      submitter: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+          surconRegNumber: true,
+          companyName: true,
+        },
+      },
       plans: {
         where: criteria,
-        select: { id: true, planNumber: true, surveyTitle: true, planType: true, referencePlanNumber: true, lga: true, ward: true, lcda: true, locality: true, deededArea: true, chartingRemarks: true, redCopyFileUrl: true, intakeApprovedAt: true, recordsIILockedBy: true, recordsIILockExpiresAt: true, recordCopyVerdict: true, recordCopyVerificationData: true },
+        select: {
+          id: true,
+          planNumber: true,
+          surveyTitle: true,
+          planType: true,
+          referencePlanNumber: true,
+          lga: true,
+          ward: true,
+          lcda: true,
+          locality: true,
+          deededArea: true,
+          chartingRemarks: true,
+          redCopyFileUrl: true,
+          intakeApprovedAt: true,
+          recordsIILockedBy: true,
+          recordsIILockExpiresAt: true,
+          recordCopyVerdict: true,
+          recordCopyVerificationData: true,
+        },
       },
     },
     orderBy: { createdAt: "asc" },
@@ -569,7 +1046,11 @@ export async function getRecordsIIBatches(userId: string) {
 
   return batches
     .map((batch) => {
-      const earliestIntake = Math.min(...batch.plans.map((p) => (p.intakeApprovedAt ? new Date(p.intakeApprovedAt).getTime() : Infinity)));
+      const earliestIntake = Math.min(
+        ...batch.plans.map((p) =>
+          p.intakeApprovedAt ? new Date(p.intakeApprovedAt).getTime() : Infinity
+        )
+      );
       return { ...batch, _sortKey: earliestIntake };
     })
     .sort((a, b) => a._sortKey - b._sortKey)
@@ -577,20 +1058,48 @@ export async function getRecordsIIBatches(userId: string) {
       ...batch,
       plans: batch.plans.map((plan) => ({
         ...plan,
-        isLocked: Boolean(plan.recordsIILockedBy && plan.recordsIILockExpiresAt && new Date(plan.recordsIILockExpiresAt) > now),
-        isLockedByMe: plan.recordsIILockedBy === userId && Boolean(plan.recordsIILockExpiresAt) && new Date(plan.recordsIILockExpiresAt!) > now,
+        isLocked: Boolean(
+          plan.recordsIILockedBy &&
+          plan.recordsIILockExpiresAt &&
+          new Date(plan.recordsIILockExpiresAt) > now
+        ),
+        isLockedByMe:
+          plan.recordsIILockedBy === userId &&
+          Boolean(plan.recordsIILockExpiresAt) &&
+          new Date(plan.recordsIILockExpiresAt!) > now,
       })),
-      isBatchLockedByMe: batch.plans.length > 0 && batch.plans[0].recordsIILockedBy === userId && Boolean(batch.plans[0].recordsIILockExpiresAt) && new Date(batch.plans[0].recordsIILockExpiresAt!) > now,
-      batchLockExpiresAt: batch.plans.length > 0 && batch.plans[0].recordsIILockedBy === userId && batch.plans[0].recordsIILockExpiresAt ? batch.plans[0].recordsIILockExpiresAt : null,
+      isBatchLockedByMe:
+        batch.plans.length > 0 &&
+        batch.plans[0].recordsIILockedBy === userId &&
+        Boolean(batch.plans[0].recordsIILockExpiresAt) &&
+        new Date(batch.plans[0].recordsIILockExpiresAt!) > now,
+      batchLockExpiresAt:
+        batch.plans.length > 0 &&
+        batch.plans[0].recordsIILockedBy === userId &&
+        batch.plans[0].recordsIILockExpiresAt
+          ? batch.plans[0].recordsIILockExpiresAt
+          : null,
     }));
 }
 
 export async function getRecordsIIHistoryBatches() {
-  const criteria = { recordsIIStatus: { in: [ApprovalStatus.APPROVED, ApprovalStatus.QUERIED] }, recordsIIApprovedAt: { not: null } };
+  const criteria = {
+    recordsIIStatus: { in: [ApprovalStatus.APPROVED, ApprovalStatus.QUERIED] },
+    recordsIIApprovedAt: { not: null },
+  };
   return prisma.certificateOfDepositBatch.findMany({
     where: { plans: { some: criteria } },
     include: {
-      submitter: { select: { firstName: true, lastName: true, email: true, phoneNumber: true, surconRegNumber: true, companyName: true } },
+      submitter: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+          surconRegNumber: true,
+          companyName: true,
+        },
+      },
       plans: {
         where: criteria,
         select: {
@@ -611,7 +1120,9 @@ export async function getRecordsIIHistoryBatches() {
           recordsIIApprovedAt: true,
           recordCopyVerdict: true,
           recordCopyVerificationData: true,
-          recordsIIApprovedByUser: { select: { firstName: true, lastName: true } },
+          recordsIIApprovedByUser: {
+            select: { firstName: true, lastName: true },
+          },
         },
       },
     },
@@ -621,20 +1132,62 @@ export async function getRecordsIIHistoryBatches() {
 }
 
 export async function getPendingArchiveBatches() {
-  const criteria = { redCopyStatus: "APPROVED" as const, deleted: false, accountsStatus: "APPROVED" as const, chartingStatus: "APPROVED" as const, surconStatus: "APPROVED" as const, recordsIStatus: "APPROVED" as const, intakeStatus: "APPROVED" as const, recordsIIStatus: "APPROVED" as const, archiveReceivedAt: null };
+  const criteria = {
+    redCopyStatus: "APPROVED" as const,
+    deleted: false,
+    accountsStatus: "APPROVED" as const,
+    chartingStatus: "APPROVED" as const,
+    surconStatus: "APPROVED" as const,
+    recordsIStatus: "APPROVED" as const,
+    intakeStatus: "APPROVED" as const,
+    recordsIIStatus: "APPROVED" as const,
+    archiveReceivedAt: null,
+  };
 
   const batches = await prisma.certificateOfDepositBatch.findMany({
     where: { plans: { some: criteria } },
     include: {
-      submitter: { select: { firstName: true, lastName: true, email: true, phoneNumber: true, surconRegNumber: true, companyName: true } },
-      plans: { where: criteria, select: { id: true, planNumber: true, surveyTitle: true, planType: true, referencePlanNumber: true, lga: true, ward: true, lcda: true, locality: true, deededArea: true, chartingRemarks: true, redCopyFileUrl: true, recordsIIApprovedAt: true } },
+      submitter: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+          surconRegNumber: true,
+          companyName: true,
+        },
+      },
+      plans: {
+        where: criteria,
+        select: {
+          id: true,
+          planNumber: true,
+          surveyTitle: true,
+          planType: true,
+          referencePlanNumber: true,
+          lga: true,
+          ward: true,
+          lcda: true,
+          locality: true,
+          deededArea: true,
+          chartingRemarks: true,
+          redCopyFileUrl: true,
+          recordsIIApprovedAt: true,
+        },
+      },
     },
     orderBy: { createdAt: "asc" },
   });
 
   return batches
     .map((batch) => {
-      const earliestApproval = Math.min(...batch.plans.map((p) => (p.recordsIIApprovedAt ? new Date(p.recordsIIApprovedAt).getTime() : Infinity)));
+      const earliestApproval = Math.min(
+        ...batch.plans.map((p) =>
+          p.recordsIIApprovedAt
+            ? new Date(p.recordsIIApprovedAt).getTime()
+            : Infinity
+        )
+      );
       return { ...batch, _sortKey: earliestApproval };
     })
     .sort((a, b) => a._sortKey - b._sortKey)
@@ -646,8 +1199,33 @@ export async function getArchiveHistoryBatches() {
   return prisma.certificateOfDepositBatch.findMany({
     where: { plans: { some: criteria } },
     include: {
-      submitter: { select: { firstName: true, lastName: true, email: true, phoneNumber: true, surconRegNumber: true, companyName: true } },
-      plans: { where: criteria, select: { id: true, planNumber: true, surveyTitle: true, planType: true, lga: true, ward: true, lcda: true, deededArea: true, chartingRemarks: true, redCopyFileUrl: true, archiveReceivedAt: true, archiveNotes: true } },
+      submitter: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+          surconRegNumber: true,
+          companyName: true,
+        },
+      },
+      plans: {
+        where: criteria,
+        select: {
+          id: true,
+          planNumber: true,
+          surveyTitle: true,
+          planType: true,
+          lga: true,
+          ward: true,
+          lcda: true,
+          deededArea: true,
+          chartingRemarks: true,
+          redCopyFileUrl: true,
+          archiveReceivedAt: true,
+          archiveNotes: true,
+        },
+      },
     },
     orderBy: { updatedAt: "desc" },
     take: 50,
@@ -655,32 +1233,115 @@ export async function getArchiveHistoryBatches() {
 }
 
 export async function getPendingCountByRole() {
-  const [accountsCount, chartingCount, surconCount, recordsICount, recordsIICount, archiveCount, intakeCount] = await Promise.all([
+  const [
+    accountsCount,
+    chartingCount,
+    surconCount,
+    recordsICount,
+    recordsIICount,
+    archiveCount,
+    intakeCount,
+  ] = await Promise.all([
     prisma.certificateOfDepositBatch.count({
-      where: { paymentStatus: { in: BATCH_PAID_STATUSES }, OR: [{ accountsApprovedBy: null }, { plans: { some: { accountsStatus: "PENDING" } } }] },
+      where: {
+        paymentStatus: { in: BATCH_PAID_STATUSES },
+        OR: [
+          { accountsApprovedBy: null },
+          { plans: { some: { accountsStatus: "PENDING" } } },
+        ],
+      },
     }),
-    prisma.surfboardPlan.count({ where: { redCopyStatus: "SUBMITTED", chartingStatus: "PENDING", deleted: false, batch: { paymentStatus: { in: BATCH_PAID_STATUSES } } } }),
-    prisma.surfboardPlan.count({ where: { redCopyStatus: "SUBMITTED", surconStatus: { in: ["PENDING", "QUERIED"] }, deleted: false, batch: { paymentStatus: { in: BATCH_PAID_STATUSES } } } }),
-    prisma.surfboardPlan.count({ where: { redCopyStatus: "SUBMITTED", recordsIStatus: { in: ["PENDING", "QUERIED"] }, deleted: false, batch: { paymentStatus: { in: BATCH_PAID_STATUSES } } } }),
     prisma.surfboardPlan.count({
-      where: { redCopyStatus: "SUBMITTED", recordsIIStatus: "PENDING", accountsStatus: "APPROVED", chartingStatus: "APPROVED", surconStatus: "APPROVED", recordsIStatus: "APPROVED", intakeStatus: "APPROVED", deleted: false, batch: { paymentStatus: { in: BATCH_PAID_STATUSES } } },
+      where: {
+        redCopyStatus: "SUBMITTED",
+        chartingStatus: "PENDING",
+        deleted: false,
+        batch: { paymentStatus: { in: BATCH_PAID_STATUSES } },
+      },
     }),
     prisma.surfboardPlan.count({
-      where: { redCopyStatus: "APPROVED", surconStatus: "APPROVED", chartingStatus: "APPROVED", recordsIStatus: "APPROVED", intakeStatus: "APPROVED", recordsIIStatus: "APPROVED", accountsStatus: "APPROVED", archiveReceivedAt: null, deleted: false },
+      where: {
+        redCopyStatus: "SUBMITTED",
+        surconStatus: { in: ["PENDING", "QUERIED"] },
+        deleted: false,
+        batch: { paymentStatus: { in: BATCH_PAID_STATUSES } },
+      },
+    }),
+    prisma.surfboardPlan.count({
+      where: {
+        redCopyStatus: "SUBMITTED",
+        recordsIStatus: { in: ["PENDING", "QUERIED"] },
+        deleted: false,
+        batch: { paymentStatus: { in: BATCH_PAID_STATUSES } },
+      },
+    }),
+    prisma.surfboardPlan.count({
+      where: {
+        redCopyStatus: "SUBMITTED",
+        recordsIIStatus: "PENDING",
+        accountsStatus: "APPROVED",
+        chartingStatus: "APPROVED",
+        surconStatus: "APPROVED",
+        recordsIStatus: "APPROVED",
+        intakeStatus: "APPROVED",
+        deleted: false,
+        batch: { paymentStatus: { in: BATCH_PAID_STATUSES } },
+      },
+    }),
+    prisma.surfboardPlan.count({
+      where: {
+        redCopyStatus: "APPROVED",
+        surconStatus: "APPROVED",
+        chartingStatus: "APPROVED",
+        recordsIStatus: "APPROVED",
+        intakeStatus: "APPROVED",
+        recordsIIStatus: "APPROVED",
+        accountsStatus: "APPROVED",
+        archiveReceivedAt: null,
+        deleted: false,
+      },
     }),
     prisma.certificateOfDepositBatch.count({
-      where: { plans: { some: { redCopyStatus: "SUBMITTED", accountsStatus: "APPROVED", chartingStatus: "APPROVED", surconStatus: "APPROVED", recordsIStatus: "APPROVED", recordsIIStatus: "PENDING", intakeStatus: "PENDING", physicalCopySubmitted: true, deleted: false } } },
+      where: {
+        plans: {
+          some: {
+            redCopyStatus: "SUBMITTED",
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            recordsIIStatus: "PENDING",
+            intakeStatus: "PENDING",
+            physicalCopySubmitted: true,
+            deleted: false,
+          },
+        },
+      },
     }),
   ]);
 
-  return { accounts: accountsCount, charting: chartingCount, surcon: surconCount, recordsI: recordsICount, recordsII: recordsIICount, archive: archiveCount, intake: intakeCount };
+  return {
+    accounts: accountsCount,
+    charting: chartingCount,
+    surcon: surconCount,
+    recordsI: recordsICount,
+    recordsII: recordsIICount,
+    archive: archiveCount,
+    intake: intakeCount,
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Query / resubmission
 // ---------------------------------------------------------------------------
 
-const QUERIED_OR = [{ accountsStatus: "QUERIED" as const }, { chartingStatus: "QUERIED" as const }, { surconStatus: "QUERIED" as const }, { recordsIStatus: "QUERIED" as const }, { recordsIIStatus: "QUERIED" as const }];
+const QUERIED_OR = [
+  { accountsStatus: "QUERIED" as const },
+  { chartingStatus: "QUERIED" as const },
+  { surconStatus: "QUERIED" as const },
+  { recordsIStatus: "QUERIED" as const },
+  { recordsIIStatus: "QUERIED" as const },
+];
 
 export async function getQueriedPlansForUser(userId: string) {
   return prisma.surfboardPlan.findMany({
@@ -724,17 +1385,35 @@ export async function resubmitQueriedPlan(
 ) {
   const plan = await prisma.surfboardPlan.findFirst({
     where: { id: planId, userId, OR: QUERIED_OR },
-    select: { id: true, planNumber: true, codFee: true, accountsStatus: true, accountsComment: true, chartingStatus: true, surconStatus: true, recordsIStatus: true, recordsIIStatus: true },
+    select: {
+      id: true,
+      planNumber: true,
+      codFee: true,
+      accountsStatus: true,
+      accountsComment: true,
+      chartingStatus: true,
+      surconStatus: true,
+      recordsIStatus: true,
+      recordsIIStatus: true,
+    },
   });
-  if (!plan) throw new NotFoundError("Plan (or no pending queries to respond to)");
+  if (!plan)
+    throw new NotFoundError("Plan (or no pending queries to respond to)");
 
   if (lasgReceiptUrl && remitaReceiptUrl) {
     const settings = await getCodSubmissionSettings();
     const feePercent = settings.queryResponseFeePercent || 0;
-    const expectedAmount = plan.codFee ? (Number(plan.codFee) * feePercent) / 100 : 0;
+    const expectedAmount = plan.codFee
+      ? (Number(plan.codFee) * feePercent) / 100
+      : 0;
 
     if (expectedAmount > 0) {
-      const verifyRes = await verifyQueryPaymentLinks(userId, lasgReceiptUrl, remitaReceiptUrl, expectedAmount);
+      const verifyRes = await verifyQueryPaymentLinks(
+        userId,
+        lasgReceiptUrl,
+        remitaReceiptUrl,
+        expectedAmount
+      );
       if (!verifyRes.success) {
         throw new ValidationError({ payment: verifyRes.error });
       }
@@ -742,7 +1421,8 @@ export async function resubmitQueriedPlan(
   }
 
   let queriedBy: string | null = null;
-  const needsAccountReview = plan.accountsStatus === "QUERIED" || !!lasgReceiptUrl || !!remitaReceiptUrl;
+  const needsAccountReview =
+    plan.accountsStatus === "QUERIED" || !!lasgReceiptUrl || !!remitaReceiptUrl;
 
   const updates: any = {
     ...(pillars && { pillars }),
@@ -752,7 +1432,9 @@ export async function resubmitQueriedPlan(
     ...(location?.ward && { ward: location.ward }),
     ...(location?.state && { state: location.state }),
     ...(lasgReceiptUrl && { queryLasgReceiptUrls: { push: lasgReceiptUrl } }),
-    ...(remitaReceiptUrl && { queryRemitaReceiptUrls: { push: remitaReceiptUrl } }),
+    ...(remitaReceiptUrl && {
+      queryRemitaReceiptUrls: { push: remitaReceiptUrl },
+    }),
     redCopyStatus: "SUBMITTED",
     accountsStatus: needsAccountReview ? "PENDING" : plan.accountsStatus,
     accountsComment: needsAccountReview ? null : plan.accountsComment,
@@ -767,10 +1449,14 @@ export async function resubmitQueriedPlan(
   };
 
   if (plan.accountsStatus === "QUERIED") queriedBy = "Accounts";
-  if (plan.chartingStatus === "QUERIED") queriedBy = queriedBy ? `${queriedBy}, Charting` : "Charting";
-  if (plan.surconStatus === "QUERIED") queriedBy = queriedBy ? `${queriedBy}, SURCON` : "SURCON";
-  if (plan.recordsIStatus === "QUERIED") queriedBy = queriedBy ? `${queriedBy}, Records I` : "Records I";
-  if (plan.recordsIIStatus === "QUERIED") queriedBy = queriedBy ? `${queriedBy}, Records II` : "Records II";
+  if (plan.chartingStatus === "QUERIED")
+    queriedBy = queriedBy ? `${queriedBy}, Charting` : "Charting";
+  if (plan.surconStatus === "QUERIED")
+    queriedBy = queriedBy ? `${queriedBy}, SURCON` : "SURCON";
+  if (plan.recordsIStatus === "QUERIED")
+    queriedBy = queriedBy ? `${queriedBy}, Records I` : "Records I";
+  if (plan.recordsIIStatus === "QUERIED")
+    queriedBy = queriedBy ? `${queriedBy}, Records II` : "Records II";
 
   await prisma.surfboardPlan.update({ where: { id: planId }, data: updates });
 
@@ -785,7 +1471,10 @@ export async function resubmitQueriedPlan(
       queriedBy,
       pillarsUpdated: !!pillars,
       recordCopyUpdated: !!recordCopyUrl,
-      queryPayment: lasgReceiptUrl && remitaReceiptUrl ? { lasgReceiptUrl, remitaReceiptUrl, verified: true } : undefined,
+      queryPayment:
+        lasgReceiptUrl && remitaReceiptUrl
+          ? { lasgReceiptUrl, remitaReceiptUrl, verified: true }
+          : undefined,
     }),
   });
 
@@ -802,22 +1491,59 @@ export async function resubmitQueriedPlan(
 async function checkAndDispatchQueries(planId: string) {
   const plan = await prisma.surfboardPlan.findUnique({
     where: { id: planId },
-    select: { userId: true, planNumber: true, accountsStatus: true, accountsComment: true, chartingStatus: true, chartingComment: true, surconStatus: true, surconComment: true, recordsIStatus: true, recordsIComment: true },
+    select: {
+      userId: true,
+      planNumber: true,
+      accountsStatus: true,
+      accountsComment: true,
+      chartingStatus: true,
+      chartingComment: true,
+      surconStatus: true,
+      surconComment: true,
+      recordsIStatus: true,
+      recordsIComment: true,
+    },
   });
   if (!plan || !plan.userId) return;
 
-  const allActed = plan.accountsStatus !== "PENDING" && plan.chartingStatus !== "PENDING" && plan.surconStatus !== "PENDING" && plan.recordsIStatus !== "PENDING";
+  const allActed =
+    plan.accountsStatus !== "PENDING" &&
+    plan.chartingStatus !== "PENDING" &&
+    plan.surconStatus !== "PENDING" &&
+    plan.recordsIStatus !== "PENDING";
   if (!allActed) return;
 
   const queries: Array<{ role: string; comment?: string }> = [];
-  if (plan.accountsStatus === "QUERIED") queries.push({ role: "Accounts", comment: plan.accountsComment || undefined });
-  if (plan.chartingStatus === "QUERIED") queries.push({ role: "Charting", comment: plan.chartingComment || undefined });
-  if (plan.surconStatus === "QUERIED") queries.push({ role: "SURCON", comment: plan.surconComment || undefined });
-  if (plan.recordsIStatus === "QUERIED") queries.push({ role: "Records I", comment: plan.recordsIComment || undefined });
+  if (plan.accountsStatus === "QUERIED")
+    queries.push({
+      role: "Accounts",
+      comment: plan.accountsComment || undefined,
+    });
+  if (plan.chartingStatus === "QUERIED")
+    queries.push({
+      role: "Charting",
+      comment: plan.chartingComment || undefined,
+    });
+  if (plan.surconStatus === "QUERIED")
+    queries.push({ role: "SURCON", comment: plan.surconComment || undefined });
+  if (plan.recordsIStatus === "QUERIED")
+    queries.push({
+      role: "Records I",
+      comment: plan.recordsIComment || undefined,
+    });
 
   if (queries.length > 0) {
-    await prisma.surfboardPlan.update({ where: { id: planId }, data: { redCopyStatus: "QUERIED" } });
-    await notifyConsolidatedQueries({ userId: plan.userId, planId, planNumber: plan.planNumber, queries, sendEmail: true });
+    await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: { redCopyStatus: "QUERIED" },
+    });
+    await notifyConsolidatedQueries({
+      userId: plan.userId,
+      planId,
+      planNumber: plan.planNumber,
+      queries,
+      sendEmail: true,
+    });
   }
 }
 
@@ -827,10 +1553,17 @@ async function checkAndDispatchQueries(planId: string) {
 
 export async function submitPhysicalCopies(userId: string, planIds: string[]) {
   const plans = await prisma.surfboardPlan.findMany({
-    where: { id: { in: planIds }, userId, redCopyStatus: "SUBMITTED", physicalCopySubmitted: false, deleted: false },
+    where: {
+      id: { in: planIds },
+      userId,
+      redCopyStatus: "SUBMITTED",
+      physicalCopySubmitted: false,
+      deleted: false,
+    },
     select: { id: true },
   });
-  if (plans.length === 0) throw new ValidationError({ planIds: "No eligible plans found to submit" });
+  if (plans.length === 0)
+    throw new ValidationError({ planIds: "No eligible plans found to submit" });
 
   const validPlanIds = plans.map((p) => p.id);
   const result = await prisma.surfboardPlan.updateMany({

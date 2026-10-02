@@ -9,12 +9,14 @@ A comprehensive notification system has been implemented for the REVA platform, 
 ## Features
 
 ### 🎨 Beautiful UI Components
+
 - **Admin Notification Page**: Advanced filtering, search, bulk actions, and real-time updates
 - **User Notification Page**: Clean, responsive design with filtering and search capabilities
 - **Notification Bell**: Real-time unread count with auto-refresh every 30 seconds
 - **Color-coded Notifications**: Different colors and icons for different notification types
 
 ### 🔔 Notification Types
+
 - **SUCCESS**: Green - Successful operations (payments, report completion)
 - **INFO**: Blue - General information
 - **WARNING**: Yellow - Warnings and alerts
@@ -24,6 +26,7 @@ A comprehensive notification system has been implemented for the REVA platform, 
 - **PROPERTY**: Purple - Property-related notifications
 
 ### 📱 Interactive Features
+
 - **Mark as Read**: Users can mark notifications as read
 - **Dismiss**: Users can dismiss notifications
 - **Bulk Actions**: Admins can perform bulk operations (mark as read, dismiss)
@@ -33,6 +36,7 @@ A comprehensive notification system has been implemented for the REVA platform, 
 ## Database Schema
 
 ### Notification Table
+
 ```sql
 CREATE TABLE "Notification" (
     "id" TEXT NOT NULL,
@@ -53,6 +57,7 @@ CREATE TABLE "Notification" (
 ## API Functions
 
 ### Core Notification Functions
+
 - `createNotification()` - Create a new notification
 - `getUserNotifications()` - Get notifications for a specific user
 - `getAdminNotifications()` - Get all notifications for admins
@@ -61,6 +66,7 @@ CREATE TABLE "Notification" (
 - `getUnreadNotificationCount()` - Get unread count for a user
 
 ### Notification Triggers
+
 - `notifyNewPropertyRequest()` - Triggered when new property requests are created
 - `notifyPaymentReceived()` - Triggered when payments are completed
 - `notifyReportReady()` - Triggered when reports are approved
@@ -69,6 +75,7 @@ CREATE TABLE "Notification" (
 ## Automatic Notification Triggers
 
 ### User Actions
+
 1. **Property Request Creation**
    - Notifies admins about new requests
    - Confirms request submission to user
@@ -78,6 +85,7 @@ CREATE TABLE "Notification" (
    - Confirms payment to user
 
 ### Admin Actions
+
 1. **Report Upload**
    - Notifies all admins about uploaded reports
 
@@ -94,24 +102,24 @@ CREATE TABLE "Notification" (
 ## Components
 
 ### NotificationBell Component
+
 ```tsx
-<NotificationBell 
-  href="/reva/dashboard/notifications"
-  size={30}
-  color="#fff"
-/>
+<NotificationBell href="/reva/dashboard/notifications" size={30} color="#fff" />
 ```
 
 **Features:**
+
 - Real-time unread count
 - Auto-refresh every 30 seconds
 - Responsive design
 - Configurable size and color
 
 ### Admin Notifications Page
+
 **Location:** `/reva-restricted/dashboard/notifications`
 
 **Features:**
+
 - Advanced filtering (type, status, dismissed)
 - Search functionality
 - Bulk actions (select all, mark as read, dismiss)
@@ -120,9 +128,11 @@ CREATE TABLE "Notification" (
 - Metadata display (property references, amounts, addresses)
 
 ### User Notifications Page
+
 **Location:** `/reva/dashboard/notifications`
 
 **Features:**
+
 - Clean, user-friendly interface
 - Filtering and search
 - Individual notification actions
@@ -132,11 +142,14 @@ CREATE TABLE "Notification" (
 ## Integration Points
 
 ### Headers
+
 - **Admin Header**: Includes notification bell with unread count
 - **User Header**: Includes notification bell with unread count
 
 ### Database Actions
+
 Notifications are automatically triggered in:
+
 - `saveToOneTimeProperty()` - New property requests
 - `saveToPropertyTable()` - New authenticated property requests
 - `checkPaymentSuccess()` - Payment completion (one-time users)
@@ -154,6 +167,7 @@ Notifications are automatically triggered in:
 ## Styling
 
 ### Color Scheme
+
 - **Success**: Green (`#10b981`)
 - **Info**: Blue (`#3b82f6`)
 - **Warning**: Yellow (`#f59e0b`)
@@ -163,7 +177,9 @@ Notifications are automatically triggered in:
 - **Property**: Purple (`#8b5cf6`)
 
 ### REVA Brand Colors
+
 The notification system uses REVA's brand colors and gradients for consistency:
+
 - Primary gradients for headers
 - Brand colors for icons and accents
 - Consistent spacing and typography
@@ -171,6 +187,7 @@ The notification system uses REVA's brand colors and gradients for consistency:
 ## Usage Examples
 
 ### Creating a Notification
+
 ```typescript
 await createNotification({
   type: "SUCCESS",
@@ -180,12 +197,13 @@ await createNotification({
   link: `/reva/dashboard/details?reference=${reference}`,
   metadata: {
     propertyReference: reference,
-    amount: 40000
-  }
+    amount: 40000,
+  },
 });
 ```
 
 ### Getting User Notifications
+
 ```typescript
 const result = await getUserNotifications(userId);
 if (result.success) {
@@ -195,6 +213,7 @@ if (result.success) {
 ```
 
 ### Marking as Read
+
 ```typescript
 await markNotificationAsRead(notificationId, userId);
 ```
@@ -240,4 +259,4 @@ app/(projects)/reva-restricted/
 │   └── AdminNotificationsList.tsx # Admin notifications page
 ```
 
-This notification system provides a comprehensive, scalable, and user-friendly way to keep users and administrators informed about important events in the REVA platform. 
+This notification system provides a comprehensive, scalable, and user-friendly way to keep users and administrators informed about important events in the REVA platform.

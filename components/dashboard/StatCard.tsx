@@ -87,7 +87,12 @@ export function StatCard({
                   : "text-rose-600 dark:text-rose-400"
               )}
             >
-              <TrendingUp className={cn("h-3.5 w-3.5", trend.direction === "down" && "rotate-180")} />
+              <TrendingUp
+                className={cn(
+                  "h-3.5 w-3.5",
+                  trend.direction === "down" && "rotate-180"
+                )}
+              />
               {trend.value}
             </span>
           )}

@@ -30,7 +30,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Trash2, RotateCcw, X, Calendar as CalendarIcon, Pencil } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  RotateCcw,
+  X,
+  Calendar as CalendarIcon,
+  Pencil,
+} from "lucide-react";
 import { format } from "date-fns";
 import { gbcApi, type EditionAdminStats } from "@/gbc/apiClient";
 import { GBC_COLORS } from "@/gbc/colors";
@@ -97,7 +104,9 @@ export default function EditionsClient({
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [binOpen, setBinOpen] = useState(false);
-  const [deletedEditions, setDeletedEditions] = useState<(GBCEdition & { deletedAt: string })[]>([]);
+  const [deletedEditions, setDeletedEditions] = useState<
+    (GBCEdition & { deletedAt: string })[]
+  >([]);
   const [loadingBin, setLoadingBin] = useState(false);
   const [permanentTarget, setPermanentTarget] = useState<string | null>(null);
 
@@ -113,7 +122,7 @@ export default function EditionsClient({
         });
         setStatsByKey(next);
         setLoadingStats(false);
-      },
+      }
     );
     return () => {
       cancelled = true;
@@ -329,7 +338,9 @@ export default function EditionsClient({
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={form[field] ? new Date(form[field]) : undefined}
+                        selected={
+                          form[field] ? new Date(form[field]) : undefined
+                        }
                         onSelect={(date) =>
                           date &&
                           setForm((f) => ({
@@ -491,7 +502,10 @@ export default function EditionsClient({
         </div>
       </div>
 
-      <Dialog open={!!editKey} onOpenChange={(open) => !open && setEditKey(null)}>
+      <Dialog
+        open={!!editKey}
+        onOpenChange={(open) => !open && setEditKey(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit GBC {editKey}</DialogTitle>
@@ -566,7 +580,9 @@ export default function EditionsClient({
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={editForm[field] ? new Date(editForm[field]) : undefined}
+                      selected={
+                        editForm[field] ? new Date(editForm[field]) : undefined
+                      }
                       onSelect={(date) =>
                         date &&
                         setEditForm((f) => ({
@@ -601,14 +617,18 @@ export default function EditionsClient({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete GBC {deleteTarget}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This moves the edition to the recycle bin — it drops off this list, but nothing is
-              destroyed and it can be restored at any time. Its tickets, sponsors, speakers, and
-              partners are unaffected either way.
+              This moves the edition to the recycle bin — it drops off this
+              list, but nothing is destroyed and it can be restored at any time.
+              Its tickets, sponsors, speakers, and partners are unaffected
+              either way.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -631,7 +651,9 @@ export default function EditionsClient({
           {loadingBin ? (
             <p className="text-sm text-gray-500 py-6 text-center">Loading…</p>
           ) : deletedEditions.length === 0 ? (
-            <p className="text-sm text-gray-500 py-6 text-center">Nothing here.</p>
+            <p className="text-sm text-gray-500 py-6 text-center">
+              Nothing here.
+            </p>
           ) : (
             <div className="space-y-2">
               {deletedEditions.map((edition) => (
@@ -673,20 +695,27 @@ export default function EditionsClient({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!permanentTarget} onOpenChange={(open) => !open && setPermanentTarget(null)}>
+      <AlertDialog
+        open={!!permanentTarget}
+        onOpenChange={(open) => !open && setPermanentTarget(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Permanently delete GBC {permanentTarget}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Permanently delete GBC {permanentTarget}?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This cannot be undone. It will be refused if the edition still has any tickets,
-              sponsors, speakers, or partners attached to it.
+              This cannot be undone. It will be refused if the edition still has
+              any tickets, sponsors, speakers, or partners attached to it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
-              onClick={() => permanentTarget && handlePermanentDelete(permanentTarget)}
+              onClick={() =>
+                permanentTarget && handlePermanentDelete(permanentTarget)
+              }
             >
               Delete permanently
             </AlertDialogAction>

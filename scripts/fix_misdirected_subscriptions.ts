@@ -102,7 +102,7 @@ const targetUpdates = [
     interval: "monthly",
     currentStart: new Date("2025-09-17T20:09:38Z"),
     currentEnd: new Date("2025-12-01T00:00:00Z"),
-  }
+  },
 ];
 
 async function main() {
@@ -115,7 +115,7 @@ async function main() {
       });
       console.log(`Deleted invalid SubscriptionHistory record: ${id}`);
     } catch (error: any) {
-      if (error.code === 'P2025') {
+      if (error.code === "P2025") {
         console.log(`Record ${id} already deleted or not found.`);
       } else {
         console.error(`Error deleting record ${id}:`, error.message);
@@ -145,7 +145,10 @@ async function main() {
       console.log(`  -> CurrentStart: ${sub.currentStart?.toISOString()}`);
       console.log(`  -> CurrentEnd: ${sub.currentEnd?.toISOString()}`);
     } catch (error: any) {
-      console.error(`Error updating Subscription for user ${update.userId}:`, error.message);
+      console.error(
+        `Error updating Subscription for user ${update.userId}:`,
+        error.message
+      );
     }
   }
 

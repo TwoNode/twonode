@@ -23,13 +23,18 @@ const verifySchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
 
     const { platform, token } = await validateBody(req, verifySchema);
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
-    const verificationToken = await prisma.emailVerificationToken.findUnique({ where: { tokenHash } });
+    const verificationToken = await prisma.emailVerificationToken.findUnique({
+      where: { tokenHash },
+    });
 
     if (
       !verificationToken ||
@@ -37,7 +42,9 @@ export async function POST(req: NextRequest) {
       verificationToken.usedAt ||
       verificationToken.expiresAt < new Date()
     ) {
-      throw new ValidationError({ token: "This link is invalid or has expired. Request a new one." });
+      throw new ValidationError({
+        token: "This link is invalid or has expired. Request a new one.",
+      });
     }
 
     await prisma.emailVerificationToken.update({
@@ -56,7 +63,13 @@ export async function POST(req: NextRequest) {
     if (session?.sub === verificationToken.userId) {
       const user = await findUserById(platform, verificationToken.userId);
       if (user) {
-        await issueSession(user.id, user.role, platform, 30 * 24 * 60 * 60, user);
+        await issueSession(
+          user.id,
+          user.role,
+          platform,
+          30 * 24 * 60 * 60,
+          user
+        );
       }
     }
 
@@ -65,6 +78,9 @@ export async function POST(req: NextRequest) {
       data: { message: "Email verified." },
     });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

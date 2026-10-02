@@ -53,10 +53,7 @@ const ViewDetailsPage = async ({
             <AdminMiniHeader title="Admin Actions" />
 
             <div className="mt-4">
-              <AdminReportUpload
-                property={transformedProperty}
-                user={user}
-              />
+              <AdminReportUpload property={transformedProperty} user={user} />
             </div>
           </div>
         </div>

@@ -11,5 +11,8 @@ export const GET = withAuth<RevaRole>(
     const data = await authGetTransactionData(reference);
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.REVA, roles: [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN] }
+  {
+    platform: Platform.REVA,
+    roles: [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN],
+  }
 );

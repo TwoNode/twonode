@@ -36,7 +36,7 @@ function PaymentCallbackContent() {
         // batchId is unused server-side — verifyBatchPayment looks the batch up by reference
         const result = await surfboardApi.cod.batches.verifyPayment(
           "_",
-          reference,
+          reference
         );
 
         if (result.success) {
@@ -114,7 +114,9 @@ function PaymentCallbackContent() {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <p className="text-center text-gray-600 dark:text-gray-400">{message}</p>
+          <p className="text-center text-gray-600 dark:text-gray-400">
+            {message}
+          </p>
 
           {status === "success" && (
             <div className="bg-green-50 dark:bg-green-500/10 p-4 rounded-lg text-sm text-green-800 dark:text-green-300">

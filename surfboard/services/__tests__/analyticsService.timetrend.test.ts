@@ -26,10 +26,16 @@ beforeEach(() => {
 describe("getTimeTrend", () => {
   it("buckets by createdAt over a trailing 12 months when no range is given", async () => {
     mockPrisma.surfboardPlan.findMany.mockResolvedValue([
-      { createdAt: new Date("2026-06-15"), dateOnSurveyPlan: new Date("2024-01-01") },
+      {
+        createdAt: new Date("2026-06-15"),
+        dateOnSurveyPlan: new Date("2024-01-01"),
+      },
     ]);
 
-    const result = await getTimeTrend({ role: SurfboardRole.USER, userId: "u1" });
+    const result = await getTimeTrend({
+      role: SurfboardRole.USER,
+      userId: "u1",
+    });
 
     expect(result).toEqual([{ period: "2026-06", count: 1 }]);
     const where = mockPrisma.surfboardPlan.findMany.mock.calls[0][0].where;
@@ -39,11 +45,17 @@ describe("getTimeTrend", () => {
 
   it("buckets by dateOnSurveyPlan and filters on it when a range is given", async () => {
     mockPrisma.surfboardPlan.findMany.mockResolvedValue([
-      { createdAt: new Date("2026-09-01"), dateOnSurveyPlan: new Date("2024-03-20") },
+      {
+        createdAt: new Date("2026-09-01"),
+        dateOnSurveyPlan: new Date("2024-03-20"),
+      },
     ]);
 
     const range = { from: new Date("2024-01-01"), to: new Date("2024-12-31") };
-    const result = await getTimeTrend({ role: SurfboardRole.USER, userId: "u1" }, range);
+    const result = await getTimeTrend(
+      { role: SurfboardRole.USER, userId: "u1" },
+      range
+    );
 
     expect(result).toEqual([{ period: "2024-03", count: 1 }]);
     const where = mockPrisma.surfboardPlan.findMany.mock.calls[0][0].where;
@@ -56,7 +68,10 @@ describe("getTimeTrend", () => {
       { createdAt: new Date("2026-09-01"), dateOnSurveyPlan: null },
     ]);
 
-    const result = await getTimeTrend({ role: SurfboardRole.USER, userId: "u1" }, { from: new Date("2024-01-01") });
+    const result = await getTimeTrend(
+      { role: SurfboardRole.USER, userId: "u1" },
+      { from: new Date("2024-01-01") }
+    );
 
     expect(result).toEqual([]);
   });

@@ -13,7 +13,10 @@ interface SessionUser {
   picture?: string | null;
 }
 
-const SESSION_API_BY_PLATFORM: Record<Platform, { get: () => Promise<{ success: boolean; data?: SessionUser }> }> = {
+const SESSION_API_BY_PLATFORM: Record<
+  Platform,
+  { get: () => Promise<{ success: boolean; data?: SessionUser }> }
+> = {
   surfboard: surfboardApi.session,
   reva: revaApi.session,
   gbc: gbcApi.session,
@@ -36,7 +39,11 @@ interface UserAvatarProps {
  * one (Kinde-derived accounts usually do), initials on a colored circle
  * otherwise (every native-login account, since that flow never collects
  * one). */
-export default function UserAvatar({ platform, size = 32, className = "" }: UserAvatarProps) {
+export default function UserAvatar({
+  platform,
+  size = 32,
+  className = "",
+}: UserAvatarProps) {
   const [user, setUser] = useState<SessionUser | null>(null);
 
   useEffect(() => {

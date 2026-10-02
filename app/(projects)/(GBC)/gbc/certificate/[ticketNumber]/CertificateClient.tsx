@@ -21,11 +21,18 @@ interface CertificateClientProps {
   qrCodeDataUrl: string;
 }
 
-export default function CertificateClient({ ticket, verificationUrl, qrCodeDataUrl }: CertificateClientProps) {
+export default function CertificateClient({
+  ticket,
+  verificationUrl,
+  qrCodeDataUrl,
+}: CertificateClientProps) {
   const edition = ticket.editionRef;
-  const attendedDate = ticket.checkedInAt ? new Date(ticket.checkedInAt) : new Date(edition.endDate);
+  const attendedDate = ticket.checkedInAt
+    ? new Date(ticket.checkedInAt)
+    : new Date(edition.endDate);
   const dateRange =
-    format(new Date(edition.startDate), "MMMM d") === format(new Date(edition.endDate), "MMMM d")
+    format(new Date(edition.startDate), "MMMM d") ===
+    format(new Date(edition.endDate), "MMMM d")
       ? format(new Date(edition.startDate), "MMMM d, yyyy")
       : `${format(new Date(edition.startDate), "MMMM d")}–${format(new Date(edition.endDate), "d, yyyy")}`;
 
@@ -44,14 +51,36 @@ export default function CertificateClient({ ticket, verificationUrl, qrCodeDataU
 
       <div className="relative w-full aspect-[1.414] bg-[#FBF8F2] shadow-2xl overflow-hidden print:shadow-none print:w-[297mm] print:h-[210mm] print:m-0">
         {/* Cable-motif corners — placeholder for the bridge-photo background */}
-        <svg className="absolute top-0 right-0 w-40 h-32 sm:w-56 sm:h-44 opacity-30 pointer-events-none" viewBox="0 0 220 160">
+        <svg
+          className="absolute top-0 right-0 w-40 h-32 sm:w-56 sm:h-44 opacity-30 pointer-events-none"
+          viewBox="0 0 220 160"
+        >
           {Array.from({ length: 9 }).map((_, i) => (
-            <line key={i} x1={220} y1={0} x2={220 - i * 24} y2={160} stroke="#C9A24B" strokeWidth={0.8} />
+            <line
+              key={i}
+              x1={220}
+              y1={0}
+              x2={220 - i * 24}
+              y2={160}
+              stroke="#C9A24B"
+              strokeWidth={0.8}
+            />
           ))}
         </svg>
-        <svg className="absolute bottom-0 left-0 w-40 h-32 sm:w-56 sm:h-44 opacity-30 pointer-events-none" viewBox="0 0 220 160">
+        <svg
+          className="absolute bottom-0 left-0 w-40 h-32 sm:w-56 sm:h-44 opacity-30 pointer-events-none"
+          viewBox="0 0 220 160"
+        >
           {Array.from({ length: 9 }).map((_, i) => (
-            <line key={i} x1={0} y1={0} x2={i * 24} y2={160} stroke="#C9A24B" strokeWidth={0.8} />
+            <line
+              key={i}
+              x1={0}
+              y1={0}
+              x2={i * 24}
+              y2={160}
+              stroke="#C9A24B"
+              strokeWidth={0.8}
+            />
           ))}
         </svg>
 
@@ -61,7 +90,9 @@ export default function CertificateClient({ ticket, verificationUrl, qrCodeDataU
         <div className="relative h-full flex flex-col p-8 sm:p-14">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm sm:text-base font-extrabold tracking-wide text-[#1A1024]">{edition.name.toUpperCase()}</p>
+              <p className="text-sm sm:text-base font-extrabold tracking-wide text-[#1A1024]">
+                {edition.name.toUpperCase()}
+              </p>
               <p className="text-[10px] sm:text-xs font-medium text-[#6B6472] tracking-wide mt-0.5">
                 GEOSPATIAL BUILDERS COURSE · TWONODE TECHNOLOGIES
               </p>
@@ -75,29 +106,43 @@ export default function CertificateClient({ ticket, verificationUrl, qrCodeDataU
             <p className="text-[10px] sm:text-xs font-semibold text-[#C9A24B] tracking-[0.2em] mb-3 sm:mb-4">
               CERTIFICATE OF ATTENDANCE
             </p>
-            <p className="text-xs sm:text-sm font-medium text-[#6B6472] mb-2">This certifies that</p>
+            <p className="text-xs sm:text-sm font-medium text-[#6B6472] mb-2">
+              This certifies that
+            </p>
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-[#1A1024] mb-4 sm:mb-6 border-b border-[#C9A24B] pb-3 px-8 sm:px-16">
               {ticket.name}
             </h2>
             <p className="text-[#1A1024] text-sm sm:text-base max-w-2xl leading-relaxed font-medium">
-              participated in <span className="font-bold text-[#5B21B6]">{edition.name}</span>, held {dateRange} at{" "}
-              {edition.venue}, under the theme &ldquo;{edition.theme}&rdquo; — {edition.subTheme}.
+              participated in{" "}
+              <span className="font-bold text-[#5B21B6]">{edition.name}</span>,
+              held {dateRange} at {edition.venue}, under the theme &ldquo;
+              {edition.theme}&rdquo; — {edition.subTheme}.
             </p>
           </div>
 
           <div className="flex justify-between items-end">
             <div className="flex items-center gap-2 sm:gap-3">
-              <img src={qrCodeDataUrl} alt="Verification QR code" className="w-10 h-10 sm:w-14 sm:h-14" />
+              <img
+                src={qrCodeDataUrl}
+                alt="Verification QR code"
+                className="w-10 h-10 sm:w-14 sm:h-14"
+              />
               <div className="text-left">
-                <p className="text-[9px] sm:text-[10px] font-semibold text-[#6B6472] tracking-wide">SCAN TO VERIFY</p>
+                <p className="text-[9px] sm:text-[10px] font-semibold text-[#6B6472] tracking-wide">
+                  SCAN TO VERIFY
+                </p>
                 <p className="text-[9px] sm:text-[10px] font-medium text-[#5B21B6] break-all">
                   {verificationUrl.replace(/^https?:\/\//, "")}
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs sm:text-sm font-bold text-[#1A1024]">TwoNode Technologies</p>
-              <p className="text-[9px] sm:text-[10px] font-medium text-[#6B6472]">{format(attendedDate, "MMMM d, yyyy")}</p>
+              <p className="text-xs sm:text-sm font-bold text-[#1A1024]">
+                TwoNode Technologies
+              </p>
+              <p className="text-[9px] sm:text-[10px] font-medium text-[#6B6472]">
+                {format(attendedDate, "MMMM d, yyyy")}
+              </p>
             </div>
           </div>
         </div>

@@ -23,7 +23,10 @@ const RESEND_COOLDOWN_SECONDS = 30;
  * lives in `details`, keyed by field name (this codebase's
  * ValidationError({ fieldName: message }) convention).
  */
-function errorMessage(result: { error: string; details?: unknown }, fallback: string): string {
+function errorMessage(
+  result: { error: string; details?: unknown },
+  fallback: string
+): string {
   const details = result.details as Record<string, string> | undefined;
   return details?.code || result.error || fallback;
 }
@@ -46,8 +49,18 @@ type Props = {
  * skip next time" state — since a code is meant to be requested fresh for
  * every single download attempt, not cached across clicks or reloads.
  */
-export function SecureDownloadDialog({ label, reference, target, email, authenticated, disabled, className }: Props) {
-  const [step, setStep] = useState<"idle" | "requesting" | "code-entry" | "verifying">("idle");
+export function SecureDownloadDialog({
+  label,
+  reference,
+  target,
+  email,
+  authenticated,
+  disabled,
+  className,
+}: Props) {
+  const [step, setStep] = useState<
+    "idle" | "requesting" | "code-entry" | "verifying"
+  >("idle");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
@@ -70,7 +83,11 @@ export function SecureDownloadDialog({ label, reference, target, email, authenti
     setError(null);
     const result = authenticated
       ? await revaApi.properties.requestDownloadOtp(reference, target)
-      : await revaApi.oneTimeProperties.requestDownloadOtp(reference, email!, target);
+      : await revaApi.oneTimeProperties.requestDownloadOtp(
+          reference,
+          email!,
+          target
+        );
 
     if (!result.success) {
       toast.error(errorMessage(result, "Failed to send download code"));
@@ -90,8 +107,17 @@ export function SecureDownloadDialog({ label, reference, target, email, authenti
     setError(null);
 
     const result = authenticated
-      ? await revaApi.properties.verifyDownloadOtp(reference, target, code.trim())
-      : await revaApi.oneTimeProperties.verifyDownloadOtp(reference, email!, target, code.trim());
+      ? await revaApi.properties.verifyDownloadOtp(
+          reference,
+          target,
+          code.trim()
+        )
+      : await revaApi.oneTimeProperties.verifyDownloadOtp(
+          reference,
+          email!,
+          target,
+          code.trim()
+        );
 
     if (!result.success) {
       setError(errorMessage(result, "Incorrect or expired code"));
@@ -127,12 +153,16 @@ export function SecureDownloadDialog({ label, reference, target, email, authenti
         {label}
       </Button>
 
-      <Dialog open={step === "code-entry" || step === "verifying"} onOpenChange={(open) => !open && closeDialog()}>
+      <Dialog
+        open={step === "code-entry" || step === "verifying"}
+        onOpenChange={(open) => !open && closeDialog()}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Enter download code</DialogTitle>
             <DialogDescription>
-              We sent a 6-digit code to your email. It expires in 10 minutes and can only be used once.
+              We sent a 6-digit code to your email. It expires in 10 minutes and
+              can only be used once.
             </DialogDescription>
           </DialogHeader>
 
@@ -156,8 +186,14 @@ export function SecureDownloadDialog({ label, reference, target, email, authenti
             >
               {cooldown > 0 ? `Resend code (${cooldown}s)` : "Resend code"}
             </Button>
-            <Button type="button" onClick={verifyCode} disabled={!code.trim() || step === "verifying"}>
-              {step === "verifying" && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            <Button
+              type="button"
+              onClick={verifyCode}
+              disabled={!code.trim() || step === "verifying"}
+            >
+              {step === "verifying" && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
               Verify &amp; Download
             </Button>
           </DialogFooter>

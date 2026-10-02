@@ -9,14 +9,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  */
 
 const mockPrisma = vi.hoisted(() => ({
-  notification: { create: vi.fn().mockResolvedValue({}), findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
+  notification: {
+    create: vi.fn().mockResolvedValue({}),
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
+    update: vi.fn(),
+  },
   revaUser: { findUnique: vi.fn() },
 }));
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
-vi.mock("@/utils/email", () => ({ sendEmailToAdmin: vi.fn(), sendEmailToAllAdmins: vi.fn() }));
+vi.mock("@/utils/email", () => ({
+  sendEmailToAdmin: vi.fn(),
+  sendEmailToAllAdmins: vi.fn(),
+}));
 
-const { notifyReportReady, notifySystemAlert, createNotification } = await import("@/reva/services/notificationService");
+const { notifyReportReady, notifySystemAlert, createNotification } =
+  await import("@/reva/services/notificationService");
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -25,7 +34,10 @@ beforeEach(() => {
 
 describe("notifyReportReady", () => {
   it("regular Property (userId, no requester field): notifies the user by id, no guest branch", async () => {
-    await notifyReportReady({ reference: "R1", address: "1 Test St" }, "user-1");
+    await notifyReportReady(
+      { reference: "R1", address: "1 Test St" },
+      "user-1"
+    );
 
     expect(mockPrisma.notification.create).toHaveBeenCalledTimes(1);
     const call = mockPrisma.notification.create.mock.calls[0][0];
@@ -34,7 +46,15 @@ describe("notifyReportReady", () => {
   });
 
   it("OneTimeUserProperty (has requester + email, no userId): creates an email-keyed notification AND echoes to admins", async () => {
-    await notifyReportReady({ reference: "R1", address: "1 Test St", requester: "Guest", email: "guest@test.com" }, undefined);
+    await notifyReportReady(
+      {
+        reference: "R1",
+        address: "1 Test St",
+        requester: "Guest",
+        email: "guest@test.com",
+      },
+      undefined
+    );
 
     // notification.create called twice: the guest-facing one + notifySystemAlert's admin echo
     expect(mockPrisma.notification.create).toHaveBeenCalledTimes(2);
@@ -51,7 +71,10 @@ describe("notifyReportReady", () => {
   });
 
   it("a OneTime request with no email does nothing (can't be keyed to anything) rather than throwing", async () => {
-    await notifyReportReady({ reference: "R1", address: "1 Test St", requester: "Guest" }, undefined);
+    await notifyReportReady(
+      { reference: "R1", address: "1 Test St", requester: "Guest" },
+      undefined
+    );
     expect(mockPrisma.notification.create).not.toHaveBeenCalled();
   });
 });
@@ -59,12 +82,16 @@ describe("notifyReportReady", () => {
 describe("notifySystemAlert", () => {
   it("uses SPECIFIC_USERS audience when userIds are given, ALL_USERS otherwise", async () => {
     await notifySystemAlert("Title", "Message", ["u1"]);
-    expect(mockPrisma.notification.create.mock.calls[0][0].data.audience).toBe("SPECIFIC_USERS");
+    expect(mockPrisma.notification.create.mock.calls[0][0].data.audience).toBe(
+      "SPECIFIC_USERS"
+    );
 
     vi.clearAllMocks();
     mockPrisma.notification.create.mockResolvedValue({});
     await notifySystemAlert("Title", "Message");
-    expect(mockPrisma.notification.create.mock.calls[0][0].data.audience).toBe("ALL_USERS");
+    expect(mockPrisma.notification.create.mock.calls[0][0].data.audience).toBe(
+      "ALL_USERS"
+    );
   });
 });
 

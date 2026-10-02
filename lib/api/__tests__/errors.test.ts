@@ -25,7 +25,10 @@ describe("handleApiError logging", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    const res = handleApiError(new NotFoundError("Plan"), { route: "/api/v1/x", method: "GET" });
+    const res = handleApiError(new NotFoundError("Plan"), {
+      route: "/api/v1/x",
+      method: "GET",
+    });
 
     expect(res.status).toBe(404);
     const logged = parseLoggedJson(warnSpy);
@@ -53,7 +56,9 @@ describe("handleApiError logging", () => {
 
   it("logs a validation error's code at warn level", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const res = handleApiError(new ValidationError({ amount: "must be positive" }));
+    const res = handleApiError(
+      new ValidationError({ amount: "must be positive" })
+    );
     expect(res.status).toBe(400);
     const logged = parseLoggedJson(warnSpy);
     expect(logged.code).toBe("VALIDATION_ERROR");
@@ -72,7 +77,9 @@ describe("handleApiError logging", () => {
     const logged = parseLoggedJson(errorSpy);
     expect(logged.level).toBe("error");
     expect(logged.route).toBe("/api/v1/y");
-    expect(logged.error).toMatchObject({ name: "PrismaClientKnownRequestError" });
+    expect(logged.error).toMatchObject({
+      name: "PrismaClientKnownRequestError",
+    });
     errorSpy.mockRestore();
   });
 

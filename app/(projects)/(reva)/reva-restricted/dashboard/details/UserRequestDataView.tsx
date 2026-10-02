@@ -70,7 +70,6 @@ const UserRequestDataView = ({ property }: { property: any }) => {
             >
               Download Report
             </Button>
-
           </div>
         </div>
 

@@ -11,7 +11,7 @@ import * as pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.mjs";
  * or worker setup is needed — pdf.js runs single-threaded in Node just fine.
  */
 export async function extractPdfTextAndItems(
-  buffer: Buffer,
+  buffer: Buffer
 ): Promise<{ allText: string; allItems: string[] }> {
   const data = new Uint8Array(buffer);
   const pdf = await pdfjsLib.getDocument({
@@ -84,7 +84,10 @@ export async function fetchAndExtractTextFromUrl(
 
       return { text, contentType };
     } catch (error: any) {
-      console.error(`Error fetching/extracting from URL (Attempt ${attempt}):`, error.message);
+      console.error(
+        `Error fetching/extracting from URL (Attempt ${attempt}):`,
+        error.message
+      );
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         throw new Error("Document not found at the provided URL.");
       }
@@ -92,7 +95,7 @@ export async function fetchAndExtractTextFromUrl(
         throw new Error(`Failed to fetch document: ${error.message}`);
       }
       // Wait for 2 seconds before retrying
-      await new Promise(res => setTimeout(res, 2000));
+      await new Promise((res) => setTimeout(res, 2000));
     }
   }
   throw new Error("Failed to fetch document");

@@ -76,8 +76,12 @@ const DashboardClient: React.FC<DashboardClientProps> = ({ initialData }) => {
   }, []);
 
   const portfolioStats = useMemo(() => {
-    const processing = initialData.filter((p) => p.status === "Processing").length;
-    const completed = initialData.filter((p) => p.status === "Completed").length;
+    const processing = initialData.filter(
+      (p) => p.status === "Processing"
+    ).length;
+    const completed = initialData.filter(
+      (p) => p.status === "Completed"
+    ).length;
     const withReport = initialData.filter((p) => p.report).length;
     return { processing, completed, withReport };
   }, [initialData]);
@@ -167,7 +171,11 @@ const DashboardClient: React.FC<DashboardClientProps> = ({ initialData }) => {
           `${portfolioStats.processing} processing`,
         ]}
         gradient={REVA_GRADIENTS.primary}
-        cta={{ label: "New Request", href: "/reva/dashboard/newrequest", icon: Plus }}
+        cta={{
+          label: "New Request",
+          href: "/reva/dashboard/newrequest",
+          icon: Plus,
+        }}
       />
 
       <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -182,7 +190,9 @@ const DashboardClient: React.FC<DashboardClientProps> = ({ initialData }) => {
           value={portfolioStats.processing}
           icon={Clock3}
           tone="warning"
-          breakdown={portfolioStats.processing ? "Awaiting review" : "All caught up"}
+          breakdown={
+            portfolioStats.processing ? "Awaiting review" : "All caught up"
+          }
         />
         <StatCard
           label="Completed"

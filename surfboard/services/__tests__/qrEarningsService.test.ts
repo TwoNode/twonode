@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { NotFoundError, SubscriptionRequiredError, ValidationError } from "@/lib/api/errors";
+import {
+  NotFoundError,
+  SubscriptionRequiredError,
+  ValidationError,
+} from "@/lib/api/errors";
 import { Platform } from "@/utils/platform";
 
 /**
@@ -19,8 +23,17 @@ const mockPrisma = vi.hoisted(() => ({
     create: vi.fn(),
     update: vi.fn(),
   },
-  surveyorWallet: { findUnique: vi.fn(), create: vi.fn(), upsert: vi.fn(), update: vi.fn() },
-  surveyorBankDetails: { findUnique: vi.fn(), upsert: vi.fn(), update: vi.fn() },
+  surveyorWallet: {
+    findUnique: vi.fn(),
+    create: vi.fn(),
+    upsert: vi.fn(),
+    update: vi.fn(),
+  },
+  surveyorBankDetails: {
+    findUnique: vi.fn(),
+    upsert: vi.fn(),
+    update: vi.fn(),
+  },
   withdrawalRequest: { findMany: vi.fn(), create: vi.fn() },
   surfboardUser: { findUnique: vi.fn(), findMany: vi.fn() },
   subscription: { findUnique: vi.fn() },
@@ -105,23 +118,34 @@ describe("getPlanQRAccessState", () => {
 
   it("throws NotFoundError when the plan does not exist", async () => {
     mockPrisma.surfboardPlan.findFirst.mockResolvedValue(null);
-    await expect(getPlanQRAccessState("missing")).rejects.toThrow(NotFoundError);
+    await expect(getPlanQRAccessState("missing")).rejects.toThrow(
+      NotFoundError
+    );
   });
 
   it("is FREE while under the free scan limit", async () => {
-    mockPrisma.surfboardPlan.findFirst.mockResolvedValue({ ...plan, qrScanCount: 4 });
+    mockPrisma.surfboardPlan.findFirst.mockResolvedValue({
+      ...plan,
+      qrScanCount: 4,
+    });
     const state = await getPlanQRAccessState("plan-1");
     expect(state.accessState).toBe("FREE");
   });
 
   it("requires payment once the free scan limit is reached", async () => {
-    mockPrisma.surfboardPlan.findFirst.mockResolvedValue({ ...plan, qrScanCount: 5 });
+    mockPrisma.surfboardPlan.findFirst.mockResolvedValue({
+      ...plan,
+      qrScanCount: 5,
+    });
     const state = await getPlanQRAccessState("plan-1");
     expect(state.accessState).toBe("PAYWALL_REQUIRED");
   });
 
   it("grants PAID_ACTIVE for a valid unexpired access token", async () => {
-    mockPrisma.surfboardPlan.findFirst.mockResolvedValue({ ...plan, qrScanCount: 10 });
+    mockPrisma.surfboardPlan.findFirst.mockResolvedValue({
+      ...plan,
+      qrScanCount: 10,
+    });
     mockPrisma.qREarningsTransaction.findFirst.mockResolvedValue({
       serviceType: "LOCATION_AUTHENTICITY",
       expiresAt: new Date(Date.now() + 60_000),
@@ -131,7 +155,10 @@ describe("getPlanQRAccessState", () => {
   });
 
   it("reports EXPIRED once a paid access token's window has passed", async () => {
-    mockPrisma.surfboardPlan.findFirst.mockResolvedValue({ ...plan, qrScanCount: 10 });
+    mockPrisma.surfboardPlan.findFirst.mockResolvedValue({
+      ...plan,
+      qrScanCount: 10,
+    });
     mockPrisma.qREarningsTransaction.findFirst.mockResolvedValue({
       serviceType: "LOCATION_AUTHENTICITY",
       expiresAt: new Date(Date.now() - 60_000),
@@ -141,7 +168,10 @@ describe("getPlanQRAccessState", () => {
   });
 
   it("only looks up transactions paid with SUCCESS status for the token", async () => {
-    mockPrisma.surfboardPlan.findFirst.mockResolvedValue({ ...plan, qrScanCount: 10 });
+    mockPrisma.surfboardPlan.findFirst.mockResolvedValue({
+      ...plan,
+      qrScanCount: 10,
+    });
     mockPrisma.qREarningsTransaction.findFirst.mockResolvedValue(null);
     const state = await getPlanQRAccessState("plan-1", "bad-token");
     expect(mockPrisma.qREarningsTransaction.findFirst).toHaveBeenCalledWith(
@@ -188,8 +218,13 @@ describe("initiateQRServicePayment", () => {
   });
 
   it("computes total = verification fee + service fee% (no custom fees)", async () => {
-    mockPrisma.qREarningsTransaction.create.mockImplementation(({ data }: any) => data);
-    const result = await initiateQRServicePayment("plan-1", "LOCATION_AUTHENTICITY");
+    mockPrisma.qREarningsTransaction.create.mockImplementation(
+      ({ data }: any) => data
+    );
+    const result = await initiateQRServicePayment(
+      "plan-1",
+      "LOCATION_AUTHENTICITY"
+    );
     // service1: fee 1000, 10% service fee = 100, no MDA fees => 1100
     expect(result.amountInNaira).toBe(1100);
     expect(result.amountInKobo).toBe(110000);
@@ -206,17 +241,26 @@ describe("initiateQRServicePayment", () => {
         },
       },
     });
-    mockPrisma.qREarningsTransaction.create.mockImplementation(({ data }: any) => data);
-    const result = await initiateQRServicePayment("plan-1", "CERTIFICATE_OF_DEPOSIT");
+    mockPrisma.qREarningsTransaction.create.mockImplementation(
+      ({ data }: any) => data
+    );
+    const result = await initiateQRServicePayment(
+      "plan-1",
+      "CERTIFICATE_OF_DEPOSIT"
+    );
     // service2: fee 2500, 10% service fee = 250, MDA flat 200 + 5% of 2500 (125) = 325
     expect(result.amountInNaira).toBe(2500 + 250 + 325);
   });
 
   it("creates the transaction as PENDING, not SUCCESS", async () => {
-    mockPrisma.qREarningsTransaction.create.mockImplementation(({ data }: any) => data);
+    mockPrisma.qREarningsTransaction.create.mockImplementation(
+      ({ data }: any) => data
+    );
     await initiateQRServicePayment("plan-1", "LOCATION_AUTHENTICITY");
     expect(mockPrisma.qREarningsTransaction.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ paymentStatus: "PENDING" }) })
+      expect.objectContaining({
+        data: expect.objectContaining({ paymentStatus: "PENDING" }),
+      })
     );
   });
 });
@@ -251,19 +295,25 @@ describe("verifyQRServicePayment — payment-verification security path", () => 
 
   it("throws NotFoundError for a reference that doesn't exist", async () => {
     mockPrisma.qREarningsTransaction.findUnique.mockResolvedValue(null);
-    await expect(verifyQRServicePayment("nonexistent")).rejects.toThrow(NotFoundError);
+    await expect(verifyQRServicePayment("nonexistent")).rejects.toThrow(
+      NotFoundError
+    );
     expect(fetch).not.toHaveBeenCalled();
   });
 
   it("regression: rejects and does NOT credit the wallet when Paystack has no successful transaction for the reference", async () => {
     // This is the exact exploit shape that was live: initiate a payment
     // (getting a free reference), then call verify without ever paying.
-    mockPrisma.qREarningsTransaction.findUnique.mockResolvedValue(baseTransaction);
+    mockPrisma.qREarningsTransaction.findUnique.mockResolvedValue(
+      baseTransaction
+    );
     (fetch as any).mockResolvedValue(
       fetchJson({ status: true, data: { status: "abandoned", amount: 0 } })
     );
 
-    await expect(verifyQRServicePayment("QREarn_1")).rejects.toThrow(ValidationError);
+    await expect(verifyQRServicePayment("QREarn_1")).rejects.toThrow(
+      ValidationError
+    );
 
     expect(mockPrisma.qREarningsTransaction.update).not.toHaveBeenCalled();
     expect(mockPrisma.surveyorWallet.upsert).not.toHaveBeenCalled();
@@ -271,25 +321,35 @@ describe("verifyQRServicePayment — payment-verification security path", () => 
   });
 
   it("rejects when Paystack confirms success but the amount paid is less than what's owed", async () => {
-    mockPrisma.qREarningsTransaction.findUnique.mockResolvedValue(baseTransaction);
+    mockPrisma.qREarningsTransaction.findUnique.mockResolvedValue(
+      baseTransaction
+    );
     (fetch as any).mockResolvedValue(
       fetchJson({ status: true, data: { status: "success", amount: 50 } }) // expects 110000 kobo
     );
 
-    await expect(verifyQRServicePayment("QREarn_1")).rejects.toThrow(ValidationError);
+    await expect(verifyQRServicePayment("QREarn_1")).rejects.toThrow(
+      ValidationError
+    );
     expect(mockPrisma.surveyorWallet.upsert).not.toHaveBeenCalled();
   });
 
   it("rejects when the Paystack HTTP call itself fails", async () => {
-    mockPrisma.qREarningsTransaction.findUnique.mockResolvedValue(baseTransaction);
+    mockPrisma.qREarningsTransaction.findUnique.mockResolvedValue(
+      baseTransaction
+    );
     (fetch as any).mockResolvedValue(fetchJson({ status: false }, false));
 
-    await expect(verifyQRServicePayment("QREarn_1")).rejects.toThrow(ValidationError);
+    await expect(verifyQRServicePayment("QREarn_1")).rejects.toThrow(
+      ValidationError
+    );
     expect(mockPrisma.surveyorWallet.upsert).not.toHaveBeenCalled();
   });
 
   it("credits the wallet and marks SUCCESS only once Paystack confirms a matching, successful payment", async () => {
-    mockPrisma.qREarningsTransaction.findUnique.mockResolvedValue(baseTransaction);
+    mockPrisma.qREarningsTransaction.findUnique.mockResolvedValue(
+      baseTransaction
+    );
     mockPrisma.qREarningsTransaction.update.mockResolvedValue({
       ...baseTransaction,
       accessToken: "new-token",
@@ -302,7 +362,9 @@ describe("verifyQRServicePayment — payment-verification security path", () => 
     const result = await verifyQRServicePayment("QREarn_1", "paystack-ref-xyz");
 
     expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining("https://api.paystack.co/transaction/verify/paystack-ref-xyz"),
+      expect.stringContaining(
+        "https://api.paystack.co/transaction/verify/paystack-ref-xyz"
+      ),
       expect.objectContaining({
         headers: { Authorization: "Bearer sk_test_fixture" },
       })
@@ -310,7 +372,10 @@ describe("verifyQRServicePayment — payment-verification security path", () => 
     expect(mockPrisma.qREarningsTransaction.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { reference: "QREarn_1" },
-        data: expect.objectContaining({ paymentStatus: "SUCCESS", paymentRef: "paystack-ref-xyz" }),
+        data: expect.objectContaining({
+          paymentStatus: "SUCCESS",
+          paymentRef: "paystack-ref-xyz",
+        }),
       })
     );
     expect(mockPrisma.surveyorWallet.upsert).toHaveBeenCalledWith(
@@ -349,7 +414,9 @@ describe("verifyQRServicePayment — payment-verification security path", () => 
 
 describe("saveSurveyorBankDetails", () => {
   it("rejects when Paystack can't resolve the account", async () => {
-    (fetch as any).mockResolvedValue(fetchJson({ status: false, message: "Invalid account" }, false));
+    (fetch as any).mockResolvedValue(
+      fetchJson({ status: false, message: "Invalid account" }, false)
+    );
     await expect(
       saveSurveyorBankDetails("surveyor-1", {
         bankCode: "058",
@@ -388,7 +455,9 @@ describe("saveSurveyorBankDetails", () => {
 
   it("still saves verified bank details even if recipient creation fails", async () => {
     (fetch as any)
-      .mockResolvedValueOnce(fetchJson({ status: true, data: { account_name: "Jane Surveyor" } }))
+      .mockResolvedValueOnce(
+        fetchJson({ status: true, data: { account_name: "Jane Surveyor" } })
+      )
       .mockRejectedValueOnce(new Error("network error"));
 
     await saveSurveyorBankDetails("surveyor-1", {
@@ -399,7 +468,10 @@ describe("saveSurveyorBankDetails", () => {
 
     expect(mockPrisma.surveyorBankDetails.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        create: expect.objectContaining({ accountName: "Jane Surveyor", recipientCode: null }),
+        create: expect.objectContaining({
+          accountName: "Jane Surveyor",
+          recipientCode: null,
+        }),
       })
     );
   });
@@ -419,24 +491,38 @@ describe("requestWithdrawal", () => {
 
   it("rejects when the surveyor has no active subscription", async () => {
     mockPrisma.subscription.findUnique.mockResolvedValue(null);
-    await expect(requestWithdrawal("surveyor-1", 500)).rejects.toThrow(SubscriptionRequiredError);
+    await expect(requestWithdrawal("surveyor-1", 500)).rejects.toThrow(
+      SubscriptionRequiredError
+    );
     expect(mockPrisma.surveyorBankDetails.findUnique).not.toHaveBeenCalled();
   });
 
   it("rejects a non-positive amount before touching the database", async () => {
-    await expect(requestWithdrawal("surveyor-1", 0)).rejects.toThrow(ValidationError);
+    await expect(requestWithdrawal("surveyor-1", 0)).rejects.toThrow(
+      ValidationError
+    );
     expect(mockPrisma.surveyorBankDetails.findUnique).not.toHaveBeenCalled();
   });
 
   it("rejects when the surveyor has no verified bank details", async () => {
-    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({ isVerified: false });
-    await expect(requestWithdrawal("surveyor-1", 500)).rejects.toThrow(ValidationError);
+    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({
+      isVerified: false,
+    });
+    await expect(requestWithdrawal("surveyor-1", 500)).rejects.toThrow(
+      ValidationError
+    );
   });
 
   it("rejects a withdrawal larger than the available balance", async () => {
-    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({ isVerified: true });
-    mockPrisma.surveyorWallet.findUnique.mockResolvedValue({ availableBalance: 100 });
-    await expect(requestWithdrawal("surveyor-1", 500)).rejects.toThrow(ValidationError);
+    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({
+      isVerified: true,
+    });
+    mockPrisma.surveyorWallet.findUnique.mockResolvedValue({
+      availableBalance: 100,
+    });
+    await expect(requestWithdrawal("surveyor-1", 500)).rejects.toThrow(
+      ValidationError
+    );
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
@@ -448,9 +534,17 @@ describe("requestWithdrawal", () => {
       accountName: "Jane Surveyor",
       recipientCode: "RCP_123",
     });
-    mockPrisma.surveyorWallet.findUnique.mockResolvedValue({ availableBalance: 1000 });
-    mockPrisma.$transaction.mockResolvedValue([{}, { id: "wd-1", amount: 500 }]);
-    mockPrisma.surfboardUser.findUnique.mockResolvedValue({ firstName: "Jane", lastName: "S" });
+    mockPrisma.surveyorWallet.findUnique.mockResolvedValue({
+      availableBalance: 1000,
+    });
+    mockPrisma.$transaction.mockResolvedValue([
+      {},
+      { id: "wd-1", amount: 500 },
+    ]);
+    mockPrisma.surfboardUser.findUnique.mockResolvedValue({
+      firstName: "Jane",
+      lastName: "S",
+    });
 
     const result = await requestWithdrawal("surveyor-1", 500);
 
@@ -463,11 +557,16 @@ describe("requestWithdrawal", () => {
 describe("toggleBankVerification", () => {
   it("throws NotFoundError when the surveyor has no bank details on file", async () => {
     mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue(null);
-    await expect(toggleBankVerification("surveyor-1", true)).rejects.toThrow(NotFoundError);
+    await expect(toggleBankVerification("surveyor-1", true)).rejects.toThrow(
+      NotFoundError
+    );
   });
 
   it("flips isVerified and stamps verifiedAt when approving", async () => {
-    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({ id: "bank-1", userId: "surveyor-1" });
+    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({
+      id: "bank-1",
+      userId: "surveyor-1",
+    });
     await toggleBankVerification("surveyor-1", true);
     expect(mockPrisma.surveyorBankDetails.update).toHaveBeenCalledWith({
       where: { userId: "surveyor-1" },
@@ -476,7 +575,10 @@ describe("toggleBankVerification", () => {
   });
 
   it("clears verifiedAt when revoking", async () => {
-    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({ id: "bank-1", userId: "surveyor-1" });
+    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({
+      id: "bank-1",
+      userId: "surveyor-1",
+    });
     await toggleBankVerification("surveyor-1", false);
     expect(mockPrisma.surveyorBankDetails.update).toHaveBeenCalledWith({
       where: { userId: "surveyor-1" },
@@ -484,7 +586,10 @@ describe("toggleBankVerification", () => {
     });
   });
   it("records who approved the account", async () => {
-    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({ id: "bank-1", userId: "surveyor-1" });
+    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({
+      id: "bank-1",
+      userId: "surveyor-1",
+    });
     await toggleBankVerification("surveyor-1", true, "admin-1");
     expect(mockWriteAudit).toHaveBeenCalledWith(
       Platform.SURFBOARD,
@@ -499,18 +604,25 @@ describe("toggleBankVerification", () => {
   });
 
   it("records who revoked the account", async () => {
-    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({ id: "bank-1", userId: "surveyor-1" });
+    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({
+      id: "bank-1",
+      userId: "surveyor-1",
+    });
     await toggleBankVerification("surveyor-1", false, "admin-1");
     expect(mockWriteAudit).toHaveBeenCalledWith(
       Platform.SURFBOARD,
-      expect.objectContaining({ userId: "admin-1", action: "REVOKE_BANK_ACCOUNT" })
+      expect.objectContaining({
+        userId: "admin-1",
+        action: "REVOKE_BANK_ACCOUNT",
+      })
     );
   });
 
   it("writes no audit entry when there is nothing to verify", async () => {
     mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue(null);
-    await expect(toggleBankVerification("surveyor-1", true, "admin-1")).rejects.toThrow(NotFoundError);
+    await expect(
+      toggleBankVerification("surveyor-1", true, "admin-1")
+    ).rejects.toThrow(NotFoundError);
     expect(mockWriteAudit).not.toHaveBeenCalled();
   });
 });
-

@@ -97,23 +97,26 @@ export function proratedAmount(
 export function applyVisualizationShift(
   pillars: PillarData[],
   state: string | null | undefined,
-  coordinateShifts: Record<string, { eastingShift: number; northingShift: number }>
+  coordinateShifts: Record<
+    string,
+    { eastingShift: number; northingShift: number }
+  >
 ): PillarData[] {
   if (!state || !coordinateShifts) return pillars;
-  
+
   const key = state.toLowerCase();
   const shift = coordinateShifts[key];
-  
+
   if (!shift || (shift.eastingShift === 0 && shift.northingShift === 0)) {
     // Even if no shift, preserve rawEasting and rawNorthing to ensure consistent popup behavior
-    return pillars.map(p => ({
+    return pillars.map((p) => ({
       ...p,
       rawEasting: p.rawEasting ?? p.easting,
       rawNorthing: p.rawNorthing ?? p.northing,
     }));
   }
 
-  return pillars.map(p => ({
+  return pillars.map((p) => ({
     ...p,
     rawEasting: p.rawEasting ?? p.easting,
     rawNorthing: p.rawNorthing ?? p.northing,
@@ -176,7 +179,8 @@ export async function convertCoordinates(
   } catch (error) {
     console.error("Coordinate conversion failed:", error);
     throw new Error(
-      `Failed to convert coordinates: ${error instanceof Error ? error.message : "Unknown error"
+      `Failed to convert coordinates: ${
+        error instanceof Error ? error.message : "Unknown error"
       }`
     );
   }
@@ -204,7 +208,10 @@ export function normalizeCsvHeader(h: string): string {
 }
 
 /** First column (in variation-list order, most-specific first) whose normalized name includes that variation as a substring. -1 if none match. */
-export function findCsvColumnIndex(header: string[], variations: string[]): number {
+export function findCsvColumnIndex(
+  header: string[],
+  variations: string[]
+): number {
   for (const variation of variations) {
     const index = header.findIndex((h) => h.includes(variation));
     if (index !== -1) return index;
@@ -246,7 +253,8 @@ export function parseCSVContent(csvContent: string): PillarData[] {
     // Parse header and normalize column names
     const header = lines[0].split(",").map(normalizeCsvHeader);
 
-    const { pillarNumberIndex, eastingIndex, northingIndex } = resolvePillarColumnIndices(header);
+    const { pillarNumberIndex, eastingIndex, northingIndex } =
+      resolvePillarColumnIndices(header);
 
     // Validate required columns
     const missingColumns = [];
@@ -301,7 +309,8 @@ export function parseCSVContent(csvContent: string): PillarData[] {
     return pillars;
   } catch (error) {
     throw new Error(
-      `Failed to parse CSV: ${error instanceof Error ? error.message : "Unknown error"
+      `Failed to parse CSV: ${
+        error instanceof Error ? error.message : "Unknown error"
       }`
     );
   }
@@ -345,7 +354,8 @@ export async function generatePolygonFromPillars(
   } catch (error) {
     console.error("Failed to generate polygon:", error);
     throw new Error(
-      `Failed to generate polygon: ${error instanceof Error ? error.message : "Unknown error"
+      `Failed to generate polygon: ${
+        error instanceof Error ? error.message : "Unknown error"
       }`
     );
   }
@@ -408,7 +418,8 @@ export async function generateMultiPolygonFromPillarGroups(
   } catch (error) {
     console.error("Failed to generate MultiPolygon:", error);
     throw new Error(
-      `Failed to generate MultiPolygon: ${error instanceof Error ? error.message : "Unknown error"
+      `Failed to generate MultiPolygon: ${
+        error instanceof Error ? error.message : "Unknown error"
       }`
     );
   }
@@ -433,7 +444,8 @@ export async function generatePointFromPillar(
   } catch (error) {
     console.error("Failed to generate point:", error);
     throw new Error(
-      `Failed to generate point: ${error instanceof Error ? error.message : "Unknown error"
+      `Failed to generate point: ${
+        error instanceof Error ? error.message : "Unknown error"
       }`
     );
   }

@@ -24,10 +24,13 @@ export default async function SpeakersPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white">
-       <GBC2Navbar />
+      <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="text-white py-20" style={{ background: GBC_GRADIENTS.primary }}>
+      <section
+        className="text-white py-20"
+        style={{ background: GBC_GRADIENTS.primary }}
+      >
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-5xl md:text-6xl font-bold mb-6">
@@ -45,7 +48,10 @@ export default async function SpeakersPage() {
         {keynoteSpeakers.length > 0 && (
           <section className="mb-20">
             <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full mb-4" style={{ background: GBC_COLORS.surface.main }}>
+              <div
+                className="inline-flex items-center gap-3 px-6 py-3 rounded-full mb-4"
+                style={{ background: GBC_COLORS.surface.main }}
+              >
                 <span className="text-3xl">🎤</span>
                 <h2 className="text-3xl font-bold text-gray-900">
                   Keynote Speakers
@@ -69,7 +75,10 @@ export default async function SpeakersPage() {
         {panelists.length > 0 && (
           <section className="mb-20">
             <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full mb-4" style={{ background: "#FCE7F3" }}>
+              <div
+                className="inline-flex items-center gap-3 px-6 py-3 rounded-full mb-4"
+                style={{ background: "#FCE7F3" }}
+              >
                 <span className="text-3xl">💬</span>
                 <h2 className="text-3xl font-bold text-gray-900">Panelists</h2>
               </div>
@@ -90,7 +99,10 @@ export default async function SpeakersPage() {
         {firesideSpeakers.length > 0 && (
           <section className="mb-20">
             <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full mb-4" style={{ background: GBC_COLORS.surface.main }}>
+              <div
+                className="inline-flex items-center gap-3 px-6 py-3 rounded-full mb-4"
+                style={{ background: GBC_COLORS.surface.main }}
+              >
                 <span className="text-3xl">🔥</span>
                 <h2 className="text-3xl font-bold text-gray-900">
                   Fireside Chat
@@ -161,7 +173,12 @@ function SpeakerCard({
           {speaker.name}
         </h3>
 
-        <p className="font-semibold mb-2" style={{ color: GBC_COLORS.primary.main }}>{speaker.title}</p>
+        <p
+          className="font-semibold mb-2"
+          style={{ color: GBC_COLORS.primary.main }}
+        >
+          {speaker.title}
+        </p>
 
         {speaker.company && (
           <div className="flex items-center gap-2 text-gray-600 mb-4">

@@ -1,10 +1,10 @@
-import prisma from './lib/prisma';
+import prisma from "./lib/prisma";
 
 async function main() {
   const batches = await prisma.certificateOfDepositBatch.findMany({
     include: {
-      plans: true
-    }
+      plans: true,
+    },
   });
 
   console.log(`Total batches found: ${batches.length}`);
@@ -19,7 +19,9 @@ async function main() {
       console.log(`    Charting: ${plan.chartingStatus}`);
       console.log(`    SURCON:   ${plan.surconStatus}`);
       console.log(`    RecordsI: ${plan.recordsIStatus}`);
-      console.log(`    Physical: ${plan.physicalCopySubmitted} (at: ${plan.physicalCopySubmittedAt})`);
+      console.log(
+        `    Physical: ${plan.physicalCopySubmitted} (at: ${plan.physicalCopySubmittedAt})`
+      );
       console.log(`    RedCopy:  ${plan.redCopyStatus}`);
     }
   }

@@ -1,5 +1,9 @@
 import prisma from "@/lib/prisma";
-import { ConflictError, NotFoundError, ValidationError } from "@/lib/api/errors";
+import {
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+} from "@/lib/api/errors";
 
 /**
  * Migrated from app/(projects)/reva/actions/profileActions.ts — a real
@@ -41,7 +45,10 @@ export type RevaProfile = {
 };
 
 export async function getProfile(userId: string): Promise<RevaProfile> {
-  const user = await prisma.revaUser.findUnique({ where: { id: userId }, select: PROFILE_SELECT });
+  const user = await prisma.revaUser.findUnique({
+    where: { id: userId },
+    select: PROFILE_SELECT,
+  });
   if (!user) throw new NotFoundError("User");
   return user;
 }
@@ -52,19 +59,24 @@ export interface ProfileUpdateInput {
   email?: string;
 }
 
-export async function updateProfile(userId: string, data: ProfileUpdateInput): Promise<RevaProfile> {
+export async function updateProfile(
+  userId: string,
+  data: ProfileUpdateInput
+): Promise<RevaProfile> {
   const current = await prisma.revaUser.findUnique({ where: { id: userId } });
   if (!current) throw new NotFoundError("User");
 
   const updates: Record<string, unknown> = {};
 
   if (data.firstName !== undefined) {
-    if (!data.firstName.trim()) throw new ValidationError({ firstName: "First name cannot be empty" });
+    if (!data.firstName.trim())
+      throw new ValidationError({ firstName: "First name cannot be empty" });
     updates.firstName = data.firstName.trim();
   }
 
   if (data.lastName !== undefined) {
-    if (!data.lastName.trim()) throw new ValidationError({ lastName: "Last name cannot be empty" });
+    if (!data.lastName.trim())
+      throw new ValidationError({ lastName: "Last name cannot be empty" });
     updates.lastName = data.lastName.trim();
   }
 
@@ -72,7 +84,9 @@ export async function updateProfile(userId: string, data: ProfileUpdateInput): P
   // resending the current value (the client sends all three fields
   // unconditionally) must not spuriously reset verification.
   if (data.email !== undefined && data.email !== current.email) {
-    const existing = await prisma.revaUser.findUnique({ where: { email: data.email } });
+    const existing = await prisma.revaUser.findUnique({
+      where: { email: data.email },
+    });
     if (existing) throw new ConflictError("Email is already in use");
     updates.email = data.email;
     updates.emailVerified = false;
@@ -82,5 +96,9 @@ export async function updateProfile(userId: string, data: ProfileUpdateInput): P
     return getProfile(userId);
   }
 
-  return prisma.revaUser.update({ where: { id: userId }, data: updates, select: PROFILE_SELECT });
+  return prisma.revaUser.update({
+    where: { id: userId },
+    data: updates,
+    select: PROFILE_SELECT,
+  });
 }

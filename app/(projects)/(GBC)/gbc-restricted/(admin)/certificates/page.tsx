@@ -1,6 +1,12 @@
-import { getAttendeeStats, getTicketsPaginated } from "@/gbc/services/ticketService";
+import {
+  getAttendeeStats,
+  getTicketsPaginated,
+} from "@/gbc/services/ticketService";
 import { getEditions } from "@/gbc/services/editionService";
-import { parseTicketListParams, toTicketFilters } from "@/gbc/utils/ticketListParams";
+import {
+  parseTicketListParams,
+  toTicketFilters,
+} from "@/gbc/utils/ticketListParams";
 import { getEditionCookieValue } from "@/gbc/utils/editionCookie";
 import CertificatesClient from "./CertificatesClient";
 
@@ -13,7 +19,11 @@ export default async function AdminCertificatesPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   // Opens on "checked in" — those are the attendees a certificate is for.
-  const params = parseTicketListParams(await searchParams, { checkedIn: "yes" }, await getEditionCookieValue());
+  const params = parseTicketListParams(
+    await searchParams,
+    { checkedIn: "yes" },
+    await getEditionCookieValue()
+  );
   const filters = toTicketFilters(params);
 
   const [result, stats, editions] = await Promise.all([
@@ -50,7 +60,11 @@ export default async function AdminCertificatesPage({
         pagination={result.pagination}
         stats={stats}
         editions={editions}
-        filters={{ search: params.search, checkedIn: params.checkedIn, edition: params.edition }}
+        filters={{
+          search: params.search,
+          checkedIn: params.checkedIn,
+          edition: params.edition,
+        }}
       />
     </div>
   );

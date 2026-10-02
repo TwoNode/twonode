@@ -90,10 +90,11 @@ export function SubmitConfirmationModal({
                 Survey Title / Owners
               </div>
               <div
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${personCount.isValid
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                  personCount.isValid
                     ? "bg-green-100 text-green-700"
                     : "bg-amber-100 text-amber-700"
-                  }`}
+                }`}
               >
                 {personCount.isValid ? (
                   <>
@@ -119,7 +120,9 @@ export function SubmitConfirmationModal({
                   <span className="text-gray-400 dark:text-gray-500 w-4 text-xs select-none">
                     {i + 1}.
                   </span>
-                  <span className="font-medium text-gray-900 dark:text-white">{line}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {line}
+                  </span>
                 </div>
               ))}
             </div>
@@ -168,19 +171,25 @@ export function SubmitConfirmationModal({
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div className="flex flex-col items-center bg-white dark:bg-surface p-2 rounded border border-gray-100 dark:border-white/10">
-                <span className="text-xs text-gray-500 dark:text-gray-400">CAD</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  CAD
+                </span>
                 <span className="text-lg font-bold text-gray-900 dark:text-white">
                   {fileCounts.cad}
                 </span>
               </div>
               <div className="flex flex-col items-center bg-white dark:bg-surface p-2 rounded border border-gray-100 dark:border-white/10">
-                <span className="text-xs text-gray-500 dark:text-gray-400">PDF</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  PDF
+                </span>
                 <span className="text-lg font-bold text-gray-900 dark:text-white">
                   {fileCounts.pdf}
                 </span>
               </div>
               <div className="flex flex-col items-center bg-white dark:bg-surface p-2 rounded border border-gray-100 dark:border-white/10">
-                <span className="text-xs text-gray-500 dark:text-gray-400">Cert</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Cert
+                </span>
                 <span className="text-lg font-bold text-gray-900 dark:text-white">
                   {fileCounts.cert}
                 </span>

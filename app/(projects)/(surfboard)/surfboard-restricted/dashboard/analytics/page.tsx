@@ -37,7 +37,7 @@ export default function AnalyticsPage() {
   const [topSurveyors, setTopSurveyors] = useState<TopSurveyorRow[]>([]);
   const [trend, setTrend] = useState<TimeTrendPoint[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>(
-    [],
+    []
   );
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -134,7 +134,9 @@ export default function AnalyticsPage() {
             />
             <StatCard
               label="Pending Certificates"
-              value={(statCards?.pendingCertificatePlansCount ?? 0).toLocaleString()}
+              value={(
+                statCards?.pendingCertificatePlansCount ?? 0
+              ).toLocaleString()}
               icon={Stamp}
               tone="warning"
               breakdown="Submitted or queried"
@@ -144,78 +146,84 @@ export default function AnalyticsPage() {
           {/* Charts and Detailed Analytics */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div className="space-y-8">
-            {/* Top LGAs */}
-            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Top LGAs by Plan Count
-              </h2>
-              {topLgas.length === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
-                  No plan data yet.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {topLgas.map((row, index) => (
-                    <div key={row.key} className="flex items-center gap-3">
-                      <div className="w-6 h-6 shrink-0 bg-blue-100 dark:bg-blue-500/15 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-xs">
-                        {index + 1}
+              {/* Top LGAs */}
+              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  Top LGAs by Plan Count
+                </h2>
+                {topLgas.length === 0 ? (
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    No plan data yet.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {topLgas.map((row, index) => (
+                      <div key={row.key} className="flex items-center gap-3">
+                        <div className="w-6 h-6 shrink-0 bg-blue-100 dark:bg-blue-500/15 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-xs">
+                          {index + 1}
+                        </div>
+                        <span className="w-32 shrink-0 truncate text-gray-700 dark:text-gray-300 text-sm">
+                          {row.key}
+                        </span>
+                        <div className="flex-1 bg-gray-100 dark:bg-white/10 rounded-full h-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{
+                              width: `${(row.count / maxLgaCount) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="w-12 shrink-0 text-right text-gray-900 dark:text-white font-semibold text-sm">
+                          {row.count}
+                        </span>
                       </div>
-                      <span className="w-32 shrink-0 truncate text-gray-700 dark:text-gray-300 text-sm">
-                        {row.key}
-                      </span>
-                      <div className="flex-1 bg-gray-100 dark:bg-white/10 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{
-                            width: `${(row.count / maxLgaCount) * 100}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="w-12 shrink-0 text-right text-gray-900 dark:text-white font-semibold text-sm">
-                        {row.count}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            {/* Top surveyors */}
-            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Top Surveyors by Plan Count
-              </h2>
-              {topSurveyors.length === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
-                  No plan data yet.
-                </p>
-              ) : (
-                <ol className="space-y-4">
-                  {topSurveyors.map((row, index) => (
-                    <li key={row.userId} className="flex items-center gap-3">
-                      <div className="w-6 h-6 shrink-0 bg-blue-100 dark:bg-blue-500/15 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-xs">
-                        {index + 1}
-                      </div>
-                      <div className="w-40 shrink-0 min-w-0">
-                        <p className="truncate text-sm text-gray-800 dark:text-gray-200">{row.name}</p>
-                        {row.companyName && (
-                          <p className="truncate text-xs text-gray-500 dark:text-gray-400">{row.companyName}</p>
-                        )}
-                      </div>
-                      <div className="flex-1 bg-gray-100 dark:bg-white/10 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${(row.count / maxSurveyorCount) * 100}%` }}
-                        />
-                      </div>
-                      <span className="w-12 shrink-0 text-right text-gray-900 dark:text-white font-semibold text-sm">
-                        {row.count}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </div>
+              {/* Top surveyors */}
+              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  Top Surveyors by Plan Count
+                </h2>
+                {topSurveyors.length === 0 ? (
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    No plan data yet.
+                  </p>
+                ) : (
+                  <ol className="space-y-4">
+                    {topSurveyors.map((row, index) => (
+                      <li key={row.userId} className="flex items-center gap-3">
+                        <div className="w-6 h-6 shrink-0 bg-blue-100 dark:bg-blue-500/15 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-xs">
+                          {index + 1}
+                        </div>
+                        <div className="w-40 shrink-0 min-w-0">
+                          <p className="truncate text-sm text-gray-800 dark:text-gray-200">
+                            {row.name}
+                          </p>
+                          {row.companyName && (
+                            <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                              {row.companyName}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex-1 bg-gray-100 dark:bg-white/10 rounded-full h-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{
+                              width: `${(row.count / maxSurveyorCount) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="w-12 shrink-0 text-right text-gray-900 dark:text-white font-semibold text-sm">
+                          {row.count}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
             </div>
 
             {/* Recent Activity */}
@@ -302,7 +310,7 @@ export default function AnalyticsPage() {
                 <div className="text-3xl font-bold text-blue-600 mb-2">
                   {userStats && userStats.totalUsers > 0
                     ? Math.round(
-                        (userStats.activeUsers / userStats.totalUsers) * 100,
+                        (userStats.activeUsers / userStats.totalUsers) * 100
                       )
                     : 0}
                   %

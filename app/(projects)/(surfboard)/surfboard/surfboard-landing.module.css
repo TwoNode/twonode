@@ -74,7 +74,12 @@
   position: sticky;
   top: 0;
   z-index: 30;
-  background: linear-gradient(155deg, var(--sfl-primary) 0%, var(--sfl-primary-2) 45%, var(--sfl-secondary) 140%);
+  background: linear-gradient(
+    155deg,
+    var(--sfl-primary) 0%,
+    var(--sfl-primary-2) 45%,
+    var(--sfl-secondary) 140%
+  );
 }
 .navRow {
   display: flex;
@@ -177,7 +182,12 @@
   min-height: 90vh;
   display: flex;
   align-items: center;
-  background: linear-gradient(155deg, var(--sfl-primary) 0%, var(--sfl-primary-2) 45%, var(--sfl-secondary) 140%);
+  background: linear-gradient(
+    155deg,
+    var(--sfl-primary) 0%,
+    var(--sfl-primary-2) 45%,
+    var(--sfl-secondary) 140%
+  );
   color: #fff;
   overflow: hidden;
 }
@@ -609,7 +619,13 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--sfl-secondary) 20%, var(--sfl-secondary) 80%, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--sfl-secondary) 20%,
+    var(--sfl-secondary) 80%,
+    transparent
+  );
   opacity: 0.4;
 }
 @media (max-width: 900px) {
@@ -780,7 +796,12 @@
 .qrCard {
   border-radius: var(--sfl-radius-lg);
   padding: 40px;
-  background: linear-gradient(155deg, var(--sfl-primary) 0%, var(--sfl-primary-2) 45%, var(--sfl-secondary) 140%);
+  background: linear-gradient(
+    155deg,
+    var(--sfl-primary) 0%,
+    var(--sfl-primary-2) 45%,
+    var(--sfl-secondary) 140%
+  );
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -1044,7 +1065,12 @@
 
 /* ---------- closing ---------- */
 .closing {
-  background: linear-gradient(155deg, var(--sfl-primary) 0%, var(--sfl-primary-2) 45%, var(--sfl-secondary) 140%);
+  background: linear-gradient(
+    155deg,
+    var(--sfl-primary) 0%,
+    var(--sfl-primary-2) 45%,
+    var(--sfl-secondary) 140%
+  );
   color: #fff;
   text-align: center;
 }

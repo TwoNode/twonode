@@ -1,7 +1,10 @@
 "use client";
 
 import { Loader2, Search } from "lucide-react";
-import { useDebouncedSearchParam, useSearchParamsUpdater } from "@/hooks/useSearchParamsUpdater";
+import {
+  useDebouncedSearchParam,
+  useSearchParamsUpdater,
+} from "@/hooks/useSearchParamsUpdater";
 import type { GalleryTypeFilter, GallerySort } from "@/gbc/types/gallery";
 import type { GBCEdition } from "@/gbc/utils/settings";
 
@@ -21,10 +24,14 @@ export function GalleryFilters({
 }) {
   const updater = useSearchParamsUpdater();
   const { update, isPending } = updater;
-  const { value: search, setValue: setSearch } = useDebouncedSearchParam(updater);
+  const { value: search, setValue: setSearch } =
+    useDebouncedSearchParam(updater);
 
   return (
-    <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2" aria-busy={isPending}>
+    <div
+      className="w-full sm:w-auto flex flex-col sm:flex-row gap-2"
+      aria-busy={isPending}
+    >
       <div className="relative w-full">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <input

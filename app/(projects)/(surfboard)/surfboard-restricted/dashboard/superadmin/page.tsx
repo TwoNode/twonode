@@ -242,7 +242,10 @@ export default function SurfboardSuperAdminPage() {
               />
               <StatCard
                 label="Admins"
-                value={(userStats?.admins ?? 0) + (userStats?.superAdmins ?? 0) || "—"}
+                value={
+                  (userStats?.admins ?? 0) + (userStats?.superAdmins ?? 0) ||
+                  "—"
+                }
                 icon={ShieldCheck}
                 tone="info"
               />

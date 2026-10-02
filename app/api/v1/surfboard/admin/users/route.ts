@@ -18,15 +18,22 @@ export const GET = withAuth<SurfboardRole>(
             ? "all"
             : "admins",
       role: params.get("role") || undefined,
-      status: params.get("status") === "active" || params.get("status") === "inactive" ? params.get("status") as "active" | "inactive" : undefined,
+      status:
+        params.get("status") === "active" || params.get("status") === "inactive"
+          ? (params.get("status") as "active" | "inactive")
+          : undefined,
       subscriptionStatus:
         params.get("subscriptionStatus") === "expired" ||
         params.get("subscriptionStatus") === "expiring_soon" ||
         params.get("subscriptionStatus") === "active"
-          ? (params.get("subscriptionStatus") as "expired" | "expiring_soon" | "active")
+          ? (params.get("subscriptionStatus") as
+              "expired" | "expiring_soon" | "active")
           : undefined,
     });
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN] }
+  {
+    platform: Platform.SURFBOARD,
+    roles: [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN],
+  }
 );

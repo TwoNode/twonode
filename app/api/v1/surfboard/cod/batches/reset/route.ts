@@ -8,7 +8,10 @@ import { Platform, SurfboardRole } from "@/utils/platform";
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const data = await deleteAllBatches();
     return NextResponse.json({ success: true, data });

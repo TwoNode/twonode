@@ -30,7 +30,9 @@ export function registerSendOtp(input: {
   password: string;
   firstName: string;
   lastName: string;
-}): Promise<ApiResult<{ pendingRegistrationId: string; method: "OTP" | "LINK" }>> {
+}): Promise<
+  ApiResult<{ pendingRegistrationId: string; method: "OTP" | "LINK" }>
+> {
   return jsonFetch("/api/v1/auth/register/send-otp", input);
 }
 
@@ -98,8 +100,12 @@ export type MeResponse = {
   verificationGraceEndsAt: string | null;
 };
 
-export async function getMe(platform: Platform): Promise<ApiResult<MeResponse>> {
-  const res = await fetch(`/api/v1/auth/me?platform=${encodeURIComponent(platform)}`);
+export async function getMe(
+  platform: Platform
+): Promise<ApiResult<MeResponse>> {
+  const res = await fetch(
+    `/api/v1/auth/me?platform=${encodeURIComponent(platform)}`
+  );
   return res.json();
 }
 
@@ -114,8 +120,14 @@ export type InvitationDetails = {
 };
 
 /** What the accept-invite page shows before the invitee sets a password. */
-export async function getInvitation(input: { platform: Platform; token: string }): Promise<ApiResult<InvitationDetails>> {
-  const query = new URLSearchParams({ platform: input.platform, token: input.token });
+export async function getInvitation(input: {
+  platform: Platform;
+  token: string;
+}): Promise<ApiResult<InvitationDetails>> {
+  const query = new URLSearchParams({
+    platform: input.platform,
+    token: input.token,
+  });
   const res = await fetch(`/api/v1/auth/invitations?${query}`);
   return res.json();
 }

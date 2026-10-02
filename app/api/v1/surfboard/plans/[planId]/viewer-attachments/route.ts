@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api/withAuth";
 import { validateCSRF } from "@/lib/auth/csrf";
 import { ValidationError } from "@/lib/api/errors";
-import { finalizeViewerAttachment, getViewerAttachments } from "@/surfboard/services/planViewerAttachmentService";
+import {
+  finalizeViewerAttachment,
+  getViewerAttachments,
+} from "@/surfboard/services/planViewerAttachmentService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 type RouteCtx = { params: Promise<{ planId: string }> };
@@ -25,14 +28,24 @@ export const GET = withAuth<SurfboardRole>(
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { planId } = await routeCtx.params;
     const body = await req.json();
     const { fileName, key, fileUrl } = body || {};
-    if (!fileName || !key || !fileUrl) throw new ValidationError({ file: "Missing file metadata" });
+    if (!fileName || !key || !fileUrl)
+      throw new ValidationError({ file: "Missing file metadata" });
 
-    const data = await finalizeViewerAttachment(planId, ctx.session.sub, fileName, key, fileUrl);
+    const data = await finalizeViewerAttachment(
+      planId,
+      ctx.session.sub,
+      fileName,
+      key,
+      fileUrl
+    );
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] }

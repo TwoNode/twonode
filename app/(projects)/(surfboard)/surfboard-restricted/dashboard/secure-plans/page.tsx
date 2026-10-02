@@ -52,14 +52,11 @@ const STATUS_TONE: Record<SecurePlan["status"], string> = {
 };
 
 const PRIORITY_TONE: Record<SecurePlan["priority"], string> = {
-  critical:
-    "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300",
-  high:
-    "bg-orange-100 dark:bg-orange-500/15 text-orange-700 dark:text-orange-300",
+  critical: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300",
+  high: "bg-orange-100 dark:bg-orange-500/15 text-orange-700 dark:text-orange-300",
   medium:
     "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  low:
-    "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  low: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
 };
 
 const CONFIDENTIALITY_TONE: Record<SecurePlan["confidentiality"], string> = {
@@ -232,8 +229,8 @@ export default function SecurePlansPage() {
             Secure Plans
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Review, approve, and manage confidential survey plans with
-            enhanced security
+            Review, approve, and manage confidential survey plans with enhanced
+            security
           </p>
         </div>
         <Button
@@ -408,137 +405,137 @@ export default function SecurePlansPage() {
             )}
           </div>
         ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
-            <thead className="bg-gray-50 dark:bg-white/5">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Plan Details
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Priority
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Confidentiality
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Assigned To
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-white/10">
-              {filteredPlans.map((plan) => (
-                <motion.tr
-                  key={plan.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-                >
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {plan.title}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {plan.id} • {plan.location}
-                      </div>
-                      <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        Submitted by {plan.submittedBy} on{" "}
-                        {new Date(plan.submittedDate).toLocaleDateString()}
-                      </div>
-                      <div className="text-xs text-gray-400 dark:text-gray-500">
-                        Value: R{plan.estimatedValue.toLocaleString()}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${STATUS_TONE[plan.status]}`}
-                    >
-                      {STATUS_LABEL[plan.status]}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${PRIORITY_TONE[plan.priority]}`}
-                    >
-                      {plan.priority.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${CONFIDENTIALITY_TONE[plan.confidentiality]}`}
-                    >
-                      {plan.confidentiality.replace("_", " ").toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    {plan.assignedTo}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => setSelectedPlan(plan)}
-                        className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        View
-                      </button>
-                      {plan.status === "pending" && (
-                        <>
-                          <button
-                            onClick={() =>
-                              handleStatusChange(plan.id, "lodged", "Lodge")
-                            }
-                            className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 text-sm font-medium"
-                          >
-                            Lodge
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleStatusChange(
-                                plan.id,
-                                "under_review",
-                                "Review"
-                              )
-                            }
-                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
-                          >
-                            Review
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleStatusChange(plan.id, "queried", "Query")
-                            }
-                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium"
-                          >
-                            Query
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-              {filteredPlans.length === 0 && (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
+              <thead className="bg-gray-50 dark:bg-white/5">
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400"
-                  >
-                    No secure plans match your filters.
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Plan Details
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Priority
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Confidentiality
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Assigned To
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-white/10">
+                {filteredPlans.map((plan) => (
+                  <motion.tr
+                    key={plan.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <td className="px-6 py-4">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {plan.title}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {plan.id} • {plan.location}
+                        </div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                          Submitted by {plan.submittedBy} on{" "}
+                          {new Date(plan.submittedDate).toLocaleDateString()}
+                        </div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          Value: R{plan.estimatedValue.toLocaleString()}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${STATUS_TONE[plan.status]}`}
+                      >
+                        {STATUS_LABEL[plan.status]}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${PRIORITY_TONE[plan.priority]}`}
+                      >
+                        {plan.priority.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${CONFIDENTIALITY_TONE[plan.confidentiality]}`}
+                      >
+                        {plan.confidentiality.replace("_", " ").toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {plan.assignedTo}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setSelectedPlan(plan)}
+                          className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          View
+                        </button>
+                        {plan.status === "pending" && (
+                          <>
+                            <button
+                              onClick={() =>
+                                handleStatusChange(plan.id, "lodged", "Lodge")
+                              }
+                              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 text-sm font-medium"
+                            >
+                              Lodge
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleStatusChange(
+                                  plan.id,
+                                  "under_review",
+                                  "Review"
+                                )
+                              }
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
+                            >
+                              Review
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleStatusChange(plan.id, "queried", "Query")
+                              }
+                              className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium"
+                            >
+                              Query
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+                {filteredPlans.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400"
+                    >
+                      No secure plans match your filters.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

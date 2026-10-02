@@ -171,7 +171,8 @@ export function SurveyorBankSettings({
             {/* Account Number */}
             <div className="space-y-2">
               <Label htmlFor="accountNumber" className="text-sm font-semibold">
-                Account Number (10 Digits) <span className="text-red-500">*</span>
+                Account Number (10 Digits){" "}
+                <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="accountNumber"

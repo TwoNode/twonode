@@ -1,7 +1,7 @@
 # Twonodes Architecture Rebuild — Proposal v1
 
 Status: **Draft for review** — nothing in here is being built yet.
-Scope: REVA, Surfboard, GBC (proplity stays a separate, independent app — nothing from it is merged in; only its auth *patterns* are being ported natively into twonodes).
+Scope: REVA, Surfboard, GBC (proplity stays a separate, independent app — nothing from it is merged in; only its auth _patterns_ are being ported natively into twonodes).
 
 ---
 
@@ -9,7 +9,7 @@ Scope: REVA, Surfboard, GBC (proplity stays a separate, independent app — noth
 
 Twonodes has grown into three real products (REVA, Surfboard, GBC) sharing one Next.js app, one Prisma schema, and one Kinde auth integration. That sharing was cheap early on and is now the source of most of the mess: a 1,146-line schema mixing four unrelated domains, ~30 server-action files (some over 5,000 lines) that mix HTTP concerns, business logic, and side effects in one function, no API boundary at all (server actions are called directly from client components, untyped, unversioned, unrateable), and a session/auth model with no rotation, no revocation, and no CSRF protection.
 
-This proposal replaces server actions with a **versioned REST API layer** (per your request), splits business logic out into a **service layer** underneath it, gives each product its **own schema file**, and adds a **native email+password auth system** (built in-house, following proplity's security patterns — not its code) that runs *alongside* Kinde rather than replacing it. Kinde narrows to social login (Google, etc.); the native system handles direct email+password; both converge on one app-issued session.
+This proposal replaces server actions with a **versioned REST API layer** (per your request), splits business logic out into a **service layer** underneath it, gives each product its **own schema file**, and adds a **native email+password auth system** (built in-house, following proplity's security patterns — not its code) that runs _alongside_ Kinde rather than replacing it. Kinde narrows to social login (Google, etc.); the native system handles direct email+password; both converge on one app-issued session.
 
 This is a foundational rebuild, done in an isolated git worktree, migrated product-by-product rather than as a big-bang cutover.
 
@@ -20,7 +20,9 @@ This is a foundational rebuild, done in an isolated git worktree, migrated produ
 Grounded in the full-codebase review and the recent Surfboard QA pass. Nothing below is speculative; each item was confirmed by reading the actual code.
 
 ### 2.1 No API boundary
+
 Every mutation and most reads go through `"use server"` action files imported directly into client components — `codActions.ts` (~5,700 lines), `surfboardActions.ts` (~3,700 lines), `revaActions.ts` (1,488 lines) plus a **second, divergent** `revaActions2.ts` (1,326 lines) used only by the webhook handler, `ticket-actions.ts` (1,284 lines). Consequences:
+
 - No consistent request validation, error shape, or auth check — each function re-implements its own guard.
 - No rate limiting anywhere, including on payment-adjacent and auth-adjacent actions.
 - No way to version a contract or expose it to anything other than this Next.js app.
@@ -28,12 +30,15 @@ Every mutation and most reads go through `"use server"` action files imported di
 - The two REVA action files have **drifted**: `saveToOneTimeProperty`, `saveToPropertyTable`, `checkPaymentSuccess`, `authPaymentSuccessful` are defined twice with different implementations, depending on whether you're in the UI path or the webhook path.
 
 ### 2.2 Auth has no rotation, revocation, or CSRF story
-`app/api/auth/success/{platform}/route.ts` mints one `USER_SESSION` cookie via `jose`'s `EncryptJWT` after Kinde redirects back, and that's it — no refresh rotation, no reuse detection, no CSRF validation on state-changing routes, no rate limiting on login-adjacent endpoints. If that cookie leaks, it's valid until it expires, full stop. This is the one piece of proplity worth porting *as a pattern*: bcrypt, short-lived access JWTs, rotating refresh tokens with theft detection (a replayed, already-rotated token revokes its whole token family), CSRF checks, and rate limiting.
+
+`app/api/auth/success/{platform}/route.ts` mints one `USER_SESSION` cookie via `jose`'s `EncryptJWT` after Kinde redirects back, and that's it — no refresh rotation, no reuse detection, no CSRF validation on state-changing routes, no rate limiting on login-adjacent endpoints. If that cookie leaks, it's valid until it expires, full stop. This is the one piece of proplity worth porting _as a pattern_: bcrypt, short-lived access JWTs, rotating refresh tokens with theft detection (a replayed, already-rotated token revokes its whole token family), CSRF checks, and rate limiting.
 
 ### 2.3 Monolithic files mixing unrelated concerns
-`codActions.ts` alone handles: optimistic locking (`acquirePlanLock`/`releasePlanLock`), FIFO queue gating, PostGIS zone-fee calculation (`$queryRaw` + `ST_Intersects`), Remita receipt parsing/verification, batch CRUD, and notification dispatch — in one file, in the same functions. This is *why* bugs like the TC-008/009 QR-earnings gap were possible: there was no seam to test the CoD-availability logic in isolation from the HTTP/notification code around it.
+
+`codActions.ts` alone handles: optimistic locking (`acquirePlanLock`/`releasePlanLock`), FIFO queue gating, PostGIS zone-fee calculation (`$queryRaw` + `ST_Intersects`), Remita receipt parsing/verification, batch CRUD, and notification dispatch — in one file, in the same functions. This is _why_ bugs like the TC-008/009 QR-earnings gap were possible: there was no seam to test the CoD-availability logic in isolation from the HTTP/notification code around it.
 
 ### 2.4 Dead code and drift
+
 - `app/(projects)/(surfboard)/actions/certificateActions.ts` — fully unreferenced, TODO-riddled parallel implementation of CoD/OSSG submission.
 - `app/(projects)/(surfboard)/adminActions/surfboardAdminActions.ts` — unimported anywhere; a second copy of plan create/update logic.
 - `app/api/webhooks/paystack/route___.ts` — an orphaned old webhook handler (not routed, since Next.js only recognizes `route.ts`, but sitting there as a trap for the next person who greps).
@@ -44,14 +49,17 @@ Every mutation and most reads go through `"use server"` action files imported di
 - **A plaintext production Postgres credential is committed in `test.js`** (`postgresql://postgres:reva15p0stgres@revadb...rds.amazonaws.com/reva`). This is unrelated to the rebuild's timeline and should be rotated and purged immediately regardless of when the rest of this happens — flagging again here so it isn't lost.
 
 ### 2.5 One schema file, four domains
+
 `prisma/schema.prisma` is 1,146 lines mixing REVA, Surfboard, GBC, and a couple of genuinely shared models (`Notification`, `WebhookEvent`) with no file-level boundary between them. Every product's migration touches the same file.
 
 ### 2.6 Admin/staff areas: three naming conventions, one fact kept in sync by hand three times
-Every product has a staff-facing area, and every product spells it differently: `app/(projects)/reva-restricted` (hyphenated top-level route group), `app/(projects)/(surfboard)/surf-restricted` (same pattern, but Surfboard *also* has a second, separate staff tree at `surf-mda/dashboard/*` for its 8 MDA sub-roles), and `app/(projects)/(GBC)/gbc/restricted` (nested path, with a login route spelled `gbc/restricted-login` — a fourth variant of the same idea in the same product).
 
-Surfboard's MDA tree is the sharpest example of the underlying problem: `surf-mda/dashboard/{accounts,archive,charting,intake,records-i,records-ii,surcon}` — eight near-identical page trees, each showing a role's queue, lock UI, and approve/query actions, hand-copied per role. Which roles can reach which routes is decided in **`proxy.ts`**, by string-matching the pathname per role (`pathname.includes("/accounts") && role !== "ACCOUNTS"`, repeated for each of the 8 roles) — a fact that has to independently agree with the folder structure *and* whatever's hand-typed into `surfboardMDAPanelLayout.tsx`'s nav array. Three places holding one fact, kept in sync by hand, is exactly the mechanism that produced TC-003 (missing nav buttons on the very first Surfboard QA pass) — there's no seam that would catch a route existing without a matching nav entry, or vice versa. The same hand-maintained-nav-array pattern repeats across all 7 layout files in `components/layouts/` (`revaAdminPanelLayout`, `revaUserPanelLayout`, `surfboardAdminPanelLayout`, `surfboardMDAPanelLayout`, `surfboardUserPanelLayout`, `gbcAdminPanelLayout`, `gbcUserPanelLayout`), not just Surfboard's.
+Every product has a staff-facing area, and every product spells it differently: `app/(projects)/reva-restricted` (hyphenated top-level route group), `app/(projects)/(surfboard)/surf-restricted` (same pattern, but Surfboard _also_ has a second, separate staff tree at `surf-mda/dashboard/*` for its 8 MDA sub-roles), and `app/(projects)/(GBC)/gbc/restricted` (nested path, with a login route spelled `gbc/restricted-login` — a fourth variant of the same idea in the same product).
+
+Surfboard's MDA tree is the sharpest example of the underlying problem: `surf-mda/dashboard/{accounts,archive,charting,intake,records-i,records-ii,surcon}` — eight near-identical page trees, each showing a role's queue, lock UI, and approve/query actions, hand-copied per role. Which roles can reach which routes is decided in **`proxy.ts`**, by string-matching the pathname per role (`pathname.includes("/accounts") && role !== "ACCOUNTS"`, repeated for each of the 8 roles) — a fact that has to independently agree with the folder structure _and_ whatever's hand-typed into `surfboardMDAPanelLayout.tsx`'s nav array. Three places holding one fact, kept in sync by hand, is exactly the mechanism that produced TC-003 (missing nav buttons on the very first Surfboard QA pass) — there's no seam that would catch a route existing without a matching nav entry, or vice versa. The same hand-maintained-nav-array pattern repeats across all 7 layout files in `components/layouts/` (`revaAdminPanelLayout`, `revaUserPanelLayout`, `surfboardAdminPanelLayout`, `surfboardMDAPanelLayout`, `surfboardUserPanelLayout`, `gbcAdminPanelLayout`, `gbcUserPanelLayout`), not just Surfboard's.
 
 ### 2.7 Stale documentation
+
 `MDs/surfboard.txt` and `COD_IMPLEMENTATION_PROGRESS.md` describe a Paystack-based two-fold CoD payment flow; the shipped code uses direct Remita receipt-link verification instead. `MDA_ADDONS.md` says plan-review locks last 30 minutes; the code says 6. These aren't alternate documented paths — they're just out of date, and will keep drifting unless docs live next to the code they describe.
 
 ---
@@ -104,7 +112,10 @@ Shared plumbing lives in `lib/api/` (directly modeled on proplity's `lib/api/*`)
 
 ```ts
 // lib/api/withAuth.ts
-export function withAuth(handler: Handler, opts?: { roles?: Role[]; platform: Platform }) {
+export function withAuth(
+  handler: Handler,
+  opts?: { roles?: Role[]; platform: Platform }
+) {
   return async (req: NextRequest, routeCtx?: any) => {
     const session = await getServerSession(opts.platform);
     if (!session) return apiError(401, "Unauthenticated");
@@ -118,11 +129,17 @@ export function withAuth(handler: Handler, opts?: { roles?: Role[]; platform: Pl
 
 ```ts
 // Example: app/api/v1/surfboard/qr/payments/verify/route.ts
-export const POST = withAuth(async (req) => {
-  const body = await validate(req, verifyPaymentSchema); // zod
-  const result = await qrEarningsService.verifyPayment(body.reference, body.paystackRef);
-  return apiResponse(result);
-}, { platform: "surfboard" }); // public route — payer isn't a logged-in surveyor, see note below
+export const POST = withAuth(
+  async (req) => {
+    const body = await validate(req, verifyPaymentSchema); // zod
+    const result = await qrEarningsService.verifyPayment(
+      body.reference,
+      body.paystackRef
+    );
+    return apiResponse(result);
+  },
+  { platform: "surfboard" }
+); // public route — payer isn't a logged-in surveyor, see note below
 ```
 
 Every response uses one envelope shape (`{ success, data }` or `{ success: false, error, details? }`), defined once in `lib/api/types.ts`, so a client never has to guess the shape per-endpoint. List endpoints get real pagination (`lib/api/pagination.ts`) instead of `take: 50` scattered through action files.
@@ -133,12 +150,20 @@ Every response uses one envelope shape (`{ success, data }` or `{ success: false
 // surfboard/apiClient.ts
 export const surfboardApi = {
   plans: {
-    list: (params) => apiFetch<PlanListResponse>("/api/v1/surfboard/plans", { params }),
-    approve: (id, role) => apiFetch(`/api/v1/surfboard/plans/${id}/approve`, { method: "POST", body: { role } }),
+    list: (params) =>
+      apiFetch<PlanListResponse>("/api/v1/surfboard/plans", { params }),
+    approve: (id, role) =>
+      apiFetch(`/api/v1/surfboard/plans/${id}/approve`, {
+        method: "POST",
+        body: { role },
+      }),
   },
   qr: {
     verifyPayment: (reference, paystackRef) =>
-      apiFetch("/api/v1/surfboard/qr/payments/verify", { method: "POST", body: { reference, paystackRef } }),
+      apiFetch("/api/v1/surfboard/qr/payments/verify", {
+        method: "POST",
+        body: { reference, paystackRef },
+      }),
   },
 };
 ```
@@ -194,6 +219,7 @@ prisma/schema/
   gbc.prisma          # GBCUser, GBCTicket, GBCSponsor, ...
   gis.prisma          # nigeria_ward_admin_boundaries, Scale_of_fees, LASG_charting_interpretation
 ```
+
 Zero runtime change — same generated client, same database. Pure organization. This is the lowest-risk, highest-clarity change in the whole proposal and can land early.
 
 ### 4.4 Service Layer
@@ -208,7 +234,7 @@ surfboard/services/
   batchApprovalService.ts    # the accounts/charting/surcon/recordsI/recordsII chain
 ```
 
-This is what makes `codActions.ts`'s 5,700 lines tractable — each concern gets its own file and, critically, becomes unit-testable without spinning up a route or a browser. It's also what fixes the REVA `revaActions.ts` / `revaActions2.ts` drift: the webhook handler and the UI-triggered flow call the *same* `revaService.saveToPropertyTable(...)`, so there's structurally only one implementation to drift from.
+This is what makes `codActions.ts`'s 5,700 lines tractable — each concern gets its own file and, critically, becomes unit-testable without spinning up a route or a browser. It's also what fixes the REVA `revaActions.ts` / `revaActions2.ts` drift: the webhook handler and the UI-triggered flow call the _same_ `revaService.saveToPropertyTable(...)`, so there's structurally only one implementation to drift from.
 
 ### 4.5 Folder & Module Conventions — One Real Folder Per Product
 
@@ -261,9 +287,9 @@ Adopt `vitest` (matching proplity) for the service layer at minimum, extending t
 
 ### 4.7 Unified Error Handling
 
-Right now error handling is three different maturity levels depending on which product you're in: Surfboard has `prismaErrorHandler.ts` (a genuinely thorough ~30-code Prisma error-message table, tested, but shaped to return a *string* for the old `{success:false, error}` server-action convention, and only wired into 7 of Surfboard's own files). REVA and GBC have nothing — bare `catch (error) { return {success:false, error: "Something went wrong"} }` scattered per function, sometimes leaking the raw error, sometimes not.
+Right now error handling is three different maturity levels depending on which product you're in: Surfboard has `prismaErrorHandler.ts` (a genuinely thorough ~30-code Prisma error-message table, tested, but shaped to return a _string_ for the old `{success:false, error}` server-action convention, and only wired into 7 of Surfboard's own files). REVA and GBC have nothing — bare `catch (error) { return {success:false, error: "Something went wrong"} }` scattered per function, sometimes leaking the raw error, sometimes not.
 
-Proplity's own `lib/api/errors.ts` is a cleaner shape for an actual API layer — `handleApiError(err)` returns a real `NextResponse` with the right status code — but its Prisma-code coverage is thin (3 codes; everything else falls to a generic 500). The plan is a synthesis: proplity's route-response *shape*, twonodes' more thorough Prisma-code *coverage*, made available to every product instead of just Surfboard.
+Proplity's own `lib/api/errors.ts` is a cleaner shape for an actual API layer — `handleApiError(err)` returns a real `NextResponse` with the right status code — but its Prisma-code coverage is thin (3 codes; everything else falls to a generic 500). The plan is a synthesis: proplity's route-response _shape_, twonodes' more thorough Prisma-code _coverage_, made available to every product instead of just Surfboard.
 
 ```ts
 // lib/api/errors.ts — one implementation, all products
@@ -271,33 +297,81 @@ Proplity's own `lib/api/errors.ts` is a cleaner shape for an actual API layer �
 // Base class for anything a service intentionally throws with a known
 // HTTP mapping. Route handlers only ever need to catch this one type.
 export class ApiError extends Error {
-  constructor(public status: number, public code: string, message: string) {
+  constructor(
+    public status: number,
+    public code: string,
+    message: string
+  ) {
     super(message);
   }
 }
 
-export class ValidationError extends ApiError { constructor(details: unknown) {
-  super(400, "VALIDATION_ERROR", "Invalid request"); this.details = details; } details: unknown; }
-export class UnauthenticatedError extends ApiError { constructor() { super(401, "UNAUTHENTICATED", "Not signed in"); } }
-export class ForbiddenError extends ApiError { constructor() { super(403, "FORBIDDEN", "Not allowed"); } }
-export class NotFoundError extends ApiError { constructor(entity: string) { super(404, "NOT_FOUND", `${entity} not found`); } }
-export class ConflictError extends ApiError { constructor(message: string) { super(409, "CONFLICT", message); } }
-export class RateLimitError extends ApiError { constructor() { super(429, "RATE_LIMITED", "Too many requests"); } }
+export class ValidationError extends ApiError {
+  constructor(details: unknown) {
+    super(400, "VALIDATION_ERROR", "Invalid request");
+    this.details = details;
+  }
+  details: unknown;
+}
+export class UnauthenticatedError extends ApiError {
+  constructor() {
+    super(401, "UNAUTHENTICATED", "Not signed in");
+  }
+}
+export class ForbiddenError extends ApiError {
+  constructor() {
+    super(403, "FORBIDDEN", "Not allowed");
+  }
+}
+export class NotFoundError extends ApiError {
+  constructor(entity: string) {
+    super(404, "NOT_FOUND", `${entity} not found`);
+  }
+}
+export class ConflictError extends ApiError {
+  constructor(message: string) {
+    super(409, "CONFLICT", message);
+  }
+}
+export class RateLimitError extends ApiError {
+  constructor() {
+    super(429, "RATE_LIMITED", "Too many requests");
+  }
+}
 
 // Route-level wrapper — one place every route's error path funnels through.
 export function handleApiError(err: unknown): NextResponse {
   if (err instanceof ApiError) {
-    return NextResponse.json({ success: false, error: err.message, code: err.code, details: (err as any).details }, { status: err.status });
+    return NextResponse.json(
+      {
+        success: false,
+        error: err.message,
+        code: err.code,
+        details: (err as any).details,
+      },
+      { status: err.status }
+    );
   }
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    return NextResponse.json({ success: false, error: PRISMA_ERROR_MESSAGES[err.code] ?? "Database error", code: err.code }, { status: prismaStatusFor(err.code) });
+    return NextResponse.json(
+      {
+        success: false,
+        error: PRISMA_ERROR_MESSAGES[err.code] ?? "Database error",
+        code: err.code,
+      },
+      { status: prismaStatusFor(err.code) }
+    );
   }
   console.error(err); // structured logging — see open question 6.6
-  return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+  return NextResponse.json(
+    { success: false, error: "Internal server error" },
+    { status: 500 }
+  );
 }
 ```
 
 Two kinds of errors flow through this:
+
 - **Technical errors** (validation, auth, not-found, Prisma conflicts) — the classes above, thrown from anywhere (route handler or service).
 - **Domain errors** — product-specific failure reasons that aren't generic HTTP concepts: `PlanLockedError` (Surfboard, someone else is reviewing this plan), `InsufficientBalanceError` (Surfboard wallet withdrawal), `ApprovalChainIncompleteError` (Surfboard CoD). These extend `ApiError` too (so the same route-level `handleApiError` catches them), but are defined next to the service that throws them (`surfboard/services/errors.ts`), not centralized into one unrelated file — same "every product looks the same on disk" principle as everything else here.
 
@@ -307,38 +381,64 @@ Route handlers get one line: `catch (err) { return handleApiError(err); }` — o
 
 ### 4.8 Admin / Restricted / MDA Dashboards
 
-The fix for §2.6 is the same idea applied to *access control and navigation*: one declarative registry per product instead of the same fact (which roles see which routes, with what label/icon) hand-typed in three places — plus, per your call, one consistent naming convention for the staff-facing route group across all three products instead of three different spellings.
+The fix for §2.6 is the same idea applied to _access control and navigation_: one declarative registry per product instead of the same fact (which roles see which routes, with what label/icon) hand-typed in three places — plus, per your call, one consistent naming convention for the staff-facing route group across all three products instead of three different spellings.
 
 **Standardized naming** — every product's staff area becomes `{product}-restricted`, matching the pattern REVA already uses correctly (2 of 3 products were already close to this; GBC and Surfboard's `surf-` abbreviation are the outliers):
 
-| Product | Public app (unchanged) | Staff app (today) | Staff app (standardized) |
-|---|---|---|---|
-| REVA | `/reva` | `/reva-restricted` | `/reva-restricted` *(no change)* |
-| Surfboard | `/surfboard` | `/surf-restricted` | `/surfboard-restricted` |
-| Surfboard MDA | — | `/surf-mda` | `/surfboard-mda` |
-| GBC | `/gbc` | `/gbc/restricted` (nested) + `/gbc/restricted-login` | `/gbc-restricted` (flattened to a top-level group, sibling to `/gbc`, matching the other two) |
+| Product       | Public app (unchanged) | Staff app (today)                                    | Staff app (standardized)                                                                      |
+| ------------- | ---------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| REVA          | `/reva`                | `/reva-restricted`                                   | `/reva-restricted` _(no change)_                                                              |
+| Surfboard     | `/surfboard`           | `/surf-restricted`                                   | `/surfboard-restricted`                                                                       |
+| Surfboard MDA | —                      | `/surf-mda`                                          | `/surfboard-mda`                                                                              |
+| GBC           | `/gbc`                 | `/gbc/restricted` (nested) + `/gbc/restricted-login` | `/gbc-restricted` (flattened to a top-level group, sibling to `/gbc`, matching the other two) |
 
 This is a live-URL change, so it needs a rollout mechanic, not just a file rename: add redirects for the old paths in `next.config.mjs` (`redirects()`, old → new, 308 permanent) for some transition window, and update each platform's Kinde application config (post-login/post-logout redirect URIs currently point at the old paths). Do this as part of that product's migration phase (§5) rather than a separate pass, since the route files are moving anyway.
 
 ```ts
 // surfboard/access/routes.ts — one file, one source of truth
 export const surfboardRoutes = [
-  { path: "/surfboard-restricted/dashboard", roles: ["ADMIN", "SUPERADMIN"], nav: { label: "Home", icon: Home } },
-  { path: "/surfboard-restricted/dashboard/settings", roles: ["ADMIN", "SUPERADMIN"], nav: { label: "Settings", icon: Settings } },
-  { path: "/surfboard-restricted/dashboard/qr-earnings", roles: ["ADMIN", "SUPERADMIN"], nav: { label: "QR Earnings", icon: QrCode } },
-  { path: "/surfboard-mda/dashboard/:role", roles: ["ACCOUNTS","CHARTING","SURCON","RECORDS_I","RECORDS_II","INTAKE","ARCHIVE","MDA_SUPERADMIN"], nav: { label: "Review Queue", icon: ClipboardCheck } },
+  {
+    path: "/surfboard-restricted/dashboard",
+    roles: ["ADMIN", "SUPERADMIN"],
+    nav: { label: "Home", icon: Home },
+  },
+  {
+    path: "/surfboard-restricted/dashboard/settings",
+    roles: ["ADMIN", "SUPERADMIN"],
+    nav: { label: "Settings", icon: Settings },
+  },
+  {
+    path: "/surfboard-restricted/dashboard/qr-earnings",
+    roles: ["ADMIN", "SUPERADMIN"],
+    nav: { label: "QR Earnings", icon: QrCode },
+  },
+  {
+    path: "/surfboard-mda/dashboard/:role",
+    roles: [
+      "ACCOUNTS",
+      "CHARTING",
+      "SURCON",
+      "RECORDS_I",
+      "RECORDS_II",
+      "INTAKE",
+      "ARCHIVE",
+      "MDA_SUPERADMIN",
+    ],
+    nav: { label: "Review Queue", icon: ClipboardCheck },
+  },
   // ...
 ] satisfies RouteEntry[];
 ```
 
 This one registry feeds three consumers that today are three independent, hand-synced implementations:
+
 1. **`proxy.ts`** looks up the matched entry for the current pathname and checks `session.role` against `entry.roles`, replacing the current per-role `pathname.includes(...)` chain.
 2. **The nav/sidebar** renders `entry.nav` for every route the current role has access to — a route with no nav entry just doesn't render, and there's no way to add a page without it showing up (or a conscious `nav: null` for pages that are intentionally not in the sidebar).
 3. **The MDA dashboards collapse from 8 route trees to 1.** `surfboard-mda/dashboard/:role` becomes a single parametrized route reading the signed-in user's role from session, backed by the `batchApprovalService` (§4.4) already responsible for "what's my queue / can I lock this / can I approve this" logic. One implementation instead of eight copies of the same review-queue-with-lock-and-approve UI.
 
 **Layouts** collapse similarly: the 7 `*PanelLayout.tsx` files become one `DashboardShell` component (`components/admin-panel/`, §4.5) parametrized by `{product, role}`, sourcing its nav from each product's registry above and its branding from that product's color tokens (`surfboard/colors.ts` etc., §4.5).
 
-This section is explicitly scoped to *structure, naming, and access control* — the actual approval-workflow business logic each MDA role's dashboard drives (locking, fee calc, OSSG lodging) is already covered by the service-layer split in §4.4 and doesn't change again here.
+This section is explicitly scoped to _structure, naming, and access control_ — the actual approval-workflow business logic each MDA role's dashboard drives (locking, fee calc, OSSG lodging) is already covered by the service-layer split in §4.4 and doesn't change again here.
 
 ---
 
@@ -389,6 +489,7 @@ Proposal defaults to one `v1` for the whole app (`/api/v1/{product}/...`), not a
 Right now, when something breaks in production — a Paystack webhook throws, a Prisma query fails, a Remita receipt fails to parse — the only record of it is `console.error`, which on Vercel means it exists in that deployment's function logs for a limited retention window and nowhere else. Nobody gets notified; there's no way to search "show me every failure in the last 7 days," group identical errors together, see which user/request triggered one, or get an alert the moment a webhook handler starts failing. An error-observability tool closes that gap: it captures every thrown error (automatically, via the wrapper in §4.7 or a global handler), gives you a dashboard of them grouped by type/frequency, keeps stack traces + request context (which route, which user, which platform) attached to each one, and can alert (email/Slack) when a new error type appears or an existing one spikes. This matters more once server actions become API routes and webhooks, not less — right now a silently-failing webhook (like the GBC Paystack-events-not-processed gap noted in the earlier codebase review) is invisible until a customer complains; with this, it's a dashboard entry the moment it happens.
 
 Options, roughly cheapest-to-richest:
+
 - **Do nothing new** — keep `console.error`, rely on Vercel's function logs. Free, but exactly today's blind spot.
 - **Structured logging only** — every error logged as JSON with consistent fields (route, platform, userId, requestId) instead of a raw string, searchable in Vercel's log drain/whatever ships them. No dashboard, no alerting, but a real step up from today's ad hoc `console.error(err)` calls for close to zero setup cost.
 - **Sentry** (or a similar APM: Axiom, Highlight, Better Stack) — the standard choice for this in the Next.js ecosystem, has a generous free tier, and is a ~15-minute install (`@sentry/nextjs` wraps `next.config.mjs` and auto-instruments route handlers). Gets you grouping, alerting, stack traces with source maps, and a searchable dashboard, per-platform if you tag events with which product they came from.
@@ -403,8 +504,8 @@ Per your call, resolved into §4.8's standardized naming table rather than left 
 ## 7. Risks & Mitigations
 
 - **Scope creep across a ~30-action-file, 3-product surface.** Mitigated by strict phase boundaries — each phase is a mergeable, fully-working slice, not a partial cutover.
-- **Behavioral drift during migration** (a service subtly does something different than the action it replaced). Mitigated by: pilot on the QR Earnings module first (small, just debugged, easy to diff behavior against), and by writing service-layer tests *before* deleting the old action, not after.
-- **Auth migration is the highest-blast-radius piece** — a bug here locks users out of everything. Mitigated by keeping Kinde's own flow completely untouched (only what happens *after* its callback changes), and by rolling the native session-issuance out behind the existing per-platform routes one platform at a time rather than globally.
+- **Behavioral drift during migration** (a service subtly does something different than the action it replaced). Mitigated by: pilot on the QR Earnings module first (small, just debugged, easy to diff behavior against), and by writing service-layer tests _before_ deleting the old action, not after.
+- **Auth migration is the highest-blast-radius piece** — a bug here locks users out of everything. Mitigated by keeping Kinde's own flow completely untouched (only what happens _after_ its callback changes), and by rolling the native session-issuance out behind the existing per-platform routes one platform at a time rather than globally.
 
 ---
 

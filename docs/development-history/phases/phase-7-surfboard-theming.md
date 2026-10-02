@@ -133,7 +133,7 @@ themes:
     always-dark-styled (`bg-slate-900`, hardcoded regardless of site theme)
     — reverted that file entirely, it needed no `dark:` variants. (2) on
     `bg-slate-50/60` (an opacity-suffixed class), the regex inserted the
-    `dark:` class *before* the `/60` suffix instead of after it, silently
+    `dark:` class _before_ the `/60` suffix instead of after it, silently
     stripping the intended translucency from the light-mode class in two
     files (`qr-earnings/page.tsx` in both the surveyor and admin shells) —
     hand-fixed both.
@@ -189,6 +189,7 @@ badge page, both subscription-related pages (the subscription/callback
 page in particular already fully dark-themed with no gaps).
 
 **Out of scope, noted for later phases (not fixed here):**
+
 - ~~The public marketing homepage (`/surfboard`) has an un-migrated light
   section below its hero (`bg-white`-ish, `text-white` heading rendering
   invisible-on-light) — belongs to Phase 10 (public/marketing sites), not
@@ -237,7 +238,7 @@ hover bug. Covered `user-management`, `certificates`, `cod/batches`,
   stayed light regardless of theme. Caught only by live-reload
   verification (a static grep for `bg-gray-*`/`slate-*` doesn't match
   gradient utilities); fixed all 8 with `dark:from-background
-  dark:to-background` once the pattern was found via a targeted grep
+dark:to-background` once the pattern was found via a targeted grep
   across the whole admin panel.
 
 Not yet started: REVA/GBC admin panels almost certainly have the same

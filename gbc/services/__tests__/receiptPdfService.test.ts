@@ -10,7 +10,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockExecFile = vi.hoisted(() => vi.fn());
 vi.mock("child_process", () => ({ execFile: mockExecFile }));
 
-const { generateTicketReceiptPdfBuffer } = await import("@/gbc/services/receiptPdfService");
+const { generateTicketReceiptPdfBuffer } =
+  await import("@/gbc/services/receiptPdfService");
 
 const ticket = {
   ticketNumber: "GBC2_ABC123",
@@ -24,7 +25,12 @@ const ticket = {
   editionRef: { name: "GBC 2.0" },
 };
 
-function mockChildProcess(stdin: { write: (v: string) => void; end: () => void } = { write: vi.fn(), end: vi.fn() }) {
+function mockChildProcess(
+  stdin: { write: (v: string) => void; end: () => void } = {
+    write: vi.fn(),
+    end: vi.fn(),
+  }
+) {
   return { stdin };
 }
 
@@ -63,10 +69,16 @@ describe("generateTicketReceiptPdfBuffer", () => {
 
   it("rejects with the worker's stderr when the process fails", async () => {
     mockExecFile.mockImplementation((_cmd, _args, _opts, callback) => {
-      callback(new Error("exit 1"), Buffer.from(""), Buffer.from("font not found"));
+      callback(
+        new Error("exit 1"),
+        Buffer.from(""),
+        Buffer.from("font not found")
+      );
       return mockChildProcess();
     });
 
-    await expect(generateTicketReceiptPdfBuffer(ticket as any)).rejects.toThrow(/font not found/);
+    await expect(generateTicketReceiptPdfBuffer(ticket as any)).rejects.toThrow(
+      /font not found/
+    );
   });
 });

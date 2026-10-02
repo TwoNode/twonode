@@ -84,7 +84,9 @@ export default function ProfilePage() {
       <div className="min-h-full flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading profile...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Loading profile...
+          </p>
         </div>
       </div>
     );
@@ -114,7 +116,9 @@ export default function ProfilePage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Profile</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              My Profile
+            </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               View your MDA account information
             </p>
@@ -172,7 +176,9 @@ export default function ProfilePage() {
                   <Shield className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Role</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                    Role
+                  </p>
                   <p className="text-gray-900 dark:text-white font-semibold text-lg">
                     {roleNames[profile.role] || profile.role}
                   </p>

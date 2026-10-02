@@ -29,7 +29,9 @@ export default function ErrorFallback({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4 py-12 dark:bg-gray-950">
-      <h1 className="text-7xl font-extrabold text-blue-900 dark:text-blue-300 mb-4">500</h1>
+      <h1 className="text-7xl font-extrabold text-blue-900 dark:text-blue-300 mb-4">
+        500
+      </h1>
       <p className="text-xl text-blue-700 dark:text-blue-200 mb-6">
         Oops! Something went wrong. Please try again later.
       </p>

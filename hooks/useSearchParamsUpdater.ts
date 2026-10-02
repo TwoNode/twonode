@@ -35,7 +35,9 @@ export function useSearchParamsUpdater() {
       }
       const query = params.toString();
       paramsRef.current = query;
-      startTransition(() => router[mode](query ? `${pathname}?${query}` : pathname));
+      startTransition(() =>
+        router[mode](query ? `${pathname}?${query}` : pathname)
+      );
     },
     [router, pathname]
   );
@@ -61,7 +63,10 @@ export function useDebouncedSearchParam(
 
   useEffect(() => {
     if (value === urlValue) return;
-    const timer = setTimeout(() => update({ search: value, page: "" }, "replace"), delayMs);
+    const timer = setTimeout(
+      () => update({ search: value, page: "" }, "replace"),
+      delayMs
+    );
     return () => clearTimeout(timer);
     // `urlValue` changes on every navigation; re-arming the timer on it would
     // fire a redundant replace for a value already in the URL.

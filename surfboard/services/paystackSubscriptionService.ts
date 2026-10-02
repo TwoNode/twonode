@@ -1,6 +1,10 @@
 import prisma from "@/lib/prisma";
 import { SUBSCRIPTION_PLANS } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
-import { createPaystackInstance, logPaystackEnvironment, getPaystackSecretForWebhook } from "@/utils/paystackConfig";
+import {
+  createPaystackInstance,
+  logPaystackEnvironment,
+  getPaystackSecretForWebhook,
+} from "@/utils/paystackConfig";
 import { createOrUpdateSubscription } from "@/surfboard/services/subscriptionService";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
 
@@ -27,9 +31,14 @@ export type Plan = {
   updatedAt: string;
 };
 
-export async function initiateSubscription(userId: string, email: string, planId: keyof typeof SUBSCRIPTION_PLANS) {
+export async function initiateSubscription(
+  userId: string,
+  email: string,
+  planId: keyof typeof SUBSCRIPTION_PLANS
+) {
   const selectedPlan = SUBSCRIPTION_PLANS[planId];
-  if (!selectedPlan) throw new ValidationError({ planId: "Invalid subscription plan" });
+  if (!selectedPlan)
+    throw new ValidationError({ planId: "Invalid subscription plan" });
 
   const isLive = process.env.NODE_ENV === "production";
   await logPaystackEnvironment(isLive);
@@ -69,11 +78,31 @@ export async function initiateSubscription(userId: string, email: string, planId
     userId,
     metadata: {
       custom_fields: [
-        { display_name: "Platform", variable_name: "platform", value: "surfboard" },
-        { display_name: "Subscription Plan", variable_name: "subscription_plan", value: plan.name },
-        { display_name: "Subscription Plan ID", variable_name: "subscription_plan_id", value: plan.id },
-        { display_name: "Plan Code", variable_name: "plan_code", value: plan.plan_code },
-        { display_name: "Reference", variable_name: "reference", value: reference },
+        {
+          display_name: "Platform",
+          variable_name: "platform",
+          value: "surfboard",
+        },
+        {
+          display_name: "Subscription Plan",
+          variable_name: "subscription_plan",
+          value: plan.name,
+        },
+        {
+          display_name: "Subscription Plan ID",
+          variable_name: "subscription_plan_id",
+          value: plan.id,
+        },
+        {
+          display_name: "Plan Code",
+          variable_name: "plan_code",
+          value: plan.plan_code,
+        },
+        {
+          display_name: "Reference",
+          variable_name: "reference",
+          value: reference,
+        },
         { display_name: "User ID", variable_name: "user_id", value: userId },
         { display_name: "Email", variable_name: "email", value: email },
       ],
@@ -97,7 +126,8 @@ export async function initiateOneTimeSubscription(
   planId: keyof typeof SUBSCRIPTION_PLANS
 ) {
   const selectedPlan = SUBSCRIPTION_PLANS[planId];
-  if (!selectedPlan) throw new ValidationError({ planId: "Invalid subscription plan" });
+  if (!selectedPlan)
+    throw new ValidationError({ planId: "Invalid subscription plan" });
 
   const isLive = process.env.NODE_ENV === "production";
   await logPaystackEnvironment(isLive);
@@ -121,11 +151,31 @@ export async function initiateOneTimeSubscription(
       platform: "surfboard",
       plan_id: planId,
       custom_fields: [
-        { display_name: "Platform", variable_name: "platform", value: "surfboard" },
-        { display_name: "Payment Type", variable_name: "payment_type", value: "one-time subscription" },
-        { display_name: "Subscription Plan", variable_name: "subscription_plan", value: plan.name },
-        { display_name: "Subscription Plan ID", variable_name: "subscription_plan_id", value: plan.id },
-        { display_name: "Reference", variable_name: "reference", value: reference },
+        {
+          display_name: "Platform",
+          variable_name: "platform",
+          value: "surfboard",
+        },
+        {
+          display_name: "Payment Type",
+          variable_name: "payment_type",
+          value: "one-time subscription",
+        },
+        {
+          display_name: "Subscription Plan",
+          variable_name: "subscription_plan",
+          value: plan.name,
+        },
+        {
+          display_name: "Subscription Plan ID",
+          variable_name: "subscription_plan_id",
+          value: plan.id,
+        },
+        {
+          display_name: "Reference",
+          variable_name: "reference",
+          value: reference,
+        },
         { display_name: "User ID", variable_name: "user_id", value: userId },
         { display_name: "Email", variable_name: "email", value: email },
       ],
@@ -134,15 +184,28 @@ export async function initiateOneTimeSubscription(
 }
 
 export async function getOrCreatePaystackPlan(
-  plan: { id: string; planCode: string; name: string; amount: number; description: string; interval: string },
+  plan: {
+    id: string;
+    planCode: string;
+    name: string;
+    amount: number;
+    description: string;
+    interval: string;
+  },
   isLive: boolean
 ): Promise<Plan> {
   const paystack = await createPaystackInstance(isLive);
   const amountInKobo = plan.amount * 100;
 
   try {
-    const plansResponse = await paystack.plan.list({ perPage: 50, page: 1, filter: { interval: plan.interval } });
-    const existingPlan = plansResponse.data.find((p: any) => p.name === plan.name && !p.is_deleted && !p.is_archived);
+    const plansResponse = await paystack.plan.list({
+      perPage: 50,
+      page: 1,
+      filter: { interval: plan.interval },
+    });
+    const existingPlan = plansResponse.data.find(
+      (p: any) => p.name === plan.name && !p.is_deleted && !p.is_archived
+    );
     if (existingPlan) return existingPlan;
   } catch (error) {
     console.warn("Error fetching existing plans:", error);
@@ -158,7 +221,8 @@ export async function getOrCreatePaystackPlan(
     send_sms: true,
   });
 
-  if (!planResponse.status) throw new Error(planResponse.message || "Failed to create plan");
+  if (!planResponse.status)
+    throw new Error(planResponse.message || "Failed to create plan");
 
   return planResponse.data;
 }
@@ -170,7 +234,9 @@ export async function verifySubscription(userId: string, reference: string) {
   const verification: any = await paystack.transaction.verify({ reference });
 
   if (verification.data?.status !== "success") {
-    throw new Error(verification.data?.gateway_response || "Payment verification failed");
+    throw new Error(
+      verification.data?.gateway_response || "Payment verification failed"
+    );
   }
 
   const { data } = verification;
@@ -182,7 +248,9 @@ export async function verifySubscription(userId: string, reference: string) {
   const authorization = data.authorization.authorization_code;
   const paidAt = data.paid_at;
 
-  const availablePlan = Object.values(SUBSCRIPTION_PLANS).find((p) => p.name === planObject.name);
+  const availablePlan = Object.values(SUBSCRIPTION_PLANS).find(
+    (p) => p.name === planObject.name
+  );
   const plan = { ...planObject, ...availablePlan, id: planObject.id };
 
   let subscriptionCode = "";
@@ -195,7 +263,9 @@ export async function verifySubscription(userId: string, reference: string) {
       plan: planObject.plan_code,
     });
 
-    const activeSubscription = subscriptionsResponse.data.find((sub: any) => sub.status === "active");
+    const activeSubscription = subscriptionsResponse.data.find(
+      (sub: any) => sub.status === "active"
+    );
     if (activeSubscription) {
       subscriptionCode = activeSubscription.subscription_code;
       emailToken = activeSubscription.email_token;
@@ -220,7 +290,12 @@ export async function verifySubscription(userId: string, reference: string) {
     skipHistory: true,
   });
 
-  return { subscriptionCode, nextPaymentDate, planName: plan.name, subscription: sub };
+  return {
+    subscriptionCode,
+    nextPaymentDate,
+    planName: plan.name,
+    subscription: sub,
+  };
 }
 
 /**
@@ -236,7 +311,8 @@ export async function verifyOneTimeSubscription(
   planId: keyof typeof SUBSCRIPTION_PLANS
 ) {
   const selectedPlan = SUBSCRIPTION_PLANS[planId];
-  if (!selectedPlan) throw new ValidationError({ planId: "Invalid subscription plan" });
+  if (!selectedPlan)
+    throw new ValidationError({ planId: "Invalid subscription plan" });
 
   const isLive = process.env.NODE_ENV === "production";
   const paystack = await createPaystackInstance(isLive);
@@ -244,7 +320,9 @@ export async function verifyOneTimeSubscription(
   const verification: any = await paystack.transaction.verify({ reference });
 
   if (verification.data?.status !== "success") {
-    throw new Error(verification.data?.gateway_response || "Payment verification failed");
+    throw new Error(
+      verification.data?.gateway_response || "Payment verification failed"
+    );
   }
 
   const { data } = verification;
@@ -275,7 +353,9 @@ export async function disableSubscription(userId: string): Promise<{
   message: string;
   data?: { currentEnd: Date; nextPaymentDate: Date | null };
 }> {
-  const subscription = await prisma.subscription.findUnique({ where: { userId } });
+  const subscription = await prisma.subscription.findUnique({
+    where: { userId },
+  });
   if (!subscription) throw new NotFoundError("Subscription");
 
   // A one-time payment never has (or will ever get) a Paystack subscription
@@ -284,49 +364,76 @@ export async function disableSubscription(userId: string): Promise<{
   // (the webhook hasn't landed yet) for a genuinely recurring subscription.
   if (subscription.provider === "paystack_onetime") {
     return {
-      message: "This was a one-time payment with no auto-renewal — nothing to cancel. Access continues until it expires.",
-      data: { currentEnd: subscription.currentEnd || new Date(), nextPaymentDate: null },
+      message:
+        "This was a one-time payment with no auto-renewal — nothing to cancel. Access continues until it expires.",
+      data: {
+        currentEnd: subscription.currentEnd || new Date(),
+        nextPaymentDate: null,
+      },
     };
   }
 
   if (!subscription.subCode && subscription.status === "active") {
-    throw new ValidationError({ subscription: "Subscription sync pending. Please try again soon." });
+    throw new ValidationError({
+      subscription: "Subscription sync pending. Please try again soon.",
+    });
   }
 
   if (subscription.status !== "active") {
-    throw new ValidationError({ subscription: "No active subscription to cancel" });
+    throw new ValidationError({
+      subscription: "No active subscription to cancel",
+    });
   }
 
   if (subscription.cancelledAt) {
     return {
       message: "Subscription is already cancelled",
-      data: { currentEnd: subscription.currentEnd || new Date(), nextPaymentDate: subscription.nextPaymentDate },
+      data: {
+        currentEnd: subscription.currentEnd || new Date(),
+        nextPaymentDate: subscription.nextPaymentDate,
+      },
     };
   }
 
   if (subscription.subCode && subscription.emailToken) {
-    const response = await fetch("https://api.paystack.co/subscription/disable", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${getPaystackSecretForWebhook()}` },
-      body: JSON.stringify({ code: subscription.subCode, token: subscription.emailToken }),
-    });
+    const response = await fetch(
+      "https://api.paystack.co/subscription/disable",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getPaystackSecretForWebhook()}`,
+        },
+        body: JSON.stringify({
+          code: subscription.subCode,
+          token: subscription.emailToken,
+        }),
+      }
+    );
 
     const result = await response.json();
 
     if (!response.ok) {
       console.error("Paystack disable error:", result);
       const isSafeToIgnore =
-        result.message?.toLowerCase().includes("disabled") || result.message?.toLowerCase().includes("not found");
+        result.message?.toLowerCase().includes("disabled") ||
+        result.message?.toLowerCase().includes("not found");
 
       if (!isSafeToIgnore) {
-        throw new Error(`Paystack Error: ${result.message || "Failed to disable subscription"}`);
+        throw new Error(
+          `Paystack Error: ${result.message || "Failed to disable subscription"}`
+        );
       }
     }
   }
 
   const updatedSubscription = await prisma.subscription.update({
     where: { userId },
-    data: { status: "canceled", cancelledAt: new Date(), nextPaymentDate: null },
+    data: {
+      status: "canceled",
+      cancelledAt: new Date(),
+      nextPaymentDate: null,
+    },
   });
 
   await prisma.subscriptionHistory.create({
@@ -345,7 +452,11 @@ export async function disableSubscription(userId: string): Promise<{
   });
 
   return {
-    message: "Subscription cancelled. Access continues until end of billing period",
-    data: { currentEnd: updatedSubscription.currentEnd || new Date(), nextPaymentDate: null },
+    message:
+      "Subscription cancelled. Access continues until end of billing period",
+    data: {
+      currentEnd: updatedSubscription.currentEnd || new Date(),
+      nextPaymentDate: null,
+    },
   };
 }

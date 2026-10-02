@@ -33,13 +33,7 @@ import { revaApi } from "@/reva/apiClient";
 import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 
 type NotificationType =
-  | "INFO"
-  | "SUCCESS"
-  | "WARNING"
-  | "ERROR"
-  | "SYSTEM"
-  | "PAYMENT"
-  | "PROPERTY";
+  "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "SYSTEM" | "PAYMENT" | "PROPERTY";
 
 type Notification = {
   id: string;

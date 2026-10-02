@@ -83,7 +83,7 @@ export const getAuthenticatedSurfUserFromCookie = cache(async () => {
   } catch (error) {
     console.error(
       "Error getting authenticated Surfboard user from cookie:",
-      error,
+      error
     );
     throw error;
   }

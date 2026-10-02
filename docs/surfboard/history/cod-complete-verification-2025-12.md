@@ -17,9 +17,11 @@
 ### PHASE 1: USER SIDE (SURVEYOR) - ⏳ NOT STARTED
 
 #### Step 1: Plan Selection ❌
+
 **Location**: `surf-plans/page.tsx`  
 **Status**: Not implemented  
 **Requirements**:
+
 - [ ] Display all plans with `status = PENDING` and `redCopyStatus = NOT_SUBMITTED`
 - [ ] Add checkbox for each eligible plan
 - [ ] Show eligibility indicators (green checkmark or red warning)
@@ -27,15 +29,18 @@
 - [ ] Show selected count badge
 
 **Backend Support**: ✅ Ready
+
 - Query filters exist in schema
 - Helper functions available: `isPlanEligibleForCertificate()`, `getPlanEligibilityMessage()`
 
 ---
 
 #### Step 2: Record Copy Upload ✅ PARTIALLY COMPLETE
+
 **Location**: `RecordCopyUploadModal.tsx`  
 **Status**: Component created, not integrated  
 **Completed**:
+
 - ✅ Modal UI created
 - ✅ File upload to AWS S3 implemented
 - ✅ Individual plan upload tracking
@@ -43,30 +48,36 @@
 - ✅ Error handling
 
 **Remaining**:
+
 - [ ] Integrate modal into `surf-plans/page.tsx`
 - [ ] Trigger modal when "Submit Red Copy Request" is clicked
 - [ ] Validate all plans have record copies before proceeding
 
 **Backend Support**: ✅ Ready
+
 - `uploadSurfboardFileWithAuth()` - Uploads to S3
 - `/api/surfboard/update-record-copy` - Updates plan with URL
 
 ---
 
 #### Step 3: Batch Submission ✅ PARTIALLY COMPLETE
+
 **Location**: `CertificateBatchSelection.tsx`  
 **Status**: Component created, not integrated  
 **Completed**:
+
 - ✅ Batch submission modal UI
 - ✅ Plan summary display
 - ✅ Integration with `submitRedCopyBatch()` action
 
 **Remaining**:
+
 - [ ] Integrate modal into workflow after record copy upload
 - [ ] Display calculated fees before submission
 - [ ] Show batch code after creation
 
 **Backend Support**: ✅ Ready
+
 ```typescript
 submitRedCopyBatch(planIds: string[])
   ├─ Validates plan eligibility
@@ -81,9 +92,11 @@ submitRedCopyBatch(planIds: string[])
 ---
 
 #### Step 4: Payment ❌ NOT STARTED
+
 **Location**: New payment page needed  
 **Status**: Not implemented  
 **Requirements**:
+
 - [ ] Create payment page/modal
 - [ ] Integrate Paystack payment initialization
 - [ ] Display batch summary (code, amount, plan count)
@@ -92,6 +105,7 @@ submitRedCopyBatch(planIds: string[])
 - [ ] Redirect to confirmation page
 
 **Backend Support**: ✅ Ready
+
 ```typescript
 verifyBatchPayment(reference: string)
   ├─ Finds batch by payment reference
@@ -101,6 +115,7 @@ verifyBatchPayment(reference: string)
 ```
 
 **Environment Variables Needed**:
+
 - `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY`
 - `PAYSTACK_SECRET_KEY`
 
@@ -109,9 +124,11 @@ verifyBatchPayment(reference: string)
 ### PHASE 2: SURFBOARD ADMIN - ❌ NOT STARTED
 
 #### LASG Receipt Upload ❌
+
 **Location**: New admin page needed  
 **Status**: Not implemented  
 **Requirements**:
+
 - [ ] Create Surfboard Admin dashboard
 - [ ] List batches with `paymentStatus = USER_PAID`
 - [ ] Upload receipt form (PDF/Image)
@@ -119,6 +136,7 @@ verifyBatchPayment(reference: string)
 - [ ] Show success confirmation
 
 **Backend Support**: ✅ Ready
+
 ```typescript
 uploadLASGReceipt(batchId, receiptUrl, receiptS3Key)
   ├─ Validates user is ADMIN or SUPERADMIN
@@ -135,9 +153,10 @@ uploadLASGReceipt(batchId, receiptUrl, receiptS3Key)
 #### 3.1 ACCOUNTS ADMIN - ✅ COMPLETE
 
 **Location**: `/surf-restricted/dashboard/cod/accounts/page.tsx`  
-**Status**: ✅ Fully implemented  
+**Status**: ✅ Fully implemented
 
 **Implemented Features**:
+
 - ✅ Fetches batches with `paymentStatus = LASG_PAID`
 - ✅ Displays batch details (code, amount, submitter, plans)
 - ✅ Shows LASG receipt with download link
@@ -146,6 +165,7 @@ uploadLASGReceipt(batchId, receiptUrl, receiptS3Key)
 - ✅ Batch becomes invisible after action
 
 **Backend Integration**: ✅ Complete
+
 ```typescript
 getAccountsBatches()
   └─ Returns batches awaiting accounts approval
@@ -164,9 +184,10 @@ updateAccountsApproval(batchId, approved, comment?)
 #### 3.2 CHARTING ADMIN - ✅ COMPLETE
 
 **Location**: `/surf-restricted/dashboard/cod/charting/page.tsx`  
-**Status**: ✅ Fully implemented  
+**Status**: ✅ Fully implemented
 
 **Implemented Features**:
+
 - ✅ Fetches plans with `chartingStatus = PENDING`
 - ✅ Displays plan details (number, title, location, area)
 - ✅ Shows `possibleChartingRemarks` (from LASG dataset)
@@ -177,6 +198,7 @@ updateAccountsApproval(batchId, approved, comment?)
 - ✅ Approve button (saves to `chartingRemarks`)
 
 **Backend Integration**: ✅ Complete
+
 ```typescript
 getChartingPlans()
   ├─ Filters: redCopyStatus=SUBMITTED, chartingStatus=PENDING
@@ -191,6 +213,7 @@ updateChartingStatus(planId, chartingRemarks)
 ```
 
 **Lock & Chronological**: ⏳ Backend ready, UI not integrated
+
 - Backend functions exist: `acquirePlanLock()`, `canWorkOnPlan()`
 - UI needs to call these before opening edit dialog
 
@@ -199,9 +222,10 @@ updateChartingStatus(planId, chartingRemarks)
 #### 3.3 SURCON ADMIN - ⏳ NOT STARTED
 
 **Location**: `/surf-restricted/dashboard/cod/surcon/page.tsx`  
-**Status**: Not created  
+**Status**: Not created
 
 **Requirements**:
+
 - [ ] Fetch plans with `getSurconPlans()`
 - [ ] Display plan details + pillar coordinates
 - [ ] Show Account Status and Charting Status
@@ -211,6 +235,7 @@ updateChartingStatus(planId, chartingRemarks)
 - [ ] Implement chronological enforcement
 
 **Backend Support**: ✅ Ready
+
 ```typescript
 getSurconPlans()
   ├─ Filters: redCopyStatus=SUBMITTED, surconStatus=PENDING
@@ -226,6 +251,7 @@ updateSurconStatus(planId, approved, comment?)
 ```
 
 **Lock & Chronological**: ✅ Backend ready
+
 ```typescript
 // Before opening plan
 canWorkOnPlan(planId, "SURCON", userId)
@@ -244,9 +270,10 @@ releasePlanLock(planId, "SURCON", userId)
 #### 3.4 RECORDS I ADMIN - ⏳ NOT STARTED
 
 **Location**: `/surf-restricted/dashboard/cod/records-i/page.tsx`  
-**Status**: Not created  
+**Status**: Not created
 
 **Requirements**:
+
 - [ ] Fetch plans with `getRecordsIPlans()`
 - [ ] Display plan details + record copy attachment
 - [ ] Show Account, Charting, SURCON statuses
@@ -257,6 +284,7 @@ releasePlanLock(planId, "SURCON", userId)
 - [ ] Implement chronological enforcement
 
 **Backend Support**: ✅ Ready
+
 ```typescript
 getRecordsIPlans()
   ├─ Filters: redCopyStatus=SUBMITTED, recordsIStatus=PENDING
@@ -276,9 +304,10 @@ updateRecordsIStatus(planId, approved, comment?)
 #### 3.5 RECORDS II ADMIN - ⏳ NOT STARTED
 
 **Location**: `/surf-restricted/dashboard/cod/records-ii/page.tsx`  
-**Status**: Not created  
+**Status**: Not created
 
 **Requirements**:
+
 - [ ] Fetch plans with `getRecordsIIPlans()`
 - [ ] Display ONLY plans where all 4 other approvals are complete
 - [ ] Show batch progress indicator ("4/10 approved")
@@ -291,6 +320,7 @@ updateRecordsIStatus(planId, approved, comment?)
 - [ ] Implement chronological enforcement
 
 **Backend Support**: ✅ Ready
+
 ```typescript
 getRecordsIIPlans()
   ├─ Filters: redCopyStatus=SUBMITTED, recordsIIStatus=PENDING
@@ -319,6 +349,7 @@ updateRecordsIIStatus(planId, approved, comment?)
 ### SurfboardPlan Model - ✅ COMPLETE
 
 **Certificate of Deposit Fields**:
+
 ```prisma
 // Core CoD fields
 locality                String?
@@ -385,40 +416,40 @@ recordsIILockExpiresAt  DateTime?
 model CertificateOfDepositBatch {
   id                      String   @id @default(cuid())
   batchCode               String   @unique @default(dbgenerated("..."))
-  
+
   // Submission
   submittedBy             String
   submitter               SurfboardUser @relation(...)
   planCount               Int
-  
+
   // Fees
   totalFees               Float
   systemCharges           Float
   totalAmount             Float
-  
+
   // User Payment (Paystack)
   userPaymentRef          String?
   userPaymentDate         DateTime?
-  
+
   // LASG Payment (Manual)
   lasgReceiptUrl          String?
   lasgReceiptS3Key        String?
   lasgPaymentDate         DateTime?
   lasgReceiptUploadedBy   String?
   lasgReceiptUploadedAt   DateTime?
-  
+
   // Accounts Approval
   accountsApprovedBy      String?
   accountsApprovedAt      DateTime?
   accountsDisapproved     Boolean @default(false)
   accountsComment         String?
-  
+
   // Status
   paymentStatus           BatchPaymentStatus @default(PENDING_USER_PAYMENT)
-  
+
   // Relations
   plans                   SurfboardPlan[]
-  
+
   // Timestamps
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
@@ -441,6 +472,7 @@ model SurfboardSettings {
 ```
 
 **Settings Structure**:
+
 ```json
 {
   "lgaFees": {
@@ -462,7 +494,7 @@ model LASG_charting_interpretation {
   id             Int                      @id @default(autoincrement())
   geom           Unsupported("geometry")? // PostGIS geometry
   interpretation String?                  // Charting interpretation text
-  
+
   @@index([geom], type: Gist)
 }
 ```
@@ -494,7 +526,7 @@ canWorkOnPlan(planId, role, userId)
   ├─ Finds oldest pending plan for this role
   ├─ Checks if target plan is the oldest
   ├─ If not: returns oldest available plan info
-  └─ Returns: { 
+  └─ Returns: {
       allowed: boolean,
       reason?: string,
       oldestAvailablePlanId?: string,
@@ -628,6 +660,7 @@ update{Role}Status(planId, approved, comment?)
 ```
 
 **Implemented**:
+
 - ✅ `updateAccountsApproval()` (batch-level)
 - ✅ `updateChartingStatus()`
 - ✅ `updateSurconStatus()`
@@ -650,6 +683,7 @@ get{Role}Plans()
 ```
 
 **Implemented**:
+
 - ✅ `getAccountsBatches()` (batch-level)
 - ✅ `getChartingPlans()`
 - ✅ `getSurconPlans()`
@@ -663,9 +697,10 @@ get{Role}Plans()
 ### RecordCopyUploadModal - ✅ COMPLETE
 
 **Location**: `components/RecordCopyUploadModal.tsx`  
-**Status**: ✅ Fully implemented, not integrated  
+**Status**: ✅ Fully implemented, not integrated
 
 **Features**:
+
 - ✅ Displays selected plans
 - ✅ File input for each plan (PDF/Image)
 - ✅ Individual upload with progress tracking
@@ -680,7 +715,7 @@ get{Role}Plans()
 ### CertificateBatchSelection - ✅ COMPLETE
 
 **Location**: `components/CertificateBatchSelection.tsx`  
-**Status**: ✅ Fully implemented, not integrated  
+**Status**: ✅ Fully implemented, not integrated
 
 **Components**:
 
@@ -709,7 +744,9 @@ get{Role}Plans()
 ### Admin Dashboards
 
 #### Accounts Admin - ✅ COMPLETE
+
 **Features**:
+
 - ✅ Fetches batches with `getAccountsBatches()`
 - ✅ Displays batch cards with details
 - ✅ LASG receipt viewer
@@ -721,7 +758,9 @@ get{Role}Plans()
 - ✅ Empty state
 
 #### Charting Admin - ✅ COMPLETE
+
 **Features**:
+
 - ✅ Fetches plans with `getChartingPlans()`
 - ✅ Displays plan cards with location info
 - ✅ Shows possible charting remarks
@@ -735,7 +774,9 @@ get{Role}Plans()
 - ✅ Empty state
 
 #### SURCON Admin - ❌ NOT CREATED
+
 #### Records I Admin - ❌ NOT CREATED
+
 #### Records II Admin - ❌ NOT CREATED
 
 ---
@@ -746,9 +787,10 @@ get{Role}Plans()
 
 **Method**: POST  
 **Auth**: Required (Surfboard User)  
-**Body**: `{ planId: string, redCopyFileUrl: string }`  
+**Body**: `{ planId: string, redCopyFileUrl: string }`
 
 **Logic**:
+
 ```typescript
 1. Validates user authentication
 2. Validates required fields
@@ -815,6 +857,7 @@ get{Role}Plans()
 ## 🎯 IMPLEMENTATION PRIORITY
 
 ### Phase 1: Core User Flow (CRITICAL)
+
 1. ✅ Database migration
 2. ✅ Seed LGA fees in SurfboardSettings
 3. ✅ Update `surf-plans/page.tsx`:
@@ -825,17 +868,20 @@ get{Role}Plans()
 5. ✅ Create Surfboard Admin dashboard for LASG receipt
 
 ### Phase 2: MDA Workflows (HIGH)
+
 6. ✅ Create SURCON Admin dashboard
 7. ✅ Create Records I Admin dashboard
 8. ✅ Create Records II Admin dashboard
 9. ✅ Integrate lock & chronological enforcement in all MDA UIs
 
 ### Phase 3: Enhancements (MEDIUM)
+
 10. ✅ Implement notification system
 11. ✅ Implement query/resubmission flow
 12. ✅ Create Settings Management page
 
 ### Phase 4: Integration (LOW)
+
 13. ✅ OSSG API integration
 14. ✅ End-to-end testing
 15. ✅ Performance optimization
@@ -845,6 +891,7 @@ get{Role}Plans()
 ## ✅ VERIFICATION CHECKLIST
 
 ### Database
+
 - [x] Schema designed
 - [x] Models created
 - [x] Relations defined
@@ -853,6 +900,7 @@ get{Role}Plans()
 - [ ] Seed data loaded
 
 ### Backend
+
 - [x] Lock management functions
 - [x] Chronological enforcement
 - [x] Spatial intersection
@@ -865,6 +913,7 @@ get{Role}Plans()
 - [ ] OSSG API integration
 
 ### Components
+
 - [x] RecordCopyUploadModal
 - [x] CertificateBatchSelection
 - [x] BatchSubmissionModal
@@ -872,6 +921,7 @@ get{Role}Plans()
 - [ ] Payment component
 
 ### Admin Dashboards
+
 - [x] Accounts Admin (2/5)
 - [x] Charting Admin (2/5)
 - [ ] SURCON Admin (0/5)
@@ -879,12 +929,14 @@ get{Role}Plans()
 - [ ] Records II Admin (0/5)
 
 ### User Interface
+
 - [ ] Plan selection (0/4)
 - [ ] Record copy upload integration (0/4)
 - [ ] Batch submission integration (0/4)
 - [ ] Payment page (0/4)
 
 ### Integrations
+
 - [ ] Paystack payment (0/3)
 - [ ] Email notifications (0/5)
 - [ ] OSSG API (0/2)
@@ -893,7 +945,8 @@ get{Role}Plans()
 
 **OVERALL PROGRESS**: 60% Backend, 40% Admin UI, 0% User UI, 0% Integrations
 
-**ESTIMATED REMAINING WORK**: 
+**ESTIMATED REMAINING WORK**:
+
 - 3 MDA dashboards: ~8 hours
 - User UI integration: ~6 hours
 - Payment integration: ~4 hours

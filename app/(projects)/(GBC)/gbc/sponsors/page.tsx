@@ -112,15 +112,23 @@ export default async function SponsorsPage() {
                   }`}
                   style={
                     featured
-                      ? { background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.main }
+                      ? {
+                          background: GBC_COLORS.surface.main,
+                          color: GBC_COLORS.primary.main,
+                        }
                       : compact
                         ? undefined
-                        : { background: "#FCE7F3", color: GBC_COLORS.secondary.dark }
+                        : {
+                            background: "#FCE7F3",
+                            color: GBC_COLORS.secondary.dark,
+                          }
                   }
                 >
                   {tier.name.toUpperCase()}
                 </div>
-                {tier.description && <p className="text-gray-600">{tier.description}</p>}
+                {tier.description && (
+                  <p className="text-gray-600">{tier.description}</p>
+                )}
               </div>
 
               <div
@@ -133,7 +141,12 @@ export default async function SponsorsPage() {
                 }
               >
                 {tierSponsors.map((sponsor: any) => (
-                  <SponsorCard key={sponsor.id} sponsor={sponsor} featured={featured} compact={compact} />
+                  <SponsorCard
+                    key={sponsor.id}
+                    sponsor={sponsor}
+                    featured={featured}
+                    compact={compact}
+                  />
                 ))}
               </div>
             </div>

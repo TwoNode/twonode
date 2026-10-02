@@ -26,8 +26,15 @@ const feePreviewSchema = z.object({
 /** Client-side fee preview before batch submit — same calculation submitRedCopyBatch uses internally. */
 export const POST = withAuth<SurfboardRole>(
   async (req) => {
-    const { zone, areaSqM, surveyTitle, zoneFees, ethnicity } = await validateBody(req, feePreviewSchema);
-    const data = await calculatePlanFeeByZone(zone, areaSqM, surveyTitle, zoneFees, ethnicity);
+    const { zone, areaSqM, surveyTitle, zoneFees, ethnicity } =
+      await validateBody(req, feePreviewSchema);
+    const data = await calculatePlanFeeByZone(
+      zone,
+      areaSqM,
+      surveyTitle,
+      zoneFees,
+      ethnicity
+    );
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] }

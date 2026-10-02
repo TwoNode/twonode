@@ -1,12 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { groupSponsorsByTier, isTierSize, sortTiers, tierKeyFromName } from "../sponsorTiers";
+import {
+  groupSponsorsByTier,
+  isTierSize,
+  sortTiers,
+  tierKeyFromName,
+} from "../sponsorTiers";
 
-const tier = (key: string, order: number, name = key) => ({ key, name, size: "STANDARD", order });
+const tier = (key: string, order: number, name = key) => ({
+  key,
+  name,
+  size: "STANDARD",
+  order,
+});
 
 describe("tierKeyFromName", () => {
   it("makes an UPPER_SNAKE key", () => {
     expect(tierKeyFromName("Gold Partner")).toBe("GOLD_PARTNER");
-    expect(tierKeyFromName("  Media & Broadcast Partners! ")).toBe("MEDIA_BROADCAST_PARTNERS");
+    expect(tierKeyFromName("  Media & Broadcast Partners! ")).toBe(
+      "MEDIA_BROADCAST_PARTNERS"
+    );
   });
 
   it("drops accents instead of leaving holes", () => {
@@ -24,7 +36,9 @@ describe("tierKeyFromName", () => {
   });
 
   it("caps the length without leaving a trailing underscore", () => {
-    const key = tierKeyFromName("Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota Kappa");
+    const key = tierKeyFromName(
+      "Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota Kappa"
+    );
     expect(key.length).toBeLessThanOrEqual(40);
     expect(key.endsWith("_")).toBe(false);
   });
@@ -39,7 +53,11 @@ describe("isTierSize", () => {
 
 describe("sortTiers", () => {
   it("orders by order, then name", () => {
-    const sorted = sortTiers([tier("B", 1, "Bravo"), tier("C", 0, "Charlie"), tier("A", 1, "Alpha")]);
+    const sorted = sortTiers([
+      tier("B", 1, "Bravo"),
+      tier("C", 0, "Charlie"),
+      tier("A", 1, "Alpha"),
+    ]);
     expect(sorted.map((t) => t.key)).toEqual(["C", "A", "B"]);
   });
 
@@ -51,7 +69,12 @@ describe("sortTiers", () => {
 });
 
 describe("groupSponsorsByTier", () => {
-  const tiers = [tier("SUPPORTING", 2), tier("HEADLINE", 0), tier("GOLD", 1), tier("EMPTY", 3)];
+  const tiers = [
+    tier("SUPPORTING", 2),
+    tier("HEADLINE", 0),
+    tier("GOLD", 1),
+    tier("EMPTY", 3),
+  ];
   const sponsors = [
     { id: "1", tier: "SUPPORTING" },
     { id: "2", tier: "HEADLINE" },
@@ -61,21 +84,27 @@ describe("groupSponsorsByTier", () => {
 
   it("groups in tier order and drops tiers with no sponsors", () => {
     const groups = groupSponsorsByTier(tiers, sponsors);
-    expect(groups.map((g) => g.tier.key)).toEqual(["HEADLINE", "GOLD", "SUPPORTING"]);
+    expect(groups.map((g) => g.tier.key)).toEqual([
+      "HEADLINE",
+      "GOLD",
+      "SUPPORTING",
+    ]);
     expect(groups[0].sponsors.map((s) => s.id)).toEqual(["2", "4"]);
   });
 
   it("can include empty tiers (the admin view needs them)", () => {
-    expect(groupSponsorsByTier(tiers, sponsors, { includeEmpty: true }).map((g) => g.tier.key)).toEqual([
-      "HEADLINE",
-      "GOLD",
-      "SUPPORTING",
-      "EMPTY",
-    ]);
+    expect(
+      groupSponsorsByTier(tiers, sponsors, { includeEmpty: true }).map(
+        (g) => g.tier.key
+      )
+    ).toEqual(["HEADLINE", "GOLD", "SUPPORTING", "EMPTY"]);
   });
 
   it("never loses a sponsor whose tier is unknown", () => {
-    const groups = groupSponsorsByTier(tiers, [...sponsors, { id: "9", tier: "GHOST" }]);
+    const groups = groupSponsorsByTier(tiers, [
+      ...sponsors,
+      { id: "9", tier: "GHOST" },
+    ]);
     const last = groups[groups.length - 1];
     expect(last.tier.key).toBe("GHOST");
     expect(last.sponsors.map((s) => s.id)).toEqual(["9"]);

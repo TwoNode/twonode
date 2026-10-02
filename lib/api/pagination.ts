@@ -40,7 +40,8 @@ export function parsePageParams(
   const maxPageSize = opts?.maxPageSize ?? MAX_PAGE_SIZE;
 
   const rawPage = Number(raw.page);
-  const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+  const page =
+    Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
 
   const rawPageSize = Number(raw.pageSize);
   const pageSize =
@@ -92,7 +93,10 @@ export async function paginateQuery<T>(
   page: number,
   pageSize: number
 ): Promise<Paginated<T>> {
-  const [rows, total] = await Promise.all([fetchPage((page - 1) * pageSize, pageSize), count()]);
+  const [rows, total] = await Promise.all([
+    fetchPage((page - 1) * pageSize, pageSize),
+    count(),
+  ]);
   const lastPage = Math.max(1, Math.ceil(total / pageSize));
 
   if (rows.length === 0 && total > 0 && page > lastPage) {

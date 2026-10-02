@@ -11,12 +11,18 @@ export async function GET(req: NextRequest) {
     const planId = req.nextUrl.searchParams.get("planId");
     const token = req.nextUrl.searchParams.get("token") ?? undefined;
     if (!planId) {
-      return NextResponse.json({ success: false, error: "Missing planId" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "Missing planId" },
+        { status: 400 }
+      );
     }
 
     const data = await getPlanQRAccessState(planId, token);
     return NextResponse.json({ success: true, data });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

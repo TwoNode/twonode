@@ -57,9 +57,17 @@ const AdminReport = ({ property, user = {} }: { property: any; user: any }) => {
       </div>
 
       {mode === "file" ? (
-        <AdminDirectLinkUpload property={property} user={user} viewerRole={viewerRole} />
+        <AdminDirectLinkUpload
+          property={property}
+          user={user}
+          viewerRole={viewerRole}
+        />
       ) : (
-        <AdminReportUpload property={property} user={user} viewerRole={viewerRole} />
+        <AdminReportUpload
+          property={property}
+          user={user}
+          viewerRole={viewerRole}
+        />
       )}
     </div>
   );

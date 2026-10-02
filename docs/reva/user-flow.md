@@ -71,9 +71,9 @@ REVA's second front door: someone who wants exactly one report and doesn't want 
 
 ### Page 3: Guest Tracking Page (`/reva/onetimerequest`)
 
-- **Lookup**: reference number + email (this pair *is* the authentication — there's no password for a guest).
+- **Lookup**: reference number + email (this pair _is_ the authentication — there's no password for a guest).
 - Shows a Submitted → In Progress → Completed tracker, payment and report-approval badges, and a **Download Report** action once approved.
-- Linked from: the report-approval email, and the post-payment landing page. **Gap, not yet fixed**: the payment-confirmation email (sent right after paying, before a report exists) doesn't include this page's link — only the *later* approval email does. A guest who pays, then loses the tab before their report is ready, has no emailed way back in until approval.
+- Linked from: the report-approval email, and the post-payment landing page. **Gap, not yet fixed**: the payment-confirmation email (sent right after paying, before a report exists) doesn't include this page's link — only the _later_ approval email does. A guest who pays, then loses the tab before their report is ready, has no emailed way back in until approval.
 
 ---
 
@@ -89,7 +89,7 @@ REVA's second front door: someone who wants exactly one report and doesn't want 
 - **Upload a report**, two ways: a structured multi-section form, or a direct link to an externally-hosted report.
 - **Approve or disapprove**: `ADMIN`/`SUPERADMIN` can approve; approval:
   - Sets the report's `isApproved` flag.
-  - Notifies the requester (email + in-app `Notification` — for both signed-in *and* guest requesters; the guest path used to be a commented-out no-op and was fixed as part of the 2026-08 rebuild, see `./notification-system.md`).
+  - Notifies the requester (email + in-app `Notification` — for both signed-in _and_ guest requesters; the guest path used to be a commented-out no-op and was fixed as part of the 2026-08 rebuild, see `./notification-system.md`).
   - Makes the report downloadable from the requester's tracking page (§2 Page 4 / §3 Page 3).
 
 ### Page 3: Payment Verification (`/reva-restricted/dashboard/payment-verification`)
@@ -103,19 +103,19 @@ REVA's second front door: someone who wants exactly one report and doesn't want 
 ### `SUPERADMIN`-only
 
 - **User management** (`/reva-restricted/dashboard/superadmin`): create admin accounts, promote/demote `ADMIN` ↔ `USER`, deactivate/reactivate, delete.
-- **Notifications** (`/reva-restricted/dashboard/notifications`): the admin-wide notification feed. A plain `ADMIN` can also reach this page directly (a real access/nav mismatch found and closed during the rebuild — the *page* was already reachable by `ADMIN`, only the sidebar *link* had been `SUPERADMIN`-only).
+- **Notifications** (`/reva-restricted/dashboard/notifications`): the admin-wide notification feed. A plain `ADMIN` can also reach this page directly (a real access/nav mismatch found and closed during the rebuild — the _page_ was already reachable by `ADMIN`, only the sidebar _link_ had been `SUPERADMIN`-only).
 
 ---
 
 ## 5. What Happens Behind the Scenes (at a glance)
 
-| Step | Service | Route |
-| :--- | :--- | :--- |
+| Step                  | Service                                   | Route                                            |
+| :-------------------- | :---------------------------------------- | :----------------------------------------------- |
 | Create/read a request | `reva/services/propertyRequestService.ts` | `/api/v1/reva/{properties,one-time-properties}*` |
-| Pay / verify payment | `reva/services/paymentService.ts` | `/api/v1/reva/payments*` |
-| Notify | `reva/services/notificationService.ts` | `/api/v1/reva/notifications*` |
-| Admin review/approve | `reva/services/reportService.ts` | `/api/v1/reva/admin/requests*` |
-| Admin user management | `reva/services/adminUserService.ts` | `/api/v1/reva/admin/users*` |
-| Profile settings | `reva/services/profileService.ts` | `/api/v1/reva/profile` |
+| Pay / verify payment  | `reva/services/paymentService.ts`         | `/api/v1/reva/payments*`                         |
+| Notify                | `reva/services/notificationService.ts`    | `/api/v1/reva/notifications*`                    |
+| Admin review/approve  | `reva/services/reportService.ts`          | `/api/v1/reva/admin/requests*`                   |
+| Admin user management | `reva/services/adminUserService.ts`       | `/api/v1/reva/admin/users*`                      |
+| Profile settings      | `reva/services/profileService.ts`         | `/api/v1/reva/profile`                           |
 
 Full route-by-route detail: `docs/development-history/phases/phase-3-reva.md`. Full current route inventory: `docs/development-history/route-inventory.md`.

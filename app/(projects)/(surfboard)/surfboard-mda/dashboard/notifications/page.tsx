@@ -8,7 +8,8 @@ import { Bell, Check, X, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 
-type NotificationType = "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "SYSTEM" | "PLAN" | "SHARING";
+type NotificationType =
+  "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "SYSTEM" | "PLAN" | "SHARING";
 
 interface Notification {
   id: string;
@@ -48,8 +49,11 @@ export default function SurfboardMdaNotificationsPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const result = await surfboardApi.notifications.list({ includeDismissed: false });
-      if (result.success) setNotifications(result.data as unknown as Notification[]);
+      const result = await surfboardApi.notifications.list({
+        includeDismissed: false,
+      });
+      if (result.success)
+        setNotifications(result.data as unknown as Notification[]);
     } catch {
       toast.error("Failed to load notifications");
     } finally {
@@ -66,7 +70,9 @@ export default function SurfboardMdaNotificationsPage() {
     try {
       const result = await surfboardApi.notifications.markRead(id);
       if (result.success) {
-        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+        );
       }
     } finally {
       setBusyId(null);
@@ -89,7 +95,9 @@ export default function SurfboardMdaNotificationsPage() {
     <div className="max-w-3xl mx-auto py-8 px-4">
       <div className="flex items-center gap-3 mb-6">
         <Bell className="h-7 w-7 text-violet-600 shrink-0" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Notifications</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          Notifications
+        </h1>
       </div>
 
       {loading ? (
@@ -109,14 +117,23 @@ export default function SurfboardMdaNotificationsPage() {
             >
               <div className="min-w-0 flex-1">
                 {n.link ? (
-                  <Link href={n.link} className="font-semibold text-gray-900 hover:underline dark:text-gray-100">
+                  <Link
+                    href={n.link}
+                    className="font-semibold text-gray-900 hover:underline dark:text-gray-100"
+                  >
                     {n.title}
                   </Link>
                 ) : (
-                  <p className="font-semibold text-gray-900 dark:text-gray-100">{n.title}</p>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">
+                    {n.title}
+                  </p>
                 )}
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{n.message}</p>
-                <p className="mt-1 text-xs text-gray-400">{format(new Date(n.createdAt), "MMM d, yyyy · h:mm a")}</p>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  {n.message}
+                </p>
+                <p className="mt-1 text-xs text-gray-400">
+                  {format(new Date(n.createdAt), "MMM d, yyyy · h:mm a")}
+                </p>
               </div>
               <div className="flex shrink-0 gap-1">
                 {!n.isRead && (

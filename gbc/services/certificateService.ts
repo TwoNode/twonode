@@ -12,7 +12,10 @@ import { sendGBCCertificateEmail } from "@/gbc/utils/email";
  * ticketService.getTicketByNumber, not this service.
  */
 
-export async function sendBulkCertificates(ticketNumbers: string[], emailBody: string) {
+export async function sendBulkCertificates(
+  ticketNumbers: string[],
+  emailBody: string
+) {
   if (!ticketNumbers.length) {
     throw new ValidationError({ ticketNumbers: "No tickets selected" });
   }
@@ -31,10 +34,16 @@ export async function sendBulkCertificates(ticketNumbers: string[], emailBody: s
   for (const ticket of tickets) {
     const emailResult = await sendGBCCertificateEmail(ticket, emailBody);
     if (emailResult.success) {
-      await prisma.gBCTicket.update({ where: { id: ticket.id }, data: { certificateSentCount: { increment: 1 } } });
+      await prisma.gBCTicket.update({
+        where: { id: ticket.id },
+        data: { certificateSentCount: { increment: 1 } },
+      });
       successCount++;
     } else {
-      console.error(`Failed to send certificate to ${ticket.email}:`, emailResult.error);
+      console.error(
+        `Failed to send certificate to ${ticket.email}:`,
+        emailResult.error
+      );
       failCount++;
     }
   }

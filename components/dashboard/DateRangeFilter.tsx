@@ -44,7 +44,9 @@ export function DateRangeFilter({
       <input
         type="date"
         value={value.from ?? ""}
-        onChange={(e) => onChange({ ...value, from: e.target.value || undefined })}
+        onChange={(e) =>
+          onChange({ ...value, from: e.target.value || undefined })
+        }
         max={value.to}
         className="rounded-lg border border-gray-200 bg-transparent px-2 py-1 text-sm text-gray-700 outline-none focus:border-gray-300 dark:border-white/10 dark:text-gray-200 dark:scheme-dark"
       />
@@ -52,7 +54,9 @@ export function DateRangeFilter({
       <input
         type="date"
         value={value.to ?? ""}
-        onChange={(e) => onChange({ ...value, to: e.target.value || undefined })}
+        onChange={(e) =>
+          onChange({ ...value, to: e.target.value || undefined })
+        }
         min={value.from}
         className="rounded-lg border border-gray-200 bg-transparent px-2 py-1 text-sm text-gray-700 outline-none focus:border-gray-300 dark:border-white/10 dark:text-gray-200 dark:scheme-dark"
       />

@@ -43,7 +43,7 @@ export function usePlanLock({
   const [lockError, setLockError] = useState<string | null>(null);
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(
-    null,
+    null
   );
 
   const hasLock = useRef(false);
@@ -74,7 +74,7 @@ export function usePlanLock({
             setLockExpiresAt(
               result.data.lockExpiresAt
                 ? new Date(result.data.lockExpiresAt)
-                : null,
+                : null
             );
             hasLock.current = true;
             onLockAcquired?.(result.data.planId, result.data.planNumber || "");
@@ -135,7 +135,7 @@ export function usePlanLock({
     (planId: string) => {
       return lockedPlanId === planId;
     },
-    [lockedPlanId],
+    [lockedPlanId]
   );
 
   // Handle confirming navigation

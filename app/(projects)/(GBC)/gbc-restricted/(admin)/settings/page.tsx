@@ -16,7 +16,11 @@ import { GallerySettings } from "@/gbc/components/admin/GallerySettings";
 import { SocialLinksSettings } from "@/gbc/components/admin/SocialLinksSettings";
 import { SettingsEditionPicker } from "@/gbc/components/admin/SettingsEditionPicker";
 import { SettingsResetRollback } from "@/gbc/components/admin/SettingsResetRollback";
-import { getEditionSettings, resolveSettingsEdition, getPreviousSettings } from "@/gbc/services/settingsService";
+import {
+  getEditionSettings,
+  resolveSettingsEdition,
+  getPreviousSettings,
+} from "@/gbc/services/settingsService";
 import { getEditions } from "@/gbc/services/editionService";
 import { firstParam } from "@/lib/searchParams";
 
@@ -32,7 +36,9 @@ export default async function AdminSettingsPage({
   const editions = await getEditions();
   // An unknown/deleted ?edition= falls back to the edition the public site shows rather than erroring.
   const { edition, settings, saved } = await getEditionSettings(
-    requested && editions.some((e) => e.key === requested) ? requested : undefined
+    requested && editions.some((e) => e.key === requested)
+      ? requested
+      : undefined
   );
   const publicEdition = (await resolveSettingsEdition())?.key ?? null;
   const previousSettings = edition ? await getPreviousSettings(edition) : null;
@@ -49,8 +55,17 @@ export default async function AdminSettingsPage({
         </p>
       </div>
 
-      <SettingsEditionPicker editions={editions} edition={edition} publicEdition={publicEdition} saved={saved} />
-      <SettingsResetRollback edition={edition ?? null} saved={saved} hasPrevious={!!previousSettings} />
+      <SettingsEditionPicker
+        editions={editions}
+        edition={edition}
+        publicEdition={publicEdition}
+        saved={saved}
+      />
+      <SettingsResetRollback
+        edition={edition ?? null}
+        saved={saved}
+        hasPrevious={!!previousSettings}
+      />
 
       {/* Keyed by edition so switching edition remounts the forms with that edition's values. */}
       <div key={edition ?? "none"} className="grid gap-8">
@@ -66,7 +81,10 @@ export default async function AdminSettingsPage({
             </div>
           </div>
 
-          <EventConfigForm settings={settings || null} edition={edition ?? undefined} />
+          <EventConfigForm
+            settings={settings || null}
+            edition={edition ?? undefined}
+          />
         </Card>
 
         {/* Gallery Settings */}
@@ -81,7 +99,10 @@ export default async function AdminSettingsPage({
             </div>
           </div>
 
-          <GallerySettings settings={settings || null} edition={edition ?? undefined} />
+          <GallerySettings
+            settings={settings || null}
+            edition={edition ?? undefined}
+          />
         </Card>
 
         {/* Ticket Settings */}
@@ -96,7 +117,10 @@ export default async function AdminSettingsPage({
             </div>
           </div>
 
-          <TicketPricingDisplay settings={settings || null} edition={edition ?? undefined} />
+          <TicketPricingDisplay
+            settings={settings || null}
+            edition={edition ?? undefined}
+          />
         </Card>
 
         {/* Social Links Settings */}
@@ -111,7 +135,10 @@ export default async function AdminSettingsPage({
             </div>
           </div>
 
-          <SocialLinksSettings settings={settings || null} edition={edition ?? undefined} />
+          <SocialLinksSettings
+            settings={settings || null}
+            edition={edition ?? undefined}
+          />
         </Card>
 
         {/* Email Notifications */}
@@ -126,7 +153,10 @@ export default async function AdminSettingsPage({
             </div>
           </div>
 
-          <NotificationSettings settings={settings || null} edition={edition ?? undefined} />
+          <NotificationSettings
+            settings={settings || null}
+            edition={edition ?? undefined}
+          />
         </Card>
 
         {/* System Settings */}
@@ -141,7 +171,10 @@ export default async function AdminSettingsPage({
             </div>
           </div>
 
-          <SystemSettings settings={settings || null} edition={edition ?? undefined} />
+          <SystemSettings
+            settings={settings || null}
+            edition={edition ?? undefined}
+          />
         </Card>
       </div>
     </div>

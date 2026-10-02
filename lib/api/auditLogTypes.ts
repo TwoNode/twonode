@@ -29,7 +29,12 @@ export interface AuditLogQuery {
 
 export interface AuditLogPage {
   data: AuditLogEntry[];
-  pagination: { page: number; pageSize: number; total: number; totalPages: number };
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface AuditLogFilterOptions {

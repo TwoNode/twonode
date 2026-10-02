@@ -3,7 +3,10 @@ import { z } from "zod";
 import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { addPlanComment, getPlanComments } from "@/surfboard/services/planCommentService";
+import {
+  addPlanComment,
+  getPlanComments,
+} from "@/surfboard/services/planCommentService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 type RouteCtx = { params: Promise<{ planId: string }> };
@@ -21,7 +24,10 @@ export const GET = withAuth<SurfboardRole>(
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { planId } = await routeCtx.params;
     const { body } = await validateBody(req, bodySchema);

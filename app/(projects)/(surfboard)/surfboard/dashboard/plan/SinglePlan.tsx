@@ -120,7 +120,9 @@ const FileCard = ({
       case "cert":
         return <FileCheck2 className="h-5 w-5 text-green-500 mr-2" />;
       default:
-        return <File className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-2" />;
+        return (
+          <File className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-2" />
+        );
     }
   };
 
@@ -273,7 +275,15 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   // Per-plan Comments — a shared discussion thread visible to the owner and
   // every current recipient (unlike the private attachments above).
   const [comments, setComments] = useState<
-    { id: string; authorId: string; authorName: string; isOwner: boolean; body: string; createdAt: string; editedAt: string | null }[]
+    {
+      id: string;
+      authorId: string;
+      authorName: string;
+      isOwner: boolean;
+      body: string;
+      createdAt: string;
+      editedAt: string | null;
+    }[]
   >([]);
   const [newComment, setNewComment] = useState("");
   const [isPostingComment, setIsPostingComment] = useState(false);
@@ -291,7 +301,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   });
 
   useEffect(() => {
-    setQrColors({ darkColor: qrOptions.darkColor, lightColor: qrOptions.lightColor });
+    setQrColors({
+      darkColor: qrOptions.darkColor,
+      lightColor: qrOptions.lightColor,
+    });
   }, [qrOptions.darkColor, qrOptions.lightColor]);
 
   function toggleMap() {
@@ -316,7 +329,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
           pillars: Array.isArray(data.pillars)
             ? data.pillars
                 .filter(
-                  (p: any) => p && typeof p === "object" && "pillarNumber" in p,
+                  (p: any) => p && typeof p === "object" && "pillarNumber" in p
                 )
                 .map((p: any) => ({
                   pillarNumber: String(p.pillarNumber || ""),
@@ -383,12 +396,15 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
     try {
       setIsPostingComment(true);
       const result = await surfboardApi.plans.comments.add(planId, body);
-      if (!result.success) throw new Error(result.error || "Failed to post comment");
+      if (!result.success)
+        throw new Error(result.error || "Failed to post comment");
       setComments((prev) => [...prev, result.data]);
       setNewComment("");
     } catch (error) {
       console.error("Error posting comment:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to post comment");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to post comment"
+      );
     } finally {
       setIsPostingComment(false);
     }
@@ -396,16 +412,24 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
   const handleDeleteComment = async (commentId: string) => {
     try {
-      const result = await surfboardApi.plans.comments.delete(planId, commentId);
-      if (!result.success) throw new Error(result.error || "Failed to delete comment");
+      const result = await surfboardApi.plans.comments.delete(
+        planId,
+        commentId
+      );
+      if (!result.success)
+        throw new Error(result.error || "Failed to delete comment");
       setComments((prev) => prev.filter((c) => c.id !== commentId));
     } catch (error) {
       console.error("Error deleting comment:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to delete comment");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete comment"
+      );
     }
   };
 
-  const handleUploadViewerAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadViewerAttachment = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     e.target.value = "";
     if (files.length === 0) return;
@@ -418,11 +442,18 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
       const failed: string[] = [];
       for (const file of files) {
         try {
-          const result = await surfboardApi.plans.viewerAttachments.upload(planId, file);
-          if (!result.success) throw new Error(result.error || "Failed to upload attachment");
+          const result = await surfboardApi.plans.viewerAttachments.upload(
+            planId,
+            file
+          );
+          if (!result.success)
+            throw new Error(result.error || "Failed to upload attachment");
           uploaded.push(result.data);
         } catch (error) {
-          console.error(`Error uploading viewer attachment "${file.name}":`, error);
+          console.error(
+            `Error uploading viewer attachment "${file.name}":`,
+            error
+          );
           failed.push(file.name);
         }
       }
@@ -445,8 +476,14 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   const handleDownloadPillarsCsv = () => {
     if (!plan?.pillars || plan.pillars.length === 0) return;
     const headers = ["Pillar Number", "Easting", "Northing"];
-    const rows = plan.pillars.map((p) => [p.pillarNumber ?? "", p.easting ?? "", p.northing ?? ""]);
-    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const rows = plan.pillars.map((p) => [
+      p.pillarNumber ?? "",
+      p.easting ?? "",
+      p.northing ?? "",
+    ]);
+    const csvContent = [headers, ...rows]
+      .map((row) => row.join(","))
+      .join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -460,13 +497,19 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
   const handleDeleteViewerAttachment = async (attachmentId: string) => {
     try {
-      const result = await surfboardApi.plans.viewerAttachments.delete(planId, attachmentId);
-      if (!result.success) throw new Error(result.error || "Failed to delete attachment");
+      const result = await surfboardApi.plans.viewerAttachments.delete(
+        planId,
+        attachmentId
+      );
+      if (!result.success)
+        throw new Error(result.error || "Failed to delete attachment");
       setViewerAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
       toast.success("Attachment removed");
     } catch (error) {
       console.error("Error deleting viewer attachment:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to delete attachment");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete attachment"
+      );
     }
   };
 
@@ -558,7 +601,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
           acc[1] + (pillar.northing || 0),
         ];
       },
-      [0, 0],
+      [0, 0]
     );
 
     return [sum[0] / pillars.length, sum[1] / pillars.length];
@@ -689,7 +732,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                         ...p,
                         minLightAlpha: Math.max(
                           0,
-                          Math.min(1, Number(e.target.value)),
+                          Math.min(1, Number(e.target.value))
                         ),
                       }))
                     }
@@ -775,7 +818,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
           <Button
             variant="outline"
             onClick={async () => {
-              const res = await surfboardApi.plans.generateQR(planId, qrOptions as any);
+              const res = await surfboardApi.plans.generateQR(
+                planId,
+                qrOptions as any
+              );
               if (res.success && res.data)
                 setQrCodeDataUrl(res.data.qrCodeDataUrl);
             }}
@@ -810,7 +856,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
   const handleDeleteFile = async (
     file: string | File,
-    fileType: "cad" | "pdf" | "certificate",
+    fileType: "cad" | "pdf" | "certificate"
   ) => {
     const INITIALS = (initial: any) => ({
       planNumber: initial?.planNumber ?? "",
@@ -838,16 +884,17 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
     try {
       const field = `${fileType}FilePaths` as
-        | "cadFilePaths"
-        | "pdfFilePaths"
-        | "certificateFilePaths";
+        "cadFilePaths" | "pdfFilePaths" | "certificateFilePaths";
 
       if (typeof file === "string") {
         // It's an existing file URL, delete from S3
         try {
           await surfboardApi.files.deleteSurfboardFile({ url: file });
         } catch (s3Error) {
-          console.error("S3 delete failed, proceeding with DB update:", s3Error);
+          console.error(
+            "S3 delete failed, proceeding with DB update:",
+            s3Error
+          );
         }
         await surfboardApi.plans.update(plan!.id, {
           ...INITIALS(plan),
@@ -1036,7 +1083,9 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <FileCheck2 className="w-4 h-4 mr-2" />
-                      <span>{isResponding ? "Marking..." : "Mark Reviewed"}</span>
+                      <span>
+                        {isResponding ? "Marking..." : "Mark Reviewed"}
+                      </span>
                     </button>
                   )}
 
@@ -1089,7 +1138,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                   : "border"
               }`}
             >
-              <MaplibreMap processedPillars={plan?.pillars} state={plan?.state} />
+              <MaplibreMap
+                processedPillars={plan?.pillars}
+                state={plan?.state}
+              />
             </div>
           </div>
         )}
@@ -1136,18 +1188,24 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                         </p>
                       </div>
                     )}
-                    {plan.withdrawalAndResubmissionStatus && plan.withdrawalAndResubmissionStatus !== "No_Action" && (
-                      <div className="mt-2">
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          Withdrawal Status
-                        </p>
-                        <span className={`inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          plan.withdrawalAndResubmissionStatus === 'Withdrawn' ? 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-300' : 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300'
-                        }`}>
-                          {plan.withdrawalAndResubmissionStatus}
-                        </span>
-                      </div>
-                    )}
+                    {plan.withdrawalAndResubmissionStatus &&
+                      plan.withdrawalAndResubmissionStatus !== "No_Action" && (
+                        <div className="mt-2">
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            Withdrawal Status
+                          </p>
+                          <span
+                            className={`inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              plan.withdrawalAndResubmissionStatus ===
+                              "Withdrawn"
+                                ? "bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-300"
+                                : "bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300"
+                            }`}
+                          >
+                            {plan.withdrawalAndResubmissionStatus}
+                          </span>
+                        </div>
+                      )}
                     {/* @ts-ignore - reasonForWithdrawalAndResubmission may not be in PlanWithPillars type yet */}
                     {plan.reasonForWithdrawalAndResubmission && (
                       <div className="mt-2">
@@ -1172,18 +1230,29 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       Survey Title
                     </p>
                     {/* @ts-ignore */}
-                    {plan.parcels && Array.isArray(plan.parcels) && plan.parcels.length > 1 ? (
+                    {plan.parcels &&
+                    Array.isArray(plan.parcels) &&
+                    plan.parcels.length > 1 ? (
                       <div className="mt-2 space-y-2">
                         {/* @ts-ignore */}
                         {plan.parcels.map((parcel: any, idx: number) => (
-                          <div key={idx} className="bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10">
-                            <span className="font-medium text-gray-600 dark:text-gray-400">Polygon {idx + 1}: </span>
-                            <span className="text-gray-700 dark:text-gray-300">{parcel.surveyTitle || plan.surveyTitle}</span>
+                          <div
+                            key={idx}
+                            className="bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10"
+                          >
+                            <span className="font-medium text-gray-600 dark:text-gray-400">
+                              Polygon {idx + 1}:{" "}
+                            </span>
+                            <span className="text-gray-700 dark:text-gray-300">
+                              {parcel.surveyTitle || plan.surveyTitle}
+                            </span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.surveyTitle}</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
+                        {plan.surveyTitle}
+                      </p>
                     )}
                   </div>
 
@@ -1192,13 +1261,17 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Plan Type
                       </p>
-                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.planType}</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
+                        {plan.planType}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Pillar Type
                       </p>
-                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.pillarType}</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
+                        {plan.pillarType}
+                      </p>
                     </div>
                   </div>
 
@@ -1267,25 +1340,39 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                 <div className="space-y-4">
                   {plan.ward && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Ward</p>
-                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.ward}</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Ward
+                      </p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
+                        {plan.ward}
+                      </p>
                     </div>
                   )}
                   {plan.lcda && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">LCDA</p>
-                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.lcda}</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        LCDA
+                      </p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
+                        {plan.lcda}
+                      </p>
                     </div>
                   )}
                   {plan.lga && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">LGA</p>
-                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.lga}</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        LGA
+                      </p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
+                        {plan.lga}
+                      </p>
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-white/10">
                     <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Area</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Area
+                      </p>
                       <p className="mt-1 text-gray-700 dark:text-gray-300">
                         {plan.areaSqM
                           ? plan.areaSqM < 10000
@@ -1294,7 +1381,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                               })} m²`
                             : `${(plan.areaSqM / 10000).toLocaleString(
                                 undefined,
-                                { maximumFractionDigits: 2 },
+                                { maximumFractionDigits: 2 }
                               )} ha`
                           : "N/A"}
                       </p>
@@ -1324,7 +1411,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                             const [lng, lat] = plan.centroid;
                             window.open(
                               `https://www.google.com/maps?q=${lat},${lng}`,
-                              "_blank",
+                              "_blank"
                             );
                           }}
                           className="mt-2 inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
@@ -1449,7 +1536,9 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
         {/* Documents Section */}
         <div className="bg-white dark:bg-surface p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Documents</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            Documents
+          </h3>
           <div className="space-y-4">
             {/* PDF Files */}
             {plan.pdfFilePaths?.length > 0 && (
@@ -1538,7 +1627,8 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
               </label>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Only visible to you — not the surveyor or anyone else this plan is shared with.
+              Only visible to you — not the surveyor or anyone else this plan is
+              shared with.
             </p>
             {viewerAttachments.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1554,12 +1644,17 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       className="flex items-center gap-2 min-w-0 hover:text-blue-600"
                     >
                       <File className="h-4 w-4 shrink-0 text-gray-400" />
-                      <span className="text-sm truncate" title={attachment.fileName}>
+                      <span
+                        className="text-sm truncate"
+                        title={attachment.fileName}
+                      >
                         {attachment.fileName}
                       </span>
                     </a>
                     <button
-                      onClick={() => handleDeleteViewerAttachment(attachment.id)}
+                      onClick={() =>
+                        handleDeleteViewerAttachment(attachment.id)
+                      }
                       className="text-gray-400 hover:text-red-600 shrink-0"
                       title="Remove"
                     >
@@ -1587,7 +1682,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
             <div className="space-y-4 mb-4 max-h-96 overflow-y-auto pr-1">
               {comments.length > 0 ? (
                 comments.map((comment) => (
-                  <div key={comment.id} className="flex items-start justify-between gap-3">
+                  <div
+                    key={comment.id}
+                    className="flex items-start justify-between gap-3"
+                  >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -1639,7 +1737,11 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                 disabled={isPostingComment || !newComment.trim()}
                 className="h-10 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shrink-0"
               >
-                {isPostingComment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {isPostingComment ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
                 Post
               </button>
             </div>
@@ -1683,7 +1785,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                             points: ring,
                           });
                         }
-                      },
+                      }
                     );
                   } else if (geometry.type === "MultiPolygon") {
                     geometry.coordinates.forEach(
@@ -1700,10 +1802,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                                   points: ring,
                                 });
                               }
-                            },
+                            }
                           );
                         }
-                      },
+                      }
                     );
                   } else {
                     return (

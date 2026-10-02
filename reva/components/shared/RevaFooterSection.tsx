@@ -4,20 +4,23 @@ import React from "react";
 import { REVA_COLORS } from "@/reva/colors";
 
 interface RevaFooterSectionProps {
-  dashboardType?: 'user' | 'admin';
+  dashboardType?: "user" | "admin";
   customLogoLink?: string;
   customCopyrightText?: string;
   showLogo?: boolean;
 }
 
-export const RevaFooterSection = ({ 
-  dashboardType = 'user',
+export const RevaFooterSection = ({
+  dashboardType = "user",
   customLogoLink,
   customCopyrightText,
-  showLogo = true
+  showLogo = true,
 }: RevaFooterSectionProps) => {
-  const defaultLogoLink = customLogoLink || (dashboardType === 'admin' ? "/reva-restricted" : "/reva");
-  const defaultCopyrightText = customCopyrightText || "&copy; 2025 REVA. All rights reserved.";
+  const defaultLogoLink =
+    customLogoLink ||
+    (dashboardType === "admin" ? "/reva-restricted" : "/reva");
+  const defaultCopyrightText =
+    customCopyrightText || "&copy; 2025 REVA. All rights reserved.";
 
   return (
     <>
@@ -39,8 +42,11 @@ export const RevaFooterSection = ({
             </Link>
           </div>
         )}
-        <p className="text-lg" dangerouslySetInnerHTML={{ __html: defaultCopyrightText }} />
+        <p
+          className="text-lg"
+          dangerouslySetInnerHTML={{ __html: defaultCopyrightText }}
+        />
       </footer>
     </>
   );
-}; 
+};

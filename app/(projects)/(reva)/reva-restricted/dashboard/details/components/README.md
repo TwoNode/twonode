@@ -7,7 +7,7 @@ This document explains the automated PDF generation system for REVA due diligenc
 The REVA PDF generation system consists of three main components:
 
 1. **RevaReportPDF** - Generates comprehensive due diligence reports
-2. **RevaReceiptPDF** - Generates professional payment receipts  
+2. **RevaReceiptPDF** - Generates professional payment receipts
 3. **PDFDownloadButton** - Reusable component for PDF downloads
 
 ## Components
@@ -17,6 +17,7 @@ The REVA PDF generation system consists of three main components:
 Generates multi-page due diligence reports with dynamic sections based on available data.
 
 #### Features:
+
 - **Dynamic Content**: Only shows sections with available data
 - **Professional Styling**: Matches REVA branding with blue/green color scheme
 - **Multi-Page Layout**: Includes front page, title investigation, parcel investigation, and physical planning sections
@@ -26,6 +27,7 @@ Generates multi-page due diligence reports with dynamic sections based on availa
 #### Report Sections:
 
 **Front Page:**
+
 - REVA logo
 - Report title
 - Property address and location
@@ -34,6 +36,7 @@ Generates multi-page due diligence reports with dynamic sections based on availa
 - Company contact information
 
 **Title Investigation (Lands Bureau):**
+
 - Title status and registration details
 - Transaction flow summary
 - Transaction flow diagram
@@ -41,6 +44,7 @@ Generates multi-page due diligence reports with dynamic sections based on availa
 - Registration flow tags
 
 **Parcel Investigation (Office of the State Surveyor General):**
+
 - Parcel location check with coordinate system details
 - Parcel position match percentage
 - Parcel status check (government acquisition, commitments, setbacks)
@@ -48,6 +52,7 @@ Generates multi-page due diligence reports with dynamic sections based on availa
 - Historical survey records
 
 **Parcel Investigation (Physical Planning):**
+
 - Land use zoning information
 - Building plan approval status
 - Land use check images
@@ -63,7 +68,7 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
   fileName="REVA_Report.pdf"
 >
   {({ loading }) => (loading ? "Generating..." : "Download Report")}
-</PDFDownloadLink>
+</PDFDownloadLink>;
 ```
 
 ### 2. RevaReceiptPDF (`RevaReceiptPDF.tsx`)
@@ -71,6 +76,7 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
 Generates professional payment receipts with company branding.
 
 #### Features:
+
 - **Premium Design**: Professional layout with REVA branding
 - **Payment Status**: Visual indicators for paid/pending status
 - **Watermark**: "PAID" watermark for completed payments
@@ -100,7 +106,7 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
   fileName="REVA_Receipt.pdf"
 >
   {({ loading }) => (loading ? "Generating..." : "Download Receipt")}
-</PDFDownloadLink>
+</PDFDownloadLink>;
 ```
 
 ### 3. PDFDownloadButton (`PDFDownloadButton.tsx`)
@@ -108,6 +114,7 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
 Reusable button component for downloading both reports and receipts.
 
 #### Features:
+
 - **Dual Purpose**: Handles both report and receipt downloads
 - **Loading States**: Shows loading spinner during PDF generation
 - **Error Handling**: Displays error states if generation fails
@@ -118,10 +125,10 @@ Reusable button component for downloading both reports and receipts.
 
 ```typescript
 interface PDFDownloadButtonProps {
-  property: any;              // Property data object
+  property: any; // Property data object
   type: "report" | "receipt"; // Type of PDF to generate
-  disabled?: boolean;         // Optional disable state
-  className?: string;         // Optional custom CSS classes
+  disabled?: boolean; // Optional disable state
+  className?: string; // Optional custom CSS classes
 }
 ```
 
@@ -300,16 +307,19 @@ export default function PropertyDetailsPage({ property }: { property: any }) {
 ### Common Issues:
 
 **PDF Generation Fails:**
+
 - Check that all required data fields are present
 - Verify image URLs are accessible
 - Ensure @react-pdf/renderer is properly installed
 
 **Images Not Showing:**
+
 - Verify image paths are correct and accessible
 - Check that images are in supported formats (PNG, JPG, WEBP)
 - Ensure images are not too large (optimize if necessary)
 
 **Styling Issues:**
+
 - Remember that @react-pdf/renderer uses a subset of CSS
 - Use StyleSheet.create() for all styles
 - Avoid using CSS-in-JS or external stylesheets
@@ -330,5 +340,6 @@ Potential improvements for the PDF generation system:
 ## Support
 
 For issues or questions about the PDF generation system, contact:
+
 - Email: reva@twonodetechnologies.com
 - Phone: +234 706 922 7677

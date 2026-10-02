@@ -83,7 +83,7 @@ export function UserAccountMenu({
             type="button"
             className={cn(
               "relative rounded-full transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2",
-              className,
+              className
             )}
             style={{ ...style, ["--tw-ring-color" as string]: accentColor }}
             aria-label="User account menu"
@@ -110,14 +110,20 @@ export function UserAccountMenu({
           </button>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent className="w-56 p-1.5 shadow-lg rounded-xl border border-gray-200 dark:border-white/10" align="end">
+        <DropdownMenuContent
+          className="w-56 p-1.5 shadow-lg rounded-xl border border-gray-200 dark:border-white/10"
+          align="end"
+        >
           <DropdownMenuLabel className="font-normal px-2 py-1.5">
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight truncate">
                 {name}
               </p>
               {email && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={email}>
+                <p
+                  className="text-xs text-gray-500 dark:text-gray-400 truncate"
+                  title={email}
+                >
                   {email}
                 </p>
               )}
@@ -139,15 +145,27 @@ export function UserAccountMenu({
           <DropdownMenuSeparator />
 
           <DropdownMenuGroup>
-            <DropdownMenuItem asChild className="cursor-pointer rounded-lg px-2.5 py-2">
-              <Link href={profileHref} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <DropdownMenuItem
+              asChild
+              className="cursor-pointer rounded-lg px-2.5 py-2"
+            >
+              <Link
+                href={profileHref}
+                className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+              >
                 <User className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 <span>Profile</span>
               </Link>
             </DropdownMenuItem>
 
-            <DropdownMenuItem asChild className="cursor-pointer rounded-lg px-2.5 py-2">
-              <Link href={settingsHref} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <DropdownMenuItem
+              asChild
+              className="cursor-pointer rounded-lg px-2.5 py-2"
+            >
+              <Link
+                href={settingsHref}
+                className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+              >
                 <Settings className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 <span>Settings</span>
               </Link>
@@ -173,7 +191,9 @@ export function UserAccountMenu({
         <AlertDialogContent className="sm:max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle>Log out?</AlertDialogTitle>
-            <AlertDialogDescription>You&apos;ll need to sign in again to continue.</AlertDialogDescription>
+            <AlertDialogDescription>
+              You&apos;ll need to sign in again to continue.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

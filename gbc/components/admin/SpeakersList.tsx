@@ -88,8 +88,8 @@ export function SpeakersList({ speakers }: SpeakersListProps) {
                   {tier === "KEYNOTE"
                     ? "Keynote Speakers"
                     : tier === "PANELIST"
-                    ? "Panelists"
-                    : "Fireside Chat"}{" "}
+                      ? "Panelists"
+                      : "Fireside Chat"}{" "}
                   ({tierSpeakers.length})
                 </h2>
               </div>

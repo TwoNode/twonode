@@ -28,9 +28,9 @@ export const GET = withAuth<SurfboardRole>(
       page,
       pageSize,
       filters,
-      sort,
+      sort
     );
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] },
+  { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] }
 );

@@ -97,10 +97,10 @@ export function Sidebar({
         // mobile). Bump above that tie only in these overlay cases, not all
         // the time, so it never fights other z-50 chrome (navbars,
         // dropdowns) during normal collapsed/expanded desktop states.
-        (isPeeking || sidebar.isOpen) ? "z-100" : "z-50",
-        "w-[240px] border-r shadow-lg",
+        isPeeking || sidebar.isOpen ? "z-100" : "z-50",
+        "w-60 border-r shadow-lg",
         showFull ? sideBarWidthClass : RAIL_WIDTH_CLASS,
-        sidebar.isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+        sidebar.isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}
       style={{
         background: railBackground || SIDEBAR_INK,
@@ -149,7 +149,7 @@ export function Sidebar({
           <ChevronLeft
             className={cn(
               "h-4 w-4 text-white transition-transform duration-300",
-              isRail && "rotate-180",
+              isRail && "rotate-180"
             )}
           />
         </button>
@@ -194,7 +194,7 @@ export function Sidebar({
                 title={showFull ? undefined : primaryAction.label}
                 className={cn(
                   "flex w-full items-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-lg shadow-black/30 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]",
-                  showFull ? "justify-center px-4" : "justify-center px-0",
+                  showFull ? "justify-center px-4" : "justify-center px-0"
                 )}
                 style={{
                   background:

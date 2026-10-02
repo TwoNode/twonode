@@ -28,24 +28,37 @@ export function SettingsEditionPicker({
   if (!edition) {
     return (
       <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        There is no edition yet. Create one on the Editions page, then come back to set its details.
+        There is no edition yet. Create one on the Editions page, then come back
+        to set its details.
       </div>
     );
   }
 
-  const publicName = editions.find((e) => e.key === publicEdition)?.name ?? publicEdition;
+  const publicName =
+    editions.find((e) => e.key === publicEdition)?.name ?? publicEdition;
 
   return (
-    <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4" aria-busy={isPending}>
+    <div
+      className="mb-6 rounded-lg border border-gray-200 bg-white p-4"
+      aria-busy={isPending}
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <label htmlFor="settings-edition" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="settings-edition"
+            className="block text-sm font-medium text-gray-700"
+          >
             Editing settings for
           </label>
-          <p className="text-xs text-gray-500">Each edition keeps its own event details, ticket prices and capacity.</p>
+          <p className="text-xs text-gray-500">
+            Each edition keeps its own event details, ticket prices and
+            capacity.
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          {isPending && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
+          {isPending && (
+            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+          )}
           <select
             id="settings-edition"
             value={edition}
@@ -73,7 +86,8 @@ export function SettingsEditionPicker({
         )}
         {!saved && (
           <span className="rounded-full bg-amber-100 px-2.5 py-1 font-medium text-amber-900">
-            Nothing saved yet — showing defaults. Saving any section creates this edition&apos;s settings.
+            Nothing saved yet — showing defaults. Saving any section creates
+            this edition&apos;s settings.
           </span>
         )}
       </div>

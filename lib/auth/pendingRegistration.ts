@@ -5,7 +5,12 @@ import { Platform } from "@/utils/platform";
 import { ConflictError, ValidationError } from "@/lib/api/errors";
 import { sendEmailVerificationOtp, sendVerificationEmail } from "@/utils/email";
 import { getEmailVerificationSettings } from "@/lib/auth/emailVerificationSettings";
-import { findUserByEmail, createNativeUser, markEmailVerified, type NativeAuthUser } from "@/lib/auth/userLookup";
+import {
+  findUserByEmail,
+  createNativeUser,
+  markEmailVerified,
+  type NativeAuthUser,
+} from "@/lib/auth/userLookup";
 
 /**
  * OTP-first registration: no User row — verified or not — exists until the
@@ -59,22 +64,37 @@ async function sendPendingRegistrationSecret(
   secret: string
 ): Promise<void> {
   if (method === "OTP") {
-    await sendEmailVerificationOtp({ to: row.email, firstName: row.firstName, code: secret, platform });
+    await sendEmailVerificationOtp({
+      to: row.email,
+      firstName: row.firstName,
+      code: secret,
+      platform,
+    });
     if (process.env.NODE_ENV !== "production") {
-      console.log(`[dev] registration OTP for ${row.email} (${platform}): ${secret}`);
+      console.log(
+        `[dev] registration OTP for ${row.email} (${platform}): ${secret}`
+      );
     }
     return;
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com";
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com";
   // Both the opaque row id and the raw token travel in the link — a fresh
   // page load from an email client has no prior client state to carry
   // pendingRegistrationId in, unlike the OTP step which gets it from the
   // send-otp response already sitting in the browser.
   const verifyUrl = `${siteUrl}${registerVerifyPath(platform)}?pid=${row.id}&token=${secret}`;
-  await sendVerificationEmail({ to: row.email, firstName: row.firstName, verifyUrl, platform });
+  await sendVerificationEmail({
+    to: row.email,
+    firstName: row.firstName,
+    verifyUrl,
+    platform,
+  });
   if (process.env.NODE_ENV !== "production") {
-    console.log(`[dev] registration verify link for ${row.email} (${platform}): ${verifyUrl}`);
+    console.log(
+      `[dev] registration verify link for ${row.email} (${platform}): ${verifyUrl}`
+    );
   }
 }
 
@@ -91,7 +111,9 @@ export async function issuePendingRegistration(
   const { method } = await getEmailVerificationSettings(platform);
   const passwordHash = await bcrypt.hash(data.password, 12);
   const secret = method === "OTP" ? generateOtpCode() : generateLinkToken();
-  const expiresAt = new Date(Date.now() + (method === "OTP" ? OTP_EXPIRY_MS : LINK_EXPIRY_MS));
+  const expiresAt = new Date(
+    Date.now() + (method === "OTP" ? OTP_EXPIRY_MS : LINK_EXPIRY_MS)
+  );
 
   const row = await prisma.pendingRegistration.upsert({
     where: { platform_email: { platform, email: normalizedEmail } },
@@ -126,7 +148,9 @@ export async function resendPendingRegistration(
   platform: Platform,
   pendingRegistrationId: string
 ): Promise<void> {
-  const row = await prisma.pendingRegistration.findUnique({ where: { id: pendingRegistrationId } });
+  const row = await prisma.pendingRegistration.findUnique({
+    where: { id: pendingRegistrationId },
+  });
   // Enumeration-safe: a missing/foreign/used row returns the same success
   // shape as a real resend — the route layer doesn't distinguish either.
   if (!row || row.platform !== platform || row.usedAt) return;
@@ -137,7 +161,9 @@ export async function resendPendingRegistration(
   // setting between the original send and this resend.
   const method = row.method === "LINK" ? "LINK" : "OTP";
   const secret = method === "OTP" ? generateOtpCode() : generateLinkToken();
-  const expiresAt = new Date(Date.now() + (method === "OTP" ? OTP_EXPIRY_MS : LINK_EXPIRY_MS));
+  const expiresAt = new Date(
+    Date.now() + (method === "OTP" ? OTP_EXPIRY_MS : LINK_EXPIRY_MS)
+  );
 
   await prisma.pendingRegistration.update({
     where: { id: row.id },
@@ -165,9 +191,13 @@ export async function completePendingRegistration(
     throw new ValidationError({ code: "Invalid verification code" });
   }
 
-  const row = await prisma.pendingRegistration.findUnique({ where: { id: pendingRegistrationId } });
+  const row = await prisma.pendingRegistration.findUnique({
+    where: { id: pendingRegistrationId },
+  });
   if (!row || row.platform !== platform || row.expiresAt < new Date()) {
-    throw new ValidationError({ code: "This registration has expired — please start over" });
+    throw new ValidationError({
+      code: "This registration has expired — please start over",
+    });
   }
 
   // Idempotent retry window: if the row was completed within the last 30 seconds
@@ -182,15 +212,22 @@ export async function completePendingRegistration(
         return { ...existing, emailVerified: true, emailVerifiedVia: via };
       }
     }
-    throw new ValidationError({ code: "This registration has expired — please start over" });
+    throw new ValidationError({
+      code: "This registration has expired — please start over",
+    });
   }
 
   if (row.attempts >= MAX_ATTEMPTS) {
-    throw new ValidationError({ code: "Too many attempts — please request a new code" });
+    throw new ValidationError({
+      code: "Too many attempts — please request a new code",
+    });
   }
 
   if (row.codeHash !== hashSecret(cleanSecret)) {
-    await prisma.pendingRegistration.update({ where: { id: row.id }, data: { attempts: { increment: 1 } } });
+    await prisma.pendingRegistration.update({
+      where: { id: row.id },
+      data: { attempts: { increment: 1 } },
+    });
     throw new ValidationError({ code: "Incorrect or expired code" });
   }
 
@@ -198,7 +235,10 @@ export async function completePendingRegistration(
   // this email in the window between send-otp and a slow/retried complete.
   const existing = await findUserByEmail(platform, row.email);
   if (existing) {
-    await prisma.pendingRegistration.update({ where: { id: row.id }, data: { usedAt: new Date() } });
+    await prisma.pendingRegistration.update({
+      where: { id: row.id },
+      data: { usedAt: new Date() },
+    });
     throw new ConflictError("Email address is already registered");
   }
 
@@ -211,7 +251,10 @@ export async function completePendingRegistration(
   });
   await markEmailVerified(platform, user.id, via);
 
-  await prisma.pendingRegistration.update({ where: { id: row.id }, data: { usedAt: new Date() } });
+  await prisma.pendingRegistration.update({
+    where: { id: row.id },
+    data: { usedAt: new Date() },
+  });
 
   return { ...user, emailVerified: true, emailVerifiedVia: via };
 }

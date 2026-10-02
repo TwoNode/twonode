@@ -13,7 +13,13 @@ import {
   CheckCircle2,
   ArrowLeft,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 // Admin page — force dynamic per-request auth verification
@@ -22,10 +28,11 @@ export const dynamic = "force-dynamic";
 export default async function GBCAdminProfilePage() {
   const user = await requireAdmin();
 
-  const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Administrator";
-  const initials = (
-    (user.firstName?.[0] || "") + (user.lastName?.[0] || "")
-  ).toUpperCase() || "A";
+  const fullName =
+    `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Administrator";
+  const initials =
+    ((user.firstName?.[0] || "") + (user.lastName?.[0] || "")).toUpperCase() ||
+    "A";
 
   const isSuperAdmin = user.role === "SUPERADMIN";
 
@@ -33,7 +40,12 @@ export default async function GBCAdminProfilePage() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Top Header */}
       <div>
-        <Button variant="ghost" size="sm" asChild className="mb-3 -ml-2 text-gray-600 hover:text-gray-900">
+        <Button
+          variant="ghost"
+          size="sm"
+          asChild
+          className="mb-3 -ml-2 text-gray-600 hover:text-gray-900"
+        >
           <Link href="/gbc-restricted">
             <ArrowLeft className="h-4 w-4 mr-1.5" />
             Back to Dashboard
@@ -48,7 +60,8 @@ export default async function GBCAdminProfilePage() {
               Administrator Profile
             </h1>
             <p className="text-gray-600 mt-1 text-sm sm:text-base">
-              View your GBC administrator account credentials and platform access details
+              View your GBC administrator account credentials and platform
+              access details
             </p>
           </div>
           <Button variant="outline" asChild>
@@ -98,15 +111,21 @@ export default async function GBCAdminProfilePage() {
             <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50/70">
               <Mail className="h-5 w-5 text-gray-400 shrink-0" />
               <div className="min-w-0">
-                <p className="text-xs text-gray-500 font-medium">Email Address</p>
-                <p className="text-sm font-semibold text-gray-900 truncate">{user.email}</p>
+                <p className="text-xs text-gray-500 font-medium">
+                  Email Address
+                </p>
+                <p className="text-sm font-semibold text-gray-900 truncate">
+                  {user.email}
+                </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50/70">
               <Phone className="h-5 w-5 text-gray-400 shrink-0" />
               <div className="min-w-0">
-                <p className="text-xs text-gray-500 font-medium">Phone Number</p>
+                <p className="text-xs text-gray-500 font-medium">
+                  Phone Number
+                </p>
                 <p className="text-sm font-semibold text-gray-900 truncate">
                   {user.phone || "Not specified"}
                 </p>
@@ -118,7 +137,9 @@ export default async function GBCAdminProfilePage() {
               <div className="min-w-0">
                 <p className="text-xs text-gray-500 font-medium">Admin Role</p>
                 <p className="text-sm font-semibold text-gray-900">
-                  {isSuperAdmin ? "Super Admin (Full Access)" : "Event Administrator"}
+                  {isSuperAdmin
+                    ? "Super Admin (Full Access)"
+                    : "Event Administrator"}
                 </p>
               </div>
             </div>
@@ -126,9 +147,13 @@ export default async function GBCAdminProfilePage() {
             <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50/70">
               <Calendar className="h-5 w-5 text-gray-400 shrink-0" />
               <div className="min-w-0">
-                <p className="text-xs text-gray-500 font-medium">Account Created</p>
+                <p className="text-xs text-gray-500 font-medium">
+                  Account Created
+                </p>
                 <p className="text-sm font-semibold text-gray-900">
-                  {user.createdAt ? format(new Date(user.createdAt), "PPP") : "N/A"}
+                  {user.createdAt
+                    ? format(new Date(user.createdAt), "PPP")
+                    : "N/A"}
                 </p>
               </div>
             </div>
@@ -145,7 +170,8 @@ export default async function GBCAdminProfilePage() {
               Settings & Configurations
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm">
-              Event configuration, ticket tiers, social links, and email notification controls.
+              Event configuration, ticket tiers, social links, and email
+              notification controls.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
@@ -167,7 +193,9 @@ export default async function GBCAdminProfilePage() {
           </CardHeader>
           <CardContent className="pt-0">
             <Button variant="secondary" size="sm" asChild className="w-full">
-              <Link href="/gbc-restricted/notifications">Go to Notifications</Link>
+              <Link href="/gbc-restricted/notifications">
+                Go to Notifications
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -180,11 +208,17 @@ export default async function GBCAdminProfilePage() {
                 Administrator User Management
               </CardTitle>
               <CardDescription className="text-xs sm:text-sm">
-                Provision new admin accounts, manage roles, and review administrator activity.
+                Provision new admin accounts, manage roles, and review
+                administrator activity.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
-              <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="w-full sm:w-auto"
+              >
                 <Link href="/gbc-restricted/users">Manage Admin Accounts</Link>
               </Button>
             </CardContent>

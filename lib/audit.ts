@@ -11,10 +11,16 @@ export interface AuditEntry {
   changes?: Record<string, unknown> | null;
 }
 
-export async function getClientInfo(): Promise<{ ipAddress: string | null; userAgent: string | null }> {
+export async function getClientInfo(): Promise<{
+  ipAddress: string | null;
+  userAgent: string | null;
+}> {
   try {
     const headersList = await headers();
-    const ipAddress = headersList.get("x-forwarded-for")?.split(",")[0] || headersList.get("x-real-ip") || null;
+    const ipAddress =
+      headersList.get("x-forwarded-for")?.split(",")[0] ||
+      headersList.get("x-real-ip") ||
+      null;
     const userAgent = headersList.get("user-agent") || null;
     return { ipAddress, userAgent };
   } catch {
@@ -28,7 +34,10 @@ export async function getClientInfo(): Promise<{ ipAddress: string | null; userA
  * and user agent. Never throws: like Surfboard's original logger, a failed
  * audit write must not undo or break the operation it describes.
  */
-export async function writeAudit(platform: Platform, entry: AuditEntry): Promise<void> {
+export async function writeAudit(
+  platform: Platform,
+  entry: AuditEntry
+): Promise<void> {
   try {
     const { ipAddress, userAgent } = await getClientInfo();
     const data = {

@@ -210,7 +210,7 @@ export function BatchSubmissionModal({
         (v: any) => ({
           ...v,
           id: v.id || v.pillarNumber || v.pillar || v.point || v.no || "",
-        }),
+        })
       );
 
       if (csvVertices.length === 0) {
@@ -242,13 +242,13 @@ export function BatchSubmissionModal({
 
         // Filter out ref coordinates already used by another parcel
         const availableCoords = extraction.refCoords.filter(
-          (r) => !usedRefCoords.has(`${r.easting}|${r.northing}`),
+          (r) => !usedRefCoords.has(`${r.easting}|${r.northing}`)
         );
 
         const anchor = identifyAnchor(
           availableCoords.length > 0 ? availableCoords : extraction.refCoords,
           vertices,
-          tolerances.tolAnchor,
+          tolerances.tolAnchor
         );
 
         if (!anchor) {
@@ -280,7 +280,7 @@ export function BatchSubmissionModal({
           extraction.distances,
           vertices,
           tolerances.tolWCB,
-          tolerances.tolDist,
+          tolerances.tolDist
         );
 
         // Area validation
@@ -288,7 +288,7 @@ export function BatchSubmissionModal({
         let matchedPdfArea = null;
         if (extraction.pdfAreas.length > 0) {
           matchedPdfArea = extraction.pdfAreas.reduce((best: any, a: any) =>
-            Math.abs(a.sqm - csvArea) < Math.abs(best.sqm - csvArea) ? a : best,
+            Math.abs(a.sqm - csvArea) < Math.abs(best.sqm - csvArea) ? a : best
           );
         }
         const pdfAreaSqm = matchedPdfArea ? matchedPdfArea.sqm : null;
@@ -332,7 +332,7 @@ export function BatchSubmissionModal({
           tolerances,
           areaMatch,
           pdfAreaSqm,
-          hasWarnings,
+          hasWarnings
         );
 
         if (score.hasLegErrors) allHasError = true;
@@ -392,12 +392,12 @@ export function BatchSubmissionModal({
         plan.id,
         finalStatus,
         finalOverall,
-        verificationDataPayload,
+        verificationDataPayload
       );
 
       if (!saveRes.success) {
         throw new Error(
-          saveRes.error || "Failed to save verification result to database.",
+          saveRes.error || "Failed to save verification result to database."
         );
       }
 
@@ -410,7 +410,7 @@ export function BatchSubmissionModal({
         },
       }));
       toast.success(
-        `Verification complete for ${plan.planNumber}: ${finalStatus}`,
+        `Verification complete for ${plan.planNumber}: ${finalStatus}`
       );
     } catch (err: any) {
       setVerificationData((prev) => ({
@@ -448,7 +448,7 @@ export function BatchSubmissionModal({
       const result = await surfboardApi.files.uploadSurfboardFile(
         file,
         "redcopy",
-        plan.planNumber,
+        plan.planNumber
       );
       if (!result || !result.url) {
         throw new Error("Upload to S3 failed");
@@ -457,11 +457,11 @@ export function BatchSubmissionModal({
       // Update DB
       const updateRes = await surfboardApi.plans.updateRecordCopy(
         planId,
-        result.url,
+        result.url
       );
       if (!updateRes.success) {
         throw new Error(
-          updateRes.error || "Failed to update plan record copy in database",
+          updateRes.error || "Failed to update plan record copy in database"
         );
       }
 
@@ -533,7 +533,7 @@ export function BatchSubmissionModal({
 
       const result = await surfboardApi.cod.batches.submit(
         selectedPlans.map((p) => p.id),
-        true,
+        true
       );
 
       if (result.success) {
@@ -551,7 +551,7 @@ export function BatchSubmissionModal({
         setShowPaymentView(true);
 
         toast.success(
-          `Batch ${batchCode} created! Please make payment via the Remita portal.`,
+          `Batch ${batchCode} created! Please make payment via the Remita portal.`
         );
       } else {
         toast.error(result.error || "Failed to submit batch");

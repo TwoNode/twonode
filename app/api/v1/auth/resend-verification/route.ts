@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Platform } from "@/utils/platform";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { checkRateLimit, recordAttempt, getClientIp } from "@/lib/auth/rateLimit";
+import {
+  checkRateLimit,
+  recordAttempt,
+  getClientIp,
+} from "@/lib/auth/rateLimit";
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
 import { findUserByEmail } from "@/lib/auth/userLookup";
@@ -23,7 +27,10 @@ const resendSchema = z.object({
 function genericResponse() {
   return NextResponse.json({
     success: true,
-    data: { message: "If that email is registered and unverified, we've sent a verification code or link to it." },
+    data: {
+      message:
+        "If that email is registered and unverified, we've sent a verification code or link to it.",
+    },
   });
 }
 
@@ -37,7 +44,10 @@ function genericResponse() {
 export async function POST(req: NextRequest) {
   try {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
 
     const { platform, email } = await validateBody(req, resendSchema);
@@ -61,6 +71,9 @@ export async function POST(req: NextRequest) {
 
     return genericResponse();
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

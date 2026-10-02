@@ -20,7 +20,8 @@ export default async function AdminSponsorsPage({
   await requireAdmin();
 
   const raw = await searchParams;
-  const edition = firstParam(raw.edition) || (await getEditionCookieValue()) || "ALL";
+  const edition =
+    firstParam(raw.edition) || (await getEditionCookieValue()) || "ALL";
 
   const [sponsors, editions, tiers] = await Promise.all([
     getAllSponsors(edition === "ALL" ? undefined : edition),
@@ -76,7 +77,12 @@ export default async function AdminSponsorsPage({
         </Card>
       ) : (
         <Card className="p-6">
-          <SponsorsManager initialSponsors={sponsors} editions={editions} tiers={tiers} selectedEdition={edition} />
+          <SponsorsManager
+            initialSponsors={sponsors}
+            editions={editions}
+            tiers={tiers}
+            selectedEdition={edition}
+          />
         </Card>
       )}
     </div>

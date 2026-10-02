@@ -74,19 +74,26 @@ export function DashboardShell({
   // refresh_token_surfboard survived a full click-through logout). Calling
   // our own /api/auth/logout_redirect directly — same fix already used by
   // the superadmin page's logout button — bypasses Kinde entirely.
-  const postLogoutPath = canAccessSurfSuperAdminPanel(role) || canAccessSurfAdminPanel(role)
-    ? "/surfboard-restricted/login"
-    : isMDARole(role)
-      ? "/surfboard-mda/login"
-      : "/surfboard/login";
+  const postLogoutPath =
+    canAccessSurfSuperAdminPanel(role) || canAccessSurfAdminPanel(role)
+      ? "/surfboard-restricted/login"
+      : isMDARole(role)
+        ? "/surfboard-mda/login"
+        : "/surfboard/login";
 
   const roleLabel = canAccessSurfSuperAdminPanel(role)
     ? "Super Admin"
     : canAccessSurfAdminPanel(role)
       ? "Admin"
-      : role ?? undefined;
-  const accountBasePath = group === "mda" ? "/surfboard-mda/dashboard" : "/surfboard-restricted/dashboard";
-  const profileHref = group === "mda" ? `${accountBasePath}/profile` : `${accountBasePath}/settings`;
+      : (role ?? undefined);
+  const accountBasePath =
+    group === "mda"
+      ? "/surfboard-mda/dashboard"
+      : "/surfboard-restricted/dashboard";
+  const profileHref =
+    group === "mda"
+      ? `${accountBasePath}/profile`
+      : `${accountBasePath}/settings`;
   const settingsHref = `${accountBasePath}/settings`;
 
   const navItems = getNavItemsForRole(role, group).map((r) => ({
@@ -104,7 +111,9 @@ export function DashboardShell({
         <ConfirmedLogoutLink
           key="logout"
           onConfirm={() => {
-            fetch(logoutRedirectUrl ?? "/api/auth/logout_redirect?from=surfboard");
+            fetch(
+              logoutRedirectUrl ?? "/api/auth/logout_redirect?from=surfboard"
+            );
             router.push(postLogoutPath);
           }}
           trigger={
@@ -160,12 +169,14 @@ export function DashboardShell({
         />
       </div>
 
-      <div
-        className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background"
-      >
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background">
         <header
           className="w-full h-16 shrink-0 flex items-center px-4 sm:px-6 shadow border-b border-blue-100"
-          style={{ background: isMda ? SURFBOARD_GRADIENTS.mda : "var(--color-brand-primary-dark)" }}
+          style={{
+            background: isMda
+              ? SURFBOARD_GRADIENTS.mda
+              : "var(--color-brand-primary-dark)",
+          }}
         >
           <button
             onClick={() => sidebar?.toggleOpen()}
@@ -177,13 +188,15 @@ export function DashboardShell({
           <div className="flex-1" />
           <NotificationBell
             platform="surfboard"
-            viewAllHref={group === "mda" ? "/surfboard-mda/dashboard/notifications" : "/surfboard-restricted/dashboard/notifications"}
+            viewAllHref={
+              group === "mda"
+                ? "/surfboard-mda/dashboard/notifications"
+                : "/surfboard-restricted/dashboard/notifications"
+            }
             className="mr-1"
             iconClassName="h-5 w-5 text-white"
           />
-          <ThemeToggle
-            className="mr-2 border-white/25 bg-white/10 text-white hover:bg-white/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
-          />
+          <ThemeToggle className="mr-2 border-white/25 bg-white/10 text-white hover:bg-white/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" />
           <UserAccountMenu
             name={user?.name || "Account"}
             email={user?.email}
@@ -192,7 +205,9 @@ export function DashboardShell({
             profileHref={profileHref}
             settingsHref={settingsHref}
             onLogout={() => {
-              fetch(logoutRedirectUrl ?? "/api/auth/logout_redirect?from=surfboard");
+              fetch(
+                logoutRedirectUrl ?? "/api/auth/logout_redirect?from=surfboard"
+              );
               router.push(postLogoutPath);
             }}
             className="ml-2 ring-2 ring-white/15"

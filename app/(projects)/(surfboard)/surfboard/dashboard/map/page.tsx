@@ -30,8 +30,12 @@ const LoadingState = () => (
       className="h-12 w-12 animate-spin"
       style={{ color: SURFBOARD_COLORS.primary.main }}
     />
-    <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300">Loading Surf Plans</h2>
-    <p className="text-gray-500 dark:text-gray-400">Hang tight while we fetch your data...</p>
+    <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300">
+      Loading Surf Plans
+    </h2>
+    <p className="text-gray-500 dark:text-gray-400">
+      Hang tight while we fetch your data...
+    </p>
   </div>
 );
 

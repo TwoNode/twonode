@@ -37,7 +37,12 @@ beforeEach(() => {
 describe("createGBCNotification", () => {
   it("defaults userIds to an empty array when none are given", async () => {
     mockPrisma.gBCUserNotification.create.mockResolvedValue({ id: "n1" });
-    const result = await createGBCNotification({ type: "INFO", title: "t", message: "m", audience: "ALL_USERS" });
+    const result = await createGBCNotification({
+      type: "INFO",
+      title: "t",
+      message: "m",
+      audience: "ALL_USERS",
+    });
 
     expect(result).toEqual({ id: "n1" });
     expect(mockPrisma.gBCUserNotification.create).toHaveBeenCalledWith({
@@ -51,18 +56,40 @@ describe("getAdminNotifications", () => {
     mockPrisma.gBCUserNotification.findMany.mockResolvedValue([]);
 
     await getAdminNotifications("admin-1", "ADMIN");
-    const adminWhere = mockPrisma.gBCUserNotification.findMany.mock.calls[0][0].where;
+    const adminWhere =
+      mockPrisma.gBCUserNotification.findMany.mock.calls[0][0].where;
     expect(adminWhere.OR).not.toContainEqual({ audience: "SUPERADMIN" });
 
     await getAdminNotifications("super-1", "SUPERADMIN");
-    const superWhere = mockPrisma.gBCUserNotification.findMany.mock.calls[1][0].where;
+    const superWhere =
+      mockPrisma.gBCUserNotification.findMany.mock.calls[1][0].where;
     expect(superWhere.OR).toContainEqual({ audience: "SUPERADMIN" });
   });
 
   it("computes isRead/isDismissed from the requesting admin's own id, not the raw arrays", async () => {
     mockPrisma.gBCUserNotification.findMany.mockResolvedValue([
-      { id: "n1", type: "INFO", title: "t", message: "m", audience: "ALL_USERS", link: null, createdAt: new Date(), readBy: ["admin-1"], dismissedBy: [] },
-      { id: "n2", type: "INFO", title: "t2", message: "m2", audience: "ALL_USERS", link: null, createdAt: new Date(), readBy: [], dismissedBy: [] },
+      {
+        id: "n1",
+        type: "INFO",
+        title: "t",
+        message: "m",
+        audience: "ALL_USERS",
+        link: null,
+        createdAt: new Date(),
+        readBy: ["admin-1"],
+        dismissedBy: [],
+      },
+      {
+        id: "n2",
+        type: "INFO",
+        title: "t2",
+        message: "m2",
+        audience: "ALL_USERS",
+        link: null,
+        createdAt: new Date(),
+        readBy: [],
+        dismissedBy: [],
+      },
     ]);
 
     const result = await getAdminNotifications("admin-1", "ADMIN");
@@ -74,10 +101,22 @@ describe("getAdminNotifications", () => {
 
   it("filters out already-read notifications when includeRead is false", async () => {
     mockPrisma.gBCUserNotification.findMany.mockResolvedValue([
-      { id: "n1", type: "INFO", title: "t", message: "m", audience: "ALL_USERS", link: null, createdAt: new Date(), readBy: ["admin-1"], dismissedBy: [] },
+      {
+        id: "n1",
+        type: "INFO",
+        title: "t",
+        message: "m",
+        audience: "ALL_USERS",
+        link: null,
+        createdAt: new Date(),
+        readBy: ["admin-1"],
+        dismissedBy: [],
+      },
     ]);
 
-    const result = await getAdminNotifications("admin-1", "ADMIN", { includeRead: false });
+    const result = await getAdminNotifications("admin-1", "ADMIN", {
+      includeRead: false,
+    });
     expect(result).toEqual([]);
   });
 });
@@ -85,11 +124,17 @@ describe("getAdminNotifications", () => {
 describe("markGBCNotificationAsRead", () => {
   it("throws NotFoundError when the notification doesn't exist", async () => {
     mockPrisma.gBCUserNotification.findUnique.mockResolvedValue(null);
-    await expect(markGBCNotificationAsRead("admin-1", "nope")).rejects.toMatchObject({ status: 404 });
+    await expect(
+      markGBCNotificationAsRead("admin-1", "nope")
+    ).rejects.toMatchObject({ status: 404 });
   });
 
   it("adds the userId to readBy without duplicating an existing entry", async () => {
-    mockPrisma.gBCUserNotification.findUnique.mockResolvedValue({ id: "n1", readBy: ["admin-1"], dismissedBy: [] });
+    mockPrisma.gBCUserNotification.findUnique.mockResolvedValue({
+      id: "n1",
+      readBy: ["admin-1"],
+      dismissedBy: [],
+    });
     await markGBCNotificationAsRead("admin-1", "n1");
 
     expect(mockPrisma.gBCUserNotification.update).toHaveBeenCalledWith({
@@ -102,7 +147,9 @@ describe("markGBCNotificationAsRead", () => {
 describe("dismissGBCNotification", () => {
   it("throws NotFoundError when the notification doesn't exist", async () => {
     mockPrisma.gBCUserNotification.findUnique.mockResolvedValue(null);
-    await expect(dismissGBCNotification("admin-1", "nope")).rejects.toMatchObject({ status: 404 });
+    await expect(
+      dismissGBCNotification("admin-1", "nope")
+    ).rejects.toMatchObject({ status: 404 });
   });
 });
 
@@ -113,7 +160,10 @@ describe("getUnreadGBCNotificationCount", () => {
 
     expect(result).toEqual({ count: 3 });
     const where = mockPrisma.gBCUserNotification.count.mock.calls[0][0].where;
-    expect(where.NOT).toEqual([{ readBy: { has: "admin-1" } }, { dismissedBy: { has: "admin-1" } }]);
+    expect(where.NOT).toEqual([
+      { readBy: { has: "admin-1" } },
+      { dismissedBy: { has: "admin-1" } },
+    ]);
   });
 });
 
@@ -123,6 +173,8 @@ describe("deleteGBCNotification", () => {
     const result = await deleteGBCNotification("n1");
 
     expect(result).toEqual({ success: true });
-    expect(mockPrisma.gBCUserNotification.delete).toHaveBeenCalledWith({ where: { id: "n1" } });
+    expect(mockPrisma.gBCUserNotification.delete).toHaveBeenCalledWith({
+      where: { id: "n1" },
+    });
   });
 });

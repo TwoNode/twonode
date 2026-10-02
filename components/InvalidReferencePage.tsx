@@ -12,8 +12,8 @@ const InvalidReferencePage = () => {
   const redirectHref = isRestricted
     ? "/reva-restricted/dashboard/alluserrequests"
     : isReva
-    ? "/reva/dashboard/allrequests"
-    : "/";
+      ? "/reva/dashboard/allrequests"
+      : "/";
 
   return (
     <div className="h-screen flex flex-col justify-center items-center bg-slate-50 text-center px-4 font-sans">

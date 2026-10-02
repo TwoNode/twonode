@@ -20,7 +20,12 @@ export function ViewToggle({
   className?: string;
 }) {
   return (
-    <div className={cn("flex items-center gap-1 rounded-lg border border-gray-300 dark:border-white/15 p-0.5", className)}>
+    <div
+      className={cn(
+        "flex items-center gap-1 rounded-lg border border-gray-300 dark:border-white/15 p-0.5",
+        className
+      )}
+    >
       <button
         type="button"
         onClick={() => onChange("list")}

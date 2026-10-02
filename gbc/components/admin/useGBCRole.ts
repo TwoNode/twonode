@@ -17,7 +17,8 @@ export function useGBCRole(): GBCRole | null {
     gbcApi.session
       .get()
       .then((result) => {
-        if (!cancelled && result.success && result.data?.role) setRole(result.data.role as GBCRole);
+        if (!cancelled && result.success && result.data?.role)
+          setRole(result.data.role as GBCRole);
       })
       .catch(() => {});
     return () => {

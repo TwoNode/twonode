@@ -23,7 +23,12 @@ export interface AuditLogFilter {
 }
 
 type AuditRow = Omit<AuditLogEntry, "createdAt" | "user"> & { createdAt: Date };
-type Actor = { id: string; firstName: string | null; lastName: string | null; email: string };
+type Actor = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+};
 
 interface AuditTables {
   logs: {
@@ -50,7 +55,16 @@ export async function listAuditLogs(
   platform: Platform,
   filter: AuditLogFilter = {}
 ): Promise<Paginated<Omit<AuditLogEntry, "createdAt"> & { createdAt: Date }>> {
-  const { page = 1, pageSize = 10, action, entity, userId, search, startDate, endDate } = filter;
+  const {
+    page = 1,
+    pageSize = 10,
+    action,
+    entity,
+    userId,
+    search,
+    startDate,
+    endDate,
+  } = filter;
   const { logs, users } = tablesFor(platform);
 
   const where: Record<string, unknown> = {};
@@ -58,7 +72,10 @@ export async function listAuditLogs(
   if (entity) where.entity = entity;
   if (userId) where.userId = userId;
   if (startDate || endDate) {
-    where.createdAt = { ...(startDate && { gte: startDate }), ...(endDate && { lte: endDate }) };
+    where.createdAt = {
+      ...(startDate && { gte: startDate }),
+      ...(endDate && { lte: endDate }),
+    };
   }
   if (search) {
     const matchingActors = await users.findMany({
@@ -74,16 +91,27 @@ export async function listAuditLogs(
     where.OR = [
       { entityId: { contains: search, mode: "insensitive" } },
       { ipAddress: { contains: search, mode: "insensitive" } },
-      ...(matchingActors.length ? [{ userId: { in: matchingActors.map((u) => u.id) } }] : []),
+      ...(matchingActors.length
+        ? [{ userId: { in: matchingActors.map((u) => u.id) } }]
+        : []),
     ];
   }
 
   const [total, rows] = await Promise.all([
     logs.count({ where }),
-    logs.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize }),
+    logs.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
   ]);
 
-  const actorIds = [...new Set(rows.map((r) => r.userId).filter((id): id is string => id !== null))];
+  const actorIds = [
+    ...new Set(
+      rows.map((r) => r.userId).filter((id): id is string => id !== null)
+    ),
+  ];
   const actors = actorIds.length
     ? await users.findMany({
         where: { id: { in: actorIds } },
@@ -96,7 +124,13 @@ export async function listAuditLogs(
     const actor = row.userId ? actorById.get(row.userId) : undefined;
     return {
       ...row,
-      user: actor ? { firstName: actor.firstName ?? "", lastName: actor.lastName ?? "", email: actor.email } : null,
+      user: actor
+        ? {
+            firstName: actor.firstName ?? "",
+            lastName: actor.lastName ?? "",
+            email: actor.email,
+          }
+        : null,
     };
   });
 
@@ -104,13 +138,23 @@ export async function listAuditLogs(
 }
 
 /** The distinct actions and entities that have been logged, for the viewer's two dropdowns. */
-export async function getAuditLogFilterOptions(platform: Platform): Promise<{ actions: string[]; entities: string[] }> {
+export async function getAuditLogFilterOptions(
+  platform: Platform
+): Promise<{ actions: string[]; entities: string[] }> {
   const { logs } = tablesFor(platform);
   const distinct = (field: "action" | "entity") =>
-    logs.findMany({ select: { [field]: true }, distinct: [field], orderBy: { [field]: "asc" } }) as unknown as Promise<
-      Array<Record<typeof field, string>>
-    >;
+    logs.findMany({
+      select: { [field]: true },
+      distinct: [field],
+      orderBy: { [field]: "asc" },
+    }) as unknown as Promise<Array<Record<typeof field, string>>>;
 
-  const [actions, entities] = await Promise.all([distinct("action"), distinct("entity")]);
-  return { actions: actions.map((a) => a.action), entities: entities.map((e) => e.entity) };
+  const [actions, entities] = await Promise.all([
+    distinct("action"),
+    distinct("entity"),
+  ]);
+  return {
+    actions: actions.map((a) => a.action),
+    entities: entities.map((e) => e.entity),
+  };
 }

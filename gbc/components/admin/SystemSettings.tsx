@@ -22,9 +22,9 @@ export function SystemSettings({ settings, edition }: Props) {
   const [emailVerificationEnabled, setEmailVerificationEnabled] = useState(
     settings?.emailVerification?.enabled ?? false
   );
-  const [emailVerificationMethod, setEmailVerificationMethod] = useState<"OTP" | "LINK">(
-    settings?.emailVerification?.method ?? "OTP"
-  );
+  const [emailVerificationMethod, setEmailVerificationMethod] = useState<
+    "OTP" | "LINK"
+  >(settings?.emailVerification?.method ?? "OTP");
   const [gracePeriodDays, setGracePeriodDays] = useState<number>(
     settings?.emailVerification?.gracePeriodDays ?? 30
   );
@@ -41,7 +41,10 @@ export function SystemSettings({ settings, edition }: Props) {
     if (key === "debugMode") setDebugMode(value);
 
     try {
-      const result = await gbcApi.settings.update({ system: { [key]: value } }, edition);
+      const result = await gbcApi.settings.update(
+        { system: { [key]: value } },
+        edition
+      );
 
       if (result.success) {
         toast.success(
@@ -70,9 +73,16 @@ export function SystemSettings({ settings, edition }: Props) {
       gracePeriodDays: number;
     }>
   ) => {
-    const nextEnabled = updates.enabled !== undefined ? updates.enabled : emailVerificationEnabled;
-    const nextMethod = updates.method !== undefined ? updates.method : emailVerificationMethod;
-    const nextGrace = updates.gracePeriodDays !== undefined ? updates.gracePeriodDays : gracePeriodDays;
+    const nextEnabled =
+      updates.enabled !== undefined
+        ? updates.enabled
+        : emailVerificationEnabled;
+    const nextMethod =
+      updates.method !== undefined ? updates.method : emailVerificationMethod;
+    const nextGrace =
+      updates.gracePeriodDays !== undefined
+        ? updates.gracePeriodDays
+        : gracePeriodDays;
 
     setLoading("emailVerification");
     setEmailVerificationEnabled(nextEnabled);
@@ -95,8 +105,12 @@ export function SystemSettings({ settings, edition }: Props) {
         toast.success("Email verification settings updated");
       } else {
         // Revert
-        setEmailVerificationEnabled(settings?.emailVerification?.enabled ?? false);
-        setEmailVerificationMethod(settings?.emailVerification?.method ?? "OTP");
+        setEmailVerificationEnabled(
+          settings?.emailVerification?.enabled ?? false
+        );
+        setEmailVerificationMethod(
+          settings?.emailVerification?.method ?? "OTP"
+        );
         setGracePeriodDays(settings?.emailVerification?.gracePeriodDays ?? 30);
         throw new Error(result.error || "Failed to update");
       }
@@ -118,10 +132,13 @@ export function SystemSettings({ settings, edition }: Props) {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Email Verification Enforcement</h3>
+              <h3 className="font-semibold text-gray-900">
+                Email Verification Enforcement
+              </h3>
               <p className="text-sm text-gray-500">
-                Require new accounts to verify their email before accessing the dashboard. Existing
-                accounts are grandfathered in with a configurable grace period.
+                Require new accounts to verify their email before accessing the
+                dashboard. Existing accounts are grandfathered in with a
+                configurable grace period.
               </p>
             </div>
           </div>
@@ -161,7 +178,9 @@ export function SystemSettings({ settings, edition }: Props) {
               </button>
               <button
                 type="button"
-                onClick={() => handleEmailVerificationUpdate({ method: "LINK" })}
+                onClick={() =>
+                  handleEmailVerificationUpdate({ method: "LINK" })
+                }
                 disabled={loading === "emailVerification"}
                 className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-sm font-medium transition ${
                   emailVerificationMethod === "LINK"
@@ -194,15 +213,20 @@ export function SystemSettings({ settings, edition }: Props) {
                 min={1}
                 max={365}
                 value={gracePeriodDays}
-                onChange={(e) => setGracePeriodDays(Math.max(1, parseInt(e.target.value) || 1))}
-                onBlur={() => handleEmailVerificationUpdate({ gracePeriodDays })}
+                onChange={(e) =>
+                  setGracePeriodDays(Math.max(1, parseInt(e.target.value) || 1))
+                }
+                onBlur={() =>
+                  handleEmailVerificationUpdate({ gracePeriodDays })
+                }
                 disabled={loading === "emailVerification"}
                 className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
               <span className="text-sm text-gray-500">days</span>
             </div>
             <p className="text-xs text-gray-500">
-              Pre-existing accounts have this many days to verify before lockout.
+              Pre-existing accounts have this many days to verify before
+              lockout.
             </p>
           </div>
         </div>
@@ -221,10 +245,12 @@ export function SystemSettings({ settings, edition }: Props) {
               type="checkbox"
               className="sr-only peer"
               checked={maintenanceMode}
-              onChange={(e) => handleToggle("maintenanceMode", e.target.checked)}
+              onChange={(e) =>
+                handleToggle("maintenanceMode", e.target.checked)
+              }
               disabled={loading === "maintenanceMode"}
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 disabled:opacity-50"></div>
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 disabled:opacity-50"></div>
           </label>
         </div>
 
@@ -243,7 +269,7 @@ export function SystemSettings({ settings, edition }: Props) {
               onChange={(e) => handleToggle("debugMode", e.target.checked)}
               disabled={loading === "debugMode"}
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 disabled:opacity-50"></div>
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 disabled:opacity-50"></div>
           </label>
         </div>
       </div>

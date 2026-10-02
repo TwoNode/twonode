@@ -18,9 +18,18 @@ export const GET = withAuth<SurfboardRole>(
     };
     const sortField = sp.get("sortField");
     const sortOrder = sp.get("sortOrder");
-    const sort = sortField && sortOrder ? { field: sortField as any, order: sortOrder as "asc" | "desc" } : undefined;
+    const sort =
+      sortField && sortOrder
+        ? { field: sortField as any, order: sortOrder as "asc" | "desc" }
+        : undefined;
 
-    const data = await getAllSharedSurfPlans(ctx.session.sub, page, pageSize, filters, sort);
+    const data = await getAllSharedSurfPlans(
+      ctx.session.sub,
+      page,
+      pageSize,
+      filters,
+      sort
+    );
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] }

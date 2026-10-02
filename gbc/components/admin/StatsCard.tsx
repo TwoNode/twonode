@@ -31,7 +31,13 @@ export function StatsCard({ title, value, subtitle, icon }: StatsCardProps) {
           <h3 className="text-3xl font-bold mb-1">{value}</h3>
           <p className="text-xs text-gray-500">{subtitle}</p>
         </div>
-        <div className="p-3 rounded-lg" style={{ background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.main }}>
+        <div
+          className="p-3 rounded-lg"
+          style={{
+            background: GBC_COLORS.surface.main,
+            color: GBC_COLORS.primary.main,
+          }}
+        >
           <Icon className="h-6 w-6" />
         </div>
       </div>

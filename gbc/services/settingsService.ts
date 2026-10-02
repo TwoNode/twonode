@@ -28,9 +28,19 @@ import { Platform } from "@/utils/platform";
  * merge per provided section is sufficient, no general deep-merge needed.
  */
 
-export type SettingsPatch = { [K in keyof GBCSettingsData]?: Partial<GBCSettingsData[K]> };
+export type SettingsPatch = {
+  [K in keyof GBCSettingsData]?: Partial<GBCSettingsData[K]>;
+};
 
-const SECTIONS: (keyof GBCSettingsData)[] = ["event", "contact", "tickets", "notifications", "gallery", "system", "emailVerification"];
+const SECTIONS: (keyof GBCSettingsData)[] = [
+  "event",
+  "contact",
+  "tickets",
+  "notifications",
+  "gallery",
+  "system",
+  "emailVerification",
+];
 
 /**
  * The edition whose settings apply when none is asked for: the ACTIVE
@@ -41,26 +51,38 @@ const SECTIONS: (keyof GBCSettingsData)[] = ["event", "contact", "tickets", "not
  *
  * A supplied key must be an existing, non-deleted edition.
  */
-export async function resolveSettingsEdition(supplied?: string): Promise<GBCEditionRow | null> {
+export async function resolveSettingsEdition(
+  supplied?: string
+): Promise<GBCEditionRow | null> {
   if (supplied) {
-    const edition = await prisma.gBCEdition.findFirst({ where: { key: supplied, deletedAt: null } });
+    const edition = await prisma.gBCEdition.findFirst({
+      where: { key: supplied, deletedAt: null },
+    });
     if (!edition) throw new NotFoundError("Edition");
     return edition;
   }
 
-  const active = await prisma.gBCEdition.findFirst({ where: { status: "ACTIVE", deletedAt: null } });
+  const active = await prisma.gBCEdition.findFirst({
+    where: { status: "ACTIVE", deletedAt: null },
+  });
   if (active) return active;
   const past = await prisma.gBCEdition.findFirst({
     where: { status: "PAST", deletedAt: null },
     orderBy: { startDate: "desc" },
   });
   if (past) return past;
-  return prisma.gBCEdition.findFirst({ where: { deletedAt: null }, orderBy: { startDate: "asc" } });
+  return prisma.gBCEdition.findFirst({
+    where: { deletedAt: null },
+    orderBy: { startDate: "asc" },
+  });
 }
 
 async function requireEdition(supplied?: string): Promise<GBCEditionRow> {
   const edition = await resolveSettingsEdition(supplied);
-  if (!edition) throw new ValidationError({ edition: "Create an edition before saving settings" });
+  if (!edition)
+    throw new ValidationError({
+      edition: "Create an edition before saving settings",
+    });
   return edition;
 }
 
@@ -80,7 +102,10 @@ function defaultsFor(edition: GBCEditionRow | null): GBCSettingsData {
   };
 }
 
-function mergeWithDefaults(saved: Partial<GBCSettingsData>, base: GBCSettingsData): GBCSettingsData {
+function mergeWithDefaults(
+  saved: Partial<GBCSettingsData>,
+  base: GBCSettingsData
+): GBCSettingsData {
   return {
     event: { ...base.event, ...(saved.event || {}) },
     contact: { ...base.contact, ...(saved.contact || {}) },
@@ -88,23 +113,34 @@ function mergeWithDefaults(saved: Partial<GBCSettingsData>, base: GBCSettingsDat
     notifications: { ...base.notifications, ...(saved.notifications || {}) },
     gallery: { ...base.gallery, ...(saved.gallery || {}) },
     system: { ...base.system, ...(saved.system || {}) },
-    emailVerification: { ...base.emailVerification, ...(saved.emailVerification || {}) },
+    emailVerification: {
+      ...base.emailVerification,
+      ...(saved.emailVerification || {}),
+    },
   };
 }
 
 /** The settings plus which edition they belong to and whether they have been saved yet (false = showing defaults). */
-export async function getEditionSettings(
-  supplied?: string
-): Promise<{ edition: string | null; settings: GBCSettingsData; saved: boolean }> {
+export async function getEditionSettings(supplied?: string): Promise<{
+  edition: string | null;
+  settings: GBCSettingsData;
+  saved: boolean;
+}> {
   const edition = await resolveSettingsEdition(supplied);
   const defaults = defaultsFor(edition);
   if (!edition) return { edition: null, settings: defaults, saved: false };
 
-  const record = await prisma.gBCSettings.findUnique({ where: { edition: edition.key } });
-  if (!record) return { edition: edition.key, settings: defaults, saved: false };
+  const record = await prisma.gBCSettings.findUnique({
+    where: { edition: edition.key },
+  });
+  if (!record)
+    return { edition: edition.key, settings: defaults, saved: false };
   return {
     edition: edition.key,
-    settings: mergeWithDefaults((record.settings || {}) as Partial<GBCSettingsData>, defaults),
+    settings: mergeWithDefaults(
+      (record.settings || {}) as Partial<GBCSettingsData>,
+      defaults
+    ),
     saved: true,
   };
 }
@@ -126,7 +162,9 @@ async function replaceSettings(
     where: { edition },
     update: {
       settings: settings as Prisma.InputJsonValue,
-      previousSettings: existing ? (existing.settings as Prisma.InputJsonValue) : Prisma.JsonNull,
+      previousSettings: existing
+        ? (existing.settings as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
     },
     create: { edition, settings: settings as Prisma.InputJsonValue },
   });
@@ -142,9 +180,18 @@ async function replaceSettings(
   return saved.settings as GBCSettingsData;
 }
 
-export async function updateSettings(patch: SettingsPatch, userId: string, edition?: string): Promise<GBCSettingsData> {
-  const invalidSection = Object.keys(patch).find((key) => !SECTIONS.includes(key as keyof GBCSettingsData));
-  if (invalidSection) throw new ValidationError({ [invalidSection]: `Invalid settings section: ${invalidSection}` });
+export async function updateSettings(
+  patch: SettingsPatch,
+  userId: string,
+  edition?: string
+): Promise<GBCSettingsData> {
+  const invalidSection = Object.keys(patch).find(
+    (key) => !SECTIONS.includes(key as keyof GBCSettingsData)
+  );
+  if (invalidSection)
+    throw new ValidationError({
+      [invalidSection]: `Invalid settings section: ${invalidSection}`,
+    });
 
   const target = await requireEdition(edition);
   const current = await getSettings(target.key);
@@ -173,22 +220,42 @@ export async function updateSettings(patch: SettingsPatch, userId: string, editi
   return replaceSettings(target.key, merged, userId, "UPDATE_SETTINGS");
 }
 
-export async function resetToDefaults(userId: string, edition?: string): Promise<GBCSettingsData> {
+export async function resetToDefaults(
+  userId: string,
+  edition?: string
+): Promise<GBCSettingsData> {
   const target = await requireEdition(edition);
-  return replaceSettings(target.key, defaultsFor(target), userId, "RESET_SETTINGS");
+  return replaceSettings(
+    target.key,
+    defaultsFor(target),
+    userId,
+    "RESET_SETTINGS"
+  );
 }
 
 /** The settings this edition had before its last change, or null if it has never been changed. */
-export async function getPreviousSettings(edition?: string): Promise<GBCSettingsData | null> {
+export async function getPreviousSettings(
+  edition?: string
+): Promise<GBCSettingsData | null> {
   const target = await requireEdition(edition);
-  const record = await prisma.gBCSettings.findUnique({ where: { edition: target.key } });
-  return (record?.previousSettings as GBCSettingsData | null | undefined) ?? null;
+  const record = await prisma.gBCSettings.findUnique({
+    where: { edition: target.key },
+  });
+  return (
+    (record?.previousSettings as GBCSettingsData | null | undefined) ?? null
+  );
 }
 
-export async function rollback(userId: string, edition?: string): Promise<GBCSettingsData> {
+export async function rollback(
+  userId: string,
+  edition?: string
+): Promise<GBCSettingsData> {
   const target = await requireEdition(edition);
   const previous = await getPreviousSettings(target.key);
-  if (!previous) throw new ValidationError({ rollback: "No previous settings available to rollback to" });
+  if (!previous)
+    throw new ValidationError({
+      rollback: "No previous settings available to rollback to",
+    });
 
   const current = await getSettings(target.key);
   const rolledBack = await prisma.gBCSettings.update({
@@ -204,7 +271,11 @@ export async function rollback(userId: string, edition?: string): Promise<GBCSet
     action: "ROLLBACK_SETTINGS",
     entity: "GBCSettings",
     entityId: rolledBack.id,
-    changes: { edition: target.key, rolledBackFrom: current, rolledBackTo: previous },
+    changes: {
+      edition: target.key,
+      rolledBackFrom: current,
+      rolledBackTo: previous,
+    },
   });
 
   return rolledBack.settings as GBCSettingsData;

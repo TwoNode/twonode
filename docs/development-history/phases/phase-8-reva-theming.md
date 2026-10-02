@@ -50,14 +50,14 @@ instead of one:**
    could ship:
    - The bare-class regex (`\bbg-gray-100\b`) also matched inside
      `hover:bg-gray-100` (a colon-to-letter transition is a valid `\b`), so
-     it fired *in addition to* the explicit `hover:` rule, appending an
+     it fired _in addition to_ the explicit `hover:` rule, appending an
      unprefixed `dark:bg-...` right next to the correct
      `dark:hover:bg-...` — silently applying that background
      unconditionally instead of only on hover. Exactly the bug class
      session 1 already hand-fixed once; this time closed at the regex
      level with a `(?<!:)` negative lookbehind so it can't recur.
    - Tailwind opacity suffixes (`bg-white/70`) satisfy the same bare regex,
-     so the dark pair got spliced *inside* the token —
+     so the dark pair got spliced _inside_ the token —
      `bg-white/70` → `bg-white dark:bg-surface/70` — silently promoting the
      light-mode class to fully opaque and stealing the `/70` onto the new
      dark class instead. Exactly the bug Phase 7 found and hand-fixed for
@@ -77,6 +77,7 @@ instead of one:**
    (`dark:bg-{color}-500/15` + `dark:text-{color}-300`).
 
 **Verification:**
+
 - `tsc --noEmit` clean after every pass.
 - Two full `next build` runs (not just `tsc`) — after the className sweep
   and again after all three passes — both exited 0 with zero prerender
@@ -96,7 +97,7 @@ instead of one:**
   edits) unauthenticated. All three confirmed correct in both themes — no
   regressions, no unreadable text, no stray light panels. Test account and
   seeded request deleted after verification.
-- REVA *user* dashboard's authenticated pages beyond the public request
+- REVA _user_ dashboard's authenticated pages beyond the public request
   form (e.g. `/reva/dashboard/*`) were not live-verified this session —
   flagged as a gap, same as Session 1's note about REVA/GBC authenticated
   coverage.

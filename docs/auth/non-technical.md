@@ -22,28 +22,29 @@ Both roads lead to the same account system — a user is a user regardless of wh
 
 A single person can hold different roles on different platforms:
 
-| Platform | Common Roles | Description |
-| :--- | :--- | :--- |
-| **REVA** | User, Admin, Super Admin | Property due-diligence report requests. |
+| Platform      | Common Roles                                                                                                     | Description                                            |
+| :------------ | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------- |
+| **REVA**      | User, Admin, Super Admin                                                                                         | Property due-diligence report requests.                |
 | **Surfboard** | User, Admin, plus 7 MDA stage roles (Accounts, Charting, SURCON, Records I/II, Intake, Archive), MDA Super Admin | Survey plan lodging and the government approval chain. |
-| **GBC** | User, Admin | Event ticketing and registrations. |
+| **GBC**       | User, Admin                                                                                                      | Event ticketing and registrations.                     |
 
 ## 4. Registration Types
 
-| Platform | Signup Type | How it Works |
-| :--- | :--- | :--- |
-| **REVA (user side)** | **Self-service** | Register with email/password, or sign in with Google — either way, the account exists instantly. |
-| **Surfboard (user side)** | **Self-service** | Same as above — ready to submit plans right away. |
-| **GBC (public side)** | **Self-service** | Same as above — ready to manage tickets. |
-| **Surfboard-MDA** | **Admin-only** | A staff member's account must be created by an administrator first; there is no public registration form for this portal. |
-| **Restricted/Admin Panels** (Surfboard-restricted, REVA-restricted, GBC-restricted) | **Admin-only** | Dedicated admin accounts must be pre-configured by an existing administrator. |
+| Platform                                                                            | Signup Type      | How it Works                                                                                                              |
+| :---------------------------------------------------------------------------------- | :--------------- | :------------------------------------------------------------------------------------------------------------------------ |
+| **REVA (user side)**                                                                | **Self-service** | Register with email/password, or sign in with Google — either way, the account exists instantly.                          |
+| **Surfboard (user side)**                                                           | **Self-service** | Same as above — ready to submit plans right away.                                                                         |
+| **GBC (public side)**                                                               | **Self-service** | Same as above — ready to manage tickets.                                                                                  |
+| **Surfboard-MDA**                                                                   | **Admin-only**   | A staff member's account must be created by an administrator first; there is no public registration form for this portal. |
+| **Restricted/Admin Panels** (Surfboard-restricted, REVA-restricted, GBC-restricted) | **Admin-only**   | Dedicated admin accounts must be pre-configured by an existing administrator.                                             |
 
 ## 5. Multi-Platform Support (Use everything at once)
 
 If someone belongs to more than one platform (say, both REVA and Surfboard), they don't need to log out of one to use the other:
+
 - **Stay logged in everywhere**: REVA open in one tab, Surfboard in another, simultaneously.
 - **One identity, several hats**: The login is the same person; which role applies just depends on which part of the site they're on.
-- **Independent logout**: Logging out of one platform sends them back to *that* platform's login page — the other platforms stay logged in until their own session naturally expires.
+- **Independent logout**: Logging out of one platform sends them back to _that_ platform's login page — the other platforms stay logged in until their own session naturally expires.
 
 ## 6. Security Features
 

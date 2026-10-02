@@ -9,7 +9,10 @@ type RouteCtx = { params: Promise<{ key: string }> };
 export const DELETE = withAuth<GBCRole>(
   async (req, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { key } = await routeCtx.params;
     const data = await softDeleteEdition(key, ctx.session.sub);

@@ -1,23 +1,23 @@
-"use client"
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Layers, FileText, Clock, Share2 } from 'lucide-react';
-import { BarChart } from './BarChart';
-import { PieChart, generateColors } from './PieChart';
-import { StatCard } from '@/components/dashboard/StatCard';
-import { surfboardApi } from '@/surfboard/apiClient';
-import { SURFBOARD_COLORS } from '@/surfboard/colors';
-import type { DateRangeValue } from '@/components/dashboard/DateRangeFilter';
-import type { AnalyticsData } from '@/app/(projects)/(surfboard)/types/surfboardTypes';
-import type { DimensionBreakdownRow } from '@/surfboard/services/analyticsService';
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { Layers, FileText, Clock, Share2 } from "lucide-react";
+import { BarChart } from "./BarChart";
+import { PieChart, generateColors } from "./PieChart";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { surfboardApi } from "@/surfboard/apiClient";
+import { SURFBOARD_COLORS } from "@/surfboard/colors";
+import type { DateRangeValue } from "@/components/dashboard/DateRangeFilter";
+import type { AnalyticsData } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
+import type { DimensionBreakdownRow } from "@/surfboard/services/analyticsService";
 
 const AREA_DIMENSIONS = [
-  { id: 'lga', label: 'LGA' },
-  { id: 'lcda', label: 'LCDA' },
-  { id: 'ward', label: 'Ward' },
+  { id: "lga", label: "LGA" },
+  { id: "lcda", label: "LCDA" },
+  { id: "ward", label: "Ward" },
 ] as const;
-type AreaDimension = (typeof AREA_DIMENSIONS)[number]['id'];
+type AreaDimension = (typeof AREA_DIMENSIONS)[number]["id"];
 
 const CHART_HEIGHT = 400;
 
@@ -41,7 +41,7 @@ export function AnalyticsDashboard({
   const [error, setError] = useState<string | null>(null);
   const [wardStats, setWardStats] = useState<DimensionBreakdownRow[]>([]);
   const [lcdaStats, setLcdaStats] = useState<DimensionBreakdownRow[]>([]);
-  const [areaDimension, setAreaDimension] = useState<AreaDimension>('lga');
+  const [areaDimension, setAreaDimension] = useState<AreaDimension>("lga");
 
   useEffect(() => {
     const range = { dateFrom: dateRange?.from, dateTo: dateRange?.to };
@@ -54,11 +54,11 @@ export function AnalyticsDashboard({
         if (result.success) {
           setAnalytics(result.data);
         } else {
-          setError(result.error || 'Failed to load analytics data');
+          setError(result.error || "Failed to load analytics data");
         }
       } catch (err) {
-        console.error('Error fetching analytics:', err);
-        setError('An unexpected error occurred');
+        console.error("Error fetching analytics:", err);
+        setError("An unexpected error occurred");
       } finally {
         setLoading(false);
       }
@@ -74,13 +74,13 @@ export function AnalyticsDashboard({
     const fetchAreaBreakdowns = async () => {
       try {
         const [wardResult, lcdaResult] = await Promise.all([
-          surfboardApi.analytics.dimension('ward', range),
-          surfboardApi.analytics.dimension('lcda', range),
+          surfboardApi.analytics.dimension("ward", range),
+          surfboardApi.analytics.dimension("lcda", range),
         ]);
         if (wardResult.success) setWardStats(wardResult.data);
         if (lcdaResult.success) setLcdaStats(lcdaResult.data);
       } catch (err) {
-        console.error('Error fetching ward/LCDA breakdowns:', err);
+        console.error("Error fetching ward/LCDA breakdowns:", err);
       }
     };
 
@@ -100,8 +100,16 @@ export function AnalyticsDashboard({
       <div className="bg-red-50 border-l-4 border-red-400 p-4 dark:bg-red-500/10 dark:border-red-500/60">
         <div className="flex">
           <div className="shrink-0">
-            <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            <svg
+              className="h-5 w-5 text-red-400"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clipRule="evenodd"
+              />
             </svg>
           </div>
           <div className="ml-3">
@@ -115,29 +123,31 @@ export function AnalyticsDashboard({
   if (!analytics) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 dark:text-gray-400">No analytics data available</p>
+        <p className="text-gray-500 dark:text-gray-400">
+          No analytics data available
+        </p>
       </div>
     );
   }
 
   // Prepare data for charts
-  const facilitatorData = analytics.facilitatorStats.map(item => ({
-    label: item.facilitator || 'Unknown',
+  const facilitatorData = analytics.facilitatorStats.map((item) => ({
+    label: item.facilitator || "Unknown",
     value: item.count,
   }));
 
-  const lgaData = analytics.lgaStats.map(item => ({
-    label: item.lga || 'Unknown',
+  const lgaData = analytics.lgaStats.map((item) => ({
+    label: item.lga || "Unknown",
     value: item.count,
   }));
 
-  const wardData = wardStats.map(item => ({
-    label: item.key || 'Unknown',
+  const wardData = wardStats.map((item) => ({
+    label: item.key || "Unknown",
     value: item.count,
   }));
 
-  const lcdaData = lcdaStats.map(item => ({
-    label: item.key || 'Unknown',
+  const lcdaData = lcdaStats.map((item) => ({
+    label: item.key || "Unknown",
     value: item.count,
   }));
 
@@ -153,25 +163,39 @@ export function AnalyticsDashboard({
     ward: wardStats.length,
   };
 
-  const regularPillars = analytics.pillarStats.find((p) => p.isRegular)?.count || 0;
-  const specialPillars = analytics.pillarStats.find((p) => !p.isRegular)?.count || 0;
+  const regularPillars =
+    analytics.pillarStats.find((p) => p.isRegular)?.count || 0;
+  const specialPillars =
+    analytics.pillarStats.find((p) => !p.isRegular)?.count || 0;
   const totalPillars = regularPillars + specialPillars;
 
   const pillarTypeData = [
-    { label: 'Regular', value: regularPillars, color: '#10B981' },
-    { label: 'Special', value: specialPillars, color: '#F59E0B' },
+    { label: "Regular", value: regularPillars, color: "#10B981" },
+    { label: "Special", value: specialPillars, color: "#F59E0B" },
   ];
 
-  const totalRecords = analytics.totalPlansCount + analytics.provisionalPlansCount;
-  const provisionalShare = totalRecords > 0 ? Math.round((analytics.provisionalPlansCount / totalRecords) * 100) : 0;
+  const totalRecords =
+    analytics.totalPlansCount + analytics.provisionalPlansCount;
+  const provisionalShare =
+    totalRecords > 0
+      ? Math.round((analytics.provisionalPlansCount / totalRecords) * 100)
+      : 0;
 
   // "Shared Access": numbers of plans shared to a user with active/expired/no subscription.
   const sharedAccessByStatus = {
-    active: analytics.sharedAccessStats.find((s) => s.status === "active")?.count ?? 0,
-    expired: analytics.sharedAccessStats.find((s) => s.status === "expired")?.count ?? 0,
-    none: analytics.sharedAccessStats.find((s) => s.status === "none")?.count ?? 0,
+    active:
+      analytics.sharedAccessStats.find((s) => s.status === "active")?.count ??
+      0,
+    expired:
+      analytics.sharedAccessStats.find((s) => s.status === "expired")?.count ??
+      0,
+    none:
+      analytics.sharedAccessStats.find((s) => s.status === "none")?.count ?? 0,
   };
-  const totalSharedAccess = sharedAccessByStatus.active + sharedAccessByStatus.expired + sharedAccessByStatus.none;
+  const totalSharedAccess =
+    sharedAccessByStatus.active +
+    sharedAccessByStatus.expired +
+    sharedAccessByStatus.none;
 
   return (
     <div className="space-y-6">
@@ -252,9 +276,12 @@ export function AnalyticsDashboard({
         />
 
         <div className="bg-white rounded-lg shadow p-6 dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Plan Health</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            Plan Health
+          </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {planHealth.lodged} of {planHealth.totalPlans} plans lodged this cycle
+            {planHealth.lodged} of {planHealth.totalPlans} plans lodged this
+            cycle
           </p>
 
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
@@ -267,17 +294,30 @@ export function AnalyticsDashboard({
             />
           </div>
 
-          <dl className="mt-4 divide-y divide-gray-100 dark:divide-white/10" style={{ minHeight: CHART_HEIGHT - 60 }}>
+          <dl
+            className="mt-4 divide-y divide-gray-100 dark:divide-white/10"
+            style={{ minHeight: CHART_HEIGHT - 60 }}
+          >
             <div className="flex items-center justify-between py-2.5">
-              <dt className="text-sm text-gray-600 dark:text-gray-300">Queried, needs attention</dt>
-              <dd className="text-sm font-semibold text-gray-900 dark:text-white">{planHealth.queried}</dd>
+              <dt className="text-sm text-gray-600 dark:text-gray-300">
+                Queried, needs attention
+              </dt>
+              <dd className="text-sm font-semibold text-gray-900 dark:text-white">
+                {planHealth.queried}
+              </dd>
             </div>
             <div className="flex items-center justify-between py-2.5">
-              <dt className="text-sm text-gray-600 dark:text-gray-300">Awaiting MDA review</dt>
-              <dd className="text-sm font-semibold text-gray-900 dark:text-white">{planHealth.underReview}</dd>
+              <dt className="text-sm text-gray-600 dark:text-gray-300">
+                Awaiting MDA review
+              </dt>
+              <dd className="text-sm font-semibold text-gray-900 dark:text-white">
+                {planHealth.underReview}
+              </dd>
             </div>
             <div className="flex items-center justify-between py-2.5">
-              <dt className="text-sm text-gray-600 dark:text-gray-300">QR earnings this month</dt>
+              <dt className="text-sm text-gray-600 dark:text-gray-300">
+                QR earnings this month
+              </dt>
               <dd className="text-sm font-semibold text-gray-900 dark:text-white">
                 ₦{planHealth.qrEarningsThisMonth.toLocaleString()}
               </dd>
@@ -289,7 +329,7 @@ export function AnalyticsDashboard({
         <BarChart
           title="Monthly Uploads"
           subtitle="Number of plans uploaded per month"
-          data={analytics.timeTrends.map(item => ({
+          data={analytics.timeTrends.map((item) => ({
             label: item.period,
             value: item.count,
           }))}
@@ -299,8 +339,8 @@ export function AnalyticsDashboard({
 
         {/* Area distribution — one chart, switchable between LGA / LCDA / Ward instead of three parallel copies */}
         <BarChart
-          title={`Records by ${AREA_DIMENSIONS.find(d => d.id === areaDimension)!.label}`}
-          subtitle={`${areaCountByDimension[areaDimension]} unique ${AREA_DIMENSIONS.find(d => d.id === areaDimension)!.label}${areaCountByDimension[areaDimension] === 1 ? '' : 's'} · toggle to compare`}
+          title={`Records by ${AREA_DIMENSIONS.find((d) => d.id === areaDimension)!.label}`}
+          subtitle={`${areaCountByDimension[areaDimension]} unique ${AREA_DIMENSIONS.find((d) => d.id === areaDimension)!.label}${areaCountByDimension[areaDimension] === 1 ? "" : "s"} · toggle to compare`}
           data={areaDataByDimension[areaDimension]}
           height={CHART_HEIGHT}
           maxItems={8}
@@ -313,8 +353,8 @@ export function AnalyticsDashboard({
                   onClick={() => setAreaDimension(dim.id)}
                   className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
                     areaDimension === dim.id
-                      ? 'bg-white text-[#1D4ED8] shadow-sm dark:bg-white/10 dark:text-white'
-                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                      ? "bg-white text-[#1D4ED8] shadow-sm dark:bg-white/10 dark:text-white"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                   }`}
                 >
                   {dim.label}
@@ -326,10 +366,17 @@ export function AnalyticsDashboard({
 
         {/* Pending Certificates — each row links straight to that plan's detail page */}
         <div className="bg-white rounded-lg shadow p-6 dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Pending Certificates</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Recently updated, awaiting approval</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            Pending Certificates
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Recently updated, awaiting approval
+          </p>
 
-          <div className="mt-4 -mx-2 overflow-y-auto" style={{ maxHeight: CHART_HEIGHT - 60 }}>
+          <div
+            className="mt-4 -mx-2 overflow-y-auto"
+            style={{ maxHeight: CHART_HEIGHT - 60 }}
+          >
             {analytics.pendingCertificates.length > 0 ? (
               <ul className="space-y-1">
                 {analytics.pendingCertificates.map((cert) => (
@@ -355,7 +402,9 @@ export function AnalyticsDashboard({
               </ul>
             ) : (
               <div className="flex items-center justify-center py-12">
-                <p className="text-sm text-gray-500 dark:text-gray-400">No pending certificates</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  No pending certificates
+                </p>
               </div>
             )}
           </div>

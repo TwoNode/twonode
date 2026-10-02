@@ -73,7 +73,10 @@ export function RemitaPaymentModal({
   const [remitaReceiptUrl, setRemitaReceiptUrl] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
-  const [errorPopup, setErrorPopup] = useState<{ step: string; message: string } | null>(null);
+  const [errorPopup, setErrorPopup] = useState<{
+    step: string;
+    message: string;
+  } | null>(null);
 
   const today = new Date().toLocaleDateString("en-GB");
 
@@ -135,7 +138,10 @@ export function RemitaPaymentModal({
       return;
     }
     if (!isValidLasgUrl(lasgReceiptUrl)) {
-      showError("Validation", "Invalid LASG receipt URL. Expected a link from printreceipt.ebs-rcm.com");
+      showError(
+        "Validation",
+        "Invalid LASG receipt URL. Expected a link from printreceipt.ebs-rcm.com"
+      );
       return;
     }
 
@@ -145,17 +151,26 @@ export function RemitaPaymentModal({
       return;
     }
     if (!isValidRemitaUrl(remitaReceiptUrl)) {
-      showError("Validation", "Invalid Remita receipt URL. Expected a link from login.remita.net");
+      showError(
+        "Validation",
+        "Invalid Remita receipt URL. Expected a link from login.remita.net"
+      );
       return;
     }
 
     // Check if URLs are swapped
     if (lasgReceiptUrl.includes("remita.net")) {
-      showError("Links Swapped", "It looks like you pasted the Remita link in the LASG field. Please swap the two links.");
+      showError(
+        "Links Swapped",
+        "It looks like you pasted the Remita link in the LASG field. Please swap the two links."
+      );
       return;
     }
     if (remitaReceiptUrl.includes("ebs-rcm.com")) {
-      showError("Links Swapped", "It looks like you pasted the LASG link in the Remita field. Please swap the two links.");
+      showError(
+        "Links Swapped",
+        "It looks like you pasted the LASG link in the Remita field. Please swap the two links."
+      );
       return;
     }
 
@@ -171,14 +186,16 @@ export function RemitaPaymentModal({
       const result = await surfboardApi.cod.batches.verifyPaymentLinks(
         batchData.id,
         lasgReceiptUrl.trim(),
-        remitaReceiptUrl.trim(),
+        remitaReceiptUrl.trim()
       );
 
       console.log("verifyBatchPaymentWithLinks result:", result);
 
       if (result.success) {
         if (result.data.status === "LASG_PAID") {
-          toast.success("Payment verified! Receipt captured and plans submitted.");
+          toast.success(
+            "Payment verified! Receipt captured and plans submitted."
+          );
           if (onSuccess) onSuccess();
           onClose();
           router.refresh();
@@ -194,7 +211,11 @@ export function RemitaPaymentModal({
             const first = vals[0];
             if (typeof first === "string") {
               errMsg = first;
-            } else if (typeof first === "object" && first !== null && "_errors" in (first as any)) {
+            } else if (
+              typeof first === "object" &&
+              first !== null &&
+              "_errors" in (first as any)
+            ) {
               errMsg = (first as any)._errors?.[0] || errMsg;
             }
           }
@@ -203,7 +224,10 @@ export function RemitaPaymentModal({
       }
     } catch (error) {
       console.error("Link verification error:", error);
-      showError("Network Error", "Failed to verify payment links. Please check your internet connection and try again.");
+      showError(
+        "Network Error",
+        "Failed to verify payment links. Please check your internet connection and try again."
+      );
     } finally {
       setIsVerifying(false);
     }
@@ -269,7 +293,9 @@ export function RemitaPaymentModal({
               <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
                 <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
                 <p className="text-xs text-amber-800">
-                  <strong>Important:</strong> Please ensure your Payer ID and Payer Type in your profile match the LASG receipt before making payment.
+                  <strong>Important:</strong> Please ensure your Payer ID and
+                  Payer Type in your profile match the LASG receipt before
+                  making payment.
                 </p>
               </div>
 
@@ -280,52 +306,96 @@ export function RemitaPaymentModal({
                 </h3>
                 <div className="grid grid-cols-1 gap-2 text-sm">
                   <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Payer ID</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                      Payer ID
+                    </span>
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-medium">
                         {batchData.submitter?.payerID || "N/A"}
                       </span>
                       {batchData.submitter?.payerID && (
-                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.payerID?.toString() || "", "Payer ID")} title="Copy Payer ID">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600"
+                          onClick={() =>
+                            handleCopyText(
+                              batchData.submitter?.payerID?.toString() || "",
+                              "Payer ID"
+                            )
+                          }
+                          title="Copy Payer ID"
+                        >
                           <Copy className="h-3 w-3" />
                         </Button>
                       )}
                     </div>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Payer ID Type</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                      Payer ID Type
+                    </span>
                     <span className="font-medium">
                       {batchData.submitter?.payerIDType || "N/A"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Name</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                      Name
+                    </span>
                     <span className="font-medium">
                       {batchData.submitter?.firstName}{" "}
                       {batchData.submitter?.lastName}
                     </span>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Email</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                      Email
+                    </span>
                     <div className="flex items-center gap-2">
                       <span className="font-medium">
                         {batchData.submitter?.email || "N/A"}
                       </span>
                       {batchData.submitter?.email && (
-                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.email?.toString() || "", "Email")} title="Copy Email">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600"
+                          onClick={() =>
+                            handleCopyText(
+                              batchData.submitter?.email?.toString() || "",
+                              "Email"
+                            )
+                          }
+                          title="Copy Email"
+                        >
                           <Copy className="h-3 w-3" />
                         </Button>
                       )}
                     </div>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Phone</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                      Phone
+                    </span>
                     <div className="flex items-center gap-2">
                       <span className="font-medium">
                         {batchData.submitter?.phoneNumber || "N/A"}
                       </span>
                       {batchData.submitter?.phoneNumber && (
-                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.phoneNumber?.toString() || "", "Phone")} title="Copy Phone">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600"
+                          onClick={() =>
+                            handleCopyText(
+                              batchData.submitter?.phoneNumber?.toString() ||
+                                "",
+                              "Phone"
+                            )
+                          }
+                          title="Copy Phone"
+                        >
                           <Copy className="h-3 w-3" />
                         </Button>
                       )}
@@ -341,34 +411,68 @@ export function RemitaPaymentModal({
                 </h3>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Agency Name</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                      Agency Name
+                    </span>
                     <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 pb-1">
                       <span className="font-medium">
                         4830000 -- 61004 -- Office of Surveyor General
                       </span>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText("4830000 -- 61004 -- Office of Surveyor General", "Agency Name")} title="Copy Agency Name">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600"
+                        onClick={() =>
+                          handleCopyText(
+                            "4830000 -- 61004 -- Office of Surveyor General",
+                            "Agency Name"
+                          )
+                        }
+                        title="Copy Agency Name"
+                      >
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Revenue Name</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                      Revenue Name
+                    </span>
                     <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 pb-1">
                       <span className="font-medium">
                         4020002 -- 32202 -- Lands Registry Transactions
                       </span>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText("4020002 -- 32202 -- Lands Registry Transactions", "Revenue Name")} title="Copy Revenue Name">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600"
+                        onClick={() =>
+                          handleCopyText(
+                            "4020002 -- 32202 -- Lands Registry Transactions",
+                            "Revenue Name"
+                          )
+                        }
+                        title="Copy Revenue Name"
+                      >
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Period</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                      Period
+                    </span>
                     <div className="flex items-center justify-between">
                       <span className="font-medium flex items-center gap-1">
                         <Calendar className="w-3 h-3" /> {today}
                       </span>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText(today, "Period")} title="Copy Period">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600"
+                        onClick={() => handleCopyText(today, "Period")}
+                        title="Copy Period"
+                      >
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
@@ -397,10 +501,11 @@ export function RemitaPaymentModal({
                   <input
                     type="url"
                     placeholder="https://printreceipt.ebs-rcm.com/..."
-                    className={`w-full h-10 px-3 rounded-md border text-xs focus:outline-none transition-colors ${lasgReceiptUrl && !isValidLasgUrl(lasgReceiptUrl)
+                    className={`w-full h-10 px-3 rounded-md border text-xs focus:outline-none transition-colors ${
+                      lasgReceiptUrl && !isValidLasgUrl(lasgReceiptUrl)
                         ? "border-red-300 focus:border-red-500 bg-red-50"
                         : "border-gray-300 dark:border-white/15 focus:border-blue-500"
-                      }`}
+                    }`}
                     value={lasgReceiptUrl}
                     onChange={(e) => setLasgReceiptUrl(e.target.value)}
                   />
@@ -419,10 +524,11 @@ export function RemitaPaymentModal({
                   <input
                     type="url"
                     placeholder="https://login.remita.net/remita/rrr/..."
-                    className={`w-full h-10 px-3 rounded-md border text-xs focus:outline-none transition-colors ${remitaReceiptUrl && !isValidRemitaUrl(remitaReceiptUrl)
+                    className={`w-full h-10 px-3 rounded-md border text-xs focus:outline-none transition-colors ${
+                      remitaReceiptUrl && !isValidRemitaUrl(remitaReceiptUrl)
                         ? "border-red-300 focus:border-red-500 bg-red-50"
                         : "border-gray-300 dark:border-white/15 focus:border-blue-500"
-                      }`}
+                    }`}
                     value={remitaReceiptUrl}
                     onChange={(e) => setRemitaReceiptUrl(e.target.value)}
                   />

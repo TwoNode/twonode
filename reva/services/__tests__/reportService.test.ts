@@ -54,7 +54,9 @@ describe("getAnyRequestByReferenceForAdmin", () => {
 
   it("falls back to OneTimeUserProperty when not a Property", async () => {
     mockPrisma.property.findUnique.mockResolvedValue(null);
-    mockPrisma.oneTimeUserProperty.findUnique.mockResolvedValue({ reference: "reva_1" });
+    mockPrisma.oneTimeUserProperty.findUnique.mockResolvedValue({
+      reference: "reva_1",
+    });
     const result = await getAnyRequestByReferenceForAdmin("reva_1");
     expect(result).toEqual({ type: "oneTime", data: { reference: "reva_1" } });
   });
@@ -62,21 +64,30 @@ describe("getAnyRequestByReferenceForAdmin", () => {
   it("throws NotFoundError when neither table has it", async () => {
     mockPrisma.property.findUnique.mockResolvedValue(null);
     mockPrisma.oneTimeUserProperty.findUnique.mockResolvedValue(null);
-    await expect(getAnyRequestByReferenceForAdmin("nope")).rejects.toMatchObject({ status: 404 });
+    await expect(
+      getAnyRequestByReferenceForAdmin("nope")
+    ).rejects.toMatchObject({ status: 404 });
   });
 });
 
 describe("uploadDueDiligenceReport", () => {
   it("throws ValidationError when reference is missing", async () => {
     const formData = new FormData();
-    await expect(uploadDueDiligenceReport(formData, "admin@test.com")).rejects.toMatchObject({ status: 400 });
+    await expect(
+      uploadDueDiligenceReport(formData, "admin@test.com")
+    ).rejects.toMatchObject({ status: 400 });
   });
 });
 
 describe("approveDueDiligenceReport", () => {
   it("throws NotFoundError when the property has no report yet", async () => {
-    mockPrisma.property.findUnique.mockResolvedValue({ reference: "R1", report: null });
-    await expect(approveDueDiligenceReport("R1", true, "admin@test.com")).rejects.toMatchObject({ status: 404 });
+    mockPrisma.property.findUnique.mockResolvedValue({
+      reference: "R1",
+      report: null,
+    });
+    await expect(
+      approveDueDiligenceReport("R1", true, "admin@test.com")
+    ).rejects.toMatchObject({ status: 404 });
   });
 
   it("approved: notifies the owning user by id and echoes to admins", async () => {
@@ -85,7 +96,10 @@ describe("approveDueDiligenceReport", () => {
       report: { titleStatus: "Clear" },
       user: { id: "user-1", email: "user@test.com", firstName: "Jane" },
     });
-    mockPrisma.property.update.mockResolvedValue({ reference: "R1", status: "Available" });
+    mockPrisma.property.update.mockResolvedValue({
+      reference: "R1",
+      status: "Available",
+    });
 
     await approveDueDiligenceReport("R1", true, "admin@test.com");
 
@@ -93,7 +107,10 @@ describe("approveDueDiligenceReport", () => {
       expect.objectContaining({ reference: "R1" }),
       "user-1"
     );
-    expect(mockNotify.notifySystemAlert).toHaveBeenCalledWith("Report Approved", expect.stringContaining("R1"));
+    expect(mockNotify.notifySystemAlert).toHaveBeenCalledWith(
+      "Report Approved",
+      expect.stringContaining("R1")
+    );
   });
 
   it("disapproved: skips notifyReportReady, still alerts admins", async () => {
@@ -102,18 +119,29 @@ describe("approveDueDiligenceReport", () => {
       report: { titleStatus: "Clear" },
       user: { id: "user-1", email: "user@test.com", firstName: "Jane" },
     });
-    mockPrisma.property.update.mockResolvedValue({ reference: "R1", status: "Processing" });
+    mockPrisma.property.update.mockResolvedValue({
+      reference: "R1",
+      status: "Processing",
+    });
 
     await approveDueDiligenceReport("R1", false, "admin@test.com");
 
     expect(mockNotify.notifyReportReady).not.toHaveBeenCalled();
-    expect(mockNotify.notifySystemAlert).toHaveBeenCalledWith("Report Disapproved", expect.stringContaining("R1"));
+    expect(mockNotify.notifySystemAlert).toHaveBeenCalledWith(
+      "Report Disapproved",
+      expect.stringContaining("R1")
+    );
   });
 });
 
 describe("approveOneTimeDueDiligenceReport", () => {
   it("approved: wires the guest email-keyed notifyReportReady path (resolved Phase 3 decision — was entirely dead code in the source)", async () => {
-    const updated = { reference: "R1", email: "guest@test.com", requester: "Guest", status: "Completed" };
+    const updated = {
+      reference: "R1",
+      email: "guest@test.com",
+      requester: "Guest",
+      status: "Completed",
+    };
     mockPrisma.oneTimeUserProperty.findUnique.mockResolvedValue({
       reference: "R1",
       email: "guest@test.com",
@@ -135,7 +163,10 @@ describe("approveOneTimeDueDiligenceReport", () => {
       requester: "Guest",
       report: { titleStatus: "Clear" },
     });
-    mockPrisma.oneTimeUserProperty.update.mockResolvedValue({ reference: "R1", status: "Processing" });
+    mockPrisma.oneTimeUserProperty.update.mockResolvedValue({
+      reference: "R1",
+      status: "Processing",
+    });
 
     await approveOneTimeDueDiligenceReport("R1", false, "admin@test.com");
 

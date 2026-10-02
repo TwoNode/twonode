@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Platform } from "@/utils/platform";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { checkRateLimit, recordAttempt, getClientIp } from "@/lib/auth/rateLimit";
+import {
+  checkRateLimit,
+  recordAttempt,
+  getClientIp,
+} from "@/lib/auth/rateLimit";
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
 import { completePendingRegistration } from "@/lib/auth/pendingRegistration";
@@ -37,7 +41,10 @@ const registerSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
 
     const clientIp = getClientIp(req);
@@ -48,11 +55,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { platform, pendingRegistrationId, code } = await validateBody(req, registerSchema);
+    const { platform, pendingRegistrationId, code } = await validateBody(
+      req,
+      registerSchema
+    );
 
     let user;
     try {
-      user = await completePendingRegistration(platform, pendingRegistrationId, code);
+      user = await completePendingRegistration(
+        platform,
+        pendingRegistrationId,
+        code
+      );
     } catch (err) {
       await recordAttempt(`register:${clientIp}`);
       throw err;
@@ -71,6 +85,9 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

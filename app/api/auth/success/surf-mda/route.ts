@@ -84,7 +84,13 @@ export async function GET(request: NextRequest) {
     // Also mint a native session (additive; must never break the existing
     // Kinde login flow if it fails).
     try {
-      await issueSession(dbUser.id, dbUser.role, Platform.SURFBOARD, undefined, dbUser);
+      await issueSession(
+        dbUser.id,
+        dbUser.role,
+        Platform.SURFBOARD,
+        undefined,
+        dbUser
+      );
     } catch (err) {
       console.error("issueSession failed for surf-mda callback:", err);
     }
@@ -124,6 +130,8 @@ export async function GET(request: NextRequest) {
     return responseWithCookie;
   } catch (error) {
     console.error("Error in GET /auth/success/surfboard-mda:", error);
-    return NextResponse.redirect(new URL("/surfboard-mda/error-login", request.url));
+    return NextResponse.redirect(
+      new URL("/surfboard-mda/error-login", request.url)
+    );
   }
 }

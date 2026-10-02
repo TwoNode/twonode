@@ -21,22 +21,38 @@ export const POST = withAuth<RevaRole>(
   async (req, ctx, routeCtx: RouteCtx) => {
     try {
       if (!validateCSRF(req)) {
-        return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+        return NextResponse.json(
+          { success: false, error: "Cross-origin request blocked" },
+          { status: 403 }
+        );
       }
       const { reference } = await routeCtx.params;
       const { target } = await validateBody(req, requestOtpSchema);
       const identifier = `download-otp:request:${ctx.session.sub}:${reference}:${target}`;
 
       if (!(await checkRateLimit(identifier))) {
-        return NextResponse.json({ success: false, error: "Too many attempts. Try again later." }, { status: 429 });
+        return NextResponse.json(
+          { success: false, error: "Too many attempts. Try again later." },
+          { status: 429 }
+        );
       }
       await recordAttempt(identifier, ctx.session.sub);
 
-      const data = await requestDownloadOtp({ reference, target, userId: ctx.session.sub });
+      const data = await requestDownloadOtp({
+        reference,
+        target,
+        userId: ctx.session.sub,
+      });
       return NextResponse.json({ success: true, data });
     } catch (err) {
-      return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+      return handleApiError(err, {
+        route: req.nextUrl.pathname,
+        method: req.method,
+      });
     }
   },
-  { platform: Platform.REVA, roles: [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN] }
+  {
+    platform: Platform.REVA,
+    roles: [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN],
+  }
 );

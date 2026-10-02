@@ -11,7 +11,14 @@ type RouteCtx = { params: Promise<{ planId: string }> };
 const bodySchema = z.object({
   pillars: z.any().optional(),
   recordCopyUrl: z.string().url().optional(),
-  location: z.object({ lga: z.string().optional(), lcda: z.string().optional(), ward: z.string().optional(), state: z.string().optional() }).optional(),
+  location: z
+    .object({
+      lga: z.string().optional(),
+      lcda: z.string().optional(),
+      ward: z.string().optional(),
+      state: z.string().optional(),
+    })
+    .optional(),
   lasgReceiptUrl: z.string().url().optional(),
   remitaReceiptUrl: z.string().url().optional(),
 });
@@ -19,11 +26,28 @@ const bodySchema = z.object({
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { planId } = await routeCtx.params;
-    const { pillars, recordCopyUrl, location, lasgReceiptUrl, remitaReceiptUrl } = await validateBody(req, bodySchema);
-    const data = await resubmitQueriedPlan(ctx.session.sub, planId, pillars, recordCopyUrl, location, lasgReceiptUrl, remitaReceiptUrl);
+    const {
+      pillars,
+      recordCopyUrl,
+      location,
+      lasgReceiptUrl,
+      remitaReceiptUrl,
+    } = await validateBody(req, bodySchema);
+    const data = await resubmitQueriedPlan(
+      ctx.session.sub,
+      planId,
+      pillars,
+      recordCopyUrl,
+      location,
+      lasgReceiptUrl,
+      remitaReceiptUrl
+    );
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] }

@@ -7,12 +7,17 @@ import { updateInquiryStatus } from "@/gbc/services/contactService";
 import { Platform, GBCRole } from "@/utils/platform";
 
 type RouteCtx = { params: Promise<{ id: string }> };
-const bodySchema = z.object({ status: z.enum(["PENDING", "IN_PROGRESS", "RESOLVED", "CLOSED"]) });
+const bodySchema = z.object({
+  status: z.enum(["PENDING", "IN_PROGRESS", "RESOLVED", "CLOSED"]),
+});
 
 export const PATCH = withAuth<GBCRole>(
   async (req, _ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { id } = await routeCtx.params;
     const { status } = await validateBody(req, bodySchema);

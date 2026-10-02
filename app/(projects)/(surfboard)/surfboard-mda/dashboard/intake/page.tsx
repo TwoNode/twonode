@@ -134,7 +134,7 @@ export default function IntakeAdminPage() {
     role: "INTAKE",
     onLockAcquired: (batchId, batchCode, planCount) => {
       toast.success(
-        `Batch ${batchCode} locked (${planCount} plan${planCount !== 1 ? "s" : ""}, ${planCount * 3}min)`,
+        `Batch ${batchCode} locked (${planCount} plan${planCount !== 1 ? "s" : ""}, ${planCount * 3}min)`
       );
     },
     onLockReleased: () => {
@@ -242,16 +242,16 @@ export default function IntakeAdminPage() {
           const aTime = new Date(
             Math.max(
               ...a.plans.map((p: any) =>
-                new Date(p.intakeApprovedAt || 0).getTime(),
-              ),
-            ),
+                new Date(p.intakeApprovedAt || 0).getTime()
+              )
+            )
           ).getTime();
           const bTime = new Date(
             Math.max(
               ...b.plans.map((p: any) =>
-                new Date(p.intakeApprovedAt || 0).getTime(),
-              ),
-            ),
+                new Date(p.intakeApprovedAt || 0).getTime()
+              )
+            )
           ).getTime();
           return bTime - aTime; // descending
         });
@@ -270,7 +270,7 @@ export default function IntakeAdminPage() {
   // Batch-level action
   const handleBatchActionClick = (
     batch: Batch,
-    action: "approve" | "query",
+    action: "approve" | "query"
   ) => {
     setSelectedBatch(batch);
     setSelectedPlan(null);
@@ -284,7 +284,7 @@ export default function IntakeAdminPage() {
   const handlePlanActionClick = (
     plan: Plan,
     batch: Batch,
-    action: "approve" | "query",
+    action: "approve" | "query"
   ) => {
     setSelectedPlan(plan);
     setSelectedBatch(batch);
@@ -315,14 +315,14 @@ export default function IntakeAdminPage() {
       const result = await surfboardApi.mda.intake.decide(
         selectedBatch.id,
         actionType === "approve",
-        comment.trim() || undefined,
+        comment.trim() || undefined
       );
 
       if (result.success) {
         toast.success(
           actionType === "approve"
             ? `Batch ${selectedBatch.batchCode} approved successfully (${result.data?.updatedCount} plans)`
-            : `Batch ${selectedBatch.batchCode} queried successfully`,
+            : `Batch ${selectedBatch.batchCode} queried successfully`
         );
         setShowDialog(false);
         await fetchBatches();
@@ -356,14 +356,14 @@ export default function IntakeAdminPage() {
         "intake",
         selectedPlan.id,
         actionType === "approve",
-        comment.trim() || undefined,
+        comment.trim() || undefined
       );
 
       if (result.success) {
         toast.success(
           actionType === "approve"
             ? `Plan ${selectedPlan.planNumber} approved successfully`
-            : `Plan ${selectedPlan.planNumber} has been queried`,
+            : `Plan ${selectedPlan.planNumber} has been queried`
         );
         setShowDialog(false);
         await fetchBatches();
@@ -420,9 +420,9 @@ export default function IntakeAdminPage() {
       ? new Date(
           Math.max(
             ...batch.plans.map((p) =>
-              new Date(p.intakeApprovedAt || 0).getTime(),
-            ),
-          ),
+              new Date(p.intakeApprovedAt || 0).getTime()
+            )
+          )
         )
       : null;
 
@@ -830,7 +830,7 @@ export default function IntakeAdminPage() {
             ) : (
               <div className="grid gap-4">
                 {filteredHistoryBatches.map((batch) =>
-                  renderBatchCard(batch, true),
+                  renderBatchCard(batch, true)
                 )}
               </div>
             )}

@@ -9,27 +9,33 @@ Foundations phase: build the shared plumbing (structured API layer, native auth,
 ## What was built
 
 ### Step 1-2 — Worktree + Prisma schema split
+
 `prisma/schema.prisma` (1,146 lines) split into `prisma/schema/{core,gis,reva,surfboard,gbc}.prisma`. Needed an added `prisma.config.ts` not in the original plan — this Prisma version (6.19) doesn't auto-discover a multi-file schema folder without one. Verified every model present on the regenerated client; `tsc`/`build` both clean.
 
 ### Step 3 — `lib/api/` shared plumbing
+
 `withAuth`, `pagination`, `errors` (full `ApiError` hierarchy + `handleApiError`, ~30-code Prisma error table ported from Surfboard's existing `prismaErrorHandler.ts`), `validate`, `types` — modeled directly on proplity's own already-proven equivalents.
 
 ### Step 4-5 — `lib/auth/` native auth primitives + schema
+
 `jwt`, `cookies`, `csrf`, `rateLimit`, `session`. Cookie names are **platform-suffixed** (`access_token_reva`, `access_token_surfboard`, ...) rather than proplity's fixed pair — a deliberate deviation to preserve this codebase's existing simultaneous-multi-platform-login capability (the `USER_SESSION` cookie's `platforms` map does the same job today).
 
 Schema additions: `passwordHash`/`authProviders` (`AuthProvider[]`) added directly onto `RevaUser`/`SurfboardUser`/`GBCUser` — no separate identity table, unlike the alternative `better-auth`-library approach evaluated later (see Step 7). Shared `RefreshToken` (rotating, `familyId`-based reuse/theft detection) and `LoginAttempt` (DB-backed rate limiting) models added to `core.prisma`. `RefreshToken.platform` is a plain `String` validated against the existing canonical `utils/platform.ts` enum, not a second Prisma enum with different casing.
 
 ### Step 6 — Native auth routes
+
 `app/api/v1/auth/{register,login,refresh,logout,me,change-password}/route.ts`. Role is never accepted from the client on registration — always the lowest-privilege value, since these are public routes. All 6 verified live against a local Postgres db, including the two hardest security properties: refresh-token replay produces family-wide revocation, and a role-escalation attempt on registration is rejected.
 
 ### Step 7 — Kinde callback dual-write
+
 Before building this, evaluated a rediscovered prior attempt at the same problem: a stale (~2 months behind `main`) `better-auth` branch using the `better-auth` npm library with a separate identity table (`authUserId` link). It independently arrived at the same "bridge onto the legacy cookie, don't touch `proxy.ts`'s downstream logic" shape proposed here — which confirmed the approach rather than changing direction. Decision: keep the native hand-rolled auth (already built and verified, matches the original brief to mirror proplity's patterns), reuse the bridge pattern.
 
-All 7 *live* Kinde callback routes (`reva`, `reva-restricted`, `surfboard`, `surf-restricted`, `surf-mda`, `gbc-restricted`, `scram`) now additionally mint a native session via a shared `issueSession()` helper (extracted out of `/login` so both entry points mint identically), alongside the existing `USER_SESSION` cookie they've always set. `issueSession()` failures are caught and logged, never allowed to break the working Kinde path. `gbc/_route.ts` (underscore-prefixed, inert, never routed by Next.js) is left alone — a pre-existing, separately-flagged decision, not part of this step.
+All 7 _live_ Kinde callback routes (`reva`, `reva-restricted`, `surfboard`, `surf-restricted`, `surf-mda`, `gbc-restricted`, `scram`) now additionally mint a native session via a shared `issueSession()` helper (extracted out of `/login` so both entry points mint identically), alongside the existing `USER_SESSION` cookie they've always set. `issueSession()` failures are caught and logged, never allowed to break the working Kinde path. `gbc/_route.ts` (underscore-prefixed, inert, never routed by Next.js) is left alone — a pre-existing, separately-flagged decision, not part of this step.
 
 `AuthProvider.PASSWORD` renamed to `AuthProvider.NATIVE` shortly after, to match the vocabulary already used everywhere else (`createNativeUser`, `NativeAuthUser`).
 
 ### Step 8 — Surfboard route/access registry pilot
+
 `surfboard/access/routes.ts` — one array of `{path, label, icon, roles, group}` entries covering Surfboard's admin + QR-earnings routes, plus `canAccessRoute()`/`getNavItemsForRole()` helpers, replacing the hardcoded nav array in `surfboardAdminPanelLayout.tsx` (now deleted) that had already drifted from reality once this session (the missing-nav-entry bug fixed under TC-003, before this rebuild started).
 
 `components/admin-panel/DashboardShell.tsx` — data-driven shell reading nav from the registry via `role`/`group` props. Caught and fixed a real bug via live verification, not assumption: `LucideIcon` component references can't be passed as props from a Server Component to a Client Component (React: "Functions cannot be passed directly to Client Components"). The shell originally received pre-resolved `navItems` (icon references included) computed in the server-side layout; fixed by having `DashboardShell` resolve nav itself, client-side, from plain serializable `role`/`group` strings.
@@ -110,6 +116,6 @@ This was a reasonable choice at the time (low edition-change frequency, fits the
 
 **You asked to proceed — the migration shipped the same day.** New `GBCEdition` Prisma model (`prisma/schema/gbc.prisma`), primary key `key` (the existing edition key values like `"2.0"`, so the 5 tag columns become real foreign keys — `edition String @relation(fields: [edition], references: [key])` — with zero data migration needed on those tables). Added a Postgres partial unique index, `gbc_editions(status) WHERE status = 'ACTIVE'`, as a DB-level backstop to `editionService.ts`'s existing app-level check — Prisma's schema DSL can't express a partial index, so it's applied via raw SQL alongside the rest of the migration.
 
-Applied by hand via `psql` (`prisma/migrations/manual_gbc_editions.sql`), not `prisma db push`/`migrate`, because this machine's local Postgres is still missing the PostGIS extension `gis.prisma`'s models need (same pre-existing environment gap noted since Phase 4 — blocks the schema engine on the *whole* datamodel, not just GBC's slice of it). The SQL backfills the one real edition ("2.0") straight out of the JSON blob, adds the FK constraints, adds the partial index, then drops the now-redundant `editions` key from `gbc_settings.settings` so there's only one source of truth going forward.
+Applied by hand via `psql` (`prisma/migrations/manual_gbc_editions.sql`), not `prisma db push`/`migrate`, because this machine's local Postgres is still missing the PostGIS extension `gis.prisma`'s models need (same pre-existing environment gap noted since Phase 4 — blocks the schema engine on the _whole_ datamodel, not just GBC's slice of it). The SQL backfills the one real edition ("2.0") straight out of the JSON blob, adds the FK constraints, adds the partial index, then drops the now-redundant `editions` key from `gbc_settings.settings` so there's only one source of truth going forward.
 
 `editionService.ts`, `ticketService.ts`'s active-edition/ticket-prefix lookup, and `settingsService.ts` (the now-dead `replaceEditions` path removed) all repointed onto the new table — every function kept its existing return shape, so no API route or frontend consumer needed changes. Verified live against the real DB, not just `tsc`/`build`: full create → activate → archive → public-recap → admin-stats flow through the real HTTP routes with a minted SUPERADMIN session, the app-level 409 "already active" conflict check, and — the point of the whole exercise — confirmed the DB partial unique index actually rejects a second `ACTIVE` row even when bypassing `editionService.ts` entirely via a direct Prisma write. Test data cleaned up after; DB confirmed back to just the one "2.0" edition. tsc clean, 242/242 vitest (`editionService.test.ts` and `ticketService.test.ts` both updated for the new `prisma.gBCEdition` mock), production build clean.

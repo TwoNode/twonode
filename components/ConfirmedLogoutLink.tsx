@@ -36,22 +36,31 @@ type ConfirmedLogoutLinkProps = {
  * e.g. DeleteAdminModal) so a misclick doesn't silently sign someone out
  * mid-task.
  */
-export function ConfirmedLogoutLink({ trigger, ...action }: ConfirmedLogoutLinkProps) {
+export function ConfirmedLogoutLink({
+  trigger,
+  ...action
+}: ConfirmedLogoutLinkProps) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
       <AlertDialogContent className="sm:max-w-sm">
         <AlertDialogHeader>
           <AlertDialogTitle>Log out?</AlertDialogTitle>
-          <AlertDialogDescription>You&apos;ll need to sign in again to continue.</AlertDialogDescription>
+          <AlertDialogDescription>
+            You&apos;ll need to sign in again to continue.
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           {action.onConfirm ? (
-            <AlertDialogAction onClick={action.onConfirm}>Log out</AlertDialogAction>
+            <AlertDialogAction onClick={action.onConfirm}>
+              Log out
+            </AlertDialogAction>
           ) : (
             <AlertDialogAction asChild>
-              <LogoutLink postLogoutRedirectURL={action.postLogoutRedirectURL}>Log out</LogoutLink>
+              <LogoutLink postLogoutRedirectURL={action.postLogoutRedirectURL}>
+                Log out
+              </LogoutLink>
             </AlertDialogAction>
           )}
         </AlertDialogFooter>

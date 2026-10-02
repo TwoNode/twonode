@@ -7,10 +7,8 @@ const mockSettings = vi.hoisted(() => ({
 vi.mock("@/lib/auth/emailVerificationSettings", () => mockSettings);
 
 const { Platform } = await import("@/utils/platform");
-const {
-  computeMustVerifyNow,
-  computeVerificationGraceEndsAt,
-} = await import("@/lib/auth/emailVerificationGate");
+const { computeMustVerifyNow, computeVerificationGraceEndsAt } =
+  await import("@/lib/auth/emailVerificationGate");
 
 describe("emailVerificationGate", () => {
   beforeEach(() => {
@@ -26,7 +24,10 @@ describe("emailVerificationGate", () => {
         enforcedSince: "2026-09-01T00:00:00.000Z",
       });
 
-      const user = { emailVerified: false, createdAt: new Date("2026-09-15T00:00:00.000Z") };
+      const user = {
+        emailVerified: false,
+        createdAt: new Date("2026-09-15T00:00:00.000Z"),
+      };
       const mustVerify = await computeMustVerifyNow(Platform.SURFBOARD, user);
       expect(mustVerify).toBe(false);
     });
@@ -39,7 +40,10 @@ describe("emailVerificationGate", () => {
         enforcedSince: "2026-09-01T00:00:00.000Z",
       });
 
-      const user = { emailVerified: true, createdAt: new Date("2026-09-15T00:00:00.000Z") };
+      const user = {
+        emailVerified: true,
+        createdAt: new Date("2026-09-15T00:00:00.000Z"),
+      };
       const mustVerify = await computeMustVerifyNow(Platform.SURFBOARD, user);
       expect(mustVerify).toBe(false);
     });
@@ -53,14 +57,19 @@ describe("emailVerificationGate", () => {
       });
 
       // Created after enforcedSince
-      const user = { emailVerified: false, createdAt: new Date("2026-09-10T00:00:00.000Z") };
+      const user = {
+        emailVerified: false,
+        createdAt: new Date("2026-09-10T00:00:00.000Z"),
+      };
       const mustVerify = await computeMustVerifyNow(Platform.SURFBOARD, user);
       expect(mustVerify).toBe(true);
     });
 
     it("returns false for grandfathered accounts still inside grace period", async () => {
       // Enforcement started 10 days ago, grace period is 30 days
-      const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+      const tenDaysAgo = new Date(
+        Date.now() - 10 * 24 * 60 * 60 * 1000
+      ).toISOString();
       mockSettings.getEmailVerificationSettings.mockResolvedValueOnce({
         enabled: true,
         method: "OTP",
@@ -79,7 +88,9 @@ describe("emailVerificationGate", () => {
 
     it("returns true for grandfathered accounts when grace period has expired", async () => {
       // Enforcement started 40 days ago, grace period is 30 days -> grace expired 10 days ago
-      const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
+      const fortyDaysAgo = new Date(
+        Date.now() - 40 * 24 * 60 * 60 * 1000
+      ).toISOString();
       mockSettings.getEmailVerificationSettings.mockResolvedValueOnce({
         enabled: true,
         method: "OTP",
@@ -106,8 +117,13 @@ describe("emailVerificationGate", () => {
         enforcedSince: "2026-09-01T00:00:00.000Z",
       });
 
-      const user = { emailVerified: false, createdAt: new Date("2026-08-01T00:00:00.000Z") };
-      expect(await computeVerificationGraceEndsAt(Platform.SURFBOARD, user)).toBeNull();
+      const user = {
+        emailVerified: false,
+        createdAt: new Date("2026-08-01T00:00:00.000Z"),
+      };
+      expect(
+        await computeVerificationGraceEndsAt(Platform.SURFBOARD, user)
+      ).toBeNull();
     });
 
     it("returns ISO date string if grandfathered user is inside grace", async () => {
@@ -124,9 +140,14 @@ describe("emailVerificationGate", () => {
         createdAt: new Date(fiveDaysAgo.getTime() - 1000),
       };
 
-      const graceEndsAt = await computeVerificationGraceEndsAt(Platform.SURFBOARD, user);
+      const graceEndsAt = await computeVerificationGraceEndsAt(
+        Platform.SURFBOARD,
+        user
+      );
       expect(graceEndsAt).not.toBeNull();
-      const expectedEnd = new Date(fiveDaysAgo.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      const expectedEnd = new Date(
+        fiveDaysAgo.getTime() + 30 * 24 * 60 * 60 * 1000
+      ).toISOString();
       expect(graceEndsAt).toBe(expectedEnd);
     });
   });

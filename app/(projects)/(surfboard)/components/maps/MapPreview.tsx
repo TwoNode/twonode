@@ -3,7 +3,10 @@
 import React, { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { convertCoordinates, applyVisualizationShift } from "@/app/(projects)/(surfboard)/utils/surfboardUtils";
+import {
+  convertCoordinates,
+  applyVisualizationShift,
+} from "@/app/(projects)/(surfboard)/utils/surfboardUtils";
 import { surfboardApi } from "@/surfboard/apiClient";
 import type { PillarData } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 
@@ -55,7 +58,11 @@ export default function MapPreview({
         // Fetch coordinate shifts and apply
         const shiftsResult = await surfboardApi.settings.coordinateShifts();
         const coordinateShifts = shiftsResult.success ? shiftsResult.data : {};
-        const visualPillars = applyVisualizationShift(pillars, state, coordinateShifts);
+        const visualPillars = applyVisualizationShift(
+          pillars,
+          state,
+          coordinateShifts
+        );
 
         // Convert all coordinates asynchronously
         const points = await Promise.all(
@@ -173,7 +180,9 @@ export default function MapPreview({
             />
           </svg>
         </div>
-        <p className="text-gray-600 dark:text-gray-400">No survey data to display</p>
+        <p className="text-gray-600 dark:text-gray-400">
+          No survey data to display
+        </p>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
           Upload a CSV file to see the map preview
         </p>

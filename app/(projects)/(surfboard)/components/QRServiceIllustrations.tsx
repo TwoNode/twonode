@@ -35,8 +35,20 @@ export function Service1Illustration() {
       </g>
       {/* magnifier / authenticity check */}
       <g transform="translate(118, 78)">
-        <circle cx="0" cy="0" r="10" stroke="#a5b4fc" strokeWidth="2.5" fill="#1e293b" />
-        <path d="M7 7 L14 14" stroke="#a5b4fc" strokeWidth="2.5" strokeLinecap="round" />
+        <circle
+          cx="0"
+          cy="0"
+          r="10"
+          stroke="#a5b4fc"
+          strokeWidth="2.5"
+          fill="#1e293b"
+        />
+        <path
+          d="M7 7 L14 14"
+          stroke="#a5b4fc"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
         <path
           d="M-4 0 l3 3 l6 -6"
           stroke="#4ade80"
@@ -72,14 +84,30 @@ export function Service2Illustration() {
           stroke="#6366f1"
           strokeWidth="1.5"
         />
-        <rect x="10" y="14" width="50" height="5" rx="2.5" fill="#818cf8" opacity="0.8" />
+        <rect
+          x="10"
+          y="14"
+          width="50"
+          height="5"
+          rx="2.5"
+          fill="#818cf8"
+          opacity="0.8"
+        />
         <rect x="10" y="26" width="38" height="4" rx="2" fill="#4c1d95" />
         <rect x="10" y="34" width="42" height="4" rx="2" fill="#4c1d95" />
         <rect x="10" y="42" width="30" height="4" rx="2" fill="#4c1d95" />
         {/* seal ribbon */}
         <g transform="translate(35, 68)">
           <circle cx="0" cy="0" r="16" fill="#4f46e5" />
-          <circle cx="0" cy="0" r="16" fill="none" stroke="#a5b4fc" strokeDasharray="2 3" strokeWidth="1.5" />
+          <circle
+            cx="0"
+            cy="0"
+            r="16"
+            fill="none"
+            stroke="#a5b4fc"
+            strokeDasharray="2 3"
+            strokeWidth="1.5"
+          />
           <path
             d="M-5 0 l3.5 3.5 l7 -8"
             stroke="#e0e7ff"

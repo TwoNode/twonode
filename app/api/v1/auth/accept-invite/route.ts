@@ -19,7 +19,10 @@ const acceptSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
 
     const body = await validateBody(req, acceptSchema);
@@ -28,14 +31,25 @@ export async function POST(req: NextRequest) {
     // REVA tells its superadmins when an admin joins; the account is created
     // here now rather than when the invitation was sent.
     if (body.platform === Platform.REVA) {
-      await announceAdminJoined({ email: user.email, firstName: user.firstName ?? "", lastName: user.lastName ?? "", role: user.role });
+      await announceAdminJoined({
+        email: user.email,
+        firstName: user.firstName ?? "",
+        lastName: user.lastName ?? "",
+        role: user.role,
+      });
     }
 
     return NextResponse.json({
       success: true,
-      data: { message: "Your account is ready. You can now sign in.", loginPath },
+      data: {
+        message: "Your account is ready. You can now sign in.",
+        loginPath,
+      },
     });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

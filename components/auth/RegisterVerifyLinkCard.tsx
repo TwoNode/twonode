@@ -41,7 +41,9 @@ export function RegisterVerifyLinkCard({
   const pendingRegistrationId = searchParams.get("pid");
   const token = searchParams.get("token");
   const { theme } = useTheme();
-  const [status, setStatus] = useState<"pending" | "success" | "error">("pending");
+  const [status, setStatus] = useState<"pending" | "success" | "error">(
+    "pending"
+  );
   const [error, setError] = useState<string | null>(null);
   const executedRef = useRef(false);
 
@@ -51,7 +53,9 @@ export function RegisterVerifyLinkCard({
   useEffect(() => {
     if (!pendingRegistrationId || !token) {
       setStatus("error");
-      setError("This link is missing information it needs. Please register again.");
+      setError(
+        "This link is missing information it needs. Please register again."
+      );
       return;
     }
 
@@ -60,7 +64,11 @@ export function RegisterVerifyLinkCard({
 
     (async () => {
       try {
-        const result = await registerComplete({ platform, pendingRegistrationId, code: token });
+        const result = await registerComplete({
+          platform,
+          pendingRegistrationId,
+          code: token,
+        });
         if (!result.success) {
           setError(result.error || "Something went wrong. Please try again.");
           setStatus("error");
@@ -71,7 +79,9 @@ export function RegisterVerifyLinkCard({
           router.push(dashboardHref);
         }, 1200);
       } catch {
-        setError("Couldn't reach the server. Check your connection and try again.");
+        setError(
+          "Couldn't reach the server. Check your connection and try again."
+        );
         setStatus("error");
       }
     })();
@@ -90,18 +100,29 @@ export function RegisterVerifyLinkCard({
 
       {status === "pending" && (
         <div className="w-full flex flex-col items-center gap-4 text-center">
-          <Loader2 className="h-10 w-10 animate-spin" style={{ color: accent }} />
-          <h1 className="text-2xl font-extrabold" style={{ color: headingColor }}>
+          <Loader2
+            className="h-10 w-10 animate-spin"
+            style={{ color: accent }}
+          />
+          <h1
+            className="text-2xl font-extrabold"
+            style={{ color: headingColor }}
+          >
             Creating your account
           </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-300">Just a moment...</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Just a moment...
+          </p>
         </div>
       )}
 
       {status === "success" && (
         <div className="w-full flex flex-col items-center gap-4 text-center">
           <CheckCircle2 className="h-10 w-10" style={{ color: accent }} />
-          <h1 className="text-2xl font-extrabold" style={{ color: headingColor }}>
+          <h1
+            className="text-2xl font-extrabold"
+            style={{ color: headingColor }}
+          >
             Account created
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -113,7 +134,10 @@ export function RegisterVerifyLinkCard({
       {status === "error" && (
         <div className="w-full flex flex-col items-center gap-4 text-center">
           <AlertCircle className="h-10 w-10 text-red-500" />
-          <h1 className="text-2xl font-extrabold" style={{ color: headingColor }}>
+          <h1
+            className="text-2xl font-extrabold"
+            style={{ color: headingColor }}
+          >
             Couldn't complete registration
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-300">{error}</p>

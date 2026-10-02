@@ -28,6 +28,7 @@ Modern, server-action-based conference management platform built with Next.js 14
 ## 🎯 Key Features
 
 ### Database Models (GBC-Prefixed)
+
 - ✅ `GBCUser` - User management with roles
 - ✅ `GBCTicket` - Ticket records with QR codes
 - ✅ `GBCSponsor` - Sponsor management by tier
@@ -39,6 +40,7 @@ Modern, server-action-based conference management platform built with Next.js 14
 - ✅ `GBCAuditLog` - Activity logging
 
 ### Email & SMS (Zoho)
+
 - ✅ Nodemailer with Zoho SMTP
 - ✅ Professional email templates
 - ✅ SMS via Termii or Africa's Talking
@@ -46,6 +48,7 @@ Modern, server-action-based conference management platform built with Next.js 14
 - ✅ Delivery tracking
 
 ### File Storage (AWS S3)
+
 - ✅ Automatic image optimization
 - ✅ Thumbnail generation
 - ✅ Organized folder structure
@@ -55,6 +58,7 @@ Modern, server-action-based conference management platform built with Next.js 14
 - ✅ QR code storage
 
 ### Admin Features
+
 - ✅ Real-time dashboard
 - ✅ Ticket management & export
 - ✅ QR scanner for check-in
@@ -67,21 +71,21 @@ Modern, server-action-based conference management platform built with Next.js 14
 
 ## 🛠️ Tech Stack
 
-| Category | Technology |
-|----------|-----------|
-| **Framework** | Next.js 14 (App Router) |
-| **Language** | TypeScript |
-| **Authentication** | Kinde Auth |
-| **Database** | PostgreSQL + Prisma |
-| **Storage** | AWS S3 |
-| **Email** | Zoho Mail (Nodemailer) |
-| **SMS** | Termii / Africa's Talking |
-| **Payment** | Paystack |
-| **Styling** | Tailwind CSS |
-| **Components** | shadcn/ui |
-| **Validation** | Zod |
-| **Image Processing** | Sharp |
-| **QR Codes** | qrcode + HMAC |
+| Category             | Technology                |
+| -------------------- | ------------------------- |
+| **Framework**        | Next.js 14 (App Router)   |
+| **Language**         | TypeScript                |
+| **Authentication**   | Kinde Auth                |
+| **Database**         | PostgreSQL + Prisma       |
+| **Storage**          | AWS S3                    |
+| **Email**            | Zoho Mail (Nodemailer)    |
+| **SMS**              | Termii / Africa's Talking |
+| **Payment**          | Paystack                  |
+| **Styling**          | Tailwind CSS              |
+| **Components**       | shadcn/ui                 |
+| **Validation**       | Zod                       |
+| **Image Processing** | Sharp                     |
+| **QR Codes**         | qrcode + HMAC             |
 
 ---
 
@@ -120,6 +124,7 @@ npm install lucide-react framer-motion react-hot-toast server-only
 ### 3. Setup Services
 
 See [Complete Setup Guide](./SETUP.md) for detailed instructions on:
+
 - Kinde Auth configuration
 - AWS S3 bucket setup
 - Zoho Mail SMTP
@@ -343,6 +348,7 @@ vercel --prod
 ### Environment Variables
 
 Set these in Vercel dashboard:
+
 - All Kinde credentials
 - AWS S3 credentials
 - Zoho SMTP credentials

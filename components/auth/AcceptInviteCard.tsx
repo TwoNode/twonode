@@ -9,14 +9,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { acceptInvitation, getInvitation, type InvitationDetails } from "@/lib/auth/authApiClient";
+import {
+  acceptInvitation,
+  getInvitation,
+  type InvitationDetails,
+} from "@/lib/auth/authApiClient";
 import { useTheme } from "@/hooks/useTheme";
 import type { Platform } from "@/utils/platform";
 
 /** ValidationError responses say only "Invalid request"; the useful text is the first field message in `details`. */
-function describeFailure(res: { error: string; code?: string; details?: unknown }): string {
-  if (res.code === "VALIDATION_ERROR" && res.details && typeof res.details === "object") {
-    const first = Object.values(res.details as Record<string, unknown>).flat()[0];
+function describeFailure(res: {
+  error: string;
+  code?: string;
+  details?: unknown;
+}): string {
+  if (
+    res.code === "VALIDATION_ERROR" &&
+    res.details &&
+    typeof res.details === "object"
+  ) {
+    const first = Object.values(
+      res.details as Record<string, unknown>
+    ).flat()[0];
     if (typeof first === "string") return first;
   }
   return res.error || "Something went wrong. Please try again.";
@@ -40,7 +54,14 @@ export type AcceptInviteCardProps = {
  * lets them confirm their name and choose a password, and creating that
  * account is the acceptance.
  */
-export function AcceptInviteCard({ platform, logoSrc, logoAlt, accent, accentDark, fallbackLoginHref }: AcceptInviteCardProps) {
+export function AcceptInviteCard({
+  platform,
+  logoSrc,
+  logoAlt,
+  accent,
+  accentDark,
+  fallbackLoginHref,
+}: AcceptInviteCardProps) {
   const token = useSearchParams().get("token");
   const { theme } = useTheme();
 
@@ -72,7 +93,13 @@ export function AcceptInviteCard({ platform, logoSrc, logoAlt, accent, accentDar
           setLoadError(res.error);
         }
       })
-      .catch(() => !cancelled && setLoadError("Couldn't reach the server. Check your connection and try again."))
+      .catch(
+        () =>
+          !cancelled &&
+          setLoadError(
+            "Couldn't reach the server. Check your connection and try again."
+          )
+      )
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
@@ -95,7 +122,13 @@ export function AcceptInviteCard({ platform, logoSrc, logoAlt, accent, accentDar
 
     setIsSubmitting(true);
     try {
-      const result = await acceptInvitation({ platform, token, password, firstName: firstName.trim(), lastName: lastName.trim() });
+      const result = await acceptInvitation({
+        platform,
+        token,
+        password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+      });
       if (!result.success) {
         setError(describeFailure(result));
         setIsSubmitting(false);
@@ -103,7 +136,9 @@ export function AcceptInviteCard({ platform, logoSrc, logoAlt, accent, accentDar
       }
       setLoginPath(result.data.loginPath);
     } catch {
-      setError("Couldn't reach the server. Check your connection and try again.");
+      setError(
+        "Couldn't reach the server. Check your connection and try again."
+      );
       setIsSubmitting(false);
     }
   }
@@ -124,38 +159,65 @@ export function AcceptInviteCard({ platform, logoSrc, logoAlt, accent, accentDar
       {loginPath ? (
         <div className="w-full flex flex-col items-center gap-4 text-center">
           <CheckCircle2 className="h-10 w-10" style={{ color: accent }} />
-          <h1 className="text-2xl font-extrabold" style={{ color: headingColor }}>
+          <h1
+            className="text-2xl font-extrabold"
+            style={{ color: headingColor }}
+          >
             Your account is ready
           </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-300">You can now sign in with your email and password.</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            You can now sign in with your email and password.
+          </p>
           <Link href={loginPath}>
-            <Button className="px-6 py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition" style={gradient}>
+            <Button
+              className="px-6 py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
+              style={gradient}
+            >
               Continue to sign in
             </Button>
           </Link>
         </div>
       ) : loading ? (
-        <Loader2 className="h-8 w-8 animate-spin my-8" style={{ color: accent }} />
+        <Loader2
+          className="h-8 w-8 animate-spin my-8"
+          style={{ color: accent }}
+        />
       ) : !token || loadError || !invitation ? (
         <div className="w-full flex flex-col items-center gap-4 text-center">
           <AlertCircle className="h-10 w-10 text-red-500" />
-          <h1 className="text-2xl font-extrabold" style={{ color: headingColor }}>
+          <h1
+            className="text-2xl font-extrabold"
+            style={{ color: headingColor }}
+          >
             Invitation unavailable
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-300">
-            {token && loadError ? loadError : "This invitation link is missing or malformed. Ask the person who invited you to send a new one."}
+            {token && loadError
+              ? loadError
+              : "This invitation link is missing or malformed. Ask the person who invited you to send a new one."}
           </p>
-          <Link href={fallbackLoginHref} className="underline font-semibold text-sm hover:opacity-80" style={{ color: accent }}>
+          <Link
+            href={fallbackLoginHref}
+            className="underline font-semibold text-sm hover:opacity-80"
+            style={{ color: accent }}
+          >
             Back to sign in
           </Link>
         </div>
       ) : (
         <>
-          <h1 className="text-3xl font-extrabold mb-2 text-center" style={{ color: headingColor }}>
+          <h1
+            className="text-3xl font-extrabold mb-2 text-center"
+            style={{ color: headingColor }}
+          >
             Accept your invitation
           </h1>
-          <p className="mb-6 text-base font-medium text-center" style={{ color: accent }}>
-            You&apos;ve been invited as {invitation.roleLabel}. Set a password to activate <strong>{invitation.email}</strong>.
+          <p
+            className="mb-6 text-base font-medium text-center"
+            style={{ color: accent }}
+          >
+            You&apos;ve been invited as {invitation.roleLabel}. Set a password
+            to activate <strong>{invitation.email}</strong>.
           </p>
 
           {error && (
@@ -165,15 +227,30 @@ export function AcceptInviteCard({ platform, logoSrc, logoAlt, accent, accentDar
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4 text-left">
+          <form
+            onSubmit={handleSubmit}
+            className="w-full flex flex-col gap-4 text-left"
+          >
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="firstName">First name</Label>
-                <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} required autoComplete="given-name" />
+                <Input
+                  id="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  autoComplete="given-name"
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="lastName">Last name</Label>
-                <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required autoComplete="family-name" />
+                <Input
+                  id="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  autoComplete="family-name"
+                />
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
@@ -204,7 +281,11 @@ export function AcceptInviteCard({ platform, logoSrc, logoAlt, accent, accentDar
               className="w-full px-6 py-3 h-auto text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
               style={gradient}
             >
-              {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Activate account"}
+              {isSubmitting ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                "Activate account"
+              )}
             </Button>
           </form>
         </>

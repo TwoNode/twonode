@@ -3,14 +3,20 @@ import { z } from "zod";
 import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { createSurfPlan, getPaginatedSurfPlans, getUserDisplayName } from "@/surfboard/services/planService";
+import {
+  createSurfPlan,
+  getPaginatedSurfPlans,
+  getUserDisplayName,
+} from "@/surfboard/services/planService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 export const GET = withAuth<SurfboardRole>(
   async (req, ctx) => {
     const sp = req.nextUrl.searchParams;
     const page = sp.get("page") ? Number(sp.get("page")) : undefined;
-    const pageSize = sp.get("pageSize") ? Number(sp.get("pageSize")) : undefined;
+    const pageSize = sp.get("pageSize")
+      ? Number(sp.get("pageSize"))
+      : undefined;
     const noPagination = sp.get("noPagination") === "true";
     const filters = {
       search: sp.get("search") ?? undefined,
@@ -22,16 +28,31 @@ export const GET = withAuth<SurfboardRole>(
     };
     const sortField = sp.get("sortField");
     const sortOrder = sp.get("sortOrder");
-    const sort = sortField && sortOrder ? { field: sortField as any, order: sortOrder as "asc" | "desc" } : undefined;
+    const sort =
+      sortField && sortOrder
+        ? { field: sortField as any, order: sortOrder as "asc" | "desc" }
+        : undefined;
 
-    const data = await getPaginatedSurfPlans(ctx.session.sub, { page, pageSize, filters, sort, noPagination });
+    const data = await getPaginatedSurfPlans(ctx.session.sub, {
+      page,
+      pageSize,
+      filters,
+      sort,
+      noPagination,
+    });
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] }
 );
 
 const geometrySchema = z.any();
-const pillarSchema = z.object({ pillarNumber: z.union([z.string(), z.number()]), easting: z.number(), northing: z.number() }).passthrough();
+const pillarSchema = z
+  .object({
+    pillarNumber: z.union([z.string(), z.number()]),
+    easting: z.number(),
+    northing: z.number(),
+  })
+  .passthrough();
 
 const createPlanBodySchema = z.object({
   planNumber: z.string().min(1),
@@ -64,7 +85,10 @@ const createPlanBodySchema = z.object({
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const dto = await validateBody(req, createPlanBodySchema);
     const user = await getUserDisplayName(ctx.session.sub);

@@ -25,7 +25,9 @@ export const metadata: Metadata = {
   title: "TwoNode — We build for industries",
   description:
     "TwoNode enters industries, understands how they work, and builds the products, experiences and connections their ecosystems need.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com"
+  ),
   openGraph: {
     title: "TwoNode — We build for industries",
     description:
@@ -39,9 +41,15 @@ export const metadata: Metadata = {
   icons: { icon: "/favicon.ico" },
 };
 
-export default function V2Layout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function V2Layout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${fraunces.variable} scroll-smooth`} data-scroll-behavior="smooth">
+    <html
+      lang="en"
+      className={`${fraunces.variable} scroll-smooth`}
+      data-scroll-behavior="smooth"
+    >
       <body
         data-site="v2"
         className="min-h-screen font-[family-name:var(--font-bricolage)]"

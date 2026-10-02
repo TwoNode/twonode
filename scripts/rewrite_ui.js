@@ -1,8 +1,11 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const file = path.join(__dirname, '../app/(projects)/(surfboard)/surfboard/dashboard/subscription/SubscriptionManager.tsx');
-let content = fs.readFileSync(file, 'utf8');
+const file = path.join(
+  __dirname,
+  "../app/(projects)/(surfboard)/surfboard/dashboard/subscription/SubscriptionManager.tsx"
+);
+let content = fs.readFileSync(file, "utf8");
 
 const searchStr = '  return (\n    <motion.div\n      initial="hidden"';
 const returnStart = content.indexOf(searchStr);
@@ -12,7 +15,7 @@ if (returnStart === -1) {
   process.exit(1);
 }
 
-const returnEnd = content.lastIndexOf('}');
+const returnEnd = content.lastIndexOf("}");
 
 const newReturn = `  return (
     <motion.div

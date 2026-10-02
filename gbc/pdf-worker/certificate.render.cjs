@@ -16,9 +16,21 @@
 const path = require("path");
 const fs = require("fs");
 const React = require("react");
-const { renderToBuffer, StyleSheet, Font, Document, Page, Text, View, Image, Svg, Line } = require("@react-pdf/renderer");
+const {
+  renderToBuffer,
+  StyleSheet,
+  Font,
+  Document,
+  Page,
+  Text,
+  View,
+  Image,
+  Svg,
+  Line,
+} = require("@react-pdf/renderer");
 
-const fontPath = (file) => path.join(__dirname, "..", "..", "public", "fonts", file);
+const fontPath = (file) =>
+  path.join(__dirname, "..", "..", "public", "fonts", file);
 
 // Hand-rolled instead of date-fns: date-fns ships every locale as its own
 // file (~5,300 files per copy traced into this worker's bundle), which was
@@ -28,10 +40,31 @@ const fontPath = (file) => path.join(__dirname, "..", "..", "public", "fonts", f
 function formatDate(date, opts) {
   return new Intl.DateTimeFormat("en-US", opts).format(date);
 }
-const BACKGROUND_IMAGE_PATH = path.join(__dirname, "..", "..", "public", "gbc", "gbcCertificateBg.jpeg");
-const LOGO_PATH = path.join(__dirname, "..", "..", "public", "gbc2", "gbc2LightLogo.png");
+const BACKGROUND_IMAGE_PATH = path.join(
+  __dirname,
+  "..",
+  "..",
+  "public",
+  "gbc",
+  "gbcCertificateBg.jpeg"
+);
+const LOGO_PATH = path.join(
+  __dirname,
+  "..",
+  "..",
+  "public",
+  "gbc2",
+  "gbc2LightLogo.png"
+);
 // Falls back to a blank line (no image) if this file is ever removed.
-const SIGNATURE_PATH = path.join(__dirname, "..", "..", "public", "signatures", "olamide_signature_white.png");
+const SIGNATURE_PATH = path.join(
+  __dirname,
+  "..",
+  "..",
+  "public",
+  "signatures",
+  "olamide_signature_white.png"
+);
 
 Font.register({
   family: "Bricolage",
@@ -57,18 +90,84 @@ const MUTED = "#B4A9C4";
 
 const styles = StyleSheet.create({
   page: { backgroundColor: BG_DARK, fontFamily: "Bricolage", padding: 0 },
-  bgImage: { position: "absolute", top: 0, left: 0, width: 842, height: 595, opacity: 0.22, objectFit: "cover" },
-  scrim: { position: "absolute", top: 0, left: 0, width: 842, height: 595, backgroundColor: SCRIM, opacity: 0.4 },
-  frame: { position: "absolute", top: 22, left: 22, right: 22, bottom: 22, borderWidth: 1.25, borderColor: GOLD },
-  frameInner: { position: "absolute", top: 27, left: 27, right: 27, bottom: 27, borderWidth: 0.5, borderColor: "#6D5490" },
-  content: { position: "absolute", top: 48, left: 64, right: 64, bottom: 40, display: "flex", flexDirection: "column" },
-  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  bgImage: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: 842,
+    height: 595,
+    opacity: 0.22,
+    objectFit: "cover",
+  },
+  scrim: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: 842,
+    height: 595,
+    backgroundColor: SCRIM,
+    opacity: 0.4,
+  },
+  frame: {
+    position: "absolute",
+    top: 22,
+    left: 22,
+    right: 22,
+    bottom: 22,
+    borderWidth: 1.25,
+    borderColor: GOLD,
+  },
+  frameInner: {
+    position: "absolute",
+    top: 27,
+    left: 27,
+    right: 27,
+    bottom: 27,
+    borderWidth: 0.5,
+    borderColor: "#6D5490",
+  },
+  content: {
+    position: "absolute",
+    top: 48,
+    left: 64,
+    right: 64,
+    bottom: 40,
+    display: "flex",
+    flexDirection: "column",
+  },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   brandRow: { flexDirection: "row", alignItems: "center" },
   logo: { width: 90, height: 22.1, objectFit: "contain" },
-  ticketNo: { fontSize: 8, fontWeight: 600, color: MUTED, letterSpacing: 1, textAlign: "right" },
-  center: { flexGrow: 1, alignItems: "center", justifyContent: "center", textAlign: "center" },
-  eyebrow: { fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 3, marginBottom: 18 },
-  presentedTo: { fontSize: 11, fontWeight: 500, color: MUTED, marginBottom: 10 },
+  ticketNo: {
+    fontSize: 8,
+    fontWeight: 600,
+    color: MUTED,
+    letterSpacing: 1,
+    textAlign: "right",
+  },
+  center: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+  },
+  eyebrow: {
+    fontSize: 10,
+    fontWeight: 600,
+    color: GOLD,
+    letterSpacing: 3,
+    marginBottom: 18,
+  },
+  presentedTo: {
+    fontSize: 11,
+    fontWeight: 500,
+    color: MUTED,
+    marginBottom: 10,
+  },
   name: {
     fontWeight: 800,
     color: INK,
@@ -78,18 +177,45 @@ const styles = StyleSheet.create({
     borderBottomColor: GOLD,
     paddingHorizontal: 28,
   },
-  body: { fontSize: 11, fontWeight: 500, color: INK, lineHeight: 1.6, maxWidth: 420 },
+  body: {
+    fontSize: 11,
+    fontWeight: 500,
+    color: INK,
+    lineHeight: 1.6,
+    maxWidth: 420,
+  },
   bodyEm: { fontWeight: 700, color: GOLD },
   bottomRow: { flexDirection: "row", alignItems: "flex-end" },
   verifyBlock: { flexDirection: "row", alignItems: "center", width: 260 },
   qr: { width: 46, height: 46, marginRight: 10, flexShrink: 0 },
   verifyText: { width: 204 },
-  verifyLabel: { fontSize: 8, fontWeight: 600, color: MUTED, letterSpacing: 0.5, marginBottom: 2 },
+  verifyLabel: {
+    fontSize: 8,
+    fontWeight: 600,
+    color: MUTED,
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
   verifyUrl: { fontSize: 8, fontWeight: 500, color: PURPLE },
   signatureBlock: { flexGrow: 1, flexBasis: 0, alignItems: "center" },
-  signatureImage: { width: 100, height: 32, marginBottom: -6, objectFit: "contain" },
-  signatureLine: { width: 140, borderBottomWidth: 0.75, borderBottomColor: MUTED, marginBottom: 5 },
-  signatureLabel: { fontSize: 8, fontWeight: 600, color: MUTED, letterSpacing: 0.5 },
+  signatureImage: {
+    width: 100,
+    height: 32,
+    marginBottom: -6,
+    objectFit: "contain",
+  },
+  signatureLine: {
+    width: 140,
+    borderBottomWidth: 0.75,
+    borderBottomColor: MUTED,
+    marginBottom: 5,
+  },
+  signatureLabel: {
+    fontSize: 8,
+    fontWeight: 600,
+    color: MUTED,
+    letterSpacing: 0.5,
+  },
   issuerBlock: { width: 230, textAlign: "right" },
   issuerName: { fontSize: 10, fontWeight: 700, color: INK, marginBottom: 2 },
   issuerDate: { fontSize: 8, fontWeight: 500, color: MUTED },
@@ -143,11 +269,17 @@ function cableMotif(corner) {
 
 function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
   const edition = ticket.editionRef;
-  const attendedDate = ticket.checkedInAt ? new Date(ticket.checkedInAt) : new Date(edition.endDate);
+  const attendedDate = ticket.checkedInAt
+    ? new Date(ticket.checkedInAt)
+    : new Date(edition.endDate);
   const monthDay = { month: "long", day: "numeric" };
   const dateRange =
-    formatDate(new Date(edition.startDate), monthDay) === formatDate(new Date(edition.endDate), monthDay)
-      ? formatDate(new Date(edition.startDate), { ...monthDay, year: "numeric" })
+    formatDate(new Date(edition.startDate), monthDay) ===
+    formatDate(new Date(edition.endDate), monthDay)
+      ? formatDate(new Date(edition.startDate), {
+          ...monthDay,
+          year: "numeric",
+        })
       : `${formatDate(new Date(edition.startDate), monthDay)}–${new Date(edition.endDate).getDate()}, ${new Date(edition.endDate).getFullYear()}`;
 
   const content = React.createElement(
@@ -161,14 +293,30 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
         { style: styles.brandRow },
         React.createElement(Image, { style: styles.logo, src: LOGO_PATH })
       ),
-      React.createElement(Text, { style: styles.ticketNo }, `CERTIFICATE ${ticket.ticketNumber}`)
+      React.createElement(
+        Text,
+        { style: styles.ticketNo },
+        `CERTIFICATE ${ticket.ticketNumber}`
+      )
     ),
     React.createElement(
       View,
       { style: styles.center },
-      React.createElement(Text, { style: styles.eyebrow }, "CERTIFICATE OF ATTENDANCE"),
-      React.createElement(Text, { style: styles.presentedTo }, "This certifies that"),
-      React.createElement(Text, { style: [styles.name, { fontSize: nameFontSize(ticket.name) }] }, ticket.name),
+      React.createElement(
+        Text,
+        { style: styles.eyebrow },
+        "CERTIFICATE OF ATTENDANCE"
+      ),
+      React.createElement(
+        Text,
+        { style: styles.presentedTo },
+        "This certifies that"
+      ),
+      React.createElement(
+        Text,
+        { style: [styles.name, { fontSize: nameFontSize(ticket.name) }] },
+        ticket.name
+      ),
       React.createElement(
         Text,
         { style: styles.body },
@@ -187,27 +335,50 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
         React.createElement(
           View,
           { style: styles.verifyText },
-          React.createElement(Text, { style: styles.verifyLabel }, "SCAN TO VERIFY"),
-          React.createElement(Text, { style: styles.verifyUrl }, verificationUrl.replace(/^https?:\/\//, ""))
+          React.createElement(
+            Text,
+            { style: styles.verifyLabel },
+            "SCAN TO VERIFY"
+          ),
+          React.createElement(
+            Text,
+            { style: styles.verifyUrl },
+            verificationUrl.replace(/^https?:\/\//, "")
+          )
         )
       ),
       React.createElement(
         View,
         { style: styles.signatureBlock },
         fs.existsSync(SIGNATURE_PATH)
-          ? React.createElement(Image, { style: styles.signatureImage, src: SIGNATURE_PATH })
+          ? React.createElement(Image, {
+              style: styles.signatureImage,
+              src: SIGNATURE_PATH,
+            })
           : null,
         React.createElement(View, { style: styles.signatureLine }),
-        React.createElement(Text, { style: styles.signatureLabel }, "AUTHORIZED SIGNATURE")
+        React.createElement(
+          Text,
+          { style: styles.signatureLabel },
+          "AUTHORIZED SIGNATURE"
+        )
       ),
       React.createElement(
         View,
         { style: styles.issuerBlock },
-        React.createElement(Text, { style: styles.issuerName }, "TwoNode Technologies"),
+        React.createElement(
+          Text,
+          { style: styles.issuerName },
+          "TwoNode Technologies"
+        ),
         React.createElement(
           Text,
           { style: styles.issuerDate },
-          formatDate(attendedDate, { month: "long", day: "numeric", year: "numeric" })
+          formatDate(attendedDate, {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          })
         )
       )
     )
@@ -216,7 +387,10 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
   const page = React.createElement(
     Page,
     { size: "A4", orientation: "landscape", style: styles.page },
-    React.createElement(Image, { src: BACKGROUND_IMAGE_PATH, style: styles.bgImage }),
+    React.createElement(Image, {
+      src: BACKGROUND_IMAGE_PATH,
+      style: styles.bgImage,
+    }),
     React.createElement(View, { style: styles.scrim }),
     cableMotif("topRight"),
     cableMotif("bottomLeft"),
@@ -232,7 +406,9 @@ function readStdin() {
   return new Promise((resolve, reject) => {
     const chunks = [];
     process.stdin.on("data", (chunk) => chunks.push(chunk));
-    process.stdin.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    process.stdin.on("end", () =>
+      resolve(Buffer.concat(chunks).toString("utf8"))
+    );
     process.stdin.on("error", reject);
   });
 }

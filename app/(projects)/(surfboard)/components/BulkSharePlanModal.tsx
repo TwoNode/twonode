@@ -46,7 +46,12 @@ interface BulkSharePlanModalProps {
   }[];
 }
 
-export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSharePlanModalProps) {
+export function BulkSharePlanModal({
+  isOpen,
+  onClose,
+  onShared,
+  plans,
+}: BulkSharePlanModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -91,7 +96,8 @@ export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSha
     setIsSearching(true);
     try {
       const result = await surfboardApi.users.search(query);
-      if (!result.success) throw new Error(result.error || "Failed to search users");
+      if (!result.success)
+        throw new Error(result.error || "Failed to search users");
       // Filter out users already in sharedUsers
       const filtered = (result.data || []).filter(
         (user: SearchUser) => !sharedUsers.some((su) => su.id === user.id)
@@ -100,7 +106,10 @@ export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSha
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to search for users.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to search for users.",
         variant: "destructive",
       });
     } finally {
@@ -109,7 +118,9 @@ export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSha
   };
 
   const shareWithAllPlans = async (
-    share: (planId: string) => Promise<{ success: boolean; error?: string; data?: any }>
+    share: (
+      planId: string
+    ) => Promise<{ success: boolean; error?: string; data?: any }>
   ) => {
     setIsSharing(true);
     let succeeded = 0;
@@ -154,7 +165,9 @@ export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSha
       surfboardApi.plans.share(planId, user.id)
     );
     if (succeeded > 0) {
-      setSharedUsers((prev) => (prev.some((u) => u.id === user.id) ? prev : [...prev, user]));
+      setSharedUsers((prev) =>
+        prev.some((u) => u.id === user.id) ? prev : [...prev, user]
+      );
       setSearchResults((prev) => prev.filter((u) => u.id !== user.id));
       setSearchQuery("");
       onShared?.(planIds, user);
@@ -170,7 +183,11 @@ export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSha
       let addedUser: SearchUser | undefined = undefined;
       if (lastData && "sharedUser" in lastData && lastData.sharedUser) {
         addedUser = lastData.sharedUser as SearchUser;
-        setSharedUsers((prev) => (prev.some((x) => x.id === addedUser!.id) ? prev : [...prev, addedUser!]));
+        setSharedUsers((prev) =>
+          prev.some((x) => x.id === addedUser!.id)
+            ? prev
+            : [...prev, addedUser!]
+        );
       }
       setSearchQuery("");
       setSearchResults([]);
@@ -233,7 +250,12 @@ export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSha
                 {plans.map((p) => p.planNumber).join(", ")}
               </p>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8 shrink-0"
+            >
               <X className="h-4 w-4" />
               <span className="sr-only">Close</span>
             </Button>
@@ -259,12 +281,17 @@ export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSha
             {searchQuery && (
               <div className="mb-4 rounded-md border">
                 {isSearching ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground">Searching...</div>
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    Searching...
+                  </div>
                 ) : searchResults.length > 0 ? (
                   <ScrollArea className="h-40">
                     <div className="divide-y">
                       {searchResults.map((user) => (
-                        <div key={user.id} className="flex items-center justify-between p-3 hover:bg-muted/50">
+                        <div
+                          key={user.id}
+                          className="flex items-center justify-between p-3 hover:bg-muted/50"
+                        >
                           <div className="flex items-center space-x-3">
                             <Avatar className="h-8 w-8">
                               <AvatarFallback>
@@ -278,7 +305,8 @@ export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSha
                               </p>
                               <p className="text-xs text-muted-foreground">
                                 {user.email}
-                                {user.surconRegNumber && ` • ${user.surconRegNumber}`}
+                                {user.surconRegNumber &&
+                                  ` • ${user.surconRegNumber}`}
                               </p>
                             </div>
                           </div>
@@ -309,8 +337,12 @@ export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSha
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm font-medium">{searchQuery.trim()}</p>
-                        <p className="text-xs text-muted-foreground">No account yet — invite by email</p>
+                        <p className="text-sm font-medium">
+                          {searchQuery.trim()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          No account yet — invite by email
+                        </p>
                       </div>
                     </div>
                     <Button
@@ -325,7 +357,9 @@ export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSha
                     </Button>
                   </div>
                 ) : (
-                  <div className="p-4 text-center text-sm text-muted-foreground">No users found</div>
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No users found
+                  </div>
                 )}
               </div>
             )}
@@ -336,7 +370,10 @@ export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSha
                 <ScrollArea className="h-40 rounded-md border">
                   <div className="divide-y">
                     {sharedUsers.map((user) => (
-                      <div key={user.id} className="flex items-center justify-between p-3 hover:bg-muted/50">
+                      <div
+                        key={user.id}
+                        className="flex items-center justify-between p-3 hover:bg-muted/50"
+                      >
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback>
@@ -350,7 +387,8 @@ export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSha
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {user.email}
-                              {user.surconRegNumber && ` • ${user.surconRegNumber}`}
+                              {user.surconRegNumber &&
+                                ` • ${user.surconRegNumber}`}
                             </p>
                           </div>
                         </div>
@@ -379,16 +417,23 @@ export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSha
         </div>
       </div>
 
-      <AlertDialog open={pendingRemoval !== null} onOpenChange={(open) => !open && setPendingRemoval(null)}>
+      <AlertDialog
+        open={pendingRemoval !== null}
+        onOpenChange={(open) => !open && setPendingRemoval(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Withdraw access?</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingRemoval && (
                 <>
-                  This will remove {pendingRemoval.firstName} {pendingRemoval.lastName}'s access to{" "}
-                  {plans.length === 1 ? "this plan" : `these ${plans.length} plans`}. They will no longer be
-                  able to view {plans.length === 1 ? "it" : "them"}.
+                  This will remove {pendingRemoval.firstName}{" "}
+                  {pendingRemoval.lastName}'s access to{" "}
+                  {plans.length === 1
+                    ? "this plan"
+                    : `these ${plans.length} plans`}
+                  . They will no longer be able to view{" "}
+                  {plans.length === 1 ? "it" : "them"}.
                 </>
               )}
             </AlertDialogDescription>

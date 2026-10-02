@@ -37,8 +37,12 @@ export function PlanDetailsErrorState({
 
             {/* Error Message */}
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                {title}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {message}
+              </p>
             </div>
 
             {/* Action Buttons */}
@@ -102,8 +106,12 @@ export function PlanFormErrorState({
 
             {/* Error Message */}
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                {title}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {message}
+              </p>
             </div>
 
             {/* Action Buttons */}
@@ -150,7 +158,9 @@ export function GenericErrorState({
           </div>
         </div>
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {title}
+          </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
         </div>
         {onRetry && (
@@ -174,11 +184,15 @@ export function NotFoundState({
       <div className="text-center space-y-6 max-w-md">
         <div className="flex justify-center">
           <div className="w-24 h-24 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center">
-            <span className="text-5xl font-bold text-gray-400 dark:text-gray-500">404</span>
+            <span className="text-5xl font-bold text-gray-400 dark:text-gray-500">
+              404
+            </span>
           </div>
         </div>
         <div className="space-y-2">
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h3>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {title}
+          </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

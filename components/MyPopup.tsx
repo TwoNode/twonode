@@ -22,7 +22,6 @@ export function MyPopup() {
   const handleClose = () => {
     setOpen(false);
     router.push("/gbc");
-
   };
 
   return (

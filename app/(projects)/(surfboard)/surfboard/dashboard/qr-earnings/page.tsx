@@ -167,8 +167,7 @@ export default function QREarningsPage() {
               </h4>
               <p className="text-sm text-slate-600 dark:text-gray-300 mt-0.5">
                 You are accumulating earnings from plan scans! Please set up
-                your verified bank account under Settings to enable
-                withdrawals.
+                your verified bank account under Settings to enable withdrawals.
               </p>
             </div>
           </div>
@@ -275,7 +274,8 @@ export default function QREarningsPage() {
               QR Service Scan Transactions
             </CardTitle>
             <CardDescription className="text-sm">
-              List of client QR code scan purchases generating income for your survey plans.
+              List of client QR code scan purchases generating income for your
+              survey plans.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
@@ -296,7 +296,9 @@ export default function QREarningsPage() {
                       colSpan={5}
                       className="text-center py-10 text-slate-500"
                     >
-                      No QR service transactions yet. When clients scan your plan's QR code and purchase access, your earnings will appear here!
+                      No QR service transactions yet. When clients scan your
+                      plan's QR code and purchase access, your earnings will
+                      appear here!
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -397,8 +399,8 @@ export default function QREarningsPage() {
                             wd.status === "PAID"
                               ? "bg-emerald-50 text-emerald-700 border-emerald-300"
                               : wd.status === "PENDING"
-                              ? "bg-amber-50 text-amber-700 border-amber-300"
-                              : "bg-red-50 text-red-700 border-red-300"
+                                ? "bg-amber-50 text-amber-700 border-amber-300"
+                                : "bg-red-50 text-red-700 border-red-300"
                           }
                         >
                           {wd.status}
@@ -432,7 +434,8 @@ export default function QREarningsPage() {
             <div className="py-6 text-center space-y-4">
               <AlertCircle className="w-12 h-12 text-amber-500 mx-auto" />
               <p className="text-sm text-slate-700 font-medium">
-                Your bank account is not verified yet. Please set up your bank details under Settings first.
+                Your bank account is not verified yet. Please set up your bank
+                details under Settings first.
               </p>
               <Link href="/surfboard/dashboard/settings">
                 <Button className="w-full bg-blue-600 hover:bg-blue-700">

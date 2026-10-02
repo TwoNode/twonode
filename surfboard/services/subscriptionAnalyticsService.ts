@@ -8,12 +8,22 @@ import prisma from "@/lib/prisma";
  */
 
 export async function getSubscriptionAnalytics() {
-  const activeCount = await prisma.subscription.count({ where: { status: "active" } });
-  const canceledCount = await prisma.subscription.count({ where: { status: "canceled" } });
+  const activeCount = await prisma.subscription.count({
+    where: { status: "active" },
+  });
+  const canceledCount = await prisma.subscription.count({
+    where: { status: "canceled" },
+  });
 
   const invalidSubscriptions = await prisma.subscription.findMany({
     where: { status: "active", OR: [{ subCode: null }, { emailToken: null }] },
-    select: { id: true, userId: true, status: true, subCode: true, emailToken: true },
+    select: {
+      id: true,
+      userId: true,
+      status: true,
+      subCode: true,
+      emailToken: true,
+    },
   });
 
   const oneDayAgo = new Date();
@@ -29,7 +39,11 @@ export async function getSubscriptionAnalytics() {
     activeCount,
     canceledCount,
     invalidSubscriptions,
-    recentWebhookEvents: webhookEvents.map((event) => ({ event: event.event, status: event.status, count: event._count })),
+    recentWebhookEvents: webhookEvents.map((event) => ({
+      event: event.event,
+      status: event.status,
+      count: event._count,
+    })),
   };
 }
 

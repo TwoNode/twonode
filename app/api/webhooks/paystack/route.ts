@@ -10,7 +10,10 @@ import { notifyPaymentReceived as notifyRevaPaymentReceived } from "@/reva/servi
 import { computePeriodPerTimestamp } from "@/app/(projects)/(surfboard)/utils/computePeriod";
 import { verifyPayment as verifyGBCTicketPayment } from "@/gbc/services/ticketService";
 import { createOrUpdateSubscription } from "@/surfboard/services/subscriptionService";
-import { SUBSCRIPTION_PLANS, type PlanId } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
+import {
+  SUBSCRIPTION_PLANS,
+  type PlanId,
+} from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,8 +32,8 @@ export type SubscriptionData = {
   email_token?: string;
   customer?: { id?: number; customer_code?: string; email?: string };
   plan?:
-  | string
-  | { plan_code?: string; name?: string; interval?: string; amount?: number };
+    | string
+    | { plan_code?: string; name?: string; interval?: string; amount?: number };
   next_payment_date?: string | null;
   authorization?: { authorization_code?: string };
   amount?: number;
@@ -56,8 +59,8 @@ export type ChargeSuccessData = {
   customer?: { id?: number; email?: string; customer_code?: string };
   authorization?: { authorization_code?: string };
   plan?:
-  | string
-  | { plan_code?: string; name?: string; interval?: string; amount?: number };
+    | string
+    | { plan_code?: string; name?: string; interval?: string; amount?: number };
   plan_object?: {
     plan_code?: string;
     name?: string;
@@ -202,7 +205,10 @@ function detectPlatform(event: string, data: any): Platform {
 
   // Fallback to custom_fields if not at top level
   if (!mPlatform && (meta as any).custom_fields) {
-    mPlatform = getField((meta as any).custom_fields, "platform")?.toLowerCase();
+    mPlatform = getField(
+      (meta as any).custom_fields,
+      "platform"
+    )?.toLowerCase();
   }
 
   // 1) Strict metadata match
@@ -218,10 +224,13 @@ function detectPlatform(event: string, data: any): Platform {
   if (event === "charge.success") {
     // Check reference prefixes first (very reliable)
     const reference = String(data.reference || (meta as any).reference || "");
-    if (reference.startsWith("REVA_") || reference.startsWith("reva_")) return "reva";
+    if (reference.startsWith("REVA_") || reference.startsWith("reva_"))
+      return "reva";
     if (reference.toUpperCase().includes("GBC")) return "gbc";
-    if (reference.startsWith("SurfCoD") || reference.startsWith("SurfCoDRef_")) return "surfboard";
-    if (reference.startsWith("SURFBOARD_SUB_") || reference.startsWith("SURF_")) return "surfboard";
+    if (reference.startsWith("SurfCoD") || reference.startsWith("SurfCoDRef_"))
+      return "surfboard";
+    if (reference.startsWith("SURFBOARD_SUB_") || reference.startsWith("SURF_"))
+      return "surfboard";
 
     // Subscription markers
     const hasSubMarkers = Boolean(
@@ -245,12 +254,12 @@ function detectPlatform(event: string, data: any): Platform {
     if (mRef) return "reva";
   }
 
-    // 4) Metadata keys (for GBC and others)
-    if (meta.ticketNumber || meta.ticketType || meta.allTicketNumbers) return "gbc";
+  // 4) Metadata keys (for GBC and others)
+  if (meta.ticketNumber || meta.ticketType || meta.allTicketNumbers)
+    return "gbc";
 
   return "unknown";
 }
-
 
 // ─────────────────────────── Ledger (DB idempotency) ───────────────────────────
 async function beginEvent(args: {
@@ -454,7 +463,6 @@ async function findSurfboardUserIdFromEvent(data: any): Promise<string | null> {
     reference.startsWith("SURFBOARD_SUB_") ||
     reference.startsWith("SURF_") ||
     isSurfboardPlan(extractPlan(data).planCode);
-
 
   if (email && isSurfboardLikely) {
     const user = await prisma.surfboardUser.findUnique({ where: { email } });
@@ -666,14 +674,18 @@ async function onOneTimeSubscriptionChargeSuccess(data: ChargeSuccessData) {
 
   const userId = await findSurfboardUserIdFromEvent(data);
   if (!userId) {
-    console.warn("⚠️ charge.success (one-time subscription): SurfboardUser not found");
+    console.warn(
+      "⚠️ charge.success (one-time subscription): SurfboardUser not found"
+    );
     return;
   }
 
   const meta = data.metadata ?? {};
   const planId = meta.plan_id as PlanId | undefined;
   if (!planId || !SUBSCRIPTION_PLANS[planId]) {
-    console.warn(`⚠️ charge.success (one-time subscription): missing/invalid plan_id in metadata (${planId})`);
+    console.warn(
+      `⚠️ charge.success (one-time subscription): missing/invalid plan_id in metadata (${planId})`
+    );
     return;
   }
 
@@ -697,7 +709,9 @@ async function onOneTimeSubscriptionChargeSuccess(data: ChargeSuccessData) {
     provider: "paystack_onetime",
   });
 
-  console.log(`✅ charge.success (one-time subscription): ${data.reference} for user ${userId}`);
+  console.log(
+    `✅ charge.success (one-time subscription): ${data.reference} for user ${userId}`
+  );
 }
 
 async function onSubscriptionChargeSuccess(data: ChargeSuccessData) {
@@ -725,7 +739,9 @@ async function onSubscriptionChargeSuccess(data: ChargeSuccessData) {
 
   const meta = data.metadata ?? {};
   if (meta.platform !== "surfboard" && !isSurfboardPlan(planCode)) {
-    console.log(`⏭️ charge.success: Skipping as it doesn't match a Surfboard plan or platform (${planCode})`);
+    console.log(
+      `⏭️ charge.success: Skipping as it doesn't match a Surfboard plan or platform (${planCode})`
+    );
     return;
   }
   const amountKobo = data.amount ?? planAmount ?? 0;
@@ -845,7 +861,8 @@ export async function handleReva(event: string, data: ChargeSuccessData) {
     getField(meta.custom_fields, "reference") ||
     data.reference) as string | undefined;
   const isAuthenticated = Boolean(
-    meta.isAuthenticated || getField(meta.custom_fields, "isAuthenticated") === "true"
+    meta.isAuthenticated ||
+    getField(meta.custom_fields, "isAuthenticated") === "true"
   );
 
   if (!reference) {
@@ -865,24 +882,44 @@ export async function handleReva(event: string, data: ChargeSuccessData) {
   }
 
   if (existing.paymentStatus === "Paid") {
-    console.log(`[reva-webhook] ${reference} already marked Paid (idempotent, likely already confirmed client-side)`);
+    console.log(
+      `[reva-webhook] ${reference} already marked Paid (idempotent, likely already confirmed client-side)`
+    );
     return;
   }
 
   const expectedKobo = Math.round((existing.totalCost ?? 0) * 100);
   const paidKobo = data.amount ?? 0;
   if (Math.abs(expectedKobo - paidKobo) > 1) {
-    console.error(`[reva-webhook] amount mismatch for ${reference}`, { expectedKobo, paidKobo });
+    console.error(`[reva-webhook] amount mismatch for ${reference}`, {
+      expectedKobo,
+      paidKobo,
+    });
     // Log but don't fail — matches onCertificatePaymentSuccess's own choice
     // for the same situation: still confirm the payment for manual review
     // rather than leaving a real payer stuck.
   }
 
   const updated = isAuthenticated
-    ? await updatePropertyTransactionStatus(reference, "Processing", "Paid", "Payment completed successfully", null)
-    : await updateOneTimeTransactionStatus(reference, "Processing", "Paid", "Payment completed successfully", null);
+    ? await updatePropertyTransactionStatus(
+        reference,
+        "Processing",
+        "Paid",
+        "Payment completed successfully",
+        null
+      )
+    : await updateOneTimeTransactionStatus(
+        reference,
+        "Processing",
+        "Paid",
+        "Payment completed successfully",
+        null
+      );
 
-  await notifyRevaPaymentReceived(updated, isAuthenticated ? (updated as any).userId ?? undefined : undefined);
+  await notifyRevaPaymentReceived(
+    updated,
+    isAuthenticated ? ((updated as any).userId ?? undefined) : undefined
+  );
 
   console.log(`✅ [reva-webhook] charge.success confirmed: ${reference}`);
 }
@@ -915,9 +952,16 @@ export async function handleGBC(event: string, data: ChargeSuccessData) {
     return;
   }
 
-  const tickets = await prisma.gBCTicket.findMany({ where: { paymentRef: reference } });
-  if (tickets.length > 0 && tickets.every((t) => t.paymentStatus === "COMPLETED")) {
-    console.log(`[gbc-webhook] ${reference} already fully COMPLETED (idempotent) — skipping re-verify`);
+  const tickets = await prisma.gBCTicket.findMany({
+    where: { paymentRef: reference },
+  });
+  if (
+    tickets.length > 0 &&
+    tickets.every((t) => t.paymentStatus === "COMPLETED")
+  ) {
+    console.log(
+      `[gbc-webhook] ${reference} already fully COMPLETED (idempotent) — skipping re-verify`
+    );
     return;
   }
 
@@ -993,7 +1037,8 @@ async function onCertificatePaymentSuccess(data: ChargeSuccessData) {
     });
 
     console.log(
-      `✅ certificate charge.success: ${reference} for batch ${batch.batchCode
+      `✅ certificate charge.success: ${reference} for batch ${
+        batch.batchCode
       } (₦${(paidAmountKobo / 100).toFixed(2)})`
     );
   } catch (error) {
@@ -1036,9 +1081,9 @@ function escapeHtml(str: unknown) {
   return String(str ?? "").replace(
     /[&<>"']/g,
     (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
-      c
-    ]!)
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ]!
   );
 }
 
@@ -1097,7 +1142,10 @@ function isCertificatePayment(data: ChargeSuccessData): boolean {
   const meta = data.metadata ?? {};
 
   // Primary check: metadata type
-  if (meta.type === "certificate_of_deposit" || meta.platform === "surfboard_cod") {
+  if (
+    meta.type === "certificate_of_deposit" ||
+    meta.platform === "surfboard_cod"
+  ) {
     return true;
   }
 
@@ -1246,8 +1294,9 @@ async function sendWebhookEmail(args: {
     args.payload?.data?.invoice_code ||
     ""
   ).toString();
-  const subject = `[Paystack][${args.platform}] ${args.event}${summaryRef ? ` — ${summaryRef}` : ""
-    }`;
+  const subject = `[Paystack][${args.platform}] ${args.event}${
+    summaryRef ? ` — ${summaryRef}` : ""
+  }`;
 
   const prettyHeaders = JSON.stringify(args.headers, null, 2);
   const prettyPayload = JSON.stringify(args.payload, null, 2);
@@ -1258,30 +1307,31 @@ async function sendWebhookEmail(args: {
     <div style="font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.45">
       <h2 style="margin:0 0 8px">Paystack Webhook</h2>
       <p style="margin:4px 0"><strong>Platform:</strong> ${escapeHtml(
-    String(args.platform)
-  )}</p>
+        String(args.platform)
+      )}</p>
       <p style="margin:4px 0"><strong>Event:</strong> ${escapeHtml(
-    args.event
-  )}</p>
+        args.event
+      )}</p>
       <p style="margin:4px 0"><strong>Signature:</strong> <code>${escapeHtml(
-    args.signature
-  )}</code></p>
-      ${args.entityKey
-      ? `<p style="margin:4px 0"><strong>Entity:</strong> ${escapeHtml(
+        args.signature
+      )}</code></p>
+      ${
         args.entityKey
-      )}</p>`
-      : ""
-    }
+          ? `<p style="margin:4px 0"><strong>Entity:</strong> ${escapeHtml(
+              args.entityKey
+            )}</p>`
+          : ""
+      }
       <h3 style="margin:16px 0 6px">Diff vs previous</h3>
       ${diffHtml}
       <h3 style="margin:16px 0 6px">Headers</h3>
       <pre style="background:#f6f8fa;padding:12px;border-radius:8px;white-space:pre-wrap">${escapeHtml(
-      prettyHeaders
-    )}</pre>
+        prettyHeaders
+      )}</pre>
       <h3 style="margin:16px 0 6px">Payload</h3>
       <pre style="background:#f6f8fa;padding:12px;border-radius:8px;white-space:pre-wrap">${escapeHtml(
-      prettyPayload
-    )}</pre>
+        prettyPayload
+      )}</pre>
     </div>
   `;
   const text = `Paystack Webhook
@@ -1311,42 +1361,41 @@ async function sendWebhookEmail(args: {
     try {
       await fn({ to, subject, html, text });
       return;
-    } catch { }
+    } catch {}
     try {
       await fn(to, subject, html);
       return;
-    } catch { }
+    } catch {}
   }
   if (typeof (mailer as any).sendMail === "function") {
     try {
       await (mailer as any).sendMail({ to, subject, html, text });
       return;
-    } catch { }
+    } catch {}
   }
   if (typeof (mailer as any).send === "function") {
     try {
       await (mailer as any).send({ to, subject, html, text });
       return;
-    } catch { }
+    } catch {}
   }
   if (typeof (mailer as any).sendRawEmail === "function") {
     try {
       await (mailer as any).sendRawEmail({ to, subject, html, text });
       return;
-    } catch { }
+    } catch {}
   }
   if (typeof (mailer as any).sendSES === "function") {
     try {
       await (mailer as any).sendSES({ to, subject, html, text });
       return;
-    } catch { }
+    } catch {}
   }
 }
 
 async function onUnhandled(event: string, data: Record<string, unknown>) {
   console.log("[webhook] unhandled", event, Object.keys(data || {}));
 }
-
 
 // Webhook sample 1
 //   Headers
@@ -1519,7 +1568,6 @@ async function onUnhandled(event: string, data: Record<string, unknown>) {
 //     }
 //   }
 
-
 // Webhook sample 2
 // Headers
 // {
@@ -1688,7 +1736,6 @@ async function onUnhandled(event: string, data: Record<string, unknown>) {
 //   }
 // }
 
-
 // Webhook sample 3
 // Headers
 // {
@@ -1793,14 +1840,12 @@ async function onUnhandled(event: string, data: Record<string, unknown>) {
 //   }
 // }
 
-
 // Webhook sample 4
 // {}
 // Payload
 // {
 //   "raw": "{\"event\":\"invoice.update\",\"data\":{\"domain\":\"test\",\"invoice_code\":\"INV_00824uyv20ya4ck\",\"amount\":5000000,\"period_start\":\"2026-05-03T16:05:00.000Z\",\"period_end\":\"2026-08-03T16:04:59.000Z\",\"status\":\"failed\",\"paid\":0,\"paid_at\":null,\"description\":null,\"createdAt\":\"2026-05-01T07:51:39.000Z\",\"authorization\":{\"authorization_code\":\"AUTH_gjpp8v69n5\",\"bin\":\"408408\",\"last4\":\"4081\",\"exp_month\":\"12\",\"exp_year\":\"2030\",\"channel\":\"card\",\"card_type\":\"visa \",\"bank\":\"TEST BANK\",\"country_code\":\"NG\",\"brand\":\"visa\",\"reusable\":true,\"signature\":\"SIG_wkAaGsI0EEXUmCX7fcNj\",\"account_name\":null},\"subscription\":{\"status\":\"attention\",\"subscription_code\":\"SUB_gutg1lbv9717i31\",\"email_token\":\"j6ju384iy204igu\",\"amount\":5000000,\"cron_expression\":\"5 16 3 2,5,8,11 *\",\"next_payment_date\":\"2026-08-03T16:05:00.000Z\",\"open_invoice\":null},\"customer\":{\"id\":336932708,\"first_name\":null,\"last_name\":null,\"email\":\"olamide.abowaba@twonodetechnologies.com\",\"customer_code\":\"CUS_q5r115qr61hmz5p\",\"phone\":null,\"metadata\":null,\"risk_action\":\"default\",\"international_format_phone\":null},\"transaction\":{\"reference\":\"48a577e12da2990c3f0f49659058f3d63f3e81126a946cf0\",\"status\":\"failed\",\"amount\":5000000,\"currency\":\"NGN\"}}}"
 // }
-
 
 // Webhook Sample 5
 // Headers
@@ -2143,4 +2188,3 @@ async function onUnhandled(event: string, data: Record<string, unknown>) {
 //     }
 //   }
 // }
-

@@ -25,7 +25,8 @@ const FIELD_BY_ROLE: Record<string, string> = {
 };
 
 export async function getUniqueQueryReasons(
-  role: "accounts" | "charting" | "surcon" | "records-i" | "records-ii" | "intake"
+  role:
+    "accounts" | "charting" | "surcon" | "records-i" | "records-ii" | "intake"
 ): Promise<string[]> {
   const fieldName = FIELD_BY_ROLE[role];
   if (!fieldName) throw new ValidationError({ role: "Invalid role" });
@@ -38,5 +39,7 @@ export async function getUniqueQueryReasons(
     take: 50,
   });
 
-  return remarks.map((r: any) => r[fieldName] as string).filter((reason) => reason && reason.trim() !== "");
+  return remarks
+    .map((r: any) => r[fieldName] as string)
+    .filter((reason) => reason && reason.trim() !== "");
 }

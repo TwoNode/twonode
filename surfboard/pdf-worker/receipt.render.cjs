@@ -9,10 +9,19 @@
 
 const path = require("path");
 const React = require("react");
-const { renderToBuffer, StyleSheet, Font, Document, Page, Text, View } = require("@react-pdf/renderer");
+const {
+  renderToBuffer,
+  StyleSheet,
+  Font,
+  Document,
+  Page,
+  Text,
+  View,
+} = require("@react-pdf/renderer");
 const { format } = require("date-fns");
 
-const fontPath = (file) => path.join(__dirname, "..", "..", "public", "fonts", file);
+const fontPath = (file) =>
+  path.join(__dirname, "..", "..", "public", "fonts", file);
 
 Font.register({
   family: "Bricolage",
@@ -35,9 +44,20 @@ const AMBER = "#B45309";
 
 const styles = StyleSheet.create({
   page: { backgroundColor: PAPER, fontFamily: "Bricolage", padding: 48 },
-  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 28,
+  },
   wordmark: { fontSize: 15, fontWeight: 800, color: INK, letterSpacing: 1 },
-  wordmarkSub: { fontSize: 8, fontWeight: 500, color: MUTED, marginTop: 2, letterSpacing: 0.5 },
+  wordmarkSub: {
+    fontSize: 8,
+    fontWeight: 500,
+    color: MUTED,
+    marginTop: 2,
+    letterSpacing: 0.5,
+  },
   statusPill: {
     borderWidth: 1,
     fontSize: 9,
@@ -50,7 +70,14 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: 800, color: INK, marginBottom: 4 },
   subtitle: { fontSize: 10, fontWeight: 500, color: MUTED, marginBottom: 20 },
   divider: { borderBottomWidth: 1, borderBottomColor: BLUE, marginBottom: 20 },
-  sectionLabel: { fontSize: 9, fontWeight: 700, color: BLUE_DARK, letterSpacing: 1, marginTop: 18, marginBottom: 8 },
+  sectionLabel: {
+    fontSize: 9,
+    fontWeight: 700,
+    color: BLUE_DARK,
+    letterSpacing: 1,
+    marginTop: 18,
+    marginBottom: 8,
+  },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -59,14 +86,24 @@ const styles = StyleSheet.create({
     borderBottomColor: "#DCE6EC",
   },
   label: { fontSize: 9.5, fontWeight: 500, color: MUTED },
-  value: { fontSize: 9.5, fontWeight: 600, color: INK, textAlign: "right", maxWidth: 300 },
+  value: {
+    fontSize: 9.5,
+    fontWeight: 600,
+    color: INK,
+    textAlign: "right",
+    maxWidth: 300,
+  },
   amountBlock: {
     marginTop: 20,
     backgroundColor: "#E7F2F8",
     borderRadius: 8,
     padding: 16,
   },
-  amountRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 3 },
+  amountRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 3,
+  },
   amountRowLabel: { fontSize: 9.5, color: MUTED },
   amountRowValue: { fontSize: 9.5, fontWeight: 600, color: INK },
   totalRow: {
@@ -79,7 +116,13 @@ const styles = StyleSheet.create({
   },
   totalLabel: { fontSize: 11, fontWeight: 700, color: INK },
   totalValue: { fontSize: 18, fontWeight: 800, color: BLUE_DARK },
-  footer: { marginTop: 32, fontSize: 8, color: MUTED, lineHeight: 1.6, textAlign: "center" },
+  footer: {
+    marginTop: 32,
+    fontSize: 8,
+    color: MUTED,
+    lineHeight: 1.6,
+    textAlign: "center",
+  },
 });
 
 function formatNaira(amount) {
@@ -96,10 +139,20 @@ const STATUS_LABEL = {
 
 function buildReceiptElement({ batch }) {
   const submitter = batch.submitter || {};
-  const payerName = submitter.companyName || `${submitter.firstName || ""} ${submitter.lastName || ""}`.trim();
-  const isApproved = batch.paymentStatus === "ACCOUNTS_APPROVED" || batch.paymentStatus === "COMPLETED";
-  const statusColor = isApproved ? GREEN : batch.paymentStatus === "ACCOUNTS_DISAPPROVED" ? "#B91C1C" : AMBER;
-  const paymentDate = batch.userPaymentDate ? new Date(batch.userPaymentDate) : new Date(batch.createdAt);
+  const payerName =
+    submitter.companyName ||
+    `${submitter.firstName || ""} ${submitter.lastName || ""}`.trim();
+  const isApproved =
+    batch.paymentStatus === "ACCOUNTS_APPROVED" ||
+    batch.paymentStatus === "COMPLETED";
+  const statusColor = isApproved
+    ? GREEN
+    : batch.paymentStatus === "ACCOUNTS_DISAPPROVED"
+      ? "#B91C1C"
+      : AMBER;
+  const paymentDate = batch.userPaymentDate
+    ? new Date(batch.userPaymentDate)
+    : new Date(batch.createdAt);
 
   const rows = [
     ["Payer", payerName || "—"],
@@ -122,16 +175,29 @@ function buildReceiptElement({ batch }) {
           View,
           null,
           React.createElement(Text, { style: styles.wordmark }, "SURFBOARD"),
-          React.createElement(Text, { style: styles.wordmarkSub }, "CERTIFICATE OF DEPOSIT · TWONODE TECHNOLOGIES")
+          React.createElement(
+            Text,
+            { style: styles.wordmarkSub },
+            "CERTIFICATE OF DEPOSIT · TWONODE TECHNOLOGIES"
+          )
         ),
         React.createElement(
           Text,
-          { style: [styles.statusPill, { borderColor: statusColor, color: statusColor }] },
+          {
+            style: [
+              styles.statusPill,
+              { borderColor: statusColor, color: statusColor },
+            ],
+          },
           STATUS_LABEL[batch.paymentStatus] || batch.paymentStatus
         )
       ),
       React.createElement(Text, { style: styles.title }, "Payment Receipt"),
-      React.createElement(Text, { style: styles.subtitle }, `Receipt for batch ${batch.batchCode}`),
+      React.createElement(
+        Text,
+        { style: styles.subtitle },
+        `Receipt for batch ${batch.batchCode}`
+      ),
       React.createElement(View, { style: styles.divider }),
       ...rows.map(([label, value]) =>
         React.createElement(
@@ -147,20 +213,44 @@ function buildReceiptElement({ batch }) {
         React.createElement(
           View,
           { style: styles.amountRow },
-          React.createElement(Text, { style: styles.amountRowLabel }, "Plan Fees"),
-          React.createElement(Text, { style: styles.amountRowValue }, formatNaira(batch.totalFees))
+          React.createElement(
+            Text,
+            { style: styles.amountRowLabel },
+            "Plan Fees"
+          ),
+          React.createElement(
+            Text,
+            { style: styles.amountRowValue },
+            formatNaira(batch.totalFees)
+          )
         ),
         React.createElement(
           View,
           { style: styles.amountRow },
-          React.createElement(Text, { style: styles.amountRowLabel }, "System Charges"),
-          React.createElement(Text, { style: styles.amountRowValue }, formatNaira(batch.systemCharges))
+          React.createElement(
+            Text,
+            { style: styles.amountRowLabel },
+            "System Charges"
+          ),
+          React.createElement(
+            Text,
+            { style: styles.amountRowValue },
+            formatNaira(batch.systemCharges)
+          )
         ),
         React.createElement(
           View,
           { style: styles.totalRow },
-          React.createElement(Text, { style: styles.totalLabel }, "Total Amount"),
-          React.createElement(Text, { style: styles.totalValue }, formatNaira(batch.totalAmount))
+          React.createElement(
+            Text,
+            { style: styles.totalLabel },
+            "Total Amount"
+          ),
+          React.createElement(
+            Text,
+            { style: styles.totalValue },
+            formatNaira(batch.totalAmount)
+          )
         )
       ),
       React.createElement(
@@ -176,7 +266,9 @@ function readStdin() {
   return new Promise((resolve, reject) => {
     const chunks = [];
     process.stdin.on("data", (chunk) => chunks.push(chunk));
-    process.stdin.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    process.stdin.on("end", () =>
+      resolve(Buffer.concat(chunks).toString("utf8"))
+    );
     process.stdin.on("error", reject);
   });
 }

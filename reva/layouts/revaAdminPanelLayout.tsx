@@ -60,7 +60,9 @@ export default function RevaAdminPanelLayout({
     },
   ];
 
-  const userName = userData ? `${userData.firstName} ${userData.lastName}`.trim() : undefined;
+  const userName = userData
+    ? `${userData.firstName} ${userData.lastName}`.trim()
+    : undefined;
 
   if (!sidebar) return null;
 
@@ -111,7 +113,10 @@ export default function RevaAdminPanelLayout({
         />
 
         <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
-          <VerificationNagBanner platform={Platform.REVA} verifyHref="/reva/verify-email" />
+          <VerificationNagBanner
+            platform={Platform.REVA}
+            verifyHref="/reva/verify-email"
+          />
           {children}
         </div>
       </div>

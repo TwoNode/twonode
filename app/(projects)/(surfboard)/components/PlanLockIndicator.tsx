@@ -73,7 +73,10 @@ export function LockedPlanBadge({
   }
   if (isLockedByOther) {
     return (
-      <Badge variant="outline" className="text-gray-500 dark:text-gray-400 border-gray-300 dark:border-white/15">
+      <Badge
+        variant="outline"
+        className="text-gray-500 dark:text-gray-400 border-gray-300 dark:border-white/15"
+      >
         <Lock className="w-3 h-3 mr-1" />
         Locked
       </Badge>

@@ -21,7 +21,12 @@ function serializeError(err: unknown): unknown {
   return err;
 }
 
-function emit(level: LogLevel, message: string, context?: LogContext, err?: unknown) {
+function emit(
+  level: LogLevel,
+  message: string,
+  context?: LogContext,
+  err?: unknown
+) {
   const entry: Record<string, unknown> = {
     level,
     message,
@@ -37,7 +42,10 @@ function emit(level: LogLevel, message: string, context?: LogContext, err?: unkn
 }
 
 export const logger = {
-  info: (message: string, context?: LogContext) => emit("info", message, context),
-  warn: (message: string, context?: LogContext, err?: unknown) => emit("warn", message, context, err),
-  error: (message: string, context?: LogContext, err?: unknown) => emit("error", message, context, err),
+  info: (message: string, context?: LogContext) =>
+    emit("info", message, context),
+  warn: (message: string, context?: LogContext, err?: unknown) =>
+    emit("warn", message, context, err),
+  error: (message: string, context?: LogContext, err?: unknown) =>
+    emit("error", message, context, err),
 };

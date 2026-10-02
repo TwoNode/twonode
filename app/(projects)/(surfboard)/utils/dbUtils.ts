@@ -15,10 +15,7 @@ import centroid from "@turf/centroid";
  * Input geometry type: WKT string, GeoJSON Polygon/MultiPolygon feature, or direct geometry
  */
 export type GeometryInput =
-  | string
-  | Feature<Polygon | MultiPolygon>
-  | Polygon
-  | MultiPolygon;
+  string | Feature<Polygon | MultiPolygon> | Polygon | MultiPolygon;
 
 /**
  * Resulting geometry details

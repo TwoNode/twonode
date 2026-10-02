@@ -29,7 +29,10 @@ proj4.defs(
   "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-92,-93,122,0,0,0,0 +units=m +no_defs"
 );
 
-const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars, state }) => {
+const MaplibreMap: React.FC<MaplibreMapProps> = ({
+  processedPillars,
+  state,
+}) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<Map | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -147,8 +150,14 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars, state }) =>
           feature?.geometry?.type === "Point" &&
           feature.geometry.coordinates
         ) {
-          const { easting, northing, pointIndex, pillarNumber, rawEasting, rawNorthing } =
-            feature.properties || {};
+          const {
+            easting,
+            northing,
+            pointIndex,
+            pillarNumber,
+            rawEasting,
+            rawNorthing,
+          } = feature.properties || {};
           const displayEasting = rawEasting ?? easting;
           const displayNorthing = rawNorthing ?? northing;
           popup
@@ -196,65 +205,69 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars, state }) =>
     const fetchAndRender = async () => {
       const shiftsResult = await surfboardApi.settings.coordinateShifts();
       const shifts = shiftsResult.success ? shiftsResult.data : {};
-      const visualPillars = applyVisualizationShift(processedPillars, state, shifts);
+      const visualPillars = applyVisualizationShift(
+        processedPillars,
+        state,
+        shifts
+      );
 
       const mapInstance = map.current;
       if (!mapInstance) return;
 
       const groups: Record<number, any[]> = {};
       visualPillars.forEach((p) => {
-      const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
-        p.easting,
-        p.northing,
-      ]);
-      const idx = p.polygonIndex ?? 0;
-      if (!groups[idx]) groups[idx] = [];
-      groups[idx].push([lon, lat]);
-    });
-
-    const polygonFeatures = Object.values(groups).map((coords) => {
-      const closedCoords = [...coords];
-      if (
-        turf.booleanEqual(
-          turf.point(closedCoords[0]),
-          turf.point(closedCoords.at(-1)!)
-        ) === false
-      ) {
-        closedCoords.push(closedCoords[0]);
-      }
-      return turf.polygon([closedCoords]);
-    });
-
-    const pointFeatures = visualPillars.map((p) => {
-      const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
-        p.easting,
-        p.northing,
-      ]);
-      return turf.point([lon, lat], {
-        pillarNumber: p.pillarNumber,
-        easting: p.easting,
-        northing: p.northing,
-        pointIndex: p.pointIndex,
-        polygonIndex: p.polygonIndex,
-        rawEasting: p.rawEasting ?? p.easting,
-        rawNorthing: p.rawNorthing ?? p.northing,
+        const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
+          p.easting,
+          p.northing,
+        ]);
+        const idx = p.polygonIndex ?? 0;
+        if (!groups[idx]) groups[idx] = [];
+        groups[idx].push([lon, lat]);
       });
-    });
 
-    (mapInstance.getSource("pointLayer") as GeoJSONSource)?.setData(
-      turf.featureCollection(pointFeatures)
-    );
-    (mapInstance.getSource("polygonLayer") as GeoJSONSource)?.setData(
-      turf.featureCollection(polygonFeatures)
-    );
+      const polygonFeatures = Object.values(groups).map((coords) => {
+        const closedCoords = [...coords];
+        if (
+          turf.booleanEqual(
+            turf.point(closedCoords[0]),
+            turf.point(closedCoords.at(-1)!)
+          ) === false
+        ) {
+          closedCoords.push(closedCoords[0]);
+        }
+        return turf.polygon([closedCoords]);
+      });
 
-    const fullCollection = turf.featureCollection(polygonFeatures);
-    mapInstance.fitBounds(
-      turf.bbox(fullCollection) as [number, number, number, number],
-      { padding: 40 }
-    );
+      const pointFeatures = visualPillars.map((p) => {
+        const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
+          p.easting,
+          p.northing,
+        ]);
+        return turf.point([lon, lat], {
+          pillarNumber: p.pillarNumber,
+          easting: p.easting,
+          northing: p.northing,
+          pointIndex: p.pointIndex,
+          polygonIndex: p.polygonIndex,
+          rawEasting: p.rawEasting ?? p.easting,
+          rawNorthing: p.rawNorthing ?? p.northing,
+        });
+      });
+
+      (mapInstance.getSource("pointLayer") as GeoJSONSource)?.setData(
+        turf.featureCollection(pointFeatures)
+      );
+      (mapInstance.getSource("polygonLayer") as GeoJSONSource)?.setData(
+        turf.featureCollection(polygonFeatures)
+      );
+
+      const fullCollection = turf.featureCollection(polygonFeatures);
+      mapInstance.fitBounds(
+        turf.bbox(fullCollection) as [number, number, number, number],
+        { padding: 40 }
+      );
     };
-    
+
     fetchAndRender();
   }, [processedPillars, isReady, state]);
 

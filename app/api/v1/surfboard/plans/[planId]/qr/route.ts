@@ -23,5 +23,5 @@ export const GET = withAuth<SurfboardRole>(
     const data = await generatePlanQRCode(ctx.session.sub, planId, options);
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] },
+  { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] }
 );

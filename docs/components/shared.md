@@ -9,175 +9,175 @@ plus the marketing-site sections colocated under `app/(main)/`.
 Standard [shadcn/ui](https://ui.shadcn.com/) primitives, one file per
 component. Not product-specific.
 
-| File | Description |
-|---|---|
-| `accordion.tsx` | Accordion / collapsible sections |
-| `alert-dialog.tsx` | Confirmation dialog (used for deletes, logout, etc.) |
-| `alert.tsx` | Inline alert banner |
-| `avatar.tsx` | Avatar image/fallback |
-| `badge.tsx` | Small status/label badge |
-| `button.tsx` | Button primitive |
-| `calendar.tsx` | Date-picker calendar |
-| `card.tsx` | Card container |
-| `carousel.tsx` | Carousel/slider |
-| `checkbox.tsx` | Checkbox input |
-| `collapsible.tsx` | Collapsible content region |
-| `command.tsx` | Command palette / searchable list |
-| `dialog.tsx` | Modal dialog |
-| `drawer.tsx` | Slide-out drawer |
-| `dropdown-menu.tsx` | Dropdown menu |
-| `file-upload.tsx` | File upload control |
-| `form.tsx` | Form field wrappers (react-hook-form integration) |
-| `input.tsx` | Text input |
-| `label.tsx` | Form label |
-| `loading-examples.tsx` | Reference/demo of loading-state patterns |
-| `loading-spinner.tsx` | Loading spinner |
-| `password-input.tsx` | Password input with show/hide toggle |
-| `phone-input.tsx` | Phone number input |
-| `popover.tsx` | Popover (used by the notification bell dropdown) |
-| `progress.tsx` | Progress bar |
-| `scroll-area.tsx` | Custom scrollbar container |
-| `select.tsx` | Select/dropdown input |
-| `separator.tsx` | Visual divider |
-| `sheet.tsx` | Slide-in panel |
-| `skeleton.tsx` | Loading skeleton placeholder |
-| `switch.tsx` | Toggle switch |
-| `table.tsx` | Table primitives |
-| `tabs.tsx` | Tabs |
-| `textarea.tsx` | Multi-line text input |
-| `toaster.tsx` | Toast notification container |
-| `toast.tsx` | Toast notification primitive |
-| `tooltip.tsx` | Tooltip |
-| `visually-hidden.tsx` | Visually-hidden (screen-reader-only) wrapper |
+| File                   | Description                                          |
+| ---------------------- | ---------------------------------------------------- |
+| `accordion.tsx`        | Accordion / collapsible sections                     |
+| `alert-dialog.tsx`     | Confirmation dialog (used for deletes, logout, etc.) |
+| `alert.tsx`            | Inline alert banner                                  |
+| `avatar.tsx`           | Avatar image/fallback                                |
+| `badge.tsx`            | Small status/label badge                             |
+| `button.tsx`           | Button primitive                                     |
+| `calendar.tsx`         | Date-picker calendar                                 |
+| `card.tsx`             | Card container                                       |
+| `carousel.tsx`         | Carousel/slider                                      |
+| `checkbox.tsx`         | Checkbox input                                       |
+| `collapsible.tsx`      | Collapsible content region                           |
+| `command.tsx`          | Command palette / searchable list                    |
+| `dialog.tsx`           | Modal dialog                                         |
+| `drawer.tsx`           | Slide-out drawer                                     |
+| `dropdown-menu.tsx`    | Dropdown menu                                        |
+| `file-upload.tsx`      | File upload control                                  |
+| `form.tsx`             | Form field wrappers (react-hook-form integration)    |
+| `input.tsx`            | Text input                                           |
+| `label.tsx`            | Form label                                           |
+| `loading-examples.tsx` | Reference/demo of loading-state patterns             |
+| `loading-spinner.tsx`  | Loading spinner                                      |
+| `password-input.tsx`   | Password input with show/hide toggle                 |
+| `phone-input.tsx`      | Phone number input                                   |
+| `popover.tsx`          | Popover (used by the notification bell dropdown)     |
+| `progress.tsx`         | Progress bar                                         |
+| `scroll-area.tsx`      | Custom scrollbar container                           |
+| `select.tsx`           | Select/dropdown input                                |
+| `separator.tsx`        | Visual divider                                       |
+| `sheet.tsx`            | Slide-in panel                                       |
+| `skeleton.tsx`         | Loading skeleton placeholder                         |
+| `switch.tsx`           | Toggle switch                                        |
+| `table.tsx`            | Table primitives                                     |
+| `tabs.tsx`             | Tabs                                                 |
+| `textarea.tsx`         | Multi-line text input                                |
+| `toaster.tsx`          | Toast notification container                         |
+| `toast.tsx`            | Toast notification primitive                         |
+| `tooltip.tsx`          | Tooltip                                              |
+| `visually-hidden.tsx`  | Visually-hidden (screen-reader-only) wrapper         |
 
 ## `components/dashboard/` — shared dashboard system
 
 Used by every product's dashboard shell (GBC/REVA/Surfboard).
 
-| File | Description |
-|---|---|
-| `DashboardBadge.tsx` | Shared status-badge look (tone system) |
-| `DashboardHero.tsx` | Gradient greeting banner at the top of a dashboard page. Optional `secondaryCta`, rendered to the left of `cta` in a lighter outline style (e.g. Surfboard dashboard's "My Batches" next to "New Plan") |
-| `DashboardSearch.tsx` | Debounced topbar search with live results dropdown |
-| `DateRangeFilter.tsx` | Two-input date-range filter (used by Surfboard's dashboard analytics) |
-| `StatCard.tsx` | Tone-tinted stat tile with icon and optional breakdown line |
-| `ThemeToggle.tsx` | Light/dark theme toggle button |
+| File                  | Description                                                                                                                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DashboardBadge.tsx`  | Shared status-badge look (tone system)                                                                                                                                                                  |
+| `DashboardHero.tsx`   | Gradient greeting banner at the top of a dashboard page. Optional `secondaryCta`, rendered to the left of `cta` in a lighter outline style (e.g. Surfboard dashboard's "My Batches" next to "New Plan") |
+| `DashboardSearch.tsx` | Debounced topbar search with live results dropdown                                                                                                                                                      |
+| `DateRangeFilter.tsx` | Two-input date-range filter (used by Surfboard's dashboard analytics)                                                                                                                                   |
+| `StatCard.tsx`        | Tone-tinted stat tile with icon and optional breakdown line                                                                                                                                             |
+| `ThemeToggle.tsx`     | Light/dark theme toggle button                                                                                                                                                                          |
 
 ## `components/sidebars/` — shared sidebar system
 
-| File | Description |
-|---|---|
-| `menu.tsx` | Renders the nav item list + pinned footer (avatar, logout). A collapsed section's items only mount while hovered/peeking; closing that hover is debounced (~150ms, cancelled by the next enter in the same group) so moving the cursor across the small gap between a section header and its first item — or between sibling items — doesn't unmount the item the cursor is moving toward before it arrives |
+| File          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `menu.tsx`    | Renders the nav item list + pinned footer (avatar, logout). A collapsed section's items only mount while hovered/peeking; closing that hover is debounced (~150ms, cancelled by the next enter in the same group) so moving the cursor across the small gap between a section header and its first item — or between sibling items — doesn't unmount the item the cursor is moving toward before it arrives                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `sidebar.tsx` | Sidebar shell (rail, optional branding header, optional primary-action button). `enableRailCollapse` now also used by Surfboard admin+MDA (`DashboardShell.tsx`) and both REVA dashboards, not just Surfboard surveyor. Collapse toggle button sits outside the content div's `overflow-hidden` boundary (previously clipped in half by it) and uses the brand accent color instead of blending into the rail — overridable per product via the new `toggleColor` prop (Surfboard MDA passes its indigo accent, so the button doesn't clash with a non-blue `railBackground`). Optional `railBackground` prop overrides the shared near-black fill (Surfboard surveyor passes its hero gradient, MDA passes `SURFBOARD_GRADIENTS.mda`; every other consumer is unaffected). Peeking rail gets a higher z-index only while peeking, so it doesn't lose a z-index tie with page content (e.g. a map viewer's own floating panels) on DOM order |
 
 ## `components/admin-panel/` — shared admin shell chrome
 
-| File | Description |
-|---|---|
-| `collapse-menu-button.tsx` | Collapsible submenu button |
-| `content-layout.tsx` | Page content wrapper for admin shells |
-| `DashboardShell.tsx` | Top-level admin dashboard shell (navbar + sidebar composition). MDA (`isMda`) now gets a full indigo treatment carried through from its own login page (`SURFBOARD_GRADIENTS.mda`, same accentDark/accent pair as its `AuthSplitLayout` background) across the sidebar rail, the navbar (previously plain white, brand color only in small accent details), and `UserAccountMenu`'s `accentColor`/`accentColorDark` (previously always defaulted to Surfboard blue regardless of product) |
-| `navbar.tsx` | Admin panel top navbar |
-| `sheet-menu.tsx` | Mobile slide-in menu |
-| `sidebar-toggle.tsx` | Sidebar collapse/expand toggle |
-| `user-nav.tsx` | User account menu in the navbar |
+| File                       | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `collapse-menu-button.tsx` | Collapsible submenu button                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `content-layout.tsx`       | Page content wrapper for admin shells                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `DashboardShell.tsx`       | Top-level admin dashboard shell (navbar + sidebar composition). MDA (`isMda`) now gets a full indigo treatment carried through from its own login page (`SURFBOARD_GRADIENTS.mda`, same accentDark/accent pair as its `AuthSplitLayout` background) across the sidebar rail, the navbar (previously plain white, brand color only in small accent details), and `UserAccountMenu`'s `accentColor`/`accentColorDark` (previously always defaulted to Surfboard blue regardless of product) |
+| `navbar.tsx`               | Admin panel top navbar                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `sheet-menu.tsx`           | Mobile slide-in menu                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `sidebar-toggle.tsx`       | Sidebar collapse/expand toggle                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `user-nav.tsx`             | User account menu in the navbar                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 ## `components/admin/` — shared admin-panel widgets
 
-| File | Description |
-|---|---|
-| `AuditLogViewer.tsx` | Superadmin's read-only audit log (search by actor/entity id/IP, action + entity filters, list/grid). Takes a product's `AuditLogApi`; used by GBC, Surfboard and REVA |
-| `PendingInvitations.tsx` | Admin-invitations panel (status pills, Resend, Revoke) + `announceInviteResult` toast helper; takes a product's invitations API |
+| File                     | Description                                                                                                                                                           |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AuditLogViewer.tsx`     | Superadmin's read-only audit log (search by actor/entity id/IP, action + entity filters, list/grid). Takes a product's `AuditLogApi`; used by GBC, Surfboard and REVA |
+| `PendingInvitations.tsx` | Admin-invitations panel (status pills, Resend, Revoke) + `announceInviteResult` toast helper; takes a product's invitations API                                       |
 
 ## `components/auth/` — shared auth UI
 
-| File | Description |
-|---|---|
-| `AcceptInviteCard.tsx` | Accept-invitation form (set a password from the emailed link) |
-| `AuthSplitLayout.tsx` | Two-panel auth page layout (form left, branded gradient + network graphic right). `PlatformNetworkGraphic` is now capped at a fixed max-width on every tier (`max-w-[240px]`→`xl:max-w-[300px]`), not just height-driven — previously uncapped at `xl`, so on a tall panel the whole diagram (lines + nodes together, not just the node icons within it) filled nearly the whole column instead of reading as one compact graphic |
-| `GoogleIcon.tsx` | Google "G" logo icon |
-| `NativeAuthCard.tsx` | Email/password login+register card |
-| `PlatformNetworkGraphic.tsx` | The connected-logo graphic on `AuthSplitLayout`'s branded panel. `variant="default"` (TwoNode hub + Surfboard/REVA/GBC/open-slot satellites) vs `variant="mda"` (a single TwoNode↔MDA connection, offset in x so the line reads as a real diagonal, not stacked dead-vertical) |
-| `ResetPasswordCard.tsx` | Password reset form card |
-| `VerifyEmailCard.tsx` | Email verification status card |
+| File                         | Description                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AcceptInviteCard.tsx`       | Accept-invitation form (set a password from the emailed link)                                                                                                                                                                                                                                                                                                                                                                     |
+| `AuthSplitLayout.tsx`        | Two-panel auth page layout (form left, branded gradient + network graphic right). `PlatformNetworkGraphic` is now capped at a fixed max-width on every tier (`max-w-[240px]`→`xl:max-w-[300px]`), not just height-driven — previously uncapped at `xl`, so on a tall panel the whole diagram (lines + nodes together, not just the node icons within it) filled nearly the whole column instead of reading as one compact graphic |
+| `GoogleIcon.tsx`             | Google "G" logo icon                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `NativeAuthCard.tsx`         | Email/password login+register card                                                                                                                                                                                                                                                                                                                                                                                                |
+| `PlatformNetworkGraphic.tsx` | The connected-logo graphic on `AuthSplitLayout`'s branded panel. `variant="default"` (TwoNode hub + Surfboard/REVA/GBC/open-slot satellites) vs `variant="mda"` (a single TwoNode↔MDA connection, offset in x so the line reads as a real diagonal, not stacked dead-vertical)                                                                                                                                                    |
+| `ResetPasswordCard.tsx`      | Password reset form card                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `VerifyEmailCard.tsx`        | Email verification status card                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## `components/Navbar/` — corporate site navbar
 
-| File | Description |
-|---|---|
-| `index.tsx` | Corporate site navbar |
-| `navbarItems.tsx` | Navbar link/item definitions |
-| `navbar-mobile.tsx` | Mobile navbar/menu |
+| File                 | Description                     |
+| -------------------- | ------------------------------- |
+| `index.tsx`          | Corporate site navbar           |
+| `navbarItems.tsx`    | Navbar link/item definitions    |
+| `navbar-mobile.tsx`  | Mobile navbar/menu              |
 | `sidebar-button.tsx` | Hamburger/sidebar toggle button |
 
 ## `components/headers/`, `components/pageNotFound/`, `components/svgs/`, `components/middlewares/`
 
-| File | Description |
-|---|---|
-| `headers/HomeHeader.tsx` | Corporate homepage header |
-| `pageNotFound/GBCPageNotFound.tsx` | GBC-branded 404 page |
-| `pageNotFound/SurfPageNotFound.tsx` | Surfboard-branded 404 page |
-| `svgs/index.tsx` | Shared inline SVG icon set |
+| File                                        | Description                           |
+| ------------------------------------------- | ------------------------------------- |
+| `headers/HomeHeader.tsx`                    | Corporate homepage header             |
+| `pageNotFound/GBCPageNotFound.tsx`          | GBC-branded 404 page                  |
+| `pageNotFound/SurfPageNotFound.tsx`         | Surfboard-branded 404 page            |
+| `svgs/index.tsx`                            | Shared inline SVG icon set            |
 | `middlewares/ServerProtectedAdminRoute.tsx` | Server-side admin route guard wrapper |
 
 ## Cross-platform utility components (`components/`)
 
-| File | Description |
-|---|---|
-| `ConfirmedLogoutLink.tsx` | Logout link/button wrapped in a confirmation dialog |
-| `ErrorFallback.tsx` | Shared "Try again / Go Home" UI for a root-layout group's `error.tsx`. This app uses Next's "multiple root layouts" pattern (`app/(main)`, `app/(noPopUp)`, `app/(projects)`, `app/v2` — each defines its own `<html>`/`<body>`, no shared `app/layout.tsx`), so a single top-level `error.tsx` is never actually mounted for any of them; each group needs its own `error.tsx` (mirrors how `not-found.tsx` was already duplicated per group). `app/global-error.tsx` is the one file allowed to render its own `<html>`/`<body>` — a last-resort fallback for errors thrown before any group's layout mounts |
-| `NotificationBell.tsx` | Dropdown notification bell (generic over platform) |
-| `UserAvatar.tsx` | Session-fetching avatar with initials fallback (generic over platform) |
-| `CountdownComponent.tsx` | Countdown timer |
-| `GoogleAnalytics.tsx` | GA tracking script loader |
-| `InvalidReferencePage.tsx` | "Invalid reference" error page |
-| `MyPopup.tsx` | Generic popup/modal wrapper |
-| `SetCookieFromClient.tsx` | Client-side cookie setter |
-| `ToasterComponent.tsx` | Mounts `sonner`'s `<Toaster>` once in the root layout — the only toast container in the app. All products (GBC, Surfboard, REVA) call `toast` from `sonner`; there is no per-product provider |
-| `YouTubeEmbed.tsx` | YouTube video embed |
+| File                       | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ConfirmedLogoutLink.tsx`  | Logout link/button wrapped in a confirmation dialog                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `ErrorFallback.tsx`        | Shared "Try again / Go Home" UI for a root-layout group's `error.tsx`. This app uses Next's "multiple root layouts" pattern (`app/(main)`, `app/(noPopUp)`, `app/(projects)`, `app/v2` — each defines its own `<html>`/`<body>`, no shared `app/layout.tsx`), so a single top-level `error.tsx` is never actually mounted for any of them; each group needs its own `error.tsx` (mirrors how `not-found.tsx` was already duplicated per group). `app/global-error.tsx` is the one file allowed to render its own `<html>`/`<body>` — a last-resort fallback for errors thrown before any group's layout mounts |
+| `NotificationBell.tsx`     | Dropdown notification bell (generic over platform)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `UserAvatar.tsx`           | Session-fetching avatar with initials fallback (generic over platform)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `CountdownComponent.tsx`   | Countdown timer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `GoogleAnalytics.tsx`      | GA tracking script loader                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `InvalidReferencePage.tsx` | "Invalid reference" error page                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `MyPopup.tsx`              | Generic popup/modal wrapper                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `SetCookieFromClient.tsx`  | Client-side cookie setter                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `ToasterComponent.tsx`     | Mounts `sonner`'s `<Toaster>` once in the root layout — the only toast container in the app. All products (GBC, Surfboard, REVA) call `toast` from `sonner`; there is no per-product provider                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `YouTubeEmbed.tsx`         | YouTube video embed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ## Corporate/marketing site sections (`components/` root)
 
-| File | Description |
-|---|---|
-| `Banner.jsx` | Marketing banner |
-| `CarouselImageSlider.jsx` | Image carousel |
-| `certificate21.html` | Static certificate HTML template/reference |
-| `DemystifyingGIS.tsx` | "Demystifying GIS" marketing section |
-| `EffortlessTracking.tsx` | Marketing section |
-| `Footer.tsx` | Corporate site footer |
-| `FrequentlyAskedQuestions.tsx` | FAQ section |
-| `HomeComponents.tsx` | Homepage section composition |
-| `OurGallery.tsx` | Gallery preview section |
-| `ProductShowcase.tsx` | Product (GBC/REVA/Surfboard) showcase section |
-| `ReachOutToUs.tsx` | Contact CTA section |
-| `Revolutionizing.jsx` | Marketing section |
-| `SurfboardCSVHeaderHelp.tsx` | Help panel explaining Surfboard's CSV import headers |
-| `SurfBoardSubscriptionPlans.tsx` | Surfboard subscription plans marketing section |
-| `SurfBoard.tsx` | Surfboard marketing section |
-| `SurveyTrustFirms.jsx` | "Trusted by" firms section |
-| `TakeAViewofOurGallery.tsx` | Gallery CTA section |
+| File                             | Description                                          |
+| -------------------------------- | ---------------------------------------------------- |
+| `Banner.jsx`                     | Marketing banner                                     |
+| `CarouselImageSlider.jsx`        | Image carousel                                       |
+| `certificate21.html`             | Static certificate HTML template/reference           |
+| `DemystifyingGIS.tsx`            | "Demystifying GIS" marketing section                 |
+| `EffortlessTracking.tsx`         | Marketing section                                    |
+| `Footer.tsx`                     | Corporate site footer                                |
+| `FrequentlyAskedQuestions.tsx`   | FAQ section                                          |
+| `HomeComponents.tsx`             | Homepage section composition                         |
+| `OurGallery.tsx`                 | Gallery preview section                              |
+| `ProductShowcase.tsx`            | Product (GBC/REVA/Surfboard) showcase section        |
+| `ReachOutToUs.tsx`               | Contact CTA section                                  |
+| `Revolutionizing.jsx`            | Marketing section                                    |
+| `SurfboardCSVHeaderHelp.tsx`     | Help panel explaining Surfboard's CSV import headers |
+| `SurfBoardSubscriptionPlans.tsx` | Surfboard subscription plans marketing section       |
+| `SurfBoard.tsx`                  | Surfboard marketing section                          |
+| `SurveyTrustFirms.jsx`           | "Trusted by" firms section                           |
+| `TakeAViewofOurGallery.tsx`      | Gallery CTA section                                  |
 
 ## Marketing-site sections colocated with pages (`app/(main)/`)
 
-| File | Description |
-|---|---|
-| `about-us/Aboutbanner.tsx` | About-us page banner |
-| `contact/ContactUs.tsx` | Contact page content |
-| `contact/OurMap.jsx` | Embedded map on the contact page |
-| `events/GbcBanner.tsx` | GBC promo banner on the events page |
-| `events/Gbc.tsx` | GBC section on the events page |
-| `events/svgs/index.jsx` | Icon set for the events page |
-| `featurednews/FeaturedNews.tsx` | Featured news section |
-| `featurednews/svgs.tsx` | Icon set for the featured news page |
-| `gbc-frame/GbcFrame.tsx` | Embeddable GBC frame content |
-| `present/GbcFrame.tsx` | GBC frame content (presentation variant) |
-| `services/Revol.tsx` | Services page section |
-| `signup/EffortlessTracking.tsx` | Signup page marketing section |
-| `signup/SurfBoardSubscriptionPlans.tsx` | Signup page subscription plans section |
+| File                                    | Description                              |
+| --------------------------------------- | ---------------------------------------- |
+| `about-us/Aboutbanner.tsx`              | About-us page banner                     |
+| `contact/ContactUs.tsx`                 | Contact page content                     |
+| `contact/OurMap.jsx`                    | Embedded map on the contact page         |
+| `events/GbcBanner.tsx`                  | GBC promo banner on the events page      |
+| `events/Gbc.tsx`                        | GBC section on the events page           |
+| `events/svgs/index.jsx`                 | Icon set for the events page             |
+| `featurednews/FeaturedNews.tsx`         | Featured news section                    |
+| `featurednews/svgs.tsx`                 | Icon set for the featured news page      |
+| `gbc-frame/GbcFrame.tsx`                | Embeddable GBC frame content             |
+| `present/GbcFrame.tsx`                  | GBC frame content (presentation variant) |
+| `services/Revol.tsx`                    | Services page section                    |
+| `signup/EffortlessTracking.tsx`         | Signup page marketing section            |
+| `signup/SurfBoardSubscriptionPlans.tsx` | Signup page subscription plans section   |
 
 ## `providers/`
 
-| File | Description |
-|---|---|
+| File                    | Description                           |
+| ----------------------- | ------------------------------------- |
 | `KindeAuthProvider.tsx` | Wraps the app with Kinde auth context |

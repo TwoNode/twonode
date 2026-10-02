@@ -21,9 +21,13 @@ const mockEmail = vi.hoisted(() => ({
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 vi.mock("@/gbc/utils/email", () => mockEmail);
 
-const { submitContactForm, replyToInquiry, getInquiries, getInquiriesPaginated, getInquiryStats } = await import(
-  "@/gbc/services/contactService"
-);
+const {
+  submitContactForm,
+  replyToInquiry,
+  getInquiries,
+  getInquiriesPaginated,
+  getInquiryStats,
+} = await import("@/gbc/services/contactService");
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -33,12 +37,22 @@ beforeEach(() => {
 describe("submitContactForm", () => {
   it("creates the inquiry and sends both the confirmation and admin notification", async () => {
     mockPrisma.gBCContactInquiry.create.mockResolvedValue({ id: "i1" });
-    const data = { name: "Jane", email: "jane@test.com", subject: "Hi", message: "Hello there", type: "GENERAL" } as any;
+    const data = {
+      name: "Jane",
+      email: "jane@test.com",
+      subject: "Hi",
+      message: "Hello there",
+      type: "GENERAL",
+    } as any;
 
     await submitContactForm(data);
 
     expect(mockPrisma.gBCContactInquiry.create).toHaveBeenCalledWith({ data });
-    expect(mockEmail.sendGBCContactConfirmation).toHaveBeenCalledWith("Jane", "jane@test.com", "Hi");
+    expect(mockEmail.sendGBCContactConfirmation).toHaveBeenCalledWith(
+      "Jane",
+      "jane@test.com",
+      "Hi"
+    );
     expect(mockEmail.sendGBCAdminNotification).toHaveBeenCalledWith(
       "GENERAL",
       "Jane",
@@ -51,7 +65,13 @@ describe("submitContactForm", () => {
 });
 
 describe("submitContactForm edition tagging", () => {
-  const data = { name: "Jane", email: "jane@test.com", subject: "Hi", message: "Hello there", type: "GENERAL" } as any;
+  const data = {
+    name: "Jane",
+    email: "jane@test.com",
+    subject: "Hi",
+    message: "Hello there",
+    type: "GENERAL",
+  } as any;
 
   it("tags the inquiry with the active edition", async () => {
     mockPrisma.gBCEdition.findFirst.mockResolvedValue({
@@ -69,7 +89,9 @@ describe("submitContactForm edition tagging", () => {
 
     await submitContactForm(data);
 
-    expect(mockPrisma.gBCContactInquiry.create).toHaveBeenCalledWith({ data: { ...data, edition: "3.0" } });
+    expect(mockPrisma.gBCContactInquiry.create).toHaveBeenCalledWith({
+      data: { ...data, edition: "3.0" },
+    });
   });
 
   it("leaves the schema default in place when no edition is active", async () => {
@@ -99,7 +121,13 @@ describe("getInquiriesPaginated", () => {
     mockPrisma.gBCContactInquiry.findMany.mockResolvedValue([{ id: "i1" }]);
     mockPrisma.gBCContactInquiry.count.mockResolvedValue(25);
 
-    const result = await getInquiriesPaginated({ page: 2, pageSize: 10, edition: "2.0", status: "PENDING", search: "jane" });
+    const result = await getInquiriesPaginated({
+      page: 2,
+      pageSize: 10,
+      edition: "2.0",
+      status: "PENDING",
+      search: "jane",
+    });
 
     const where = {
       status: "PENDING",
@@ -117,11 +145,18 @@ describe("getInquiriesPaginated", () => {
       take: 10,
     });
     expect(mockPrisma.gBCContactInquiry.count).toHaveBeenCalledWith({ where });
-    expect(result.pagination).toEqual({ page: 2, pageSize: 10, total: 25, totalPages: 3 });
+    expect(result.pagination).toEqual({
+      page: 2,
+      pageSize: 10,
+      total: 25,
+      totalPages: 3,
+    });
   });
 
   it("falls back to the last real page when the requested page is past the end", async () => {
-    mockPrisma.gBCContactInquiry.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: "last" }]);
+    mockPrisma.gBCContactInquiry.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: "last" }]);
     mockPrisma.gBCContactInquiry.count.mockResolvedValue(11);
 
     const result = await getInquiriesPaginated({ page: 9, pageSize: 10 });
@@ -133,11 +168,24 @@ describe("getInquiriesPaginated", () => {
 
 describe("getInquiryStats", () => {
   it("counts everything when no edition is given", async () => {
-    mockPrisma.gBCContactInquiry.count.mockResolvedValueOnce(9).mockResolvedValueOnce(4).mockResolvedValueOnce(3).mockResolvedValueOnce(2);
+    mockPrisma.gBCContactInquiry.count
+      .mockResolvedValueOnce(9)
+      .mockResolvedValueOnce(4)
+      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(2);
 
-    expect(await getInquiryStats()).toEqual({ total: 9, pending: 4, inProgress: 3, resolved: 2 });
-    expect(mockPrisma.gBCContactInquiry.count).toHaveBeenNthCalledWith(1, { where: {} });
-    expect(mockPrisma.gBCContactInquiry.count).toHaveBeenNthCalledWith(2, { where: { status: "PENDING" } });
+    expect(await getInquiryStats()).toEqual({
+      total: 9,
+      pending: 4,
+      inProgress: 3,
+      resolved: 2,
+    });
+    expect(mockPrisma.gBCContactInquiry.count).toHaveBeenNthCalledWith(1, {
+      where: {},
+    });
+    expect(mockPrisma.gBCContactInquiry.count).toHaveBeenNthCalledWith(2, {
+      where: { status: "PENDING" },
+    });
   });
 
   it("scopes every count to the edition when one is given", async () => {
@@ -155,18 +203,31 @@ describe("getInquiryStats", () => {
 describe("replyToInquiry", () => {
   it("throws NotFoundError for an unknown inquiry", async () => {
     mockPrisma.gBCContactInquiry.findUnique.mockResolvedValue(null);
-    await expect(replyToInquiry("nope", "Subj", "Msg")).rejects.toMatchObject({ status: 404 });
+    await expect(replyToInquiry("nope", "Subj", "Msg")).rejects.toMatchObject({
+      status: 404,
+    });
   });
 
   it("throws when the reply email fails to send, without updating status", async () => {
-    mockPrisma.gBCContactInquiry.findUnique.mockResolvedValue({ email: "a@test.com", name: "A" });
-    mockEmail.sendGBCInquiryReply.mockResolvedValueOnce({ success: false, error: "SMTP down" });
-    await expect(replyToInquiry("i1", "Subj", "Msg")).rejects.toThrow("SMTP down");
+    mockPrisma.gBCContactInquiry.findUnique.mockResolvedValue({
+      email: "a@test.com",
+      name: "A",
+    });
+    mockEmail.sendGBCInquiryReply.mockResolvedValueOnce({
+      success: false,
+      error: "SMTP down",
+    });
+    await expect(replyToInquiry("i1", "Subj", "Msg")).rejects.toThrow(
+      "SMTP down"
+    );
     expect(mockPrisma.gBCContactInquiry.update).not.toHaveBeenCalled();
   });
 
   it("marks the inquiry IN_PROGRESS once the reply sends", async () => {
-    mockPrisma.gBCContactInquiry.findUnique.mockResolvedValue({ email: "a@test.com", name: "A" });
+    mockPrisma.gBCContactInquiry.findUnique.mockResolvedValue({
+      email: "a@test.com",
+      name: "A",
+    });
     await replyToInquiry("i1", "Subj", "Msg");
     expect(mockPrisma.gBCContactInquiry.update).toHaveBeenCalledWith({
       where: { id: "i1" },

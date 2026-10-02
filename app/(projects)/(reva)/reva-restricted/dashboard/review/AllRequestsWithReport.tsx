@@ -4,10 +4,12 @@ import AllRequestsWithReportClient from "./AllRequestsWithReportClient";
 
 export async function AllRequestsWithReport() {
   try {
-    const { properties, oneTimeRequests } = await getAllRequestsWithUserByAdmin({
-      onlyWithReport: true,
-      includeOneTimeRequests: true,
-    });
+    const { properties, oneTimeRequests } = await getAllRequestsWithUserByAdmin(
+      {
+        onlyWithReport: true,
+        includeOneTimeRequests: true,
+      }
+    );
 
     return (
       <AllRequestsWithReportClient

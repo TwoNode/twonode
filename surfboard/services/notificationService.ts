@@ -2,7 +2,11 @@ import { addBaseUrl } from "@/utils/addBaseUrl";
 import prisma from "@/lib/prisma";
 import { sendNotificationMail } from "@/utils/email";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
-import { SurfboardNotificationType, SurfboardNotificationAudience, SurfboardRole } from "@/prisma/generated";
+import {
+  SurfboardNotificationType,
+  SurfboardNotificationAudience,
+  SurfboardRole,
+} from "@/prisma/generated";
 import { NotFoundError } from "@/lib/api/errors";
 import { paginatedResult } from "@/lib/api/pagination";
 
@@ -106,7 +110,10 @@ export async function createNotification(input: CreateNotificationInput) {
  * createNotification, so correcting a typo after the fact can't re-notify
  * everyone a second time.
  */
-export async function updateNotification(id: string, input: UpdateNotificationInput) {
+export async function updateNotification(
+  id: string,
+  input: UpdateNotificationInput
+) {
   const notification = await prisma.surfboardNotification.update({
     where: { id },
     data: {
@@ -116,7 +123,9 @@ export async function updateNotification(id: string, input: UpdateNotificationIn
       ...(input.audience !== undefined && { audience: input.audience }),
       ...(input.userIds !== undefined && { userIds: input.userIds }),
       ...(input.link !== undefined && { link: input.link }),
-      ...(input.showAsModal !== undefined && { showAsModal: input.showAsModal }),
+      ...(input.showAsModal !== undefined && {
+        showAsModal: input.showAsModal,
+      }),
       ...(input.startsAt !== undefined && { startsAt: input.startsAt }),
       ...(input.endsAt !== undefined && { endsAt: input.endsAt }),
     },
@@ -127,7 +136,9 @@ export async function updateNotification(id: string, input: UpdateNotificationIn
 
 async function sendNotificationEmails(notificationId: string): Promise<void> {
   try {
-    const notification = await prisma.surfboardNotification.findUnique({ where: { id: notificationId } });
+    const notification = await prisma.surfboardNotification.findUnique({
+      where: { id: notificationId },
+    });
     if (!notification) {
       console.error("Notification not found:", notificationId);
       return;
@@ -152,7 +163,15 @@ async function sendNotificationEmails(notificationId: string): Promise<void> {
 async function getNotificationRecipients(notification: {
   audience: SurfboardNotificationAudience;
   userIds: string[];
-}): Promise<Array<{ id: string; email: string; firstName: string; lastName: string; phoneNumber: string | null }>> {
+}): Promise<
+  Array<{
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string | null;
+  }>
+> {
   const where: any = { isActive: true };
 
   switch (notification.audience) {
@@ -169,11 +188,22 @@ async function getNotificationRecipients(notification: {
       break;
   }
 
-  return prisma.surfboardUser.findMany({ where, select: { id: true, email: true, firstName: true, lastName: true, phoneNumber: true } });
+  return prisma.surfboardUser.findMany({
+    where,
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phoneNumber: true,
+    },
+  });
 }
 
 async function sendNotificationWhatsApp(notificationId: string): Promise<void> {
-  const notification = await prisma.surfboardNotification.findUnique({ where: { id: notificationId } });
+  const notification = await prisma.surfboardNotification.findUnique({
+    where: { id: notificationId },
+  });
   if (!notification) {
     console.error("Notification not found:", notificationId);
     return;
@@ -182,89 +212,104 @@ async function sendNotificationWhatsApp(notificationId: string): Promise<void> {
   const recipients = await getNotificationRecipients(notification);
   const sends = recipients
     .filter((r) => r.phoneNumber)
-    .map((r) => sendWhatsAppMessage(r.phoneNumber!, `${notification.title}\n\n${notification.message}`));
+    .map((r) =>
+      sendWhatsAppMessage(
+        r.phoneNumber!,
+        `${notification.title}\n\n${notification.message}`
+      )
+    );
 
   await Promise.allSettled(sends);
 }
 
 function generateNotificationEmailHtml(
-  notification: { title: string; message: string; type: SurfboardNotificationType; link: string | null },
+  notification: {
+    title: string;
+    message: string;
+    type: SurfboardNotificationType;
+    link: string | null;
+  },
   recipient: { firstName: string; lastName: string }
 ): string {
-  const typeColors: Record<SurfboardNotificationType, string> = {
-    INFO: "#3b82f6",
-    SUCCESS: "#10b981",
-    WARNING: "#f59e0b",
-    ERROR: "#ef4444",
-    SYSTEM: "#6366f1",
-    PLAN: "#8b5cf6",
-    SHARING: "#ec4899",
+  const brand = {
+    name: "Surfboard",
+    accent: "#233dff",
+    accentDark: "#141c4d",
   };
 
-  const color = typeColors[notification.type] || "#3b82f6";
+  const recipientName = [recipient.firstName, recipient.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const greeting = recipientName ? `Hi ${recipientName},` : "Hi,";
   const withBaseUrl = addBaseUrl(notification.link || "");
+
+  // Format message paragraphs cleanly
+  const formattedParagraphs = notification.message
+    .split("\n\n")
+    .map((paragraph) => {
+      const formatted = paragraph.replace(/\n/g, "<br />");
+      return `<p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #374151;">${formatted}</p>`;
+    })
+    .join("");
 
   return `
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${notification.title}</title>
       </head>
-      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f3f4f6;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px;">
-          <tr>
-            <td align="center">
-              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <tr>
-                  <td style="background-color: ${color}; padding: 30px; text-align: center;">
-                    <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: bold;">
-                      Surfboard Notification
-                    </h1>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 40px 30px;">
-                    <p style="margin: 0 0 20px; color: #374151; font-size: 16px;">
-                      Hello ${recipient.firstName} ${recipient.lastName},
-                    </p>
-                    <h2 style="margin: 0 0 15px; color: #111827; font-size: 20px; font-weight: 600;">
-                      ${notification.title}
-                    </h2>
-                    <p style="margin: 0 0 25px; color: #4b5563; font-size: 15px; line-height: 1.6;">
-                      ${notification.message}
-                    </p>
-                    ${notification.link
-      ? `
-                    <table cellpadding="0" cellspacing="0" style="margin: 25px 0;">
-                      <tr>
-                        <td style="background-color: ${color}; border-radius: 6px; padding: 12px 30px;">
-                          <a href="${withBaseUrl}" style="color: #ffffff; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
-                            View Details
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                    `
-      : ""
-    }
-                  </td>
-                </tr>
-                <tr>
-                  <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb;">
-                    <p style="margin: 0; color: #6b7280; font-size: 13px; text-align: center;">
-                      This is an automated notification from Surfboard. Please do not reply to this email.
-                    </p>
-                    <p style="margin: 10px 0 0; color: #6b7280; font-size: 13px; text-align: center;">
-                      © ${new Date().getFullYear()} Surfboard. All rights reserved.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1a1a1a;">
+        <div style="max-width: 520px; margin: 0 auto; padding: 24px 20px;">
+          <!-- Brand Header with Accent Bar -->
+          <div style="padding: 20px 0 16px; border-bottom: 3px solid ${brand.accent};">
+            <span style="font-size: 16px; font-weight: 700; color: ${brand.accentDark}; letter-spacing: .02em;">${brand.name}</span>
+            <span style="font-size: 13px; color: #888888; margin-left: 8px;">by TwoNode Technologies</span>
+          </div>
+
+          <!-- Body -->
+          <div style="padding: 28px 0 20px;">
+            <p style="margin: 0 0 16px; font-size: 15px; color: #111827; font-weight: 500;">
+              ${greeting}
+            </p>
+
+            <h2 style="margin: 0 0 16px; font-size: 18px; font-weight: 600; color: #111827; letter-spacing: -0.01em;">
+              ${notification.title}
+            </h2>
+
+            <div style="margin: 0 0 24px;">
+              ${formattedParagraphs}
+            </div>
+
+            ${
+              notification.link
+                ? `
+            <div style="margin: 28px 0;">
+              <a href="${withBaseUrl}" style="background-color: ${brand.accent}; background-image: linear-gradient(135deg, ${brand.accent}, ${brand.accentDark}); color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">
+                View Details
+              </a>
+            </div>
+            `
+                : ""
+            }
+
+            <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
+              You can track this and other survey activities directly on your Surfboard dashboard.
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="padding: 20px 0; border-top: 1px solid #e5e5e5; color: #888888; font-size: 12px; line-height: 1.6;">
+            <a href="https://www.twonodetechnologies.com" style="color: ${brand.accentDark}; text-decoration: none; font-weight: 600;">TwoNode Technologies</a>
+            &nbsp;&middot;&nbsp;
+            <a href="mailto:info@twonodetechnologies.com" style="color: #888888; text-decoration: none;">info@twonodetechnologies.com</a>
+            <p style="margin: 6px 0 0; color: #9ca3af; font-size: 11px;">
+              This is an automated notification from Surfboard. Please do not reply directly to this email.
+            </p>
+          </div>
+        </div>
       </body>
     </html>
   `;
@@ -273,9 +318,17 @@ function generateNotificationEmailHtml(
 export async function getUserNotifications(
   userId: string,
   role: SurfboardRole,
-  options?: { includeRead?: boolean; includeDismissed?: boolean; limit?: number }
+  options?: {
+    includeRead?: boolean;
+    includeDismissed?: boolean;
+    limit?: number;
+  }
 ): Promise<NotificationWithUser[]> {
-  const { includeRead = true, includeDismissed = false, limit = 50 } = options || {};
+  const {
+    includeRead = true,
+    includeDismissed = false,
+    limit = 50,
+  } = options || {};
 
   const now = new Date();
   const where: any = {
@@ -289,10 +342,15 @@ export async function getUserNotifications(
       { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
     ],
   };
-  if (role === "ADMIN" || role === "SUPERADMIN") where.AND[0].OR.push({ audience: "GENERAL_ADMINS" });
+  if (role === "ADMIN" || role === "SUPERADMIN")
+    where.AND[0].OR.push({ audience: "GENERAL_ADMINS" });
   if (role === "SUPERADMIN") where.AND[0].OR.push({ audience: "SUPERADMIN" });
 
-  const notifications = await prisma.surfboardNotification.findMany({ where, orderBy: { createdAt: "desc" }, take: limit });
+  const notifications = await prisma.surfboardNotification.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
 
   return notifications
     .map((notification) => ({
@@ -339,7 +397,8 @@ export async function getActiveModalAnnouncement(
       { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
     ],
   };
-  if (role === "ADMIN" || role === "SUPERADMIN") where.OR.push({ audience: "GENERAL_ADMINS" });
+  if (role === "ADMIN" || role === "SUPERADMIN")
+    where.OR.push({ audience: "GENERAL_ADMINS" });
   if (role === "SUPERADMIN") where.OR.push({ audience: "SUPERADMIN" });
 
   const notification = await prisma.surfboardNotification.findFirst({
@@ -389,13 +448,18 @@ export async function getUserNotificationsPaginated(
 ) {
   const { includeRead = true, includeDismissed = false } = options;
 
-  const audienceOr: any[] = [{ audience: "ALL_USERS" }, { userIds: { has: userId } }];
-  if (role === "ADMIN" || role === "SUPERADMIN") audienceOr.push({ audience: "GENERAL_ADMINS" });
+  const audienceOr: any[] = [
+    { audience: "ALL_USERS" },
+    { userIds: { has: userId } },
+  ];
+  if (role === "ADMIN" || role === "SUPERADMIN")
+    audienceOr.push({ audience: "GENERAL_ADMINS" });
   if (role === "SUPERADMIN") audienceOr.push({ audience: "SUPERADMIN" });
 
   const where: any = { AND: [{ OR: audienceOr }] };
   if (!includeRead) where.AND.push({ NOT: { readBy: { has: userId } } });
-  if (!includeDismissed) where.AND.push({ NOT: { dismissedBy: { has: userId } } });
+  if (!includeDismissed)
+    where.AND.push({ NOT: { dismissedBy: { has: userId } } });
   if (options.type) where.AND.push({ type: options.type });
   if (options.audience) where.AND.push({ audience: options.audience });
   if (options.search) {
@@ -436,9 +500,16 @@ export async function getUserNotificationsPaginated(
 }
 
 /** Same audience-visibility scoping as getUserNotificationsPaginated, so the admin page's stat cards always agree with what the table can actually show. */
-export async function getNotificationStats(userId: string, role: SurfboardRole) {
-  const audienceOr: any[] = [{ audience: "ALL_USERS" }, { userIds: { has: userId } }];
-  if (role === "ADMIN" || role === "SUPERADMIN") audienceOr.push({ audience: "GENERAL_ADMINS" });
+export async function getNotificationStats(
+  userId: string,
+  role: SurfboardRole
+) {
+  const audienceOr: any[] = [
+    { audience: "ALL_USERS" },
+    { userIds: { has: userId } },
+  ];
+  if (role === "ADMIN" || role === "SUPERADMIN")
+    audienceOr.push({ audience: "GENERAL_ADMINS" });
   if (role === "SUPERADMIN") audienceOr.push({ audience: "SUPERADMIN" });
   const baseWhere = { OR: audienceOr };
 
@@ -447,38 +518,67 @@ export async function getNotificationStats(userId: string, role: SurfboardRole) 
 
   const [total, unread, sentToday, broadcastToAllUsers] = await Promise.all([
     prisma.surfboardNotification.count({ where: baseWhere }),
-    prisma.surfboardNotification.count({ where: { AND: [baseWhere, { NOT: { readBy: { has: userId } } }] } }),
-    prisma.surfboardNotification.count({ where: { AND: [baseWhere, { createdAt: { gte: startOfToday } }] } }),
-    prisma.surfboardNotification.count({ where: { AND: [baseWhere, { audience: "ALL_USERS" }] } }),
+    prisma.surfboardNotification.count({
+      where: { AND: [baseWhere, { NOT: { readBy: { has: userId } } }] },
+    }),
+    prisma.surfboardNotification.count({
+      where: { AND: [baseWhere, { createdAt: { gte: startOfToday } }] },
+    }),
+    prisma.surfboardNotification.count({
+      where: { AND: [baseWhere, { audience: "ALL_USERS" }] },
+    }),
   ]);
 
   return { total, unread, sentToday, broadcastToAllUsers };
 }
 
-export async function markNotificationAsRead(userId: string, notificationId: string) {
-  const notification = await prisma.surfboardNotification.findUnique({ where: { id: notificationId } });
+export async function markNotificationAsRead(
+  userId: string,
+  notificationId: string
+) {
+  const notification = await prisma.surfboardNotification.findUnique({
+    where: { id: notificationId },
+  });
   if (!notification) throw new NotFoundError("Notification");
 
   const readBy = [...new Set([...notification.readBy, userId])];
-  await prisma.surfboardNotification.update({ where: { id: notificationId }, data: { readBy } });
+  await prisma.surfboardNotification.update({
+    where: { id: notificationId },
+    data: { readBy },
+  });
 
   return { success: true };
 }
 
-export async function dismissNotification(userId: string, notificationId: string) {
-  const notification = await prisma.surfboardNotification.findUnique({ where: { id: notificationId } });
+export async function dismissNotification(
+  userId: string,
+  notificationId: string
+) {
+  const notification = await prisma.surfboardNotification.findUnique({
+    where: { id: notificationId },
+  });
   if (!notification) throw new NotFoundError("Notification");
 
   const dismissedBy = [...new Set([...notification.dismissedBy, userId])];
-  await prisma.surfboardNotification.update({ where: { id: notificationId }, data: { dismissedBy } });
+  await prisma.surfboardNotification.update({
+    where: { id: notificationId },
+    data: { dismissedBy },
+  });
 
   return { success: true };
 }
 
-export async function getUnreadNotificationCount(userId: string, role: SurfboardRole) {
+export async function getUnreadNotificationCount(
+  userId: string,
+  role: SurfboardRole
+) {
   const now = new Date();
-  const audienceOr: any[] = [{ audience: "ALL_USERS" }, { userIds: { has: userId } }];
-  if (role === "ADMIN" || role === "SUPERADMIN") audienceOr.push({ audience: "GENERAL_ADMINS" });
+  const audienceOr: any[] = [
+    { audience: "ALL_USERS" },
+    { userIds: { has: userId } },
+  ];
+  if (role === "ADMIN" || role === "SUPERADMIN")
+    audienceOr.push({ audience: "GENERAL_ADMINS" });
   if (role === "SUPERADMIN") audienceOr.push({ audience: "SUPERADMIN" });
 
   // Same startsAt/endsAt window as getUserNotifications, so the bell badge
@@ -542,7 +642,11 @@ export async function notifyPlanShared(params: {
       audience: "SPECIFIC_USERS",
       userIds: [params.sharedWithUserId],
       link: `/surfboard/dashboard/plan?planId=${params.planId}`,
-      metadata: { planId: params.planId, planNumber: params.planNumber, sharedBy: params.sharedByUser },
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        sharedBy: params.sharedByUser,
+      },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -564,7 +668,11 @@ export async function notifyPaymentReceived(params: {
       message: `Payment of ₦${params.amount.toLocaleString()} received for batch ${params.batchCode} from ${params.paidBy.firstName} ${params.paidBy.lastName}.`,
       audience: "GENERAL_ADMINS",
       link: `/surfboard-restricted/dashboard/cod/batches`,
-      metadata: { batchId: params.batchId, batchCode: params.batchCode, amount: params.amount },
+      metadata: {
+        batchId: params.batchId,
+        batchCode: params.batchCode,
+        amount: params.amount,
+      },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -580,7 +688,12 @@ export async function notifyLASGReceiptUploaded(params: {
 }): Promise<void> {
   try {
     const mdaUsers = await prisma.surfboardUser.findMany({
-      where: { role: { in: ["ACCOUNTS", "CHARTING", "SURCON", "RECORDS_I", "RECORDS_II"] }, isActive: true },
+      where: {
+        role: {
+          in: ["ACCOUNTS", "CHARTING", "SURCON", "RECORDS_I", "RECORDS_II"],
+        },
+        isActive: true,
+      },
       select: { id: true },
     });
 
@@ -592,7 +705,11 @@ export async function notifyLASGReceiptUploaded(params: {
         audience: "SPECIFIC_USERS",
         userIds: mdaUsers.map((u) => u.id),
         link: `/surfboard-mda/dashboard`,
-        metadata: { batchId: params.batchId, batchCode: params.batchCode, planCount: params.planCount },
+        metadata: {
+          batchId: params.batchId,
+          batchCode: params.batchCode,
+          planCount: params.planCount,
+        },
         sendEmail: params.sendEmail ?? true,
       });
     }
@@ -614,7 +731,11 @@ export async function notifyAccountsDisapproval(params: {
       message: `Batch ${params.batchCode} was disapproved by Accounts. ${params.comment ? `Reason: ${params.comment}` : ""}`,
       audience: "GENERAL_ADMINS",
       link: `/surfboard-restricted/dashboard/cod/batches`,
-      metadata: { batchId: params.batchId, batchCode: params.batchCode, comment: params.comment },
+      metadata: {
+        batchId: params.batchId,
+        batchCode: params.batchCode,
+        comment: params.comment,
+      },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -638,7 +759,12 @@ export async function notifyPlanQueried(params: {
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
       link: `/surfboard/dashboard/plans?tab=queried`,
-      metadata: { planId: params.planId, planNumber: params.planNumber, queriedBy: params.queriedBy, comment: params.comment },
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        queriedBy: params.queriedBy,
+        comment: params.comment,
+      },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -654,7 +780,9 @@ export async function notifyConsolidatedQueries(params: {
   sendEmail?: boolean;
 }): Promise<void> {
   try {
-    const queryList = params.queries.map((q) => `- **${q.role}**: ${q.comment || "Please review."}`).join("\n");
+    const queryList = params.queries
+      .map((q) => `- **${q.role}**: ${q.comment || "Please review."}`)
+      .join("\n");
 
     await createNotification({
       type: "WARNING",
@@ -663,7 +791,11 @@ export async function notifyConsolidatedQueries(params: {
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
       link: `/surfboard/dashboard/plans?tab=queried`,
-      metadata: { planId: params.planId, planNumber: params.planNumber, queries: params.queries },
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        queries: params.queries,
+      },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -686,7 +818,11 @@ export async function notifyPlanApproved(params: {
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
       link: `/surfboard/dashboard/plans`,
-      metadata: { planId: params.planId, planNumber: params.planNumber, batchCode: params.batchCode },
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        batchCode: params.batchCode,
+      },
       sendEmail: params.sendEmail ?? true,
       sendWhatsApp: true,
     });
@@ -710,7 +846,11 @@ export async function notifyPlanCreated(params: {
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
       link: `/surfboard/dashboard/plan?planId=${params.planId}`,
-      metadata: { planId: params.planId, planNumber: params.planNumber, surveyTitle: params.surveyTitle },
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        surveyTitle: params.surveyTitle,
+      },
       sendEmail: params.sendEmail ?? true,
       sendWhatsApp: true,
     });
@@ -757,7 +897,12 @@ export async function notifyRecordCopySubmitted(params: {
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
       link: `/surfboard/dashboard/plans`,
-      metadata: { batchId: params.batchId, batchCode: params.batchCode, planCount: params.planCount, totalAmount: params.totalAmount },
+      metadata: {
+        batchId: params.batchId,
+        batchCode: params.batchCode,
+        planCount: params.planCount,
+        totalAmount: params.totalAmount,
+      },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -783,6 +928,9 @@ export async function notifyReadyForPhysicalSubmission(params: {
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
-    console.error("Error sending ready for physical submission notification:", error);
+    console.error(
+      "Error sending ready for physical submission notification:",
+      error
+    );
   }
 }

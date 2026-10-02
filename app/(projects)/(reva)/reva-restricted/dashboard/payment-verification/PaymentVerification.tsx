@@ -148,7 +148,7 @@ export function PaymentVerification() {
           (req.user?.email &&
             req.user.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (req.email &&
-            req.email.toLowerCase().includes(searchTerm.toLowerCase())),
+            req.email.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -161,13 +161,13 @@ export function PaymentVerification() {
   };
 
   const verifyPayment = async (
-    request: Request,
+    request: Request
   ): Promise<VerificationResult> => {
     try {
       const result = await revaApi.admin.requests.verifyPayment(
         request.reference,
         request.isLive,
-        request.type === "authenticated" ? "authenticated" : "oneTime",
+        request.type === "authenticated" ? "authenticated" : "oneTime"
       );
 
       if (!result.success) {
@@ -211,11 +211,11 @@ export function PaymentVerification() {
 
       const results: VerificationResult[] = [];
       const unpaidRequests = filteredRequests.filter(
-        (req) => req.paymentStatus !== "Paid",
+        (req) => req.paymentStatus !== "Paid"
       );
 
       notifyInfo(
-        `Starting verification of ${unpaidRequests.length} unpaid requests...`,
+        `Starting verification of ${unpaidRequests.length} unpaid requests...`
       );
 
       for (const request of unpaidRequests) {
@@ -227,8 +227,8 @@ export function PaymentVerification() {
           prev.map((req) =>
             req.reference === request.reference
               ? { ...req, paymentStatus: result.newStatus }
-              : req,
-          ),
+              : req
+          )
         );
       }
 
@@ -237,11 +237,11 @@ export function PaymentVerification() {
 
       const successfulVerifications = results.filter((r) => r.success).length;
       const statusChanges = results.filter(
-        (r) => r.originalStatus !== r.newStatus,
+        (r) => r.originalStatus !== r.newStatus
       ).length;
 
       notifySuccess(
-        `Verification completed! ${successfulVerifications} successful, ${statusChanges} status changes.`,
+        `Verification completed! ${successfulVerifications} successful, ${statusChanges} status changes.`
       );
 
       // Refresh the requests list
@@ -265,17 +265,17 @@ export function PaymentVerification() {
         prev.map((req) =>
           req.reference === request.reference
             ? { ...req, paymentStatus: result.newStatus }
-            : req,
-        ),
+            : req
+        )
       );
 
       if (result.success) {
         notifySuccess(
-          `Payment verified for ${request.reference}: ${result.message}`,
+          `Payment verified for ${request.reference}: ${result.message}`
         );
       } else {
         notifyError(
-          `Verification failed for ${request.reference}: ${result.message}`,
+          `Verification failed for ${request.reference}: ${result.message}`
         );
       }
 
@@ -299,7 +299,7 @@ export function PaymentVerification() {
     return (
       <Badge
         style={revaStatusBadgeStyle(
-          tones[status as keyof typeof tones] || "info",
+          tones[status as keyof typeof tones] || "info"
         )}
       >
         {status}
@@ -313,7 +313,7 @@ export function PaymentVerification() {
   const totalPages = Math.max(1, Math.ceil(filteredRequests.length / pageSize));
   const pagedRequests = filteredRequests.slice(
     (page - 1) * pageSize,
-    page * pageSize,
+    page * pageSize
   );
 
   const getEnvironmentBadge = (isLive: boolean) => {
@@ -332,7 +332,9 @@ export function PaymentVerification() {
             className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
             style={{ borderColor: REVA_COLORS.primary.light }}
           ></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading requests...</p>
+          <p className="text-gray-600 dark:text-gray-300">
+            Loading requests...
+          </p>
         </div>
       </div>
     );
@@ -444,7 +446,9 @@ export function PaymentVerification() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">{result.reference}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">{result.message}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {result.message}
+                      </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         {result.originalStatus} → {result.newStatus}
                         {result.isLive && " (Live)"}
@@ -456,7 +460,7 @@ export function PaymentVerification() {
                           ? result.originalStatus !== result.newStatus
                             ? "success"
                             : "info"
-                          : "error",
+                          : "error"
                       )}
                     >
                       {result.success ? "Success" : "Failed"}

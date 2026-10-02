@@ -46,7 +46,9 @@ function generateReference(): string {
   return `REVA_${crypto.randomUUID().replace(/-/g, "").slice(0, 9)}`;
 }
 
-export async function saveToOneTimeProperty(data: OneTimeUserPropertyCreateInput) {
+export async function saveToOneTimeProperty(
+  data: OneTimeUserPropertyCreateInput
+) {
   const newProperty = await prisma.oneTimeUserProperty.create({
     data: {
       ...data,
@@ -119,17 +121,26 @@ export async function updatePropertyTransactionStatus(
  * `directFileLink`'s presence becomes a `downloadAvailable` boolean so a
  * "Download Report" button can still render correctly.
  */
-function redactDownloadableFields<T extends { documentsUrls: string[]; report: unknown }>(
+function redactDownloadableFields<
+  T extends { documentsUrls: string[]; report: unknown },
+>(
   row: T
 ): Omit<T, "documentsUrls" | "report"> & {
   documentsCount: number;
   report: (Record<string, unknown> & { downloadAvailable: boolean }) | null;
 } {
   const { documentsUrls, report, ...safe } = row;
-  let safeReport: (Record<string, unknown> & { downloadAvailable: boolean }) | null = null;
+  let safeReport:
+    (Record<string, unknown> & { downloadAvailable: boolean }) | null = null;
   if (report && typeof report === "object") {
-    const { directFileLink, ...restOfReport } = report as Record<string, unknown>;
-    safeReport = { ...restOfReport, downloadAvailable: "directFileLink" in (report as object) };
+    const { directFileLink, ...restOfReport } = report as Record<
+      string,
+      unknown
+    >;
+    safeReport = {
+      ...restOfReport,
+      downloadAvailable: "directFileLink" in (report as object),
+    };
   }
   return {
     ...safe,
@@ -167,13 +178,18 @@ export async function getUserProperties(userId: string) {
  * to probe which ids exist.
  */
 export async function getUserPropertyById(id: string, email: string) {
-  const property = await prisma.oneTimeUserProperty.findUnique({ where: { id } });
-  if (!property || property.email !== email) throw new NotFoundError("Property");
+  const property = await prisma.oneTimeUserProperty.findUnique({
+    where: { id },
+  });
+  if (!property || property.email !== email)
+    throw new NotFoundError("Property");
   return property;
 }
 
 export async function getTransactionData(reference: string) {
-  const transaction = await prisma.oneTimeUserProperty.findUnique({ where: { reference } });
+  const transaction = await prisma.oneTimeUserProperty.findUnique({
+    where: { reference },
+  });
   if (!transaction) throw new NotFoundError("Transaction");
   return transaction;
 }
@@ -185,13 +201,20 @@ export async function getTransactionData(reference: string) {
  * transaction's data. Worth its own decision later if this needs closing.
  */
 export async function authGetTransactionData(reference: string) {
-  const transaction = await prisma.property.findUnique({ where: { reference } });
+  const transaction = await prisma.property.findUnique({
+    where: { reference },
+  });
   if (!transaction) throw new NotFoundError("Transaction");
   return redactDownloadableFields(transaction);
 }
 
-export async function getOneTimeRequestByReference(reference: string, email: string) {
-  const request = await prisma.oneTimeUserProperty.findFirst({ where: { reference, email } });
+export async function getOneTimeRequestByReference(
+  reference: string,
+  email: string
+) {
+  const request = await prisma.oneTimeUserProperty.findFirst({
+    where: { reference, email },
+  });
   if (!request) throw new NotFoundError("Request");
   return redactDownloadableFields(request);
 }

@@ -37,7 +37,7 @@ export const DemystifyingGIS: React.FC = () => {
               </span>
             </div>
           </div>
-       
+
           <CountdownComponent />
           {/* <Link
             href={"/gbc"}

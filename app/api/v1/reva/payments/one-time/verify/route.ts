@@ -13,6 +13,9 @@ export async function POST(req: NextRequest) {
     const data = await checkPaymentSuccess(reference);
     return NextResponse.json({ success: true, data });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

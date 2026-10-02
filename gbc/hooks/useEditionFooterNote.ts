@@ -20,7 +20,8 @@ export function useEditionFooterNote(): string {
     gbcApi.editions
       .current()
       .then((res) => {
-        if (!cancelled) setNote(res.success && res.data?.name ? res.data.name : GENERIC);
+        if (!cancelled)
+          setNote(res.success && res.data?.name ? res.data.name : GENERIC);
       })
       .catch(() => {
         if (!cancelled) setNote(GENERIC);

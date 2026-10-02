@@ -142,10 +142,10 @@ export function QRScanner() {
         error.name === "NotAllowedError"
           ? "Camera permission denied. Please allow camera access."
           : error.name === "NotFoundError"
-          ? "No camera found on this device."
-          : error.name === "NotReadableError"
-          ? "Camera is in use by another application."
-          : `Camera error: ${error.message}`;
+            ? "No camera found on this device."
+            : error.name === "NotReadableError"
+              ? "Camera is in use by another application."
+              : `Camera error: ${error.message}`;
 
       setCameraError(errorMsg);
       setDebugInfo(errorMsg);
@@ -263,7 +263,9 @@ export function QRScanner() {
             const result = await gbcApi.qr.verify(qrData);
 
             if (!result.success || !result.data.valid) {
-              const error = (result.success ? result.data.error : result.error) || "Invalid QR code";
+              const error =
+                (result.success ? result.data.error : result.error) ||
+                "Invalid QR code";
               toast.error(error);
               setLastResult({
                 success: false,

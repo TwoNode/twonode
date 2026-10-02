@@ -1,7 +1,10 @@
 "use client";
 
 import { Loader2, Search } from "lucide-react";
-import { useDebouncedSearchParam, useSearchParamsUpdater } from "@/hooks/useSearchParamsUpdater";
+import {
+  useDebouncedSearchParam,
+  useSearchParamsUpdater,
+} from "@/hooks/useSearchParamsUpdater";
 import type { GBCEdition } from "@/gbc/utils/settings";
 
 interface InquiriesFiltersProps {
@@ -19,7 +22,8 @@ export function InquiriesFilters({
 }: InquiriesFiltersProps) {
   const updater = useSearchParamsUpdater();
   const { update, isPending } = updater;
-  const { value: search, setValue: setSearch } = useDebouncedSearchParam(updater);
+  const { value: search, setValue: setSearch } =
+    useDebouncedSearchParam(updater);
 
   // Every filter change also drops `page` so the list restarts on page 1.
   // Unlike `type`/`status` below, "all" is kept as an explicit `edition=all`
@@ -27,7 +31,15 @@ export function InquiriesFilters({
   // edition switcher's cookie default (gbc/utils/editionCookie.ts), silently
   // overriding an explicit "show all editions" choice made on this page.
   const onSelect = (key: string) => (e: React.ChangeEvent<HTMLSelectElement>) =>
-    update({ [key]: key === "edition" ? e.target.value : e.target.value === "all" ? "" : e.target.value, page: "" });
+    update({
+      [key]:
+        key === "edition"
+          ? e.target.value
+          : e.target.value === "all"
+            ? ""
+            : e.target.value,
+      page: "",
+    });
 
   return (
     <div className="flex flex-col md:flex-row gap-4" aria-busy={isPending}>
@@ -49,7 +61,9 @@ export function InquiriesFilters({
       </div>
 
       <div className="flex-1">
-        <label className="block text-sm font-medium mb-2">Filter by Edition</label>
+        <label className="block text-sm font-medium mb-2">
+          Filter by Edition
+        </label>
         <select
           className="w-full px-4 py-2 border rounded-lg"
           value={currentEdition || "all"}

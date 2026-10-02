@@ -13,10 +13,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockFindFirst = vi.hoisted(() => vi.fn());
 const mockExecFile = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/prisma", () => ({ default: { certificateOfDepositBatch: { findFirst: mockFindFirst } } }));
+vi.mock("@/lib/prisma", () => ({
+  default: { certificateOfDepositBatch: { findFirst: mockFindFirst } },
+}));
 vi.mock("child_process", () => ({ execFile: mockExecFile }));
 
-const { getBatchReceiptData, generateBatchReceiptPdfBuffer } = await import("@/surfboard/services/receiptPdfService");
+const { getBatchReceiptData, generateBatchReceiptPdfBuffer } =
+  await import("@/surfboard/services/receiptPdfService");
 const { SurfboardRole } = await import("@/utils/platform");
 
 const baseBatch = {
@@ -39,14 +42,19 @@ beforeEach(() => {
 describe("getBatchReceiptData", () => {
   it("throws NotFoundError when the batch doesn't exist (or isn't owned by this user)", async () => {
     mockFindFirst.mockResolvedValue(null);
-    await expect(getBatchReceiptData("user-1", SurfboardRole.USER, "b1")).rejects.toMatchObject({ status: 404 });
+    await expect(
+      getBatchReceiptData("user-1", SurfboardRole.USER, "b1")
+    ).rejects.toMatchObject({ status: 404 });
   });
 
   it("scopes the query to the requesting user's own batches for a plain USER", async () => {
     mockFindFirst.mockResolvedValue(baseBatch);
     await getBatchReceiptData("user-1", SurfboardRole.USER, "b1");
 
-    expect(mockFindFirst.mock.calls[0][0].where).toEqual({ id: "b1", submittedBy: "user-1" });
+    expect(mockFindFirst.mock.calls[0][0].where).toEqual({
+      id: "b1",
+      submittedBy: "user-1",
+    });
   });
 
   it("lets staff roles (ADMIN/SUPERADMIN/ACCOUNTS) fetch any batch, not just their own", async () => {
@@ -57,13 +65,25 @@ describe("getBatchReceiptData", () => {
   });
 
   it("throws NotFoundError when payment hasn't been reviewed yet (still PENDING_USER_PAYMENT/LASG_PAID)", async () => {
-    mockFindFirst.mockResolvedValue({ ...baseBatch, paymentStatus: "LASG_PAID" });
-    await expect(getBatchReceiptData("user-1", SurfboardRole.USER, "b1")).rejects.toMatchObject({ status: 404 });
+    mockFindFirst.mockResolvedValue({
+      ...baseBatch,
+      paymentStatus: "LASG_PAID",
+    });
+    await expect(
+      getBatchReceiptData("user-1", SurfboardRole.USER, "b1")
+    ).rejects.toMatchObject({ status: 404 });
   });
 
   it("allows ACCOUNTS_DISAPPROVED through too (batch was reviewed, just not approved)", async () => {
-    mockFindFirst.mockResolvedValue({ ...baseBatch, paymentStatus: "ACCOUNTS_DISAPPROVED" });
-    const result = await getBatchReceiptData("user-1", SurfboardRole.USER, "b1");
+    mockFindFirst.mockResolvedValue({
+      ...baseBatch,
+      paymentStatus: "ACCOUNTS_DISAPPROVED",
+    });
+    const result = await getBatchReceiptData(
+      "user-1",
+      SurfboardRole.USER,
+      "b1"
+    );
     expect(result.paymentStatus).toBe("ACCOUNTS_DISAPPROVED");
   });
 });
@@ -86,10 +106,16 @@ describe("generateBatchReceiptPdfBuffer", () => {
 
   it("rejects with the worker's stderr when the process fails", async () => {
     mockExecFile.mockImplementation((_cmd, _args, _opts, callback) => {
-      callback(new Error("exit 1"), Buffer.from(""), Buffer.from("font not found"));
+      callback(
+        new Error("exit 1"),
+        Buffer.from(""),
+        Buffer.from("font not found")
+      );
       return { stdin: { write: vi.fn(), end: vi.fn() } };
     });
 
-    await expect(generateBatchReceiptPdfBuffer(baseBatch as any)).rejects.toThrow(/font not found/);
+    await expect(
+      generateBatchReceiptPdfBuffer(baseBatch as any)
+    ).rejects.toThrow(/font not found/);
   });
 });

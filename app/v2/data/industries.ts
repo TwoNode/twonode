@@ -44,7 +44,8 @@ export const industries: Industry[] = [
       },
       {
         name: "GBC",
-        tagline: "Bringing the people shaping the industry into the same conversation.",
+        tagline:
+          "Bringing the people shaping the industry into the same conversation.",
         description:
           "Surfboard solves the record. GBC solves the room — the Geospatial Builders Conference is where surveyors, regulators and institutions in this industry actually talk to each other, not just to us.",
         accent: "purple-600",

@@ -38,7 +38,9 @@ describe("getUserStats — Active Subscriptions", () => {
     expect(where.OR).toEqual(
       expect.arrayContaining([
         { currentEnd: null },
-        expect.objectContaining({ currentEnd: expect.objectContaining({ gte: expect.any(Date) }) }),
+        expect.objectContaining({
+          currentEnd: expect.objectContaining({ gte: expect.any(Date) }),
+        }),
       ])
     );
   });

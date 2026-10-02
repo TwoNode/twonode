@@ -20,7 +20,7 @@ export enum SurfboardRole {
   USER = "USER",
   ADMIN = "ADMIN",
   SUPERADMIN = "SUPERADMIN",
-  
+
   CHARTING = "CHARTING",
   ACCOUNTS = "ACCOUNTS",
   SURCON = "SURCON",

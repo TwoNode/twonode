@@ -11,7 +11,13 @@ const TICKET_TYPE_LABEL: Record<string, string> = {
   STUDENT: "Student",
 };
 
-export default function MyTicketView({ ticket, edition }: { ticket: GBCTicket; edition: GBCEdition | null }) {
+export default function MyTicketView({
+  ticket,
+  edition,
+}: {
+  ticket: GBCTicket;
+  edition: GBCEdition | null;
+}) {
   const isPending = ticket.paymentStatus !== "COMPLETED";
 
   return (
@@ -21,12 +27,18 @@ export default function MyTicketView({ ticket, edition }: { ticket: GBCTicket; e
           <div className="bg-linear-to-r from-purple-600 to-pink-600 p-6 text-white text-center">
             {edition ? (
               <>
-                <div className="text-sm font-semibold text-purple-100 mb-1">GBC {edition.key}</div>
-                <h1 className="text-xl sm:text-2xl font-bold mb-1">{edition.name}</h1>
+                <div className="text-sm font-semibold text-purple-100 mb-1">
+                  GBC {edition.key}
+                </div>
+                <h1 className="text-xl sm:text-2xl font-bold mb-1">
+                  {edition.name}
+                </h1>
                 <p className="text-purple-100 text-sm">{edition.theme}</p>
               </>
             ) : (
-              <h1 className="text-xl sm:text-2xl font-bold">Geospatial Builders Conference</h1>
+              <h1 className="text-xl sm:text-2xl font-bold">
+                Geospatial Builders Conference
+              </h1>
             )}
           </div>
 
@@ -39,7 +51,10 @@ export default function MyTicketView({ ticket, edition }: { ticket: GBCTicket; e
             ) : ticket.checkedIn ? (
               <div className="mb-6 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800 flex items-center gap-2 justify-center">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
-                Checked in{ticket.checkedInAt ? ` at ${new Date(ticket.checkedInAt).toLocaleString()}` : ""}
+                Checked in
+                {ticket.checkedInAt
+                  ? ` at ${new Date(ticket.checkedInAt).toLocaleString()}`
+                  : ""}
               </div>
             ) : (
               <div className="mb-6 rounded-lg bg-purple-50 border border-purple-200 px-4 py-3 text-sm text-purple-800">
@@ -67,7 +82,9 @@ export default function MyTicketView({ ticket, edition }: { ticket: GBCTicket; e
             <div className="border-t border-gray-100 pt-6 space-y-2 text-left">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Ticket Number</span>
-                <span className="font-mono font-medium">{ticket.ticketNumber}</span>
+                <span className="font-mono font-medium">
+                  {ticket.ticketNumber}
+                </span>
               </div>
               {edition && (
                 <>
@@ -90,7 +107,10 @@ export default function MyTicketView({ ticket, edition }: { ticket: GBCTicket; e
         </div>
 
         <div className="mt-6 text-center">
-          <Link href="/gbc/login" className="text-sm text-purple-600 hover:underline font-medium">
+          <Link
+            href="/gbc/login"
+            className="text-sm text-purple-600 hover:underline font-medium"
+          >
             Look up a different ticket
           </Link>
         </div>

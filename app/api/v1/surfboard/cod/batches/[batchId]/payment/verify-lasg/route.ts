@@ -13,12 +13,23 @@ const bodySchema = z.object({ receiptUrl: z.string().url() });
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { batchId } = await routeCtx.params;
     const { receiptUrl } = await validateBody(req, bodySchema);
-    const data = await verifyLASGReceiptLink(ctx.session.sub, ctx.session.role, batchId, receiptUrl);
+    const data = await verifyLASGReceiptLink(
+      ctx.session.sub,
+      ctx.session.role,
+      batchId,
+      receiptUrl
+    );
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER, SurfboardRole.SUPERADMIN] }
+  {
+    platform: Platform.SURFBOARD,
+    roles: [SurfboardRole.USER, SurfboardRole.SUPERADMIN],
+  }
 );

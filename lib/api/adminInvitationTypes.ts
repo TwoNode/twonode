@@ -1,6 +1,7 @@
 /** Client-safe shapes for the admin-invitation endpoints (dates arrive as ISO strings). */
 
-export type AdminInvitationStatus = "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
+export type AdminInvitationStatus =
+  "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
 
 export interface AdminInvitationRow {
   id: string;
@@ -41,7 +42,9 @@ export function roleLabel(role: string): string {
     .split("_")
     .map((word) =>
       // Keep roman numerals (RECORDS_II) and acronyms (SURCON) as written.
-      /^[IVX]+$/.test(word) || ACRONYM_WORDS.has(word) ? word : word.charAt(0) + word.slice(1).toLowerCase()
+      /^[IVX]+$/.test(word) || ACRONYM_WORDS.has(word)
+        ? word
+        : word.charAt(0) + word.slice(1).toLowerCase()
     )
     .join(" ");
 }

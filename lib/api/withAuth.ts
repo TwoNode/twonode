@@ -53,7 +53,11 @@ export function withAuth<TRole extends string>(
       context.role = session.role;
       context.platform = session.platform;
 
-      if (!opts.allowUnverified && session.mustVerifyNow && !session.emailVerified) {
+      if (
+        !opts.allowUnverified &&
+        session.mustVerifyNow &&
+        !session.emailVerified
+      ) {
         throw new EmailVerificationRequiredError();
       }
 

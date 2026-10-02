@@ -226,7 +226,7 @@ export function useSurfUserProfile() {
           address: data.address || "",
           payerID: data.payerID ?? null,
           payerIDType: data.payerIDType || "",
-            isKycValidated: data.isKycValidated ?? false,
+          isKycValidated: data.isKycValidated ?? false,
         };
 
         setUserData(updatedData);

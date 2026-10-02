@@ -62,7 +62,13 @@ export async function GET(request: NextRequest) {
     // Also mint a native session (additive; must never break the existing
     // Kinde login flow if it fails).
     try {
-      await issueSession(dbUser.id, dbUser.role, Platform.GBC, undefined, dbUser);
+      await issueSession(
+        dbUser.id,
+        dbUser.role,
+        Platform.GBC,
+        undefined,
+        dbUser
+      );
     } catch (err) {
       console.error("issueSession failed for gbc-restricted callback:", err);
     }

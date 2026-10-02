@@ -1,5 +1,8 @@
 import prisma from "@/lib/prisma";
-import { SUBSCRIPTION_PLANS, type PlanId } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
+import {
+  SUBSCRIPTION_PLANS,
+  type PlanId,
+} from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
 import { computePeriodPerTimestamp } from "@/app/(projects)/(surfboard)/utils/computePeriod";
 import { getOrCreatePaystackPlan } from "@/surfboard/services/paystackSubscriptionService";
 import { SubscriptionRequiredError } from "@/lib/api/errors";
@@ -19,8 +22,13 @@ import { SubscriptionRequiredError } from "@/lib/api/errors";
 const GRACE_PERIOD_MS = 24 * 60 * 60 * 1000;
 
 /** Exported for bulk classification (e.g. analyticsService's sharedAccessStats) — getUserActiveSubscription/getUserAndActiveSub apply this same rule one row at a time via findUnique. */
-export function isSubActiveOrGrace(status: string | null | undefined, expiresAt: Date | null) {
-  const isValid = expiresAt ? new Date() <= new Date(expiresAt.getTime() + GRACE_PERIOD_MS) : true;
+export function isSubActiveOrGrace(
+  status: string | null | undefined,
+  expiresAt: Date | null
+) {
+  const isValid = expiresAt
+    ? new Date() <= new Date(expiresAt.getTime() + GRACE_PERIOD_MS)
+    : true;
   const isActive = (status === "active" || status === "past_due") && isValid;
   const isCancelledButValid = status === "canceled" && isValid;
   return isActive || isCancelledButValid;
@@ -38,7 +46,10 @@ export function isSubActiveOrGrace(status: string | null | undefined, expiresAt:
 export function activeSubscriptionWhereClause(now: Date = new Date()) {
   return {
     status: { in: ["active", "past_due", "canceled"] },
-    OR: [{ currentEnd: null }, { currentEnd: { gte: new Date(now.getTime() - GRACE_PERIOD_MS) } }],
+    OR: [
+      { currentEnd: null },
+      { currentEnd: { gte: new Date(now.getTime() - GRACE_PERIOD_MS) } },
+    ],
   };
 }
 
@@ -70,7 +81,8 @@ export async function getUserAndActiveSub(userId: string) {
   if (!sub) return { subscription: null };
 
   const currentEnd = sub.currentEnd ? new Date(sub.currentEnd) : null;
-  if (!isSubActiveOrGrace(sub.status, currentEnd)) return { subscription: null };
+  if (!isSubActiveOrGrace(sub.status, currentEnd))
+    return { subscription: null };
 
   return { subscription: sub };
 }
@@ -114,8 +126,13 @@ export async function createOrUpdateSubscription({
   const now = new Date();
   const paidDate = paidAt ? new Date(paidAt) : now;
 
-  const { currentStart, currentEnd, nextCharge } = computePeriodPerTimestamp(plan.interval, paidDate);
-  const _nextPaymentDate = nextPaymentDate ? new Date(nextPaymentDate) : nextCharge;
+  const { currentStart, currentEnd, nextCharge } = computePeriodPerTimestamp(
+    plan.interval,
+    paidDate
+  );
+  const _nextPaymentDate = nextPaymentDate
+    ? new Date(nextPaymentDate)
+    : nextCharge;
 
   const sub = await prisma.subscription.upsert({
     where: { userId },

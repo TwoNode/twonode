@@ -12,8 +12,18 @@ import { NotFoundError } from "@/lib/api/errors";
  */
 
 const mockPrisma = vi.hoisted(() => ({
-  oneTimeUserProperty: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn(), findFirst: vi.fn() },
-  property: { create: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
+  oneTimeUserProperty: {
+    create: vi.fn(),
+    update: vi.fn(),
+    findUnique: vi.fn(),
+    findFirst: vi.fn(),
+  },
+  property: {
+    create: vi.fn(),
+    findUnique: vi.fn(),
+    findMany: vi.fn(),
+    update: vi.fn(),
+  },
   revaUser: { findUnique: vi.fn() },
 }));
 
@@ -37,26 +47,38 @@ beforeEach(() => {
 
 describe("getUserPropertyById", () => {
   it("returns the property when the email matches", async () => {
-    mockPrisma.oneTimeUserProperty.findUnique.mockResolvedValue({ id: "p1", email: "guest@test.com" });
+    mockPrisma.oneTimeUserProperty.findUnique.mockResolvedValue({
+      id: "p1",
+      email: "guest@test.com",
+    });
     const result = await getUserPropertyById("p1", "guest@test.com");
     expect(result).toEqual({ id: "p1", email: "guest@test.com" });
   });
 
   it("throws NotFoundError when the email does not match — the resolved security gap", async () => {
-    mockPrisma.oneTimeUserProperty.findUnique.mockResolvedValue({ id: "p1", email: "guest@test.com" });
-    await expect(getUserPropertyById("p1", "attacker@test.com")).rejects.toThrow(NotFoundError);
+    mockPrisma.oneTimeUserProperty.findUnique.mockResolvedValue({
+      id: "p1",
+      email: "guest@test.com",
+    });
+    await expect(
+      getUserPropertyById("p1", "attacker@test.com")
+    ).rejects.toThrow(NotFoundError);
   });
 
   it("throws NotFoundError (not a distinct error) when the id doesn't exist, so existence can't be probed", async () => {
     mockPrisma.oneTimeUserProperty.findUnique.mockResolvedValue(null);
-    await expect(getUserPropertyById("missing", "anyone@test.com")).rejects.toThrow(NotFoundError);
+    await expect(
+      getUserPropertyById("missing", "anyone@test.com")
+    ).rejects.toThrow(NotFoundError);
   });
 });
 
 describe("getOneTimeRequestByReference", () => {
   it("throws NotFoundError when reference+email don't jointly match", async () => {
     mockPrisma.oneTimeUserProperty.findFirst.mockResolvedValue(null);
-    await expect(getOneTimeRequestByReference("REF1", "wrong@test.com")).rejects.toThrow(NotFoundError);
+    await expect(
+      getOneTimeRequestByReference("REF1", "wrong@test.com")
+    ).rejects.toThrow(NotFoundError);
   });
 });
 
@@ -65,13 +87,22 @@ describe("getOneTimeRequestByReference redaction", () => {
     mockPrisma.oneTimeUserProperty.findFirst.mockResolvedValue({
       reference: "R1",
       email: "e@test.com",
-      documentsUrls: ["https://bucket.s3.region.amazonaws.com/a.pdf", "https://bucket.s3.region.amazonaws.com/b.pdf"],
-      report: { isApproved: true, directFileLink: ["https://bucket.s3.region.amazonaws.com/report.pdf"] },
+      documentsUrls: [
+        "https://bucket.s3.region.amazonaws.com/a.pdf",
+        "https://bucket.s3.region.amazonaws.com/b.pdf",
+      ],
+      report: {
+        isApproved: true,
+        directFileLink: ["https://bucket.s3.region.amazonaws.com/report.pdf"],
+      },
     });
     const result = await getOneTimeRequestByReference("R1", "e@test.com");
     expect(result).not.toHaveProperty("documentsUrls");
     expect(result.documentsCount).toBe(2);
-    expect(result.report).toEqual({ isApproved: true, downloadAvailable: true });
+    expect(result.report).toEqual({
+      isApproved: true,
+      downloadAvailable: true,
+    });
     expect(JSON.stringify(result)).not.toContain("s3.region.amazonaws.com");
   });
 
@@ -80,7 +111,11 @@ describe("getOneTimeRequestByReference redaction", () => {
       reference: "R1",
       email: "e@test.com",
       documentsUrls: [],
-      report: { isApproved: true, titleName: "Jane Doe", zoning: "Residential" },
+      report: {
+        isApproved: true,
+        titleName: "Jane Doe",
+        zoning: "Residential",
+      },
     });
     const result = await getOneTimeRequestByReference("R1", "e@test.com");
     expect(result.report).toEqual({
@@ -95,7 +130,13 @@ describe("getOneTimeRequestByReference redaction", () => {
 describe("getUserProperties", () => {
   it("queries directly by userId, sorts descending by updatedAt, and redacts URLs", async () => {
     mockPrisma.property.findMany.mockResolvedValue([
-      { id: "a", updatedAt: new Date("2026-01-01"), createdAt: new Date("2026-01-01"), documentsUrls: [], report: null },
+      {
+        id: "a",
+        updatedAt: new Date("2026-01-01"),
+        createdAt: new Date("2026-01-01"),
+        documentsUrls: [],
+        report: null,
+      },
       {
         id: "b",
         updatedAt: new Date("2026-02-01"),
@@ -105,7 +146,9 @@ describe("getUserProperties", () => {
       },
     ]);
     const result = await getUserProperties("user-1");
-    expect(mockPrisma.property.findMany).toHaveBeenCalledWith({ where: { userId: "user-1", deleted: false } });
+    expect(mockPrisma.property.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-1", deleted: false },
+    });
     expect(result.map((p: any) => p.id)).toEqual(["b", "a"]);
     expect(result[0]).not.toHaveProperty("documentsUrls");
     expect(result[0].documentsCount).toBe(1);

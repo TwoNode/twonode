@@ -5,7 +5,12 @@ import { toast } from "sonner";
 
 export interface ServerListPage<T> {
   data: T[];
-  pagination: { page: number; pageSize: number; total: number; totalPages: number };
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export type ServerListFetcher<T, F> = (params: {
@@ -48,7 +53,10 @@ export function useServerList<T, F extends object>(
   const requestIdRef = useRef(0);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), opts.searchDebounceMs ?? 350);
+    const t = setTimeout(
+      () => setDebouncedSearch(search),
+      opts.searchDebounceMs ?? 350
+    );
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
@@ -67,7 +75,12 @@ export function useServerList<T, F extends object>(
     const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
-      const res = await fetcher({ page, pageSize, search: debouncedSearch, filters });
+      const res = await fetcher({
+        page,
+        pageSize,
+        search: debouncedSearch,
+        filters,
+      });
       if (requestId !== requestIdRef.current) return; // superseded by a newer request
       if (res.success && res.data) {
         setItems(res.data.data);

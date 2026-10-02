@@ -95,7 +95,7 @@ export default async function PastEditionsPage() {
                               year: "numeric",
                               month: "long",
                               day: "numeric",
-                            },
+                            }
                           )}
                         </span>
                         <span className="flex items-center gap-1.5">

@@ -23,7 +23,10 @@ const ErrorState = ({ message }: { message: string }) => (
 );
 
 const LoadingState = () => (
-  <PageLoader className="h-[calc(100vh-200px)] min-h-0" label="Fetching spatial data across the platform…" />
+  <PageLoader
+    className="h-[calc(100vh-200px)] min-h-0"
+    label="Fetching spatial data across the platform…"
+  />
 );
 
 export default function AdminMapViewerPage() {
@@ -40,7 +43,10 @@ export default function AdminMapViewerPage() {
       let combined: any[] = [];
 
       while (true) {
-        const result = await surfboardApi.admin.plansMap({ skip, take: PAGE_SIZE });
+        const result = await surfboardApi.admin.plansMap({
+          skip,
+          take: PAGE_SIZE,
+        });
 
         if (!result.success) {
           setError(result.error || "Failed to fetch plans");
@@ -92,7 +98,9 @@ export default function AdminMapViewerPage() {
   return (
     <div className="flex h-[calc(100vh-96px)] w-full flex-col">
       <div className="mb-4 shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Map Viewer</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Admin Map Viewer
+        </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
           View all survey plans across the platform with spatial visualization
         </p>
@@ -100,7 +108,9 @@ export default function AdminMapViewerPage() {
       <div className="min-h-0 flex-1 w-full rounded-lg overflow-hidden border border-gray-200 dark:border-white/10">
         <PlansMapClient
           plansRaw={allPlans}
-          getPlanDetailUrl={(id) => `/surfboard-restricted/dashboard/surf-plans/update/${id}`}
+          getPlanDetailUrl={(id) =>
+            `/surfboard-restricted/dashboard/surf-plans/update/${id}`
+          }
         />
       </div>
     </div>
