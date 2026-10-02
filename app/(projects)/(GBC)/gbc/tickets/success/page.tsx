@@ -68,7 +68,8 @@ export default async function TicketSuccessPage({
   const eventDate = settings?.event.date ?? "2025-05-15";
   const eventTime = settings?.event.time ?? "09:00";
   const eventVenue = settings?.event.venue ?? "Eko Hotel & Suites, Lagos";
-  const contactEmail = settings?.contact?.email ?? "info@twonodetechnologies.com";
+  const contactEmail =
+    settings?.contact?.email ?? "info@twonodetechnologies.com";
 
   // Format the date
   const eventDateTime = new Date(`${eventDate}T${eventTime}:00`);
@@ -90,7 +91,10 @@ export default async function TicketSuccessPage({
       <div className="max-w-2xl w-full">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
           {/* Header */}
-          <div className="p-6 text-white" style={{ background: GBC_GRADIENTS.primary }}>
+          <div
+            className="p-6 text-white"
+            style={{ background: GBC_GRADIENTS.primary }}
+          >
             <div className="flex items-center gap-3 mb-4">
               <CheckCircle className="h-8 w-8 text-green-300" />
               <h1 className="text-2xl md:text-3xl font-bold">
@@ -107,37 +111,61 @@ export default async function TicketSuccessPage({
           <div className="p-6 md:p-8">
             <div
               className="rounded-lg p-4 mb-6 border"
-              style={{ background: GBC_COLORS.surface.main, borderColor: GBC_COLORS.primary.light }}
+              style={{
+                background: GBC_COLORS.surface.main,
+                borderColor: GBC_COLORS.primary.light,
+              }}
             >
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium mb-1" style={{ color: GBC_COLORS.primary.dark }}>
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: GBC_COLORS.primary.dark }}
+                  >
                     Ticket Number{isGroupTicket ? "s" : ""}
                   </p>
-                  <p className="font-mono font-bold" style={{ color: GBC_COLORS.primary.dark }}>
+                  <p
+                    className="font-mono font-bold"
+                    style={{ color: GBC_COLORS.primary.dark }}
+                  >
                     {isGroupTicket
                       ? tickets.map((t) => t.ticketNumber).join(", ")
                       : primaryTicket.ticketNumber}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium mb-1" style={{ color: GBC_COLORS.primary.dark }}>
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: GBC_COLORS.primary.dark }}
+                  >
                     Payment Reference
                   </p>
-                  <p className="font-mono text-sm break-all" style={{ color: GBC_COLORS.primary.dark }}>
+                  <p
+                    className="font-mono text-sm break-all"
+                    style={{ color: GBC_COLORS.primary.dark }}
+                  >
                     {reference}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium mb-1" style={{ color: GBC_COLORS.primary.dark }}>
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: GBC_COLORS.primary.dark }}
+                  >
                     Amount Paid
                   </p>
-                  <p className="font-bold" style={{ color: GBC_COLORS.primary.dark }}>
+                  <p
+                    className="font-bold"
+                    style={{ color: GBC_COLORS.primary.dark }}
+                  >
                     ₦{amount.toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium mb-1" style={{ color: GBC_COLORS.primary.dark }}>
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: GBC_COLORS.primary.dark }}
+                  >
                     Status
                   </p>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -179,7 +207,8 @@ export default async function TicketSuccessPage({
                     >
                       Download your receipt
                     </a>
-                    {isGroupTicket && " (also attached to each attendee's confirmation email)"}
+                    {isGroupTicket &&
+                      " (also attached to each attendee's confirmation email)"}
                   </p>
                 </div>
               </div>
@@ -226,14 +255,20 @@ export default async function TicketSuccessPage({
             </div>
 
             <div className="border-t border-gray-100 pt-6 mb-8">
-              <h3 className="font-bold text-lg mb-4" style={{ color: GBC_COLORS.primary.main }}>
+              <h3
+                className="font-bold text-lg mb-4"
+                style={{ color: GBC_COLORS.primary.main }}
+              >
                 What's Next?
               </h3>
               <ol className="space-y-3 text-gray-600">
                 <li className="flex gap-3">
                   <span
                     className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full text-sm font-medium"
-                    style={{ background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.dark }}
+                    style={{
+                      background: GBC_COLORS.surface.main,
+                      color: GBC_COLORS.primary.dark,
+                    }}
                   >
                     1
                   </span>
@@ -244,7 +279,10 @@ export default async function TicketSuccessPage({
                 <li className="flex gap-3">
                   <span
                     className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full text-sm font-medium"
-                    style={{ background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.dark }}
+                    style={{
+                      background: GBC_COLORS.surface.main,
+                      color: GBC_COLORS.primary.dark,
+                    }}
                   >
                     2
                   </span>
@@ -253,7 +291,10 @@ export default async function TicketSuccessPage({
                 <li className="flex gap-3">
                   <span
                     className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full text-sm font-medium"
-                    style={{ background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.dark }}
+                    style={{
+                      background: GBC_COLORS.surface.main,
+                      color: GBC_COLORS.primary.dark,
+                    }}
                   >
                     3
                   </span>
@@ -262,7 +303,10 @@ export default async function TicketSuccessPage({
                 <li className="flex gap-3">
                   <span
                     className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full text-sm font-medium"
-                    style={{ background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.dark }}
+                    style={{
+                      background: GBC_COLORS.surface.main,
+                      color: GBC_COLORS.primary.dark,
+                    }}
                   >
                     4
                   </span>

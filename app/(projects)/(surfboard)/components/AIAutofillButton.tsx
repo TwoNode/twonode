@@ -23,11 +23,7 @@ interface AIAutofillButtonProps {
 }
 
 type ExtractionStatus =
-  | "idle"
-  | "extracting"
-  | "processing"
-  | "success"
-  | "error";
+  "idle" | "extracting" | "processing" | "success" | "error";
 
 export default function AIAutofillButton({
   pdfFiles,
@@ -259,8 +255,8 @@ export default function AIAutofillButton({
           !pdfJsLoaded
             ? "Loading PDF library..."
             : hasNoPdf
-            ? "Upload a PDF file first to enable AI autofill"
-            : "Extract data from PDF using AI"
+              ? "Upload a PDF file first to enable AI autofill"
+              : "Extract data from PDF using AI"
         }
       >
         {getButtonContent()}
@@ -274,7 +270,9 @@ export default function AIAutofillButton({
       )}
 
       {status === "idle" && !pdfJsLoaded && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">Loading PDF library...</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Loading PDF library...
+        </p>
       )}
 
       {/* Error details */}
@@ -393,10 +391,10 @@ export function AIAutofillButtonCompact({
         status === "success"
           ? "bg-emerald-100 text-emerald-700"
           : status === "error"
-          ? "bg-red-100 text-red-700"
-          : isProcessing
-          ? "bg-indigo-100 text-indigo-600"
-          : "bg-linear-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 shadow-sm hover:shadow"
+            ? "bg-red-100 text-red-700"
+            : isProcessing
+              ? "bg-indigo-100 text-indigo-600"
+              : "bg-linear-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 shadow-sm hover:shadow"
       } disabled:opacity-50 disabled:cursor-not-allowed`}
       title="Extract data from PDF using AI"
     >
@@ -411,10 +409,10 @@ export function AIAutofillButtonCompact({
         {status === "extracting"
           ? "Extracting..."
           : status === "processing"
-          ? "Processing..."
-          : status === "success"
-          ? "Done"
-          : "AI Autofill"}
+            ? "Processing..."
+            : status === "success"
+              ? "Done"
+              : "AI Autofill"}
       </span>
     </button>
   );

@@ -14,7 +14,8 @@ export async function GET(req: NextRequest, routeCtx: RouteCtx) {
   try {
     const { ticketNumber } = await routeCtx.params;
     const ticket = await getTicketByNumber(ticketNumber);
-    if (ticket.paymentStatus !== "COMPLETED") throw new NotFoundError("Receipt");
+    if (ticket.paymentStatus !== "COMPLETED")
+      throw new NotFoundError("Receipt");
     const pdfBuffer = await generateTicketReceiptPdfBuffer(ticket);
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
@@ -25,6 +26,9 @@ export async function GET(req: NextRequest, routeCtx: RouteCtx) {
       },
     });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

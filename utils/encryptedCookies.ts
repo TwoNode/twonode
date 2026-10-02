@@ -53,12 +53,12 @@ export interface EncryptedUserData {
   sessionId: string; // Unique session identifier
   lastActivity: number; // For idle timeout tracking
   picture?: string | null; // Optional user picture URL
-  
+
   // Multi-platform support
   platforms: Partial<Record<Platform, PlatformSession>>;
-  
+
   // Legacy fields (kept for backward compatibility during transition)
-  platform?: Platform; 
+  platform?: Platform;
   role?: RevaRole | SurfboardRole | GBCRole;
   subscription?: SubscriptionData;
 }
@@ -73,9 +73,9 @@ interface UserJWTPayload extends JWTPayload {
   sessionId: string;
   lastActivity: number;
   picture?: string | null;
-  
+
   platforms: Partial<Record<Platform, PlatformSession>>;
-  
+
   // Legacy
   platform?: Platform;
   role?: RevaRole | SurfboardRole | GBCRole;
@@ -158,11 +158,15 @@ export async function decryptUserData(
 
     // Migration logic: handle old single-platform payloads
     let platforms = userPayload.platforms || {};
-    if ((!platforms || Object.keys(platforms).length === 0) && userPayload.platform && userPayload.role) {
+    if (
+      (!platforms || Object.keys(platforms).length === 0) &&
+      userPayload.platform &&
+      userPayload.role
+    ) {
       platforms = {};
       platforms[userPayload.platform] = {
         role: userPayload.role,
-        subscription: userPayload.subscription
+        subscription: userPayload.subscription,
       };
     }
 
@@ -179,7 +183,7 @@ export async function decryptUserData(
       // Keep legacy fields populated for safety
       platform: userPayload.platform,
       role: userPayload.role,
-      subscription: userPayload.subscription
+      subscription: userPayload.subscription,
     };
 
     return userData;
@@ -314,7 +318,7 @@ export async function updateLastActivityAndSubscription(
 ): Promise<string> {
   try {
     const userData = await decryptUserData(encryptedJWT);
-    
+
     // Refresh subscription for Surfboard if it exists in the platforms
     if (userData.platforms[Platform.SURFBOARD]) {
       const sub = await getUserActiveSubscription(userData.userId);
@@ -370,7 +374,10 @@ export async function updateLastActivityAndSubscription(
 // Set/Merge encrypted user cookie (server-side)
 // Now handles multiple platforms by merging into existing session
 export async function setEncryptedUserCookie(
-  newData: Omit<EncryptedUserData, "sessionId" | "lastActivity" | "platforms"> & {
+  newData: Omit<
+    EncryptedUserData,
+    "sessionId" | "lastActivity" | "platforms"
+  > & {
     platform: Platform;
     role: PlatformSession["role"];
     subscription?: PlatformSession["subscription"];
@@ -379,18 +386,18 @@ export async function setEncryptedUserCookie(
 ): Promise<NextResponse> {
   // 1. Get existing session
   const existingData = await getEncryptedUserData();
-  
+
   let finalPlatforms: Partial<Record<Platform, PlatformSession>> = {};
-  
+
   if (existingData) {
     // Port existing platforms
     finalPlatforms = { ...existingData.platforms };
   }
-  
+
   // 2. Add/Update the specific platform
   finalPlatforms[newData.platform] = {
     role: newData.role,
-    subscription: newData.subscription
+    subscription: newData.subscription,
   };
 
   // 3. Prepare final data object
@@ -405,7 +412,7 @@ export async function setEncryptedUserCookie(
     // Keep legacy fields updated for compatibility
     platform: newData.platform,
     role: newData.role,
-    subscription: newData.subscription
+    subscription: newData.subscription,
   };
 
   const encryptedJWT = await encryptUserData(finalUserData);
@@ -461,10 +468,9 @@ export async function getAndRefreshUserSession(
     }
 
     const userData = await decryptUserData(encryptedJWT);
-    const refreshedJWT =
-      updateSubscription 
-        ? await updateLastActivityAndSubscription(encryptedJWT)
-        : await updateLastActivity(encryptedJWT);
+    const refreshedJWT = updateSubscription
+      ? await updateLastActivityAndSubscription(encryptedJWT)
+      : await updateLastActivity(encryptedJWT);
 
     const response = NextResponse.next();
     response.cookies.set("USER_SESSION", refreshedJWT, {
@@ -508,20 +514,27 @@ export async function clearEncryptedUserCookie(
 }
 
 // Checker functions - refined for multi-platform
-export function isSuperAdmin(userData: EncryptedUserData | null, platform: Platform): boolean {
+export function isSuperAdmin(
+  userData: EncryptedUserData | null,
+  platform: Platform
+): boolean {
   if (!userData) return false;
   return userData.platforms[platform]?.role === RevaRole.SUPERADMIN;
 }
 
-export function isAdmin(userData: EncryptedUserData | null, platform: Platform): boolean {
+export function isAdmin(
+  userData: EncryptedUserData | null,
+  platform: Platform
+): boolean {
   if (!userData) return false;
   const role = userData.platforms[platform]?.role;
-  return (
-    role === RevaRole.ADMIN || role === RevaRole.SUPERADMIN
-  );
+  return role === RevaRole.ADMIN || role === RevaRole.SUPERADMIN;
 }
 
-export function isRegularUser(userData: EncryptedUserData | null, platform: Platform): boolean {
+export function isRegularUser(
+  userData: EncryptedUserData | null,
+  platform: Platform
+): boolean {
   if (!userData) return false;
   return userData.platforms[platform]?.role === RevaRole.USER;
 }

@@ -48,14 +48,17 @@ export function GBCEditionSwitcher() {
 
   if (!editions || editions.length === 0) return null;
 
-  const activeKey = editions.find((e) => e.status === "ACTIVE")?.key ?? editions[0].key;
+  const activeKey =
+    editions.find((e) => e.status === "ACTIVE")?.key ?? editions[0].key;
   const current = searchParams.get("edition") || lastSaved || activeKey;
   const currentEdition = editions.find((e) => e.key === current);
 
   return (
     <div className="flex items-center gap-1.5">
       <CalendarRange className="h-4 w-4 text-gray-400 shrink-0" />
-      {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />}
+      {isPending && (
+        <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
+      )}
       <select
         aria-label="Switch edition"
         value={currentEdition?.key ?? current}

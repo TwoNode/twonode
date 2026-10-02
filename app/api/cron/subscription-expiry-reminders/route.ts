@@ -9,8 +9,14 @@ import { sendExpiringSubscriptionReminders } from "@/surfboard/services/subscrip
  */
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  if (
+    process.env.CRON_SECRET &&
+    authHeader !== `Bearer ${process.env.CRON_SECRET}`
+  ) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   try {
@@ -19,7 +25,10 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("subscription-expiry-reminders cron failed:", error);
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

@@ -8,11 +8,22 @@ import { Platform } from "@/utils/platform";
  * page accent exactly, so the email and the page it links to feel like
  * one flow instead of a generic shared template.
  */
-const PLATFORM_BRAND: Record<Platform, { name: string; accent: string; accentDark: string }> = {
-  [Platform.SURFBOARD]: { name: "Surfboard", accent: "#233dff", accentDark: "#141c4d" },
+const PLATFORM_BRAND: Record<
+  Platform,
+  { name: string; accent: string; accentDark: string }
+> = {
+  [Platform.SURFBOARD]: {
+    name: "Surfboard",
+    accent: "#233dff",
+    accentDark: "#141c4d",
+  },
   [Platform.REVA]: { name: "REVA", accent: "#008cff", accentDark: "#032740" },
   [Platform.GBC]: { name: "GBC", accent: "#7C3AED", accentDark: "#5B21B6" },
-  [Platform.SCRAM]: { name: "TwoNode", accent: "#0077B6", accentDark: "#023E8A" },
+  [Platform.SCRAM]: {
+    name: "TwoNode",
+    accent: "#0077B6",
+    accentDark: "#023E8A",
+  },
 };
 
 export const sendEmailToAdmin = async ({
@@ -79,7 +90,9 @@ export const sendMail = async ({
     });
 
     const mailOptions = {
-      from: fromName ? `"${fromName}" <${process.env.EMAIL_USER}>` : process.env.EMAIL_USER,
+      from: fromName
+        ? `"${fromName}" <${process.env.EMAIL_USER}>`
+        : process.env.EMAIL_USER,
       to,
       subject,
       text,
@@ -133,8 +146,17 @@ export const sendEmailToAllAdmins = async ({
   if (adminEmails.length === 0) {
     return { success: false, error: "No admin emails found" };
   }
-  const result = await sendMail({ to: adminEmails.join(","), subject, text, html });
-  return { success: result.success, data: result, recipientCount: adminEmails.length };
+  const result = await sendMail({
+    to: adminEmails.join(","),
+    subject,
+    text,
+    html,
+  });
+  return {
+    success: result.success,
+    data: result,
+    recipientCount: adminEmails.length,
+  };
 };
 
 export const sendEmailToAllSuperAdmins = async ({
@@ -150,8 +172,17 @@ export const sendEmailToAllSuperAdmins = async ({
   if (superadminEmails.length === 0) {
     return { success: false, error: "No superadmin emails found" };
   }
-  const result = await sendMail({ to: superadminEmails.join(","), subject, text, html });
-  return { success: result.success, data: result, recipientCount: superadminEmails.length };
+  const result = await sendMail({
+    to: superadminEmails.join(","),
+    subject,
+    text,
+    html,
+  });
+  return {
+    success: result.success,
+    data: result,
+    recipientCount: superadminEmails.length,
+  };
 };
 
 /**
@@ -211,11 +242,21 @@ export const sendPasswordResetEmail = async ({
     </div>
   `;
 
-  return sendMail({ to, subject, text, html, fromName: `${brand.name} · TwoNode Technologies` });
+  return sendMail({
+    to,
+    subject,
+    text,
+    html,
+    fromName: `${brand.name} · TwoNode Technologies`,
+  });
 };
 
 const escapeHtml = (value: string) =>
-  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 
 /**
  * The invitation for a new admin/staff account (see lib/auth/adminInvitations.ts).
@@ -244,7 +285,11 @@ export const sendAdminInvitationEmail = async ({
   const subject = `You've been invited to ${brand.name} as ${roleLabel}`;
   const greeting = firstName ? `Hi ${firstName},` : "Hi,";
   const bodyLine = `${inviterName} has invited you to join ${brand.name} as ${roleLabel}. Use the link below to set your password and activate your account.`;
-  const expiry = expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const expiry = expiresAt.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   const text = `${greeting}\n\n${bodyLine}\n\n${acceptUrl}\n\nThis link can be used once and expires on ${expiry}. If you weren't expecting this invitation, you can safely ignore this email.\n\nTwoNode Technologies — https://www.twonodetechnologies.com`;
   const html = `
@@ -269,7 +314,13 @@ export const sendAdminInvitationEmail = async ({
     </div>
   `;
 
-  return sendMail({ to, subject, text, html, fromName: `${brand.name} · TwoNode Technologies` });
+  return sendMail({
+    to,
+    subject,
+    text,
+    html,
+    fromName: `${brand.name} · TwoNode Technologies`,
+  });
 };
 
 /**
@@ -296,7 +347,11 @@ export const sendPlanShareInviteEmail = async ({
   const brand = PLATFORM_BRAND[Platform.SURFBOARD];
   const subject = `${sharedByName} shared a survey plan with you on ${brand.name}`;
   const bodyLine = `${sharedByName} has shared survey plan ${planNumber} with you on ${brand.name}. Sign up with this email address to view it.`;
-  const expiry = expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const expiry = expiresAt.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   const text = `Hi,\n\n${bodyLine}\n\n${signupUrl}\n\nThis invitation expires on ${expiry}. If you weren't expecting this, you can safely ignore this email.\n\nTwoNode Technologies — https://www.twonodetechnologies.com`;
   const html = `
@@ -321,7 +376,13 @@ export const sendPlanShareInviteEmail = async ({
     </div>
   `;
 
-  return sendMail({ to, subject, text, html, fromName: `${brand.name} · TwoNode Technologies` });
+  return sendMail({
+    to,
+    subject,
+    text,
+    html,
+    fromName: `${brand.name} · TwoNode Technologies`,
+  });
 };
 
 /**
@@ -488,6 +549,7 @@ export const sendNotificationMail = async ({
   subject,
   text = "",
   html = "",
+  fromName,
 }: EmailOptions) => {
   try {
     const transporter = createTransport({
@@ -499,7 +561,9 @@ export const sendNotificationMail = async ({
     });
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: fromName
+        ? `"${fromName}" <${process.env.EMAIL_USER}>`
+        : `"Surfboard · TwoNode Technologies" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       text,

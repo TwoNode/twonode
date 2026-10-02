@@ -74,8 +74,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
     setIsLoading(true);
     try {
       const changes: Record<string, string> = {};
-      if (formData.firstName !== currentUser.firstName) changes.firstName = formData.firstName;
-      if (formData.lastName !== currentUser.lastName) changes.lastName = formData.lastName;
+      if (formData.firstName !== currentUser.firstName)
+        changes.firstName = formData.firstName;
+      if (formData.lastName !== currentUser.lastName)
+        changes.lastName = formData.lastName;
       if (formData.email !== currentUser.email) changes.email = formData.email;
 
       if (Object.keys(changes).length === 0) {
@@ -144,9 +146,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
   const handleResendVerification = async () => {
     setIsResendingVerification(true);
     try {
-      const result = await resendVerification({ platform: Platform.REVA, email: currentUser.email });
+      const result = await resendVerification({
+        platform: Platform.REVA,
+        email: currentUser.email,
+      });
       if (result.success) {
-        toast.success("If your email isn't verified yet, a new link is on its way.");
+        toast.success(
+          "If your email isn't verified yet, a new link is on its way."
+        );
       } else {
         toast.error(result.error || "Failed to resend verification email");
       }
@@ -171,14 +178,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
   };
 
   const getStatusBadgeColor = (isActive: boolean) => {
-    return isActive ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300" : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300";
+    return isActive
+      ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
+      : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300";
   };
 
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profile Settings</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Profile Settings
+        </h1>
         <p className="text-gray-600 dark:text-gray-300 mt-2">
           Manage your account information and preferences
         </p>
@@ -278,7 +289,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                       placeholder="Enter your last name"
                     />
                   ) : (
-                    <p className="text-gray-900 dark:text-white font-medium">{currentUser.lastName}</p>
+                    <p className="text-gray-900 dark:text-white font-medium">
+                      {currentUser.lastName}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -295,7 +308,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                     />
                   ) : (
                     <div className="flex items-center gap-2">
-                      <p className="text-gray-900 dark:text-white font-medium">{currentUser.email}</p>
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {currentUser.email}
+                      </p>
                       {currentUser.emailVerified && (
                         <Badge variant="outline" className="text-green-600">
                           Verified
@@ -306,7 +321,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                 </div>
                 <div className="space-y-2">
                   <Label>User ID</Label>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm font-mono">{currentUser.id}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm font-mono">
+                    {currentUser.id}
+                  </p>
                 </div>
               </div>
 
@@ -430,10 +447,16 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                       onClick={handleResendVerification}
                       disabled={isResendingVerification}
                     >
-                      {isResendingVerification ? "Sending..." : "Resend verification email"}
+                      {isResendingVerification
+                        ? "Sending..."
+                        : "Resend verification email"}
                     </Button>
                   )}
-                  <Badge variant={currentUser.emailVerified ? "default" : "secondary"}>
+                  <Badge
+                    variant={
+                      currentUser.emailVerified ? "default" : "secondary"
+                    }
+                  >
                     {currentUser.emailVerified ? "Verified" : "Not Verified"}
                   </Badge>
                 </div>

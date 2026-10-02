@@ -4,8 +4,6 @@ export type PaystackEnv = {
   secretKey: string; // sk_test_xxx / sk_live_xxx
 };
 
-
-
 const BASE_URL = "https://api.paystack.co";
 
 function createClient(env: PaystackEnv) {

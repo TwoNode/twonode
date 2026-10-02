@@ -6,7 +6,6 @@ import { paginatedResult } from "@/lib/api/pagination";
 
 /** Migrated from app/(projects)/(surfboard)/actions/qrAdminActions.ts. */
 
-
 export async function getAdminQREarningsStats() {
   const successfulTx = await prisma.qREarningsTransaction.findMany({
     where: { paymentStatus: "SUCCESS" },
@@ -49,7 +48,13 @@ export async function getAdminQREarningsStats() {
   const surveyorIds = surveyorGroup.map((g) => g.surveyorId);
   const users = await prisma.surfboardUser.findMany({
     where: { id: { in: surveyorIds } },
-    select: { id: true, firstName: true, lastName: true, email: true, companyName: true },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      companyName: true,
+    },
   });
 
   const leaderboard = surveyorGroup.map((g) => {
@@ -90,7 +95,9 @@ export interface GetAdminPendingWithdrawalsParams {
   search?: string;
 }
 
-export async function getAdminPendingWithdrawals(params: GetAdminPendingWithdrawalsParams) {
+export async function getAdminPendingWithdrawals(
+  params: GetAdminPendingWithdrawalsParams
+) {
   const { page, pageSize, search } = params;
   const where: any = { status: "PENDING" };
   if (search) {
@@ -139,7 +146,11 @@ export async function processAdminWithdrawalRequest(
 ) {
   const request = await prisma.withdrawalRequest.findUnique({
     where: { id: requestId },
-    include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+    include: {
+      user: {
+        select: { id: true, email: true, firstName: true, lastName: true },
+      },
+    },
   });
 
   if (!request || request.status !== "PENDING") {
@@ -159,7 +170,10 @@ export async function processAdminWithdrawalRequest(
       }),
       prisma.surveyorWallet.update({
         where: { userId: request.userId },
-        data: { pendingWithdrawal: { decrement: request.amount }, availableBalance: { increment: request.amount } },
+        data: {
+          pendingWithdrawal: { decrement: request.amount },
+          availableBalance: { increment: request.amount },
+        },
       }),
     ]);
 
@@ -184,7 +198,10 @@ export async function processAdminWithdrawalRequest(
     try {
       const transferRes = await fetch("https://api.paystack.co/transfer", {
         method: "POST",
-        headers: { Authorization: `Bearer ${getPaystackSecretForWebhook()}`, "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${getPaystackSecretForWebhook()}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           source: "balance",
           amount: Math.round(request.amount * 100),
@@ -209,7 +226,8 @@ export async function processAdminWithdrawalRequest(
     paystackSuccess = true; // fallback to manual approval
   }
 
-  if (!paystackSuccess) throw new Error("Failed to process transfer via Paystack API.");
+  if (!paystackSuccess)
+    throw new Error("Failed to process transfer via Paystack API.");
 
   await prisma.$transaction([
     prisma.withdrawalRequest.update({
@@ -224,7 +242,10 @@ export async function processAdminWithdrawalRequest(
     }),
     prisma.surveyorWallet.update({
       where: { userId: request.userId },
-      data: { pendingWithdrawal: { decrement: request.amount }, totalWithdrawn: { increment: request.amount } },
+      data: {
+        pendingWithdrawal: { decrement: request.amount },
+        totalWithdrawn: { increment: request.amount },
+      },
     }),
   ]);
 
@@ -241,8 +262,13 @@ export async function processAdminWithdrawalRequest(
   return { message: "Withdrawal approved and paid successfully" };
 }
 
-export async function updateQREarningsSettings(adminId: string, settingsData: QREarningsSettingsData) {
-  const currentRecord = await prisma.surfboardSettings.findFirst({ orderBy: { createdAt: "desc" } });
+export async function updateQREarningsSettings(
+  adminId: string,
+  settingsData: QREarningsSettingsData
+) {
+  const currentRecord = await prisma.surfboardSettings.findFirst({
+    orderBy: { createdAt: "desc" },
+  });
 
   const currentJson = (currentRecord?.settings as any) || {};
   const updatedJson = { ...currentJson, qrCodeEarnings: settingsData };
@@ -250,10 +276,16 @@ export async function updateQREarningsSettings(adminId: string, settingsData: QR
   if (currentRecord) {
     await prisma.surfboardSettings.update({
       where: { id: currentRecord.id },
-      data: { settings: updatedJson, previousSettings: currentRecord.settings || {}, updatedById: adminId },
+      data: {
+        settings: updatedJson,
+        previousSettings: currentRecord.settings || {},
+        updatedById: adminId,
+      },
     });
   } else {
-    await prisma.surfboardSettings.create({ data: { settings: updatedJson, updatedById: adminId } });
+    await prisma.surfboardSettings.create({
+      data: { settings: updatedJson, updatedById: adminId },
+    });
   }
 
   return { message: "QR Code Earnings settings updated successfully" };

@@ -4,7 +4,7 @@ import { generateVerificationQRDataURL } from "@/gbc/utils/qr_code";
 describe("generateVerificationQRDataURL", () => {
   it("encodes the given URL as a scannable PNG data URL", async () => {
     const dataUrl = await generateVerificationQRDataURL(
-      "https://www.twonodetechnologies.com/gbc/certificate/GBC2_ABC",
+      "https://www.twonodetechnologies.com/gbc/certificate/GBC2_ABC"
     );
     expect(dataUrl).toMatch(/^data:image\/png;base64,/);
   });

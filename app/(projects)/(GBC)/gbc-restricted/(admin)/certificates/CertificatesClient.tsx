@@ -22,7 +22,12 @@ interface CertificateTicket {
 
 interface CertificatesClientProps {
   tickets: CertificateTicket[];
-  pagination: { page: number; pageSize: number; total: number; totalPages: number };
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
   stats: { checkedIn: number; certificatesSent: number };
   editions: GBCEdition[];
   filters: { search?: string; checkedIn: CheckedInFilter; edition: string };
@@ -36,12 +41,15 @@ export default function CertificatesClient({
   filters,
 }: CertificatesClientProps) {
   const router = useRouter();
-  const [selectedTickets, setSelectedTickets] = useState<Set<string>>(new Set());
+  const [selectedTickets, setSelectedTickets] = useState<Set<string>>(
+    new Set()
+  );
   // The default message names the edition being filtered (from the database),
   // or the conference generally when every edition is shown. `null` means the
   // admin hasn't typed anything, so the default keeps following the filter.
   const editionName =
-    editions.find((e) => e.key === filters.edition)?.name ?? "Geospatial Builders Conference (GBC)";
+    editions.find((e) => e.key === filters.edition)?.name ??
+    "Geospatial Builders Conference (GBC)";
   const defaultBody = `Thank you for attending ${editionName}!\n\nWe appreciate your active participation and are thrilled to have you as part of our geospatial community.`;
   const [editedBody, setEditedBody] = useState<string | null>(null);
   const emailBody = editedBody ?? defaultBody;
@@ -147,7 +155,8 @@ export default function CertificatesClient({
                 placeholder="Enter your congratulatory message..."
               />
               <p className="text-xs text-gray-500 mt-1">
-                This message will appear above the "View & Download Certificate" button.
+                This message will appear above the "View & Download Certificate"
+                button.
               </p>
             </div>
 
@@ -157,9 +166,14 @@ export default function CertificatesClient({
               className="w-full py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSending ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Sending...
+                </>
               ) : (
-                <><Mail className="w-4 h-4" /> Send to {selectedTickets.size} Attendee(s)</>
+                <>
+                  <Mail className="w-4 h-4" /> Send to {selectedTickets.size}{" "}
+                  Attendee(s)
+                </>
               )}
             </button>
           </div>
@@ -167,14 +181,18 @@ export default function CertificatesClient({
 
         <div className="grid grid-cols-2 gap-4">
           <Card className="p-4 flex flex-col justify-center items-center text-center bg-gray-50">
-             <CheckCircle className="w-8 h-8 text-green-600 mb-2" />
-             <p className="text-2xl font-bold text-gray-900">{stats.checkedIn}</p>
-             <p className="text-sm text-gray-500">Checked In</p>
+            <CheckCircle className="w-8 h-8 text-green-600 mb-2" />
+            <p className="text-2xl font-bold text-gray-900">
+              {stats.checkedIn}
+            </p>
+            <p className="text-sm text-gray-500">Checked In</p>
           </Card>
           <Card className="p-4 flex flex-col justify-center items-center text-center bg-gray-50">
-             <Mail className="w-8 h-8 text-blue-600 mb-2" />
-             <p className="text-2xl font-bold text-gray-900">{stats.certificatesSent}</p>
-             <p className="text-sm text-gray-500">Certificates Sent</p>
+            <Mail className="w-8 h-8 text-blue-600 mb-2" />
+            <p className="text-2xl font-bold text-gray-900">
+              {stats.certificatesSent}
+            </p>
+            <p className="text-sm text-gray-500">Certificates Sent</p>
           </Card>
         </div>
       </div>
@@ -182,7 +200,11 @@ export default function CertificatesClient({
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
           <h2 className="text-lg sm:text-xl font-bold">Select Attendees</h2>
-          <TicketListFilters editions={editions} checkedIn={filters.checkedIn} edition={filters.edition} />
+          <TicketListFilters
+            editions={editions}
+            checkedIn={filters.checkedIn}
+            edition={filters.edition}
+          />
         </div>
 
         <div className="mb-4 flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
@@ -200,7 +222,9 @@ export default function CertificatesClient({
             )}
             Select All ({pagination.total})
           </button>
-          <span className="text-sm text-gray-500">{selectedTickets.size} selected</span>
+          <span className="text-sm text-gray-500">
+            {selectedTickets.size} selected
+          </span>
         </div>
 
         <div className="space-y-2 max-h-150 overflow-y-auto pr-2">
@@ -224,9 +248,15 @@ export default function CertificatesClient({
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
                   <div>
-                    <p className="font-medium text-gray-900 truncate">{ticket.name}</p>
-                    <p className="text-sm text-gray-500 truncate">{ticket.email}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Ticket #{ticket.ticketNumber}</p>
+                    <p className="font-medium text-gray-900 truncate">
+                      {ticket.name}
+                    </p>
+                    <p className="text-sm text-gray-500 truncate">
+                      {ticket.email}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Ticket #{ticket.ticketNumber}
+                    </p>
                   </div>
                   <div className="flex flex-wrap gap-2 text-right">
                     {ticket.checkedIn ? (
@@ -257,7 +287,8 @@ export default function CertificatesClient({
         {pagination.totalPages > 1 && (
           <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-sm text-gray-500">
-              Page {pagination.page} of {pagination.totalPages} • {pagination.total} attendees
+              Page {pagination.page} of {pagination.totalPages} •{" "}
+              {pagination.total} attendees
             </p>
             <SearchParamsPagination
               page={pagination.page}

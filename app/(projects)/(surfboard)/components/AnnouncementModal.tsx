@@ -86,7 +86,11 @@ export function AnnouncementModal() {
         <DialogFooter className="gap-2 sm:gap-0">
           {announcement.link && (
             <Button variant="outline" asChild>
-              <a href={announcement.link} target="_blank" rel="noopener noreferrer">
+              <a
+                href={announcement.link}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Learn more
               </a>
             </Button>

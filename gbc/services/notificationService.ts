@@ -1,5 +1,8 @@
 import prisma from "@/lib/prisma";
-import { GBCUserNotificationType, GBCUserNotificationAudience } from "@/prisma/generated";
+import {
+  GBCUserNotificationType,
+  GBCUserNotificationAudience,
+} from "@/prisma/generated";
 import { NotFoundError } from "@/lib/api/errors";
 import { paginatedResult } from "@/lib/api/pagination";
 
@@ -54,14 +57,32 @@ export async function createGBCNotification(input: CreateGBCNotificationInput) {
 export async function getAdminNotifications(
   userId: string,
   role: "ADMIN" | "SUPERADMIN",
-  options?: { includeRead?: boolean; includeDismissed?: boolean; limit?: number }
+  options?: {
+    includeRead?: boolean;
+    includeDismissed?: boolean;
+    limit?: number;
+  }
 ): Promise<GBCNotificationWithReadState[]> {
-  const { includeRead = true, includeDismissed = false, limit = 50 } = options || {};
+  const {
+    includeRead = true,
+    includeDismissed = false,
+    limit = 50,
+  } = options || {};
 
-  const where: any = { OR: [{ audience: "ALL_USERS" }, { audience: "GENERAL_ADMINS" }, { userIds: { has: userId } }] };
+  const where: any = {
+    OR: [
+      { audience: "ALL_USERS" },
+      { audience: "GENERAL_ADMINS" },
+      { userIds: { has: userId } },
+    ],
+  };
   if (role === "SUPERADMIN") where.OR.push({ audience: "SUPERADMIN" });
 
-  const notifications = await prisma.gBCUserNotification.findMany({ where, orderBy: { createdAt: "desc" }, take: limit });
+  const notifications = await prisma.gBCUserNotification.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
 
   return notifications
     .map((n) => ({
@@ -104,9 +125,22 @@ export async function getAdminNotificationsPaginated(
   role: "ADMIN" | "SUPERADMIN",
   params: GetAdminNotificationsPaginatedParams
 ) {
-  const { page, pageSize, search, type, includeRead = true, includeDismissed = false } = params;
+  const {
+    page,
+    pageSize,
+    search,
+    type,
+    includeRead = true,
+    includeDismissed = false,
+  } = params;
 
-  const where: any = { OR: [{ audience: "ALL_USERS" }, { audience: "GENERAL_ADMINS" }, { userIds: { has: userId } }] };
+  const where: any = {
+    OR: [
+      { audience: "ALL_USERS" },
+      { audience: "GENERAL_ADMINS" },
+      { userIds: { has: userId } },
+    ],
+  };
   if (role === "SUPERADMIN") where.OR.push({ audience: "SUPERADMIN" });
 
   const and: any[] = [];
@@ -115,7 +149,15 @@ export async function getAdminNotificationsPaginated(
   if (!includeDismissed) and.push({ NOT: { dismissedBy: { has: userId } } });
   if (and.length) where.AND = and;
   if (search) {
-    where.AND = [...(where.AND || []), { OR: [{ title: { contains: search, mode: "insensitive" } }, { message: { contains: search, mode: "insensitive" } }] }];
+    where.AND = [
+      ...(where.AND || []),
+      {
+        OR: [
+          { title: { contains: search, mode: "insensitive" } },
+          { message: { contains: search, mode: "insensitive" } },
+        ],
+      },
+    ];
   }
 
   const [rows, total] = await Promise.all([
@@ -143,21 +185,37 @@ export async function getAdminNotificationsPaginated(
   return paginatedResult(data, total, page, pageSize);
 }
 
-export async function markGBCNotificationAsRead(userId: string, notificationId: string) {
-  const notification = await prisma.gBCUserNotification.findUnique({ where: { id: notificationId } });
+export async function markGBCNotificationAsRead(
+  userId: string,
+  notificationId: string
+) {
+  const notification = await prisma.gBCUserNotification.findUnique({
+    where: { id: notificationId },
+  });
   if (!notification) throw new NotFoundError("Notification");
 
   const readBy = [...new Set([...notification.readBy, userId])];
-  await prisma.gBCUserNotification.update({ where: { id: notificationId }, data: { readBy } });
+  await prisma.gBCUserNotification.update({
+    where: { id: notificationId },
+    data: { readBy },
+  });
   return { success: true };
 }
 
-export async function dismissGBCNotification(userId: string, notificationId: string) {
-  const notification = await prisma.gBCUserNotification.findUnique({ where: { id: notificationId } });
+export async function dismissGBCNotification(
+  userId: string,
+  notificationId: string
+) {
+  const notification = await prisma.gBCUserNotification.findUnique({
+    where: { id: notificationId },
+  });
   if (!notification) throw new NotFoundError("Notification");
 
   const dismissedBy = [...new Set([...notification.dismissedBy, userId])];
-  await prisma.gBCUserNotification.update({ where: { id: notificationId }, data: { dismissedBy } });
+  await prisma.gBCUserNotification.update({
+    where: { id: notificationId },
+    data: { dismissedBy },
+  });
   return { success: true };
 }
 
@@ -167,9 +225,16 @@ export async function deleteGBCNotification(notificationId: string) {
   return { success: true };
 }
 
-export async function getUnreadGBCNotificationCount(userId: string, role: "ADMIN" | "SUPERADMIN") {
+export async function getUnreadGBCNotificationCount(
+  userId: string,
+  role: "ADMIN" | "SUPERADMIN"
+) {
   const where: any = {
-    OR: [{ audience: "ALL_USERS" }, { audience: "GENERAL_ADMINS" }, { userIds: { has: userId } }],
+    OR: [
+      { audience: "ALL_USERS" },
+      { audience: "GENERAL_ADMINS" },
+      { userIds: { has: userId } },
+    ],
     NOT: [{ readBy: { has: userId } }, { dismissedBy: { has: userId } }],
   };
   if (role === "SUPERADMIN") where.OR.push({ audience: "SUPERADMIN" });

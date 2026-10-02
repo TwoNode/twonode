@@ -148,7 +148,7 @@ thread through.
   stale dev-server Postgres connection causing a raw-query 500 on the
   Analytics tab — resolved by restarting the dev server, not a code
   change; documented in case it recurs).
-- REVA's and GBC's *authenticated* dashboards were not separately
+- REVA's and GBC's _authenticated_ dashboards were not separately
   live-tested this pass (no REVA/GBC test account was available without a
   bulk user lookup, which the environment's own safety classifier
   declined to run) — their public/unauthenticated pages were visually

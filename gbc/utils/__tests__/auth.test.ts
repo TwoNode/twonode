@@ -25,7 +25,9 @@ vi.mock("@kinde-oss/kinde-auth-nextjs/server", () => ({
   getKindeServerSession: () => mockKindeSession,
 }));
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
-vi.mock("@/lib/auth/session", () => ({ getServerSession: mockGetServerSession }));
+vi.mock("@/lib/auth/session", () => ({
+  getServerSession: mockGetServerSession,
+}));
 
 const { requireAuth, requireAdmin } = await import("@/gbc/utils/auth");
 
@@ -42,21 +44,37 @@ describe("requireAuth", () => {
 
   it("falls back to the native session when there is no Kinde session (a natively-authenticated admin has no Kinde session at all)", async () => {
     mockKindeSession.isAuthenticated.mockResolvedValue(false);
-    mockGetServerSession.mockResolvedValue({ sub: "native-user-1", role: "SUPERADMIN", platform: "gbc" });
-    await expect(requireAuth()).resolves.toEqual({ id: "native-user-1", email: undefined });
+    mockGetServerSession.mockResolvedValue({
+      sub: "native-user-1",
+      role: "SUPERADMIN",
+      platform: "gbc",
+    });
+    await expect(requireAuth()).resolves.toEqual({
+      id: "native-user-1",
+      email: undefined,
+    });
   });
 
   it("returns the real Kinde user when authenticated", async () => {
     mockKindeSession.isAuthenticated.mockResolvedValue(true);
-    mockKindeSession.getUser.mockResolvedValue({ id: "kinde-1", email: "a@test.com" });
-    await expect(requireAuth()).resolves.toEqual({ id: "kinde-1", email: "a@test.com" });
+    mockKindeSession.getUser.mockResolvedValue({
+      id: "kinde-1",
+      email: "a@test.com",
+    });
+    await expect(requireAuth()).resolves.toEqual({
+      id: "kinde-1",
+      email: "a@test.com",
+    });
   });
 });
 
 describe("requireAdmin", () => {
   it("throws when authenticated but no matching GBCUser exists at all", async () => {
     mockKindeSession.isAuthenticated.mockResolvedValue(true);
-    mockKindeSession.getUser.mockResolvedValue({ id: "kinde-1", email: "stranger@test.com" });
+    mockKindeSession.getUser.mockResolvedValue({
+      id: "kinde-1",
+      email: "stranger@test.com",
+    });
     mockPrisma.gBCUser.findUnique.mockResolvedValue(null);
 
     await expect(requireAdmin()).rejects.toThrow("not a registered GBC user");
@@ -91,7 +109,13 @@ describe("requireAdmin", () => {
   it("returns the real GBCUser row for an active ADMIN", async () => {
     mockKindeSession.isAuthenticated.mockResolvedValue(true);
     mockKindeSession.getUser.mockResolvedValue({ id: "kinde-1" });
-    const admin = { id: "u1", kindeId: "kinde-1", email: "admin@test.com", role: "ADMIN", isActive: true };
+    const admin = {
+      id: "u1",
+      kindeId: "kinde-1",
+      email: "admin@test.com",
+      role: "ADMIN",
+      isActive: true,
+    };
     mockPrisma.gBCUser.findUnique.mockResolvedValue(admin);
 
     await expect(requireAdmin()).resolves.toEqual(admin);
@@ -99,7 +123,10 @@ describe("requireAdmin", () => {
 
   it("reconciles a pre-provisioned account (placeholder kindeId, created by email via addNewAdmin) with the real Kinde id on first login", async () => {
     mockKindeSession.isAuthenticated.mockResolvedValue(true);
-    mockKindeSession.getUser.mockResolvedValue({ id: "real-kinde-id", email: "preprovisioned@test.com" });
+    mockKindeSession.getUser.mockResolvedValue({
+      id: "real-kinde-id",
+      email: "preprovisioned@test.com",
+    });
 
     mockPrisma.gBCUser.findUnique
       .mockResolvedValueOnce(null) // no match by kindeId
@@ -130,16 +157,28 @@ describe("requireAdmin", () => {
 
   it("looks up a natively-authenticated admin by internal id, not kindeId, since the native session has no Kinde id to match", async () => {
     mockKindeSession.isAuthenticated.mockResolvedValue(false);
-    mockGetServerSession.mockResolvedValue({ sub: "native-user-1", role: "SUPERADMIN", platform: "gbc" });
+    mockGetServerSession.mockResolvedValue({
+      sub: "native-user-1",
+      role: "SUPERADMIN",
+      platform: "gbc",
+    });
 
-    const admin = { id: "native-user-1", kindeId: null, email: "native-admin@test.com", role: "SUPERADMIN", isActive: true };
+    const admin = {
+      id: "native-user-1",
+      kindeId: null,
+      email: "native-admin@test.com",
+      role: "SUPERADMIN",
+      isActive: true,
+    };
     mockPrisma.gBCUser.findUnique
       .mockResolvedValueOnce(null) // no match by kindeId (undefined for a native session)
       .mockResolvedValueOnce(admin); // match by internal id
 
     const result = await requireAdmin();
 
-    expect(mockPrisma.gBCUser.findUnique).toHaveBeenNthCalledWith(2, { where: { id: "native-user-1" } });
+    expect(mockPrisma.gBCUser.findUnique).toHaveBeenNthCalledWith(2, {
+      where: { id: "native-user-1" },
+    });
     expect(result).toEqual(admin);
   });
 });

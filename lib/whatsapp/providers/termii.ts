@@ -13,7 +13,9 @@ export const termiiProvider: WhatsAppProvider = {
   name: "termii",
 
   isConfigured() {
-    return Boolean(process.env.TERMII_API_KEY && process.env.TERMII_WHATSAPP_SENDER_ID);
+    return Boolean(
+      process.env.TERMII_API_KEY && process.env.TERMII_WHATSAPP_SENDER_ID
+    );
   },
 
   async sendText(to: string, message: string): Promise<WhatsAppSendResult> {
@@ -21,7 +23,11 @@ export const termiiProvider: WhatsAppProvider = {
     const senderId = process.env.TERMII_WHATSAPP_SENDER_ID;
 
     if (!apiKey || !senderId) {
-      return { success: false, provider: "termii", error: "Termii WhatsApp credentials not configured" };
+      return {
+        success: false,
+        provider: "termii",
+        error: "Termii WhatsApp credentials not configured",
+      };
     }
 
     try {
@@ -41,11 +47,19 @@ export const termiiProvider: WhatsAppProvider = {
 
       const data = await response.json();
       if (!data?.message_id) {
-        return { success: false, provider: "termii", error: data?.message || "Termii WhatsApp send failed" };
+        return {
+          success: false,
+          provider: "termii",
+          error: data?.message || "Termii WhatsApp send failed",
+        };
       }
       return { success: true, provider: "termii", messageId: data.message_id };
     } catch (error) {
-      return { success: false, provider: "termii", error: error instanceof Error ? error.message : "Unknown error" };
+      return {
+        success: false,
+        provider: "termii",
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
     }
   },
 };

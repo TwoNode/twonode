@@ -64,11 +64,7 @@ export function TicketCards({
     soldEarlyBirdTickets,
     { maxEarlyBirdCapacity, earlyBirdDeadline }
   );
-  const studentAvailability = isTicketTypeAvailable(
-    "STUDENT",
-    0,
-    {}
-  );
+  const studentAvailability = isTicketTypeAvailable("STUDENT", 0, {});
 
   const scrollToForm = (tier: string) => {
     const formElement = document.getElementById("registration-form");
@@ -111,8 +107,13 @@ export function TicketCards({
           >
             Early Bird
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold mb-2">Single Ticket (One Attendee)</h3>
-          <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: GBC_COLORS.primary.main }}>
+          <h3 className="text-xl sm:text-2xl font-bold mb-2">
+            Single Ticket (One Attendee)
+          </h3>
+          <div
+            className="text-3xl sm:text-4xl font-bold mb-2"
+            style={{ color: GBC_COLORS.primary.main }}
+          >
             ₦{(earlyBirdPrice / 1000).toFixed(0)}K
           </div>
           <p className="text-sm text-gray-600">
@@ -147,7 +148,11 @@ export function TicketCards({
             ? "cursor-pointer border-[#7C3AED] hover:shadow-lg"
             : "opacity-60 cursor-not-allowed border-[#EEE1FA]"
         }`}
-        style={{ background: regularAvailability.available ? GBC_COLORS.surface.main : "#fff" }}
+        style={{
+          background: regularAvailability.available
+            ? GBC_COLORS.surface.main
+            : "#fff",
+        }}
       >
         {regularAvailability.available ? (
           <div
@@ -169,8 +174,13 @@ export function TicketCards({
           >
             Regular
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold mb-2">Pair Ticket (Two attendees)</h3>
-          <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: GBC_COLORS.primary.main }}>
+          <h3 className="text-xl sm:text-2xl font-bold mb-2">
+            Pair Ticket (Two attendees)
+          </h3>
+          <div
+            className="text-3xl sm:text-4xl font-bold mb-2"
+            style={{ color: GBC_COLORS.primary.main }}
+          >
             ₦{(regularPrice / 1000).toFixed(0)}K
           </div>
           <p className="text-sm text-gray-600">
@@ -204,7 +214,9 @@ export function TicketCards({
         onClick={() => scrollToForm("company")}
         className="bg-white rounded-2xl p-4 sm:p-6 border-2 border-[#EEE1FA] relative overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200"
         style={{ borderColor: "#EEE1FA" }}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = GBC_COLORS.primary.light)}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.borderColor = GBC_COLORS.primary.light)
+        }
         onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#EEE1FA")}
       >
         <div className="absolute top-0 right-0 bg-green-600 text-white px-2 sm:px-3 py-1 text-xs font-bold">
@@ -218,8 +230,13 @@ export function TicketCards({
           >
             Company
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold mb-2">Group Ticket (Five Attendees)</h3>
-          <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: GBC_COLORS.primary.main }}>
+          <h3 className="text-xl sm:text-2xl font-bold mb-2">
+            Group Ticket (Five Attendees)
+          </h3>
+          <div
+            className="text-3xl sm:text-4xl font-bold mb-2"
+            style={{ color: GBC_COLORS.primary.main }}
+          >
             ₦{(companyPrice / 1000).toFixed(0)}K
           </div>
           <p className="text-sm text-gray-600">5 attendees</p>
@@ -240,7 +257,9 @@ export function TicketCards({
         onClick={() => scrollToForm("student")}
         className="bg-white rounded-2xl p-4 sm:p-6 border-2 relative overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200"
         style={{ borderColor: "#EEE1FA" }}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = GBC_COLORS.primary.light)}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.borderColor = GBC_COLORS.primary.light)
+        }
         onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#EEE1FA")}
       >
         <div className="absolute top-0 right-0 bg-green-600 text-white px-2 sm:px-3 py-1 text-xs font-bold">
@@ -255,7 +274,10 @@ export function TicketCards({
             Student
           </div>
           <h3 className="text-xl sm:text-2xl font-bold mb-2">Student Ticket</h3>
-          <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: GBC_COLORS.primary.main }}>
+          <div
+            className="text-3xl sm:text-4xl font-bold mb-2"
+            style={{ color: GBC_COLORS.primary.main }}
+          >
             ₦{(studentPrice / 1000).toFixed(0)}K
           </div>
           <p className="text-sm text-gray-600">Valid ID required</p>

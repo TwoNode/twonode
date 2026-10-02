@@ -262,7 +262,7 @@ function parseAIResponse(text: string): AIExtractedData {
         return null;
       })
       .filter(
-        (c: any): c is { northing: string; easting: string } => c !== null,
+        (c: any): c is { northing: string; easting: string } => c !== null
       );
   }
 
@@ -322,7 +322,7 @@ function normalizeLocality(locality: string): string {
 
   // Ensure it doesn't end with LOCAL GOVT info (should stop before that)
   const lgaIndex = cleaned.search(
-    /,?\s*(LOCAL GOVT|LOCAL GOVERNMENT|L\.G\.A)/i,
+    /,?\s*(LOCAL GOVT|LOCAL GOVERNMENT|L\.G\.A)/i
   );
   if (lgaIndex > 0) {
     cleaned = cleaned.substring(0, lgaIndex).trim();
@@ -344,7 +344,7 @@ function normalizeArea(area: string): string {
 
   // Extract just the numeric value and unit
   const match = area.match(
-    /(\d[\d,\s]*\.?\d*)\s*(SQ\.?\s*M(?:TS?|ETRES?)?\.?|HA\.?)/i,
+    /(\d[\d,\s]*\.?\d*)\s*(SQ\.?\s*M(?:TS?|ETRES?)?\.?|HA\.?)/i
   );
   if (match) {
     // Clean up the number (remove commas and internal spaces)
@@ -380,7 +380,7 @@ function normalizeDate(dateStr: string): string {
 
   // DD-MM-YYYY or DD/MM/YYYY or DD - MM - YYYY
   const dmyMatch = dateStr.match(
-    /^([0-3]?\d)[\s\-\/]+([0-1]?\d)[\s\-\/]+(\d{2,4})$/,
+    /^([0-3]?\d)[\s\-\/]+([0-1]?\d)[\s\-\/]+(\d{2,4})$/
   );
   if (dmyMatch) {
     let [, day, month, year] = dmyMatch;
@@ -393,7 +393,7 @@ function normalizeDate(dateStr: string): string {
 
   // Written formats: "21ST AUGUST, 2025" or "22ND SEPTEMBER, 2025"
   const writtenMatch = dateStr.match(
-    /(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)[,]?\s+(\d{4})/i,
+    /(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)[,]?\s+(\d{4})/i
   );
   if (writtenMatch) {
     const [, day, monthName, year] = writtenMatch;
@@ -401,14 +401,14 @@ function normalizeDate(dateStr: string): string {
     if (month) {
       return `${year}-${String(month).padStart(2, "0")}-${day.padStart(
         2,
-        "0",
+        "0"
       )}`;
     }
   }
 
   // Reversed: "AUGUST 21, 2025"
   const reversedMatch = dateStr.match(
-    /([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i,
+    /([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i
   );
   if (reversedMatch) {
     const [, monthName, day, year] = reversedMatch;
@@ -416,7 +416,7 @@ function normalizeDate(dateStr: string): string {
     if (month) {
       return `${year}-${String(month).padStart(2, "0")}-${day.padStart(
         2,
-        "0",
+        "0"
       )}`;
     }
   }
@@ -496,7 +496,7 @@ function preprocessExtractedText(text: string): string {
  * @returns Promise<ApiResult<AIExtractedData>>
  */
 export async function extractSurveyPlanDataFromText(
-  extractedText: string,
+  extractedText: string
 ): Promise<ApiResult<AIExtractedData>> {
   try {
     // Validate API key
@@ -657,7 +657,7 @@ Return ONLY valid JSON with these exact keys: planNumber, surveyTitle, personCou
  * Used for confirming user edits or verifying AI extraction
  */
 export async function recognizePersonCount(
-  surveyTitle: string,
+  surveyTitle: string
 ): Promise<ApiResult<{ count: number; names: string[] }>> {
   try {
     if (!OPENAI_API_KEY) {
@@ -731,7 +731,7 @@ export interface AIPaymentDetails {
  * Extract payment details from receipt text using AI
  */
 export async function extractPaymentDetailsFromText(
-  text: string,
+  text: string
 ): Promise<ApiResult<AIPaymentDetails>> {
   try {
     if (!OPENAI_API_KEY) {
@@ -816,7 +816,6 @@ If status specifically says Pending/Incomplete, use PENDING.
   }
 }
 
-
 // ============================================================
 // Two-Link Receipt Verification — HTML Extraction Functions
 // ============================================================
@@ -837,7 +836,7 @@ export interface LASGReceiptFields {
  * We need the cross-validation anchor (AssessRef/Teller reference) and amount.
  */
 export async function extractLASGReceiptFromHtml(
-  receiptContent: string,
+  receiptContent: string
 ): Promise<ApiResult<LASGReceiptFields>> {
   try {
     if (!OPENAI_API_KEY) {
@@ -944,7 +943,7 @@ Return the JSON with transactionAnchor, amountPaid, payerName, payerId, payerTyp
       console.error(
         "OpenAI API error for LASG extraction:",
         response.status,
-        errorText,
+        errorText
       );
       return { success: false, error: `AI service error (${response.status})` };
     }
@@ -994,7 +993,9 @@ Return the JSON with transactionAnchor, amountPaid, payerName, payerId, payerTyp
         // payer-ID mismatch check (`if (finalPayerId)`) silently never ran
         // for any non-legacy receipt URL as a result, since lasgData.payerId
         // was always undefined regardless of what the receipt actually said.
-        payerId: String(result.payerId || "").replace(/\D/g, "").trim(),
+        payerId: String(result.payerId || "")
+          .replace(/\D/g, "")
+          .trim(),
         payerType: String(result.payerType || "").trim(),
         transactionDate: String(result.transactionDate || "").trim(),
       },

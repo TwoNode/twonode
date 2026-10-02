@@ -29,7 +29,9 @@ interface DashboardNavbarProps extends Pick<MenuProps, "userImageUrl"> {
  * per-page utilities (mobile nav toggle, notifications, the role-based CTA)
  * that don't belong in the persistent sidebar.
  */
-export const RevaAdminDashboardNavbar = ({ userData }: DashboardNavbarProps) => {
+export const RevaAdminDashboardNavbar = ({
+  userData,
+}: DashboardNavbarProps) => {
   const sidebar = useStore(useSidebar, (x) => x);
 
   return (

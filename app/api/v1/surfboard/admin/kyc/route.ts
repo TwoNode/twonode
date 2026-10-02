@@ -3,7 +3,10 @@ import { z } from "zod";
 import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { getSurveyorsForKyc, toggleBankVerification } from "@/surfboard/services/qrEarningsService";
+import {
+  getSurveyorsForKyc,
+  toggleBankVerification,
+} from "@/surfboard/services/qrEarningsService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 export const GET = withAuth<SurfboardRole>(
@@ -14,12 +17,18 @@ export const GET = withAuth<SurfboardRole>(
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.SUPERADMIN] }
 );
 
-const toggleSchema = z.object({ userId: z.string().min(1), status: z.boolean() });
+const toggleSchema = z.object({
+  userId: z.string().min(1),
+  status: z.boolean(),
+});
 
 export const POST = withAuth<SurfboardRole>(
   async (req, ctx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { userId, status } = await validateBody(req, toggleSchema);
     const data = await toggleBankVerification(userId, status, ctx.session.sub);

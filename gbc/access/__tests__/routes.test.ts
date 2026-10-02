@@ -15,12 +15,16 @@ import { GBCRole } from "@/utils/platform";
 describe("canAccessRoute — admin panel", () => {
   it("allows ADMIN and SUPERADMIN into the admin home and sub-pages", () => {
     expect(canAccessRoute("/gbc-restricted", GBCRole.ADMIN)).toBe(true);
-    expect(canAccessRoute("/gbc-restricted/tickets", GBCRole.SUPERADMIN)).toBe(true);
+    expect(canAccessRoute("/gbc-restricted/tickets", GBCRole.SUPERADMIN)).toBe(
+      true
+    );
   });
 
   it("rejects a plain USER from the admin panel", () => {
     expect(canAccessRoute("/gbc-restricted", GBCRole.USER)).toBe(false);
-    expect(canAccessRoute("/gbc-restricted/settings", GBCRole.USER)).toBe(false);
+    expect(canAccessRoute("/gbc-restricted/settings", GBCRole.USER)).toBe(
+      false
+    );
   });
 
   it("ADMIN reaches every registered sub-page — the real tree has no SUPERADMIN-only page (unlike REVA/Surfboard)", () => {
@@ -41,21 +45,39 @@ describe("canAccessRoute — admin panel", () => {
   });
 
   it("resolves an unlisted nested sub-path to its registered parent entry's role requirement", () => {
-    expect(canAccessRoute("/gbc-restricted/users/123", GBCRole.ADMIN)).toBe(true);
-    expect(canAccessRoute("/gbc-restricted/users/123", GBCRole.USER)).toBe(false);
+    expect(canAccessRoute("/gbc-restricted/users/123", GBCRole.ADMIN)).toBe(
+      true
+    );
+    expect(canAccessRoute("/gbc-restricted/users/123", GBCRole.USER)).toBe(
+      false
+    );
   });
 });
 
 describe("canAccessRoute — Audit Logs", () => {
   it("is SUPERADMIN-only: the one admin page an ADMIN cannot reach", () => {
-    expect(canAccessRoute("/gbc-restricted/audit-logs", GBCRole.SUPERADMIN)).toBe(true);
-    expect(canAccessRoute("/gbc-restricted/audit-logs", GBCRole.ADMIN)).toBe(false);
-    expect(canAccessRoute("/gbc-restricted/audit-logs", GBCRole.USER)).toBe(false);
+    expect(
+      canAccessRoute("/gbc-restricted/audit-logs", GBCRole.SUPERADMIN)
+    ).toBe(true);
+    expect(canAccessRoute("/gbc-restricted/audit-logs", GBCRole.ADMIN)).toBe(
+      false
+    );
+    expect(canAccessRoute("/gbc-restricted/audit-logs", GBCRole.USER)).toBe(
+      false
+    );
   });
 
   it("shows in the sidebar for SUPERADMIN only", () => {
-    expect(getNavItemsForRole(GBCRole.SUPERADMIN, "admin").some((r) => r.label === "Audit Logs")).toBe(true);
-    expect(getNavItemsForRole(GBCRole.ADMIN, "admin").some((r) => r.label === "Audit Logs")).toBe(false);
+    expect(
+      getNavItemsForRole(GBCRole.SUPERADMIN, "admin").some(
+        (r) => r.label === "Audit Logs"
+      )
+    ).toBe(true);
+    expect(
+      getNavItemsForRole(GBCRole.ADMIN, "admin").some(
+        (r) => r.label === "Audit Logs"
+      )
+    ).toBe(false);
   });
 });
 
@@ -77,11 +99,15 @@ describe("canAccessRoute — guest-facing (public)", () => {
 
 describe("canAccessRoute — unmatched paths", () => {
   it("an unlisted subpath under the public /gbc base still resolves — the whole public site is guest territory", () => {
-    expect(canAccessRoute("/gbc/some-new-public-page", GBCRole.SUPERADMIN)).toBe(true);
+    expect(
+      canAccessRoute("/gbc/some-new-public-page", GBCRole.SUPERADMIN)
+    ).toBe(true);
   });
 
   it("rejects a path with no registered ancestor at all, for any role", () => {
-    expect(canAccessRoute("/unregistered-area", GBCRole.SUPERADMIN)).toBe(false);
+    expect(canAccessRoute("/unregistered-area", GBCRole.SUPERADMIN)).toBe(
+      false
+    );
   });
 });
 

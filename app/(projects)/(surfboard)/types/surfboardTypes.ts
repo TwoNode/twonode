@@ -49,12 +49,12 @@ export interface CreatePlanData {
   lcda?: string;
   lga?: string;
   geometry:
-  | GeoJSONPolygon
-  | {
-    type: "Polygon";
-    coordinates: [[number, number][]];
-  }
-  | any;
+    | GeoJSONPolygon
+    | {
+        type: "Polygon";
+        coordinates: [[number, number][]];
+      }
+    | any;
   /** Array of simple pillar objects */
   pillars: PillarData[] | any;
   certificateReady?: boolean;
@@ -98,10 +98,10 @@ export interface Plan {
   facilitator: string;
   pillarType: string;
   geometry:
-  | Prisma.JsonValue
-  | GeoJSONPolygon
-  | { type: "Polygon"; coordinates: [[number, number][]] }
-  | null; // Using Prisma's JsonValue type
+    | Prisma.JsonValue
+    | GeoJSONPolygon
+    | { type: "Polygon"; coordinates: [[number, number][]] }
+    | null; // Using Prisma's JsonValue type
   pdfFilePaths: string[];
   cadFilePaths: string[];
   certificateFilePaths: string[];
@@ -173,12 +173,12 @@ export interface CreatePlanData {
   lcda?: string;
   lga?: string;
   geometry:
-  | GeoJSONPolygon
-  | {
-    type: "Polygon";
-    coordinates: [[number, number][]];
-  }
-  | any;
+    | GeoJSONPolygon
+    | {
+        type: "Polygon";
+        coordinates: [[number, number][]];
+      }
+    | any;
   /** Array of simple pillar objects */
   pillars: PillarData[] | any;
   certificateReady?: boolean;
@@ -348,8 +348,6 @@ export const PILLAR_TYPE_ADJOINING_FILTERS: Record<
   },
 };
 
-
-
 export const REFERENCE_FILTERS: Record<
   PlanType,
   {
@@ -481,12 +479,7 @@ export interface UserFilters {
 
 export interface UserSort {
   field:
-  | "firstName"
-  | "lastName"
-  | "email"
-  | "role"
-  | "createdAt"
-  | "lastLogin";
+    "firstName" | "lastName" | "email" | "role" | "createdAt" | "lastLogin";
   order: "asc" | "desc";
 }
 

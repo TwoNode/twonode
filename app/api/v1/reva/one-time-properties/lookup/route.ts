@@ -7,10 +7,16 @@ export async function GET(req: NextRequest) {
   try {
     const reference = req.nextUrl.searchParams.get("reference");
     const email = req.nextUrl.searchParams.get("email");
-    if (!reference || !email) throw new ValidationError({ reference: "reference and email are required" });
+    if (!reference || !email)
+      throw new ValidationError({
+        reference: "reference and email are required",
+      });
     const data = await getOneTimeRequestByReference(reference, email);
     return NextResponse.json({ success: true, data });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

@@ -24,6 +24,9 @@ export async function GET(req: NextRequest, routeCtx: RouteCtx) {
       },
     });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

@@ -24,8 +24,15 @@ type RouteCtx = { params: Promise<{ planId: string }> };
  * page per role) — this closes that gap, consistent with the registry work
  * elsewhere in this phase.
  */
-function assertRoleMatchesSession(requestedRole: MDARole, sessionRole: SurfboardRole) {
-  if (sessionRole === SurfboardRole.SUPERADMIN || sessionRole === SurfboardRole.MDA_SUPERADMIN) return;
+function assertRoleMatchesSession(
+  requestedRole: MDARole,
+  sessionRole: SurfboardRole
+) {
+  if (
+    sessionRole === SurfboardRole.SUPERADMIN ||
+    sessionRole === SurfboardRole.MDA_SUPERADMIN
+  )
+    return;
   if (requestedRole !== sessionRole) throw new ForbiddenError();
 }
 
@@ -38,16 +45,26 @@ const roleQuerySchema = z.enum(MDA_ROLES as [MDARole, ...MDARole[]]);
 // would incorrectly also make "SUPERADMIN" a valid stage-role value.
 // Without this, SUPERADMIN callers were 403'd by withAuth before ever
 // reaching assertRoleMatchesSession's own SUPERADMIN allowance.
-const LOCK_ROUTE_ROLES = [...MDA_ROLES, SurfboardRole.SUPERADMIN] as SurfboardRole[];
+const LOCK_ROUTE_ROLES = [
+  ...MDA_ROLES,
+  SurfboardRole.SUPERADMIN,
+] as SurfboardRole[];
 
 export const GET = withAuth<SurfboardRole>(
   async (req, ctx, routeCtx: RouteCtx) => {
     const { planId } = await routeCtx.params;
-    const parsedRole = roleQuerySchema.safeParse(req.nextUrl.searchParams.get("role"));
-    if (!parsedRole.success) throw new ValidationError({ role: "Missing or invalid role" });
+    const parsedRole = roleQuerySchema.safeParse(
+      req.nextUrl.searchParams.get("role")
+    );
+    if (!parsedRole.success)
+      throw new ValidationError({ role: "Missing or invalid role" });
     assertRoleMatchesSession(parsedRole.data, ctx.session.role);
 
-    const data = await getPlanLockStatus(planId, parsedRole.data, ctx.session.sub);
+    const data = await getPlanLockStatus(
+      planId,
+      parsedRole.data,
+      ctx.session.sub
+    );
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: LOCK_ROUTE_ROLES }
@@ -58,7 +75,10 @@ const lockBodySchema = z.object({ role: roleQuerySchema });
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { planId } = await routeCtx.params;
     const { role } = await validateBody(req, lockBodySchema);
@@ -73,7 +93,10 @@ export const POST = withAuth<SurfboardRole>(
 export const DELETE = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { planId } = await routeCtx.params;
     const { role } = await validateBody(req, lockBodySchema);

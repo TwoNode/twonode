@@ -20,8 +20,14 @@ export default async function GalleryPage() {
   // by defaultYear unconditionally previously hid every item whenever the
   // setting's year didn't match the actual data's year (confirmed live:
   // defaultYear defaulted to 2025, all real items are tagged 2024).
-  const [allItems, editions] = await Promise.all([getGalleryItems(), getEditions()]);
-  const items = allItems.slice(0, gallerySettings?.itemsPerPage ?? allItems.length);
+  const [allItems, editions] = await Promise.all([
+    getGalleryItems(),
+    getEditions(),
+  ]);
+  const items = allItems.slice(
+    0,
+    gallerySettings?.itemsPerPage ?? allItems.length
+  );
 
   if (gallerySettings?.enabled === false) {
     return (
@@ -29,7 +35,9 @@ export default async function GalleryPage() {
         <GBC2Navbar />
         <div className="text-center py-24">
           <ImageIcon className="h-24 w-24 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-400 mb-2">Gallery unavailable</h2>
+          <h2 className="text-2xl font-bold text-gray-400 mb-2">
+            Gallery unavailable
+          </h2>
           <p className="text-gray-500">The gallery is currently disabled.</p>
         </div>
       </div>
@@ -44,7 +52,9 @@ export default async function GalleryPage() {
     if (!section) {
       section = {
         key: item.edition,
-        name: editions.find((e) => e.key === item.edition)?.name ?? `GBC ${item.year}`,
+        name:
+          editions.find((e) => e.key === item.edition)?.name ??
+          `GBC ${item.year}`,
         items: [],
       };
       sections.push(section);

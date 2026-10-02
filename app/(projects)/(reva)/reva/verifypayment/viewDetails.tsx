@@ -170,7 +170,9 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                 </Badge>
                 <span className="text-sm font-medium">{totalCost}</span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Paid on: {createdAt}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Paid on: {createdAt}
+              </p>
             </div>
           </div>
         </div>
@@ -230,7 +232,9 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between py-2 border-b">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Reference</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Reference
+                      </span>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {formData.reference}
                       </span>
@@ -239,13 +243,17 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                       <span className="text-sm text-gray-500 dark:text-gray-400">
                         Submitted On
                       </span>
-                      <span className="text-sm text-gray-900 dark:text-white">{createdAt}</span>
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {createdAt}
+                      </span>
                     </div>
                     <div className="flex justify-between py-2 border-b">
                       <span className="text-sm text-gray-500 dark:text-gray-400">
                         Last Updated
                       </span>
-                      <span className="text-sm text-gray-900 dark:text-white">{updatedAt}</span>
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {updatedAt}
+                      </span>
                     </div>
                     {formData.description && (
                       <div className="pt-2">
@@ -303,7 +311,9 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Amount Paid</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Amount Paid
+                      </span>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {formatCurrency(formData.totalCost)}
                       </span>

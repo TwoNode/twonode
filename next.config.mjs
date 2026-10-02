@@ -27,28 +27,64 @@ const nextConfig = {
    */
   async redirects() {
     return [
-      { source: "/surf-restricted", destination: "/surfboard-restricted", permanent: true },
-      { source: "/surf-restricted/:path*", destination: "/surfboard-restricted/:path*", permanent: true },
+      {
+        source: "/surf-restricted",
+        destination: "/surfboard-restricted",
+        permanent: true,
+      },
+      {
+        source: "/surf-restricted/:path*",
+        destination: "/surfboard-restricted/:path*",
+        permanent: true,
+      },
       { source: "/surf-mda", destination: "/surfboard-mda", permanent: true },
-      { source: "/surf-mda/:path*", destination: "/surfboard-mda/:path*", permanent: true },
+      {
+        source: "/surf-mda/:path*",
+        destination: "/surfboard-mda/:path*",
+        permanent: true,
+      },
       // REVA naming standardization (Phase 3): viewdetails -> details, across
       // all three route trees (authenticated user, authenticated admin, and
       // the top-level guest page) — same reasoning as Surfboard's rename
       // above, keeps existing bookmarks/emailed notification links working.
       // None of these three routes have nested sub-paths of their own
       // (query strings only), so no :path* wildcard is needed.
-      { source: "/reva/dashboard/viewdetails", destination: "/reva/dashboard/details", permanent: true },
-      { source: "/reva-restricted/dashboard/viewdetails", destination: "/reva-restricted/dashboard/details", permanent: true },
-      { source: "/reva/viewdetails", destination: "/reva/details", permanent: true },
+      {
+        source: "/reva/dashboard/viewdetails",
+        destination: "/reva/dashboard/details",
+        permanent: true,
+      },
+      {
+        source: "/reva-restricted/dashboard/viewdetails",
+        destination: "/reva-restricted/dashboard/details",
+        permanent: true,
+      },
+      {
+        source: "/reva/viewdetails",
+        destination: "/reva/details",
+        permanent: true,
+      },
       // GBC naming standardization (Phase 4, step 14): gbc/restricted ->
       // gbc-restricted, flattened to match reva-restricted/surfboard-restricted's
       // convention. Simpler than Surfboard's/REVA's rename — the Kinde OAuth
       // callback (/api/auth/success/gbc-restricted) was already hyphenated
       // ahead of the page routes catching up, so no callback exclusion is
       // needed here.
-      { source: "/gbc/restricted", destination: "/gbc-restricted", permanent: true },
-      { source: "/gbc/restricted/:path*", destination: "/gbc-restricted/:path*", permanent: true },
-      { source: "/gbc/restricted-login", destination: "/gbc-restricted/login", permanent: true },
+      {
+        source: "/gbc/restricted",
+        destination: "/gbc-restricted",
+        permanent: true,
+      },
+      {
+        source: "/gbc/restricted/:path*",
+        destination: "/gbc-restricted/:path*",
+        permanent: true,
+      },
+      {
+        source: "/gbc/restricted-login",
+        destination: "/gbc-restricted/login",
+        permanent: true,
+      },
     ];
   },
 
@@ -128,10 +164,7 @@ const nextConfig = {
       "./gbc/pdf-worker/**/*",
       "./public/fonts/**/*",
     ],
-    "/api/v1/gbc/tickets": [
-      "./gbc/pdf-worker/**/*",
-      "./public/fonts/**/*",
-    ],
+    "/api/v1/gbc/tickets": ["./gbc/pdf-worker/**/*", "./public/fonts/**/*"],
     "/api/v1/gbc/tickets/pair": [
       "./gbc/pdf-worker/**/*",
       "./public/fonts/**/*",

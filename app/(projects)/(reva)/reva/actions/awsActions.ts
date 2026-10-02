@@ -43,7 +43,8 @@ const BUCKET_HOST = `${BUCKET_NAME}.s3.${BUCKET_REGION}.amazonaws.com/`;
 
 function extractS3KeyFromUrl(url: string): string {
   const idx = url.indexOf(BUCKET_HOST);
-  if (idx === -1) throw new Error(`Invalid S3 URL format. Expected host: ${BUCKET_HOST}`);
+  if (idx === -1)
+    throw new Error(`Invalid S3 URL format. Expected host: ${BUCKET_HOST}`);
   return url.substring(idx + BUCKET_HOST.length);
 }
 
@@ -199,5 +200,9 @@ export async function getPresignedDownloadUrl(
   expiresIn = 300
 ): Promise<string> {
   const key = extractS3KeyFromUrl(rawUrl);
-  return getSignedUrl(s3, new GetObjectCommand({ Bucket: BUCKET_NAME, Key: key }), { expiresIn });
+  return getSignedUrl(
+    s3,
+    new GetObjectCommand({ Bucket: BUCKET_NAME, Key: key }),
+    { expiresIn }
+  );
 }

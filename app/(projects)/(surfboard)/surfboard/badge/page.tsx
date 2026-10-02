@@ -27,7 +27,10 @@ export default function SurfboardBadgePage() {
       <header className="absolute top-0 z-40 w-full border-b border-white/5 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <Link href="/surfboard" className="group inline-flex items-center gap-2">
+            <Link
+              href="/surfboard"
+              className="group inline-flex items-center gap-2"
+            >
               <Image
                 src="/surfboard/surf_logo.svg"
                 alt="Surfboard"
@@ -44,10 +47,16 @@ export default function SurfboardBadgePage() {
               >
                 Features
               </Link>
-              <Link href="/surfboard#how" className="hover:text-white transition-colors">
+              <Link
+                href="/surfboard#how"
+                className="hover:text-white transition-colors"
+              >
                 How it works
               </Link>
-              <Link href="/surfboard#faq" className="hover:text-white transition-colors">
+              <Link
+                href="/surfboard#faq"
+                className="hover:text-white transition-colors"
+              >
                 FAQ
               </Link>
             </nav>
@@ -73,7 +82,7 @@ export default function SurfboardBadgePage() {
               controls
             />
           </div>
-          
+
           <div className="mt-8 flex flex-col items-center text-center px-4 pb-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-400/10 px-3 py-1 text-xs text-blue-200 mb-4">
               <ShieldCheck className="h-4 w-4" /> Official Surfboard Badge
@@ -96,8 +105,6 @@ export default function SurfboardBadgePage() {
                 </li>
               </ul>
             </div>
-            
-
           </div>
         </motion.div>
       </main>

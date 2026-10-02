@@ -45,7 +45,7 @@ export function PhysicalSubmissionModal({
 }: PhysicalSubmissionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isEligible = (p: PhysicalSubmissionPlan) => 
+  const isEligible = (p: PhysicalSubmissionPlan) =>
     p.accountsStatus === "APPROVED" &&
     p.chartingStatus === "APPROVED" &&
     p.recordsIStatus === "APPROVED" &&
@@ -53,7 +53,16 @@ export function PhysicalSubmissionModal({
 
   // We auto-select all eligible plans by default.
   const [selectedPlanIds, setSelectedPlanIds] = useState<Set<string>>(
-    new Set(plans.filter(p => p.redCopyStatus === "SUBMITTED" && !p.physicalCopySubmitted && isEligible(p)).map((p) => p.id))
+    new Set(
+      plans
+        .filter(
+          (p) =>
+            p.redCopyStatus === "SUBMITTED" &&
+            !p.physicalCopySubmitted &&
+            isEligible(p)
+        )
+        .map((p) => p.id)
+    )
   );
 
   const handleTogglePlan = (planId: string) => {
@@ -77,10 +86,12 @@ export function PhysicalSubmissionModal({
     setIsSubmitting(true);
     try {
       const result = await surfboardApi.plans.submitPhysicalCopies(
-        Array.from(selectedPlanIds),
+        Array.from(selectedPlanIds)
       );
       if (result.success) {
-        toast.success(`Successfully submitted physical copies for ${result.data?.count} record(s)`);
+        toast.success(
+          `Successfully submitted physical copies for ${result.data?.count} record(s)`
+        );
         onSuccess();
         onClose();
       } else {
@@ -106,14 +117,19 @@ export function PhysicalSubmissionModal({
 
         <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           {plans.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400 text-center">No records found in this batch.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center">
+              No records found in this batch.
+            </p>
           ) : (
             <div className="space-y-3">
               {plans.map((plan) => {
                 const isAlreadySubmitted = plan.physicalCopySubmitted;
                 const isQueried = plan.redCopyStatus === "QUERIED";
                 const eligible = isEligible(plan);
-                const isAvailable = plan.redCopyStatus === "SUBMITTED" && !isAlreadySubmitted && eligible;
+                const isAvailable =
+                  plan.redCopyStatus === "SUBMITTED" &&
+                  !isAlreadySubmitted &&
+                  eligible;
                 const isSelected = selectedPlanIds.has(plan.id);
 
                 return (
@@ -123,12 +139,12 @@ export function PhysicalSubmissionModal({
                       isAlreadySubmitted
                         ? "bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 opacity-70"
                         : isQueried
-                        ? "bg-red-50/50 border-red-100 opacity-60"
-                        : !eligible
-                        ? "bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 opacity-60 cursor-not-allowed"
-                        : isSelected
-                        ? "border-blue-500 bg-blue-50 cursor-pointer"
-                        : "border-gray-200 dark:border-white/10 hover:border-blue-300 cursor-pointer"
+                          ? "bg-red-50/50 border-red-100 opacity-60"
+                          : !eligible
+                            ? "bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 opacity-60 cursor-not-allowed"
+                            : isSelected
+                              ? "border-blue-500 bg-blue-50 cursor-pointer"
+                              : "border-gray-200 dark:border-white/10 hover:border-blue-300 cursor-pointer"
                     }`}
                     onClick={() => {
                       if (isAvailable) {
@@ -149,24 +165,37 @@ export function PhysicalSubmissionModal({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-gray-900 dark:text-white">{plan.planNumber}</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {plan.planNumber}
+                        </span>
                         {isAlreadySubmitted && (
-                          <Badge variant="outline" className="text-xs bg-gray-100 dark:bg-white/10">
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-gray-100 dark:bg-white/10"
+                          >
                             Already Submitted
                           </Badge>
                         )}
                         {isQueried && (
-                          <Badge variant="outline" className="text-xs bg-red-100 text-red-700">
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-red-100 text-red-700"
+                          >
                             Queried
                           </Badge>
                         )}
                         {!eligible && !isAlreadySubmitted && !isQueried && (
-                          <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-orange-50 text-orange-700 border-orange-200"
+                          >
                             Awaiting Approvals
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{plan.surveyTitle}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                        {plan.surveyTitle}
+                      </p>
                     </div>
                   </div>
                 );
@@ -177,13 +206,17 @@ export function PhysicalSubmissionModal({
 
         <DialogFooter className="flex items-center justify-between mt-4">
           <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-            {selectedPlanIds.size} out of {plans.length} records selected to be submitted
+            {selectedPlanIds.size} out of {plans.length} records selected to be
+            submitted
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={isSubmitting || selectedPlanIds.size === 0}>
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || selectedPlanIds.size === 0}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

@@ -21,7 +21,9 @@ import type { ZoneFeeRow } from "@/app/(projects)/(surfboard)/utils/CoDFees";
 
 export type { ZoneFeeRow };
 
-export async function getChartingInterpretation(geometry: any): Promise<string | null> {
+export async function getChartingInterpretation(
+  geometry: any
+): Promise<string | null> {
   try {
     const geom = typeof geometry === "string" ? JSON.parse(geometry) : geometry;
 
@@ -30,7 +32,9 @@ export async function getChartingInterpretation(geometry: any): Promise<string |
       for (let i = 0; i < geom.coordinates.length; i++) {
         const poly = { type: "Polygon", coordinates: geom.coordinates[i] };
         const polyString = JSON.stringify(poly);
-        const result = await prisma.$queryRaw<Array<{ interpretation: string }>>`
+        const result = await prisma.$queryRaw<
+          Array<{ interpretation: string }>
+        >`
           SELECT interpretation
           FROM "LASG_charting_interpretation"
           WHERE ST_Intersects(
@@ -43,7 +47,9 @@ export async function getChartingInterpretation(geometry: any): Promise<string |
           interpretations.add(result[0].interpretation);
         }
       }
-      return interpretations.size > 0 ? Array.from(interpretations).join(", ") : null;
+      return interpretations.size > 0
+        ? Array.from(interpretations).join(", ")
+        : null;
     }
 
     const geometryString = JSON.stringify(geom);
@@ -56,20 +62,27 @@ export async function getChartingInterpretation(geometry: any): Promise<string |
       )
       LIMIT 1;
     `;
-    return result?.length && result[0].interpretation ? result[0].interpretation : null;
+    return result?.length && result[0].interpretation
+      ? result[0].interpretation
+      : null;
   } catch (err) {
     console.error("Charting interpretation error:", err);
     return null;
   }
 }
 
-export async function getZoneFromGeometry(geometry: any): Promise<string | null> {
+export async function getZoneFromGeometry(
+  geometry: any
+): Promise<string | null> {
   try {
     const geom = typeof geometry === "string" ? JSON.parse(geometry) : geometry;
 
     // For MultiPolygon, we take the zone of the first parcel for plan-level
     // storage; the actual fee calculation iterates through all parcels.
-    const geometryToUse = geom.type === "MultiPolygon" ? { type: "Polygon", coordinates: geom.coordinates[0] } : geom;
+    const geometryToUse =
+      geom.type === "MultiPolygon"
+        ? { type: "Polygon", coordinates: geom.coordinates[0] }
+        : geom;
     const geometryString = JSON.stringify(geometryToUse);
 
     const result = await prisma.$queryRaw<Array<{ Zone: string }>>`
@@ -93,7 +106,10 @@ export async function getZoneFromGeometry(geometry: any): Promise<string | null>
  * two names on the survey title (by newline or "and"/"&" separator), or a
  * corporate-sounding keyword in the title.
  */
-function shouldChargeDoubleFee(surveyTitle: string, ethnicity?: string | null): boolean {
+function shouldChargeDoubleFee(
+  surveyTitle: string,
+  ethnicity?: string | null
+): boolean {
   if (ethnicity?.toLowerCase() === "corporate") return true;
 
   const names = surveyTitle
@@ -117,16 +133,22 @@ function shouldChargeDoubleFee(surveyTitle: string, ethnicity?: string | null): 
     "associates",
   ];
   const lowerTitle = surveyTitle.toLowerCase();
-  if (corporateKeywords.some((keyword) => lowerTitle.includes(keyword))) return true;
+  if (corporateKeywords.some((keyword) => lowerTitle.includes(keyword)))
+    return true;
 
-  const andSeparators = surveyTitle.split(/\s+and\s+|\s*&\s*/i).filter((n) => n.trim().length > 0);
+  const andSeparators = surveyTitle
+    .split(/\s+and\s+|\s*&\s*/i)
+    .filter((n) => n.trim().length > 0);
   if (andSeparators.length > 2) return true;
 
   return false;
 }
 
 function calculateFeeFromRow(
-  feeRow: Pick<ZoneFeeRow, "lagosZoneA" | "lagosZoneB" | "lagosZoneC" | "lagosZoneD">,
+  feeRow: Pick<
+    ZoneFeeRow,
+    "lagosZoneA" | "lagosZoneB" | "lagosZoneC" | "lagosZoneD"
+  >,
   zone: string,
   surveyTitle: string,
   ethnicity?: string | null
@@ -161,7 +183,9 @@ export async function calculatePlanFeeByZone(
   zoneFees: ZoneFeeRow[],
   ethnicity?: string | null
 ): Promise<{ fee: number; isDoubleFee: boolean }> {
-  const feeRow = zoneFees.find((row) => areaSqM >= row.start && areaSqM <= row.end);
+  const feeRow = zoneFees.find(
+    (row) => areaSqM >= row.start && areaSqM <= row.end
+  );
 
   if (!feeRow) {
     const lastRow = zoneFees[zoneFees.length - 1];

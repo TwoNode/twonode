@@ -29,7 +29,7 @@ const Navbar = () => {
   const renderNavItem = (item: NavbarItemProps) => {
     const isActive = pathname === item.href;
     const Icon = item.icon;
-    
+
     return (
       <Link
         key={item.href}

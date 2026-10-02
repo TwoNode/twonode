@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Search, CheckCircle, AlertCircle, BadgeCheck, Landmark } from "lucide-react";
+import {
+  Search,
+  CheckCircle,
+  AlertCircle,
+  BadgeCheck,
+  Landmark,
+} from "lucide-react";
 import { formatInAdminTimezone } from "@/lib/adminTimezone";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,8 +26,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
-import { SURFBOARD_COLORS, surfboardStatusBadgeStyle } from "@/surfboard/colors";
-import { KYC_FILTERS, countByKycFilter, matchesKycFilter, type KycFilter } from "@/surfboard/utils/kycFilter";
+import {
+  SURFBOARD_COLORS,
+  surfboardStatusBadgeStyle,
+} from "@/surfboard/colors";
+import {
+  KYC_FILTERS,
+  countByKycFilter,
+  matchesKycFilter,
+  type KycFilter,
+} from "@/surfboard/utils/kycFilter";
 
 interface SurveyorRow {
   id: string;
@@ -53,7 +67,10 @@ export default function KycClient({
   const [loadingBankId, setLoadingBankId] = useState<string | null>(null);
   const [filter, setFilter] = useState<KycFilter>("all");
   // The bank account an admin is about to verify or revoke, held while the confirmation is open.
-  const [bankTarget, setBankTarget] = useState<{ surveyor: SurveyorRow; verify: boolean } | null>(null);
+  const [bankTarget, setBankTarget] = useState<{
+    surveyor: SurveyorRow;
+    verify: boolean;
+  } | null>(null);
 
   const counts = useMemo(() => countByKycFilter(surveyors), [surveyors]);
 
@@ -71,22 +88,25 @@ export default function KycClient({
   const handleToggleValidation = async (id: string, currentStatus: boolean) => {
     setLoadingId(id);
     const newStatus = !currentStatus;
-    
+
     const res = await surfboardApi.settings.toggleUserKyc(id, newStatus);
     if (res.success) {
       setSurveyors((prev) =>
-        prev.map((s) =>
-          s.id === id ? { ...s, isKycValidated: newStatus } : s
-        )
+        prev.map((s) => (s.id === id ? { ...s, isKycValidated: newStatus } : s))
       );
-      toast.success(`User KYC ${newStatus ? "Validated" : "Revoked"} successfully.`);
+      toast.success(
+        `User KYC ${newStatus ? "Validated" : "Revoked"} successfully.`
+      );
     } else {
       toast.error(res.error || "Failed to update KYC status.");
     }
     setLoadingId(null);
   };
 
-  const handleToggleBankVerification = async (id: string, currentStatus: boolean) => {
+  const handleToggleBankVerification = async (
+    id: string,
+    currentStatus: boolean
+  ) => {
     setLoadingBankId(id);
     const newStatus = !currentStatus;
 
@@ -106,7 +126,9 @@ export default function KycClient({
             : s
         )
       );
-      toast.success(`Bank account ${newStatus ? "verified" : "unverified"} successfully.`);
+      toast.success(
+        `Bank account ${newStatus ? "verified" : "unverified"} successfully.`
+      );
     } else {
       toast.error(res.error || "Failed to update bank verification status.");
     }
@@ -144,7 +166,11 @@ export default function KycClient({
           </div>
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Filter surveyors">
+        <div
+          className="mb-4 flex flex-wrap gap-2"
+          role="group"
+          aria-label="Filter surveyors"
+        >
           {KYC_FILTERS.map(({ value, label }) => {
             const active = filter === value;
             return (
@@ -162,7 +188,9 @@ export default function KycClient({
                 {label}
                 <span
                   className={`rounded-full px-1.5 text-xs tabular-nums ${
-                    active ? "bg-white/20 dark:bg-[#000b3d]/15" : "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400"
+                    active
+                      ? "bg-white/20 dark:bg-[#000b3d]/15"
+                      : "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400"
                   }`}
                 >
                   {counts[value]}
@@ -205,24 +233,33 @@ export default function KycClient({
                         <span className="text-gray-900 dark:text-white font-medium">
                           {s.firstName} {s.lastName}
                         </span>
-                        <span className="text-gray-500 dark:text-gray-400 text-xs">{s.email}</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-xs">
+                          {s.email}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
                       {s.surconRegNumber || (
-                        <span className="text-gray-400 dark:text-gray-500 italic">Not set</span>
+                        <span className="text-gray-400 dark:text-gray-500 italic">
+                          Not set
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
                       {s.payerID ? (
                         <div className="flex flex-col gap-1">
                           <span>{s.payerID}</span>
-                          <Badge variant="outline" className="w-fit text-xs border-gray-300 dark:border-white/15 text-gray-600 dark:text-gray-400">
+                          <Badge
+                            variant="outline"
+                            className="w-fit text-xs border-gray-300 dark:border-white/15 text-gray-600 dark:text-gray-400"
+                          >
                             {s.payerIDType || "Unknown Type"}
                           </Badge>
                         </div>
                       ) : (
-                        <span className="text-gray-400 dark:text-gray-500 italic">Not set</span>
+                        <span className="text-gray-400 dark:text-gray-500 italic">
+                          Not set
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
@@ -239,12 +276,21 @@ export default function KycClient({
                           </div>
                           {s.bankDetails.isVerified ? (
                             <div className="flex flex-wrap items-center gap-2">
-                              <Badge style={surfboardStatusBadgeStyle("success")} className="gap-1">
-                                <BadgeCheck className="h-3.5 w-3.5" aria-hidden />
+                              <Badge
+                                style={surfboardStatusBadgeStyle("success")}
+                                className="gap-1"
+                              >
+                                <BadgeCheck
+                                  className="h-3.5 w-3.5"
+                                  aria-hidden
+                                />
                                 Verified
                                 {s.bankDetails.verifiedAt && (
                                   <span className="font-normal">
-                                    · {formatInAdminTimezone(s.bankDetails.verifiedAt)}
+                                    ·{" "}
+                                    {formatInAdminTimezone(
+                                      s.bankDetails.verifiedAt
+                                    )}
                                   </span>
                                 )}
                               </Badge>
@@ -254,20 +300,28 @@ export default function KycClient({
                                 size="sm"
                                 className="h-8 px-2 text-xs text-gray-600 hover:text-red-600 dark:text-gray-400"
                                 disabled={loadingBankId === s.id}
-                                onClick={() => setBankTarget({ surveyor: s, verify: false })}
+                                onClick={() =>
+                                  setBankTarget({ surveyor: s, verify: false })
+                                }
                               >
                                 Revoke
                               </Button>
                             </div>
                           ) : (
                             <div className="flex flex-wrap items-center gap-2">
-                              <Badge style={surfboardStatusBadgeStyle("warning")}>Awaiting approval</Badge>
+                              <Badge
+                                style={surfboardStatusBadgeStyle("warning")}
+                              >
+                                Awaiting approval
+                              </Badge>
                               <Button
                                 type="button"
                                 size="sm"
                                 className="h-8 gap-1.5 text-xs"
                                 disabled={loadingBankId === s.id}
-                                onClick={() => setBankTarget({ surveyor: s, verify: true })}
+                                onClick={() =>
+                                  setBankTarget({ surveyor: s, verify: true })
+                                }
                               >
                                 <Landmark className="h-3.5 w-3.5" aria-hidden />
                                 Verify account
@@ -276,7 +330,9 @@ export default function KycClient({
                           )}
                         </div>
                       ) : (
-                        <span className="text-gray-400 dark:text-gray-500 italic">Not set</span>
+                        <span className="text-gray-400 dark:text-gray-500 italic">
+                          Not set
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -315,11 +371,16 @@ export default function KycClient({
           </table>
         </div>
 
-        <AlertDialog open={bankTarget !== null} onOpenChange={(open) => !open && setBankTarget(null)}>
+        <AlertDialog
+          open={bankTarget !== null}
+          onOpenChange={(open) => !open && setBankTarget(null)}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {bankTarget?.verify ? "Verify this bank account?" : "Revoke bank verification?"}
+                {bankTarget?.verify
+                  ? "Verify this bank account?"
+                  : "Revoke bank verification?"}
               </AlertDialogTitle>
               <AlertDialogDescription asChild>
                 <div className="space-y-3 text-sm">
@@ -327,13 +388,17 @@ export default function KycClient({
                     <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-md border border-gray-200 p-3 dark:border-white/10">
                       <dt className="text-gray-500">Surveyor</dt>
                       <dd className="text-gray-900 dark:text-white">
-                        {bankTarget.surveyor.firstName} {bankTarget.surveyor.lastName}
+                        {bankTarget.surveyor.firstName}{" "}
+                        {bankTarget.surveyor.lastName}
                       </dd>
                       <dt className="text-gray-500">Account name</dt>
-                      <dd className="text-gray-900 dark:text-white">{bankTarget.surveyor.bankDetails.accountName}</dd>
+                      <dd className="text-gray-900 dark:text-white">
+                        {bankTarget.surveyor.bankDetails.accountName}
+                      </dd>
                       <dt className="text-gray-500">Account</dt>
                       <dd className="text-gray-900 dark:text-white">
-                        {bankTarget.surveyor.bankDetails.bankName} • {bankTarget.surveyor.bankDetails.accountNumber}
+                        {bankTarget.surveyor.bankDetails.bankName} •{" "}
+                        {bankTarget.surveyor.bankDetails.accountNumber}
                       </dd>
                     </dl>
                   )}
@@ -349,7 +414,11 @@ export default function KycClient({
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
-                  if (bankTarget) void handleToggleBankVerification(bankTarget.surveyor.id, !bankTarget.verify);
+                  if (bankTarget)
+                    void handleToggleBankVerification(
+                      bankTarget.surveyor.id,
+                      !bankTarget.verify
+                    );
                   setBankTarget(null);
                 }}
               >

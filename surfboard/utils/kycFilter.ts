@@ -26,7 +26,10 @@ export type KycFilterRow = {
   bankDetails: { isVerified: boolean } | null;
 };
 
-export function matchesKycFilter(row: KycFilterRow, filter: KycFilter): boolean {
+export function matchesKycFilter(
+  row: KycFilterRow,
+  filter: KycFilter
+): boolean {
   switch (filter) {
     case "all":
       return true;
@@ -43,8 +46,12 @@ export function matchesKycFilter(row: KycFilterRow, filter: KycFilter): boolean 
   }
 }
 
-export function countByKycFilter(rows: KycFilterRow[]): Record<KycFilter, number> {
-  const counts = Object.fromEntries(KYC_FILTERS.map((f) => [f.value, 0])) as Record<KycFilter, number>;
+export function countByKycFilter(
+  rows: KycFilterRow[]
+): Record<KycFilter, number> {
+  const counts = Object.fromEntries(
+    KYC_FILTERS.map((f) => [f.value, 0])
+  ) as Record<KycFilter, number>;
   for (const row of rows) {
     for (const { value } of KYC_FILTERS) {
       if (matchesKycFilter(row, value)) counts[value] += 1;

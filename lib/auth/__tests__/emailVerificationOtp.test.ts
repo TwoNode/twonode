@@ -23,12 +23,11 @@ vi.mock("@/utils/email", () => mockEmail);
 vi.mock("@/lib/auth/userLookup", () => mockUserLookup);
 
 const { Platform } = await import("@/utils/platform");
-const {
-  issueAndSendVerificationOtp,
-  verifyEmailOtp,
-} = await import("@/lib/auth/emailVerificationOtp");
+const { issueAndSendVerificationOtp, verifyEmailOtp } =
+  await import("@/lib/auth/emailVerificationOtp");
 
-const sha256 = (v: string) => crypto.createHash("sha256").update(v).digest("hex");
+const sha256 = (v: string) =>
+  crypto.createHash("sha256").update(v).digest("hex");
 
 describe("emailVerificationOtp", () => {
   beforeEach(() => {
@@ -37,7 +36,11 @@ describe("emailVerificationOtp", () => {
 
   describe("issueAndSendVerificationOtp", () => {
     it("invalidates prior unused codes, stores sha256 hash, and emails the raw 6-digit code", async () => {
-      const user = { id: "user-123", email: "surveyor@example.com", firstName: "Jane" };
+      const user = {
+        id: "user-123",
+        email: "surveyor@example.com",
+        firstName: "Jane",
+      };
 
       await issueAndSendVerificationOtp(Platform.SURFBOARD, user);
 
@@ -66,18 +69,23 @@ describe("emailVerificationOtp", () => {
       });
 
       const sentCode = mockEmail.sendEmailVerificationOtp.mock.calls[0][0].code;
-      const storedHash = mockPrisma.emailVerificationOtp.create.mock.calls[0][0].data.codeHash;
+      const storedHash =
+        mockPrisma.emailVerificationOtp.create.mock.calls[0][0].data.codeHash;
       expect(sha256(sentCode)).toBe(storedHash);
     });
   });
 
   describe("verifyEmailOtp", () => {
     it("rejects non-6-digit codes before querying the DB", async () => {
-      await expect(verifyEmailOtp(Platform.SURFBOARD, "user-123", "123")).rejects.toMatchObject({
+      await expect(
+        verifyEmailOtp(Platform.SURFBOARD, "user-123", "123")
+      ).rejects.toMatchObject({
         status: 400,
         details: { code: "Code must be 6 digits" },
       });
-      await expect(verifyEmailOtp(Platform.SURFBOARD, "user-123", "1234567")).rejects.toMatchObject({
+      await expect(
+        verifyEmailOtp(Platform.SURFBOARD, "user-123", "1234567")
+      ).rejects.toMatchObject({
         status: 400,
         details: { code: "Code must be 6 digits" },
       });
@@ -87,9 +95,13 @@ describe("emailVerificationOtp", () => {
     it("throws if no active, unexpired, unused code exists", async () => {
       mockPrisma.emailVerificationOtp.findFirst.mockResolvedValueOnce(null);
 
-      await expect(verifyEmailOtp(Platform.SURFBOARD, "user-123", "123456")).rejects.toMatchObject({
+      await expect(
+        verifyEmailOtp(Platform.SURFBOARD, "user-123", "123456")
+      ).rejects.toMatchObject({
         status: 400,
-        details: { code: expect.stringContaining("No active verification code found") },
+        details: {
+          code: expect.stringContaining("No active verification code found"),
+        },
       });
     });
 
@@ -102,7 +114,9 @@ describe("emailVerificationOtp", () => {
         expiresAt: new Date(Date.now() + 60000),
       });
 
-      await expect(verifyEmailOtp(Platform.SURFBOARD, "user-123", "123456")).rejects.toMatchObject({
+      await expect(
+        verifyEmailOtp(Platform.SURFBOARD, "user-123", "123456")
+      ).rejects.toMatchObject({
         status: 400,
         details: { code: expect.stringContaining("Too many attempts") },
       });
@@ -117,7 +131,9 @@ describe("emailVerificationOtp", () => {
         expiresAt: new Date(Date.now() + 60000),
       });
 
-      await expect(verifyEmailOtp(Platform.SURFBOARD, "user-123", "111111")).rejects.toMatchObject({
+      await expect(
+        verifyEmailOtp(Platform.SURFBOARD, "user-123", "111111")
+      ).rejects.toMatchObject({
         status: 400,
         details: { code: "Incorrect code" },
       });
@@ -139,7 +155,11 @@ describe("emailVerificationOtp", () => {
         expiresAt: new Date(Date.now() + 60000),
       });
 
-      const result = await verifyEmailOtp(Platform.SURFBOARD, "user-123", validCode);
+      const result = await verifyEmailOtp(
+        Platform.SURFBOARD,
+        "user-123",
+        validCode
+      );
 
       expect(result).toBe(true);
       expect(mockPrisma.emailVerificationOtp.update).toHaveBeenCalledWith({

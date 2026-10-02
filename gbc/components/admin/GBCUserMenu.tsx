@@ -75,7 +75,8 @@ export function GBCUserMenu({ size = 36, className }: GBCUserMenuProps) {
     );
   }
 
-  const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Admin";
+  const fullName =
+    `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Admin";
   const initials = getInitials(user);
   const style = { width: size, height: size };
 
@@ -114,14 +115,20 @@ export function GBCUserMenu({ size = 36, className }: GBCUserMenuProps) {
           </button>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent className="w-56 p-1.5 shadow-lg rounded-xl border border-gray-200" align="end">
+        <DropdownMenuContent
+          className="w-56 p-1.5 shadow-lg rounded-xl border border-gray-200"
+          align="end"
+        >
           <DropdownMenuLabel className="font-normal px-2 py-1.5">
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-semibold text-gray-900 leading-tight truncate">
                 {fullName}
               </p>
               {user.email && (
-                <p className="text-xs text-gray-500 truncate" title={user.email}>
+                <p
+                  className="text-xs text-gray-500 truncate"
+                  title={user.email}
+                >
                   {user.email}
                 </p>
               )}
@@ -136,15 +143,27 @@ export function GBCUserMenu({ size = 36, className }: GBCUserMenuProps) {
           <DropdownMenuSeparator />
 
           <DropdownMenuGroup>
-            <DropdownMenuItem asChild className="cursor-pointer rounded-lg px-2.5 py-2">
-              <Link href="/gbc-restricted/profile" className="flex items-center gap-2 text-sm text-gray-700">
+            <DropdownMenuItem
+              asChild
+              className="cursor-pointer rounded-lg px-2.5 py-2"
+            >
+              <Link
+                href="/gbc-restricted/profile"
+                className="flex items-center gap-2 text-sm text-gray-700"
+              >
                 <User className="h-4 w-4 text-gray-500" />
                 <span>Profile</span>
               </Link>
             </DropdownMenuItem>
 
-            <DropdownMenuItem asChild className="cursor-pointer rounded-lg px-2.5 py-2">
-              <Link href="/gbc-restricted/settings" className="flex items-center gap-2 text-sm text-gray-700">
+            <DropdownMenuItem
+              asChild
+              className="cursor-pointer rounded-lg px-2.5 py-2"
+            >
+              <Link
+                href="/gbc-restricted/settings"
+                className="flex items-center gap-2 text-sm text-gray-700"
+              >
                 <Settings className="h-4 w-4 text-gray-500" />
                 <span>Settings</span>
               </Link>

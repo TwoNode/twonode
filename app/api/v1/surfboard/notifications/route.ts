@@ -3,7 +3,11 @@ import { z } from "zod";
 import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { getUserNotifications, getUserNotificationsPaginated, createNotification } from "@/surfboard/services/notificationService";
+import {
+  getUserNotifications,
+  getUserNotificationsPaginated,
+  createNotification,
+} from "@/surfboard/services/notificationService";
 import { parsePagination } from "@/lib/api/pagination";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
@@ -18,29 +22,50 @@ export const GET = withAuth<SurfboardRole>(
     // its request shape and response shape are both left untouched.
     if (params.has("page")) {
       const pagination = parsePagination(params);
-      const data = await getUserNotificationsPaginated(ctx.session.sub, ctx.session.role, {
-        ...pagination,
-        includeRead,
-        includeDismissed,
-        type: (params.get("type") as any) || undefined,
-        audience: (params.get("audience") as any) || undefined,
-        search: params.get("search") || undefined,
-      });
+      const data = await getUserNotificationsPaginated(
+        ctx.session.sub,
+        ctx.session.role,
+        {
+          ...pagination,
+          includeRead,
+          includeDismissed,
+          type: (params.get("type") as any) || undefined,
+          audience: (params.get("audience") as any) || undefined,
+          search: params.get("search") || undefined,
+        }
+      );
       return NextResponse.json({ success: true, data });
     }
 
     const limit = params.get("limit") ? Number(params.get("limit")) : undefined;
-    const data = await getUserNotifications(ctx.session.sub, ctx.session.role, { includeRead, includeDismissed, limit });
+    const data = await getUserNotifications(ctx.session.sub, ctx.session.role, {
+      includeRead,
+      includeDismissed,
+      limit,
+    });
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD }
 );
 
 const createSchema = z.object({
-  type: z.enum(["INFO", "SUCCESS", "WARNING", "ERROR", "SYSTEM", "PLAN", "SHARING"]),
+  type: z.enum([
+    "INFO",
+    "SUCCESS",
+    "WARNING",
+    "ERROR",
+    "SYSTEM",
+    "PLAN",
+    "SHARING",
+  ]),
   title: z.string().min(1),
   message: z.string().min(1),
-  audience: z.enum(["SPECIFIC_USERS", "GENERAL_ADMINS", "SUPERADMIN", "ALL_USERS"]),
+  audience: z.enum([
+    "SPECIFIC_USERS",
+    "GENERAL_ADMINS",
+    "SUPERADMIN",
+    "ALL_USERS",
+  ]),
   userIds: z.array(z.string()).optional(),
   link: z.string().optional(),
   metadata: z.any().optional(),
@@ -53,11 +78,17 @@ const createSchema = z.object({
 export const POST = withAuth<SurfboardRole>(
   async (req) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const body = await validateBody(req, createSchema);
     const data = await createNotification(body as any);
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN] }
+  {
+    platform: Platform.SURFBOARD,
+    roles: [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN],
+  }
 );

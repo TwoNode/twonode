@@ -1,7 +1,11 @@
 import prisma from "@/lib/prisma";
 import { SurfboardRole } from "@/prisma/generated";
 import { ForbiddenError, NotFoundError, ConflictError } from "@/lib/api/errors";
-import { logAuditAction, createChangeLog, formatChanges } from "@/app/(projects)/(surfboard)/utils/auditLogger";
+import {
+  logAuditAction,
+  createChangeLog,
+  formatChanges,
+} from "@/app/(projects)/(surfboard)/utils/auditLogger";
 import { paginatedResult } from "@/lib/api/pagination";
 import { activeSubscriptionWhereClause } from "@/surfboard/services/subscriptionService";
 import { EXPIRING_SOON_WINDOW_DAYS } from "@/surfboard/utils/subscriptionExpiry";
@@ -41,7 +45,6 @@ export interface GetAllUsersParams {
   subscriptionStatus?: "expired" | "expiring_soon" | "active";
 }
 
-
 /**
  * Migrated from app/(projects)/(surfboard)/actions/adminActions.ts. Broad
  * ADMIN/SUPERADMIN access folds into withAuth's role check at the route
@@ -52,8 +55,13 @@ export interface GetAllUsersParams {
  * confirmed dead (zero real callers) and not migrated.
  */
 
-export async function getAllUsers(callerRole: SurfboardRole, params: GetAllUsersParams) {
-  const where: NonNullable<Parameters<typeof prisma.surfboardUser.findMany>[0]>["where"] = {};
+export async function getAllUsers(
+  callerRole: SurfboardRole,
+  params: GetAllUsersParams
+) {
+  const where: NonNullable<
+    Parameters<typeof prisma.surfboardUser.findMany>[0]
+  >["where"] = {};
   if (params.roleGroup === "mda") {
     where.role = { in: MDA_TAB_ROLES };
   } else if (params.roleGroup !== "all") {
@@ -72,7 +80,9 @@ export async function getAllUsers(callerRole: SurfboardRole, params: GetAllUsers
   }
   if (params.subscriptionStatus === "expiring_soon") {
     const now = new Date();
-    const soon = new Date(now.getTime() + EXPIRING_SOON_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+    const soon = new Date(
+      now.getTime() + EXPIRING_SOON_WINDOW_DAYS * 24 * 60 * 60 * 1000
+    );
     where.subscription = { some: { currentEnd: { gte: now, lte: soon } } };
   }
   if (params.search) {
@@ -113,7 +123,10 @@ export async function getAllUsers(callerRole: SurfboardRole, params: GetAllUsers
     updatedAt: user.updatedAt,
     plansCount: user._count.plans,
     // ADMINs can only see subscriptions for USER role accounts
-    subscription: callerRole === "ADMIN" && user.role !== "USER" ? null : user.subscription[0] || null,
+    subscription:
+      callerRole === "ADMIN" && user.role !== "USER"
+        ? null
+        : user.subscription[0] || null,
   }));
 
   return paginatedResult(data, total, params.page, params.pageSize);
@@ -121,7 +134,9 @@ export async function getAllUsers(callerRole: SurfboardRole, params: GetAllUsers
 
 export async function getUserStats() {
   const now = new Date();
-  const expiringSoonCutoff = new Date(now.getTime() + EXPIRING_SOON_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  const expiringSoonCutoff = new Date(
+    now.getTime() + EXPIRING_SOON_WINDOW_DAYS * 24 * 60 * 60 * 1000
+  );
 
   const [
     totalUsers,
@@ -138,7 +153,9 @@ export async function getUserStats() {
     prisma.surfboardUser.count({ where: { role: "SUPERADMIN" } }),
     prisma.subscription.count({ where: activeSubscriptionWhereClause(now) }),
     prisma.subscription.count({ where: { currentEnd: { lt: now } } }),
-    prisma.subscription.count({ where: { currentEnd: { gte: now, lte: expiringSoonCutoff } } }),
+    prisma.subscription.count({
+      where: { currentEnd: { gte: now, lte: expiringSoonCutoff } },
+    }),
   ]);
 
   return {
@@ -154,16 +171,29 @@ export async function getUserStats() {
   };
 }
 
-export async function updateUserRole(actor: AdminActor, userId: string, newRole: SurfboardRole) {
+export async function updateUserRole(
+  actor: AdminActor,
+  userId: string,
+  newRole: SurfboardRole
+) {
   if (actor.role === "ADMIN") throw new ForbiddenError();
 
-  const targetUser = await prisma.surfboardUser.findUnique({ where: { id: userId }, select: { role: true, email: true } });
+  const targetUser = await prisma.surfboardUser.findUnique({
+    where: { id: userId },
+    select: { role: true, email: true },
+  });
   if (!targetUser) throw new NotFoundError("User");
 
   const updatedUser = await prisma.surfboardUser.update({
     where: { id: userId },
     data: { role: newRole },
-    select: { id: true, email: true, firstName: true, lastName: true, role: true },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+    },
   });
 
   await logAuditAction({
@@ -171,24 +201,43 @@ export async function updateUserRole(actor: AdminActor, userId: string, newRole:
     action: "UPDATE_USER_ROLE",
     entity: "SurfboardUser",
     entityId: userId,
-    changes: { ...formatChanges({ role: targetUser.role }, { role: newRole }), userEmail: targetUser.email },
+    changes: {
+      ...formatChanges({ role: targetUser.role }, { role: newRole }),
+      userEmail: targetUser.email,
+    },
   });
 
   return updatedUser;
 }
 
-export async function updateUserStatus(actor: AdminActor, userId: string, isActive: boolean) {
-  const targetUser = await prisma.surfboardUser.findUnique({ where: { id: userId }, select: { role: true, email: true } });
+export async function updateUserStatus(
+  actor: AdminActor,
+  userId: string,
+  isActive: boolean
+) {
+  const targetUser = await prisma.surfboardUser.findUnique({
+    where: { id: userId },
+    select: { role: true, email: true },
+  });
   if (!targetUser) throw new NotFoundError("User");
 
-  if (actor.role === "ADMIN" && (targetUser.role === "ADMIN" || targetUser.role === "SUPERADMIN")) {
+  if (
+    actor.role === "ADMIN" &&
+    (targetUser.role === "ADMIN" || targetUser.role === "SUPERADMIN")
+  ) {
     throw new ForbiddenError();
   }
 
   const updatedUser = await prisma.surfboardUser.update({
     where: { id: userId },
     data: { isActive },
-    select: { id: true, email: true, firstName: true, lastName: true, isActive: true },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      isActive: true,
+    },
   });
 
   await logAuditAction({
@@ -202,27 +251,44 @@ export async function updateUserStatus(actor: AdminActor, userId: string, isActi
   return updatedUser;
 }
 
-export async function updateUserSubscription(actorId: string, input: {
-  userId: string;
-  planCode: string;
-  planName: string;
-  amount: number;
-  interval: string;
-  status: string;
-  currentEnd?: Date | string | null;
-}) {
-  const { userId, planCode, planName, amount, interval, status, currentEnd } = input;
+export async function updateUserSubscription(
+  actorId: string,
+  input: {
+    userId: string;
+    planCode: string;
+    planName: string;
+    amount: number;
+    interval: string;
+    status: string;
+    currentEnd?: Date | string | null;
+  }
+) {
+  const { userId, planCode, planName, amount, interval, status, currentEnd } =
+    input;
 
-  const user = await prisma.surfboardUser.findUnique({ where: { id: userId }, select: { id: true, email: true } });
+  const user = await prisma.surfboardUser.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true },
+  });
   if (!user) throw new NotFoundError("User");
 
-  const existingSubscription = await prisma.subscription.findUnique({ where: { userId } });
+  const existingSubscription = await prisma.subscription.findUnique({
+    where: { userId },
+  });
   const currentEndDate = currentEnd ? new Date(currentEnd) : null;
 
   const subscription = existingSubscription
     ? await prisma.subscription.update({
         where: { userId },
-        data: { planCode, planName, amount, interval, status, currentEnd: currentEndDate, updatedAt: new Date() },
+        data: {
+          planCode,
+          planName,
+          amount,
+          interval,
+          status,
+          currentEnd: currentEndDate,
+          updatedAt: new Date(),
+        },
       })
     : await prisma.subscription.create({
         data: {
@@ -239,7 +305,14 @@ export async function updateUserSubscription(actorId: string, input: {
         },
       });
 
-  const snapshot = (s: { planCode: string; planName: string; amount: number; interval: string; status: string; currentEnd: Date | null }) => ({
+  const snapshot = (s: {
+    planCode: string;
+    planName: string;
+    amount: number;
+    interval: string;
+    status: string;
+    currentEnd: Date | null;
+  }) => ({
     planCode: s.planCode,
     planName: s.planName,
     amount: s.amount,
@@ -253,7 +326,10 @@ export async function updateUserSubscription(actorId: string, input: {
     entity: "Subscription",
     entityId: subscription.id,
     changes: {
-      ...formatChanges(existingSubscription ? snapshot(existingSubscription) : null, snapshot(subscription)),
+      ...formatChanges(
+        existingSubscription ? snapshot(existingSubscription) : null,
+        snapshot(subscription)
+      ),
       subscriberId: userId,
       userEmail: user.email,
       created: !existingSubscription,
@@ -264,7 +340,9 @@ export async function updateUserSubscription(actorId: string, input: {
 }
 
 export async function cancelUserSubscription(actorId: string, userId: string) {
-  const subscription = await prisma.subscription.findUnique({ where: { userId } });
+  const subscription = await prisma.subscription.findUnique({
+    where: { userId },
+  });
   if (!subscription) throw new NotFoundError("Subscription");
 
   const cancelled = await prisma.subscription.update({
@@ -288,13 +366,22 @@ export async function cancelUserSubscription(actorId: string, userId: string) {
 }
 
 export async function promoteToAdmin(actorId: string, userId: string) {
-  const targetUser = await prisma.surfboardUser.findUnique({ where: { id: userId }, select: { role: true, email: true } });
+  const targetUser = await prisma.surfboardUser.findUnique({
+    where: { id: userId },
+    select: { role: true, email: true },
+  });
   if (!targetUser) throw new NotFoundError("User");
 
   const promoted = await prisma.surfboardUser.update({
     where: { id: userId },
     data: { role: "ADMIN" },
-    select: { id: true, email: true, firstName: true, lastName: true, role: true },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+    },
   });
 
   await logAuditAction({
@@ -302,7 +389,10 @@ export async function promoteToAdmin(actorId: string, userId: string) {
     action: "PROMOTE_TO_ADMIN",
     entity: "SurfboardUser",
     entityId: userId,
-    changes: { ...formatChanges({ role: targetUser.role }, { role: "ADMIN" }), userEmail: targetUser.email },
+    changes: {
+      ...formatChanges({ role: targetUser.role }, { role: "ADMIN" }),
+      userEmail: targetUser.email,
+    },
   });
 
   return promoted;

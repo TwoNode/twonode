@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
         });
         // Resolve any plans shared to this email before the account existed
         // (Surfboard "Shared Access" — see invitePlanShareByEmail).
-        if (dbUser.email) await acceptPendingPlanShareInvites(dbUser.id, dbUser.email);
+        if (dbUser.email)
+          await acceptPendingPlanShareInvites(dbUser.id, dbUser.email);
       }
     }
 
@@ -69,7 +70,13 @@ export async function GET(request: NextRequest) {
     // Also mint a native session (additive; must never break the existing
     // Kinde login flow if it fails).
     try {
-      await issueSession(dbUser.id, dbUser.role, Platform.SURFBOARD, undefined, dbUser);
+      await issueSession(
+        dbUser.id,
+        dbUser.role,
+        Platform.SURFBOARD,
+        undefined,
+        dbUser
+      );
     } catch (err) {
       console.error("issueSession failed for surfboard callback:", err);
     }
@@ -88,14 +95,9 @@ export async function GET(request: NextRequest) {
         ? {
             subscription: {
               status: dbUser.subscription[0].status as
-                | "active"
-                | "canceled"
-                | "expired"
-                | "past_due",
+                "active" | "canceled" | "expired" | "past_due",
               interval: dbUser.subscription[0].interval as
-                | "monthly"
-                | "quarterly"
-                | "annually",
+                "monthly" | "quarterly" | "annually",
               subCode: dbUser.subscription[0].subCode ?? "",
               planCode: dbUser.subscription[0].planCode ?? "",
               emailToken: dbUser.subscription[0].emailToken ?? "",
@@ -130,6 +132,8 @@ export async function GET(request: NextRequest) {
     return responseWithCookie;
   } catch (error) {
     console.error("Error in GET /auth/success/surfboard:", error);
-    return NextResponse.redirect(new URL("/surfboard/error-login", request.url));
+    return NextResponse.redirect(
+      new URL("/surfboard/error-login", request.url)
+    );
   }
 }

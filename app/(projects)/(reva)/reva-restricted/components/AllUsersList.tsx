@@ -77,7 +77,10 @@ export default function AllUsersList() {
         page,
         pageSize,
         search: search || undefined,
-        scope: filters.role === "admins" || filters.role === "users" ? filters.role : "all",
+        scope:
+          filters.role === "admins" || filters.role === "users"
+            ? filters.role
+            : "all",
       }),
     { initialFilters: { role: "all" } }
   );
@@ -254,8 +257,8 @@ export default function AllUsersList() {
                             user.role === "SUPERADMIN"
                               ? "destructive"
                               : user.role === "ADMIN"
-                              ? "default"
-                              : "secondary"
+                                ? "default"
+                                : "secondary"
                           }
                         >
                           {user.role}
@@ -271,7 +274,9 @@ export default function AllUsersList() {
                       </div>
                     </div>
 
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{user.email}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      {user.email}
+                    </p>
                     <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                       <div className="flex items-center gap-1">
                         <CalendarIcon className="h-3 w-3" />
@@ -440,7 +445,13 @@ export default function AllUsersList() {
             <p className="text-sm text-gray-500">
               Page {page} of {totalPages} • {total} users
             </p>
-            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              pageSize={pageSize}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
       </CardContent>

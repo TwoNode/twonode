@@ -73,9 +73,7 @@ function ServiceInfoButton({
           {illustration}
         </div>
         <h5 className="font-semibold text-sm">{title}</h5>
-        <p className="text-xs text-slate-300 leading-relaxed">
-          {description}
-        </p>
+        <p className="text-xs text-slate-300 leading-relaxed">{description}</p>
       </PopoverContent>
     </Popover>
   );
@@ -121,9 +119,7 @@ export default function QRPaywallModal({
   const service2Total = service2Price + service2Fee;
 
   const currentTotal =
-    selectedService === "LOCATION_AUTHENTICITY"
-      ? service1Total
-      : service2Total;
+    selectedService === "LOCATION_AUTHENTICITY" ? service1Total : service2Total;
 
   // Dynamically load Paystack Inline JS
   useEffect(() => {
@@ -182,7 +178,8 @@ export default function QRPaywallModal({
         },
         callback: function (response: any) {
           toast.loading("Verifying payment...");
-          surfboardApi.qr.verifyPayment(reference, response.reference)
+          surfboardApi.qr
+            .verifyPayment(reference, response.reference)
             .then((verifyRes) => {
               if (verifyRes.success && verifyRes.data.accessToken) {
                 toast.dismiss();
@@ -190,7 +187,10 @@ export default function QRPaywallModal({
                 onPaymentSuccess(verifyRes.data.accessToken);
               } else {
                 toast.dismiss();
-                toast.error((!verifyRes.success && verifyRes.error) || "Payment verification failed");
+                toast.error(
+                  (!verifyRes.success && verifyRes.error) ||
+                    "Payment verification failed"
+                );
               }
               setLoading(false);
             })
@@ -228,9 +228,12 @@ export default function QRPaywallModal({
         toast.success("Access code verified!", { id: toastId });
         onPaymentSuccess(code);
       } else if (res.success && res.data?.accessState === "EXPIRED") {
-        toast.error("This access code has expired. Please purchase access again.", {
-          id: toastId,
-        });
+        toast.error(
+          "This access code has expired. Please purchase access again.",
+          {
+            id: toastId,
+          }
+        );
       } else {
         toast.error("Invalid access code. Please check and try again.", {
           id: toastId,
@@ -255,227 +258,227 @@ export default function QRPaywallModal({
             className="w-full max-w-xl overflow-hidden bg-slate-900 border border-slate-800 text-white shadow-2xl rounded-2xl"
           >
             {/* Modal Header */}
-        <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-6 text-center relative overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="inline-flex items-center justify-center p-3 bg-white/10 rounded-2xl backdrop-blur-md mb-3">
-            <Lock className="w-6 h-6 text-white" />
-          </div>
-            <div className="text-2xl font-bold text-white">
-              Unlock Survey Plan Access
-            </div>
-            <div className="text-blue-100 mt-1 text-sm">
-              Survey Plan #{planNumber} • Free scan quota reached
-            </div>
-        </div>
-
-        {/* Service Options */}
-        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Select Service to Purchase (1-Hour Full Access)
-          </Label>
-
-          {/* Service 1 */}
-          <div
-            onClick={() => setSelectedService("LOCATION_AUTHENTICITY")}
-            className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-              selectedService === "LOCATION_AUTHENTICITY"
-                ? "border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/10"
-                : "border-slate-800 bg-slate-800/50 hover:border-slate-700"
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`p-2.5 rounded-lg ${
-                    selectedService === "LOCATION_AUTHENTICITY"
-                      ? "bg-blue-500 text-white"
-                      : "bg-slate-800 text-slate-400"
-                  }`}
-                >
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h4 className="font-semibold text-white text-base">
-                      Service 1: Know Actual Location
-                    </h4>
-                    <ServiceInfoButton
-                      title="Service 1: Know Actual Location"
-                      illustration={<Service1Illustration />}
-                      description="Unlocks an interactive map of the exact survey location, GPS-ready directions, and an on-the-spot authenticity check."
-                    />
-                  </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Interactive map, GPS directions & authenticity check
-                  </p>
-                </div>
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-6 text-center relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="inline-flex items-center justify-center p-3 bg-white/10 rounded-2xl backdrop-blur-md mb-3">
+                <Lock className="w-6 h-6 text-white" />
               </div>
-              <div className="text-right">
-                <div className="text-lg font-bold text-white">
-                  ₦{service1Total.toLocaleString()}
-                </div>
-                <span className="text-[10px] text-slate-400">
-                  incl. service fee
-                </span>
+              <div className="text-2xl font-bold text-white">
+                Unlock Survey Plan Access
+              </div>
+              <div className="text-blue-100 mt-1 text-sm">
+                Survey Plan #{planNumber} • Free scan quota reached
               </div>
             </div>
-          </div>
 
-          {/* Service 2 */}
-          <div
-            onClick={() => setSelectedService("CERTIFICATE_OF_DEPOSIT")}
-            className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-              selectedService === "CERTIFICATE_OF_DEPOSIT"
-                ? "border-indigo-500 bg-indigo-500/10 shadow-lg shadow-indigo-500/10"
-                : "border-slate-800 bg-slate-800/50 hover:border-slate-700"
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`p-2.5 rounded-lg ${
-                    selectedService === "CERTIFICATE_OF_DEPOSIT"
-                      ? "bg-indigo-500 text-white"
-                      : "bg-slate-800 text-slate-400"
-                  }`}
-                >
-                  <FileCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-semibold text-white text-base">
-                      Service 2: Access CoD
-                    </h4>
-                    <ServiceInfoButton
-                      title="Service 2: Access Certificate of Deposit"
-                      illustration={<Service2Illustration />}
-                      description="Unlocks the official Certificate of Deposit for this plan, issued by office of the State Surveyor General (OSSG), available to download once the plan has been lodged."
-                    />
-                    {isCoDAvailable ? (
-                      <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">
-                        Available Now
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[10px]">
-                        Pending OSSG Lodging
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Download official Certificate of Deposit issued by OSSG
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-bold text-white">
-                  ₦{service2Total.toLocaleString()}
-                </div>
-                <span className="text-[10px] text-slate-400">
-                  incl. service fee
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* User Email & Name Inputs */}
-          <div className="space-y-3 pt-2">
-            <div>
-              <Label className="text-xs text-slate-300">
-                Email Address (Receipt & Access Confirmation)
+            {/* Service Options */}
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Select Service to Purchase (1-Hour Full Access)
               </Label>
-              <Input
-                type="email"
-                placeholder="your.name@example.com"
-                value={payerEmail}
-                onChange={(e) => setPayerEmail(e.target.value)}
-                className="mt-1 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <Label className="text-xs text-slate-300">
-                Full Name (Optional)
-              </Label>
-              <Input
-                type="text"
-                placeholder="John Doe"
-                value={payerName}
-                onChange={(e) => setPayerName(e.target.value)}
-                className="mt-1 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
 
-          {/* 1-Hour Access Notice */}
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-800/80 border border-slate-700/50 text-xs text-slate-300">
-            <Clock className="w-4 h-4 text-blue-400 shrink-0" />
-            <span>
-              Purchased access remains valid for <strong>1 Hour</strong> from
-              confirmation.
-            </span>
-          </div>
-
-          {/* Pay Button */}
-          <Button
-            onClick={handlePaystackPayment}
-            disabled={loading}
-            className="w-full py-6 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-base rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Processing Checkout...
-              </>
-            ) : (
-              <>
-                Pay ₦{currentTotal.toLocaleString()} via Paystack
-                <ArrowRight className="w-5 h-5" />
-              </>
-            )}
-          </Button>
-
-          {/* Already Paid? Enter Access Code */}
-          <div className="pt-2 border-t border-slate-800 mt-4 text-center">
-            {!showCodeInput ? (
-              <button
-                onClick={() => setShowCodeInput(true)}
-                className="text-xs text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors"
+              {/* Service 1 */}
+              <div
+                onClick={() => setSelectedService("LOCATION_AUTHENTICITY")}
+                className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  selectedService === "LOCATION_AUTHENTICITY"
+                    ? "border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/10"
+                    : "border-slate-800 bg-slate-800/50 hover:border-slate-700"
+                }`}
               >
-                Already paid? Enter Access Code
-              </button>
-            ) : (
-              <div className="space-y-3 mt-2">
-                <div className="flex gap-2">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`p-2.5 rounded-lg ${
+                        selectedService === "LOCATION_AUTHENTICITY"
+                          ? "bg-blue-500 text-white"
+                          : "bg-slate-800 text-slate-400"
+                      }`}
+                    >
+                      <MapPin className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="font-semibold text-white text-base">
+                          Service 1: Know Actual Location
+                        </h4>
+                        <ServiceInfoButton
+                          title="Service 1: Know Actual Location"
+                          illustration={<Service1Illustration />}
+                          description="Unlocks an interactive map of the exact survey location, GPS-ready directions, and an on-the-spot authenticity check."
+                        />
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Interactive map, GPS directions & authenticity check
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-white">
+                      ₦{service1Total.toLocaleString()}
+                    </div>
+                    <span className="text-[10px] text-slate-400">
+                      incl. service fee
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Service 2 */}
+              <div
+                onClick={() => setSelectedService("CERTIFICATE_OF_DEPOSIT")}
+                className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  selectedService === "CERTIFICATE_OF_DEPOSIT"
+                    ? "border-indigo-500 bg-indigo-500/10 shadow-lg shadow-indigo-500/10"
+                    : "border-slate-800 bg-slate-800/50 hover:border-slate-700"
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`p-2.5 rounded-lg ${
+                        selectedService === "CERTIFICATE_OF_DEPOSIT"
+                          ? "bg-indigo-500 text-white"
+                          : "bg-slate-800 text-slate-400"
+                      }`}
+                    >
+                      <FileCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-white text-base">
+                          Service 2: Access CoD
+                        </h4>
+                        <ServiceInfoButton
+                          title="Service 2: Access Certificate of Deposit"
+                          illustration={<Service2Illustration />}
+                          description="Unlocks the official Certificate of Deposit for this plan, issued by office of the State Surveyor General (OSSG), available to download once the plan has been lodged."
+                        />
+                        {isCoDAvailable ? (
+                          <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">
+                            Available Now
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[10px]">
+                            Pending OSSG Lodging
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Download official Certificate of Deposit issued by OSSG
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-white">
+                      ₦{service2Total.toLocaleString()}
+                    </div>
+                    <span className="text-[10px] text-slate-400">
+                      incl. service fee
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* User Email & Name Inputs */}
+              <div className="space-y-3 pt-2">
+                <div>
+                  <Label className="text-xs text-slate-300">
+                    Email Address (Receipt & Access Confirmation)
+                  </Label>
+                  <Input
+                    type="email"
+                    placeholder="your.name@example.com"
+                    value={payerEmail}
+                    onChange={(e) => setPayerEmail(e.target.value)}
+                    className="mt-1 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-300">
+                    Full Name (Optional)
+                  </Label>
                   <Input
                     type="text"
-                    placeholder="Paste access code here"
-                    value={accessCode}
-                    onChange={(e) => setAccessCode(e.target.value)}
-                    disabled={verifyingCode}
-                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
+                    placeholder="John Doe"
+                    value={payerName}
+                    onChange={(e) => setPayerName(e.target.value)}
+                    className="mt-1 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
                   />
-                  <Button
-                    onClick={handleCodeSubmit}
-                    disabled={verifyingCode}
-                    className="bg-blue-600 hover:bg-blue-500 text-white font-medium"
-                  >
-                    {verifyingCode ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      "Verify"
-                    )}
-                  </Button>
                 </div>
-                <button
-                  onClick={() => setShowCodeInput(false)}
-                  disabled={verifyingCode}
-                  className="text-xs text-slate-400 hover:text-slate-300"
-                >
-                  Cancel
-                </button>
               </div>
-            )}
-          </div>
-        </div>
+
+              {/* 1-Hour Access Notice */}
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-800/80 border border-slate-700/50 text-xs text-slate-300">
+                <Clock className="w-4 h-4 text-blue-400 shrink-0" />
+                <span>
+                  Purchased access remains valid for <strong>1 Hour</strong>{" "}
+                  from confirmation.
+                </span>
+              </div>
+
+              {/* Pay Button */}
+              <Button
+                onClick={handlePaystackPayment}
+                disabled={loading}
+                className="w-full py-6 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-base rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Processing Checkout...
+                  </>
+                ) : (
+                  <>
+                    Pay ₦{currentTotal.toLocaleString()} via Paystack
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </Button>
+
+              {/* Already Paid? Enter Access Code */}
+              <div className="pt-2 border-t border-slate-800 mt-4 text-center">
+                {!showCodeInput ? (
+                  <button
+                    onClick={() => setShowCodeInput(true)}
+                    className="text-xs text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors"
+                  >
+                    Already paid? Enter Access Code
+                  </button>
+                ) : (
+                  <div className="space-y-3 mt-2">
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        placeholder="Paste access code here"
+                        value={accessCode}
+                        onChange={(e) => setAccessCode(e.target.value)}
+                        disabled={verifyingCode}
+                        className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
+                      />
+                      <Button
+                        onClick={handleCodeSubmit}
+                        disabled={verifyingCode}
+                        className="bg-blue-600 hover:bg-blue-500 text-white font-medium"
+                      >
+                        {verifyingCode ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          "Verify"
+                        )}
+                      </Button>
+                    </div>
+                    <button
+                      onClick={() => setShowCodeInput(false)}
+                      disabled={verifyingCode}
+                      className="text-xs text-slate-400 hover:text-slate-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </motion.div>
         </div>
       )}

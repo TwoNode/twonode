@@ -1,5 +1,8 @@
 // src/app/admin/inquiries/page.tsx
-import { getInquiriesPaginated, getInquiryStats } from "@/gbc/services/contactService";
+import {
+  getInquiriesPaginated,
+  getInquiryStats,
+} from "@/gbc/services/contactService";
 import { getEditions } from "@/gbc/services/editionService";
 import { Card } from "@/components/ui/card";
 import { MessageSquare, Clock, CheckCircle } from "lucide-react";
@@ -19,11 +22,17 @@ export default async function AdminInquiriesPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const raw = await searchParams;
-  const { page, pageSize } = parsePageParams({ page: firstParam(raw.page), pageSize: firstParam(raw.pageSize) });
+  const { page, pageSize } = parsePageParams({
+    page: firstParam(raw.page),
+    pageSize: firstParam(raw.pageSize),
+  });
   const status = firstParam(raw.status);
   const type = firstParam(raw.type);
   const rawEdition = firstParam(raw.edition);
-  const edition = rawEdition === "all" ? undefined : rawEdition || (await getEditionCookieValue());
+  const edition =
+    rawEdition === "all"
+      ? undefined
+      : rawEdition || (await getEditionCookieValue());
   const search = firstParam(raw.search)?.trim() || undefined;
 
   const [result, stats, editions] = await Promise.all([
@@ -93,7 +102,12 @@ export default async function AdminInquiriesPage({
 
       {/* Filters */}
       <Card className="p-6 mb-6">
-        <InquiriesFilters editions={editions} currentType={type} currentStatus={status} currentEdition={edition} />
+        <InquiriesFilters
+          editions={editions}
+          currentType={type}
+          currentStatus={status}
+          currentEdition={edition}
+        />
       </Card>
 
       {/* Inquiries Table */}
@@ -102,7 +116,8 @@ export default async function AdminInquiriesPage({
       {result.pagination.totalPages > 1 && (
         <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-sm text-gray-600">
-            Page {result.pagination.page} of {result.pagination.totalPages} • {result.pagination.total} inquiries
+            Page {result.pagination.page} of {result.pagination.totalPages} •{" "}
+            {result.pagination.total} inquiries
           </p>
           <SearchParamsPagination
             page={result.pagination.page}

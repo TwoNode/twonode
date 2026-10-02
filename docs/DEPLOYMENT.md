@@ -4,11 +4,11 @@ The branch names in this repo do **not** map to environments the way
 they conventionally would — this has tripped up assumptions before, so
 it's written down explicitly.
 
-| Branch | Environment | Notes |
-| :--- | :--- | :--- |
-| `dev` | Integration | Feature PRs land here first. |
-| `main` | **Staging** | Still being tested; not customer-facing. |
-| `prod` | **Live production** | Currently serving real traffic. |
+| Branch | Environment         | Notes                                    |
+| :----- | :------------------ | :--------------------------------------- |
+| `dev`  | Integration         | Feature PRs land here first.             |
+| `main` | **Staging**         | Still being tested; not customer-facing. |
+| `prod` | **Live production** | Currently serving real traffic.          |
 
 The periodic "Promote dev to main" PRs move `dev`'s accumulated work
 into staging (`main`) for testing. A change only reaches real users

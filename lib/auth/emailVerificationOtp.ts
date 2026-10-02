@@ -50,7 +50,9 @@ export async function issueAndSendVerificationOtp(
   // Local/dev convenience only — SMTP creds aren't always configured in
   // dev, and the raw code is never persisted anywhere (only its sha256 hash is).
   if (process.env.NODE_ENV !== "production") {
-    console.log(`[dev] verification OTP for ${user.email} (${platform}): ${code}`);
+    console.log(
+      `[dev] verification OTP for ${user.email} (${platform}): ${code}`
+    );
   }
 }
 
@@ -80,11 +82,15 @@ export async function verifyEmailOtp(
   });
 
   if (!otp) {
-    throw new ValidationError({ code: "No active verification code found — please request a new code" });
+    throw new ValidationError({
+      code: "No active verification code found — please request a new code",
+    });
   }
 
   if (otp.attempts >= MAX_ATTEMPTS) {
-    throw new ValidationError({ code: "Too many attempts — please request a new code" });
+    throw new ValidationError({
+      code: "Too many attempts — please request a new code",
+    });
   }
 
   if (otp.codeHash !== hashCode(cleanCode)) {

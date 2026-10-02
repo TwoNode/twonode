@@ -126,9 +126,14 @@ export default function SettingsPage() {
   const handleResendVerification = async () => {
     setIsResendingVerification(true);
     try {
-      const result = await resendVerification({ platform: Platform.SURFBOARD, email: userData.email });
+      const result = await resendVerification({
+        platform: Platform.SURFBOARD,
+        email: userData.email,
+      });
       if (result.success) {
-        toast.success("If your email isn't verified yet, a new link is on its way.");
+        toast.success(
+          "If your email isn't verified yet, a new link is on its way."
+        );
       } else {
         toast.error(result.error || "Failed to resend verification email");
       }
@@ -384,7 +389,9 @@ export default function SettingsPage() {
                                 : "bg-amber-100 text-amber-700"
                             }`}
                           >
-                            {userData.emailVerified ? "Verified" : "Not Verified"}
+                            {userData.emailVerified
+                              ? "Verified"
+                              : "Not Verified"}
                           </span>
                           {!userData.emailVerified && (
                             <Button
@@ -394,7 +401,9 @@ export default function SettingsPage() {
                               onClick={handleResendVerification}
                               disabled={isResendingVerification}
                             >
-                              {isResendingVerification ? "Sending..." : "Resend verification email"}
+                              {isResendingVerification
+                                ? "Sending..."
+                                : "Resend verification email"}
                             </Button>
                           )}
                         </div>

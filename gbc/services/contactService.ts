@@ -21,20 +21,36 @@ export async function submitContactForm(data: ContactFormInput) {
   // The public form never supplies an edition: tag the inquiry with the one
   // currently active, or leave the schema default when none is.
   const active = await getActiveEdition();
-  const inquiry = await prisma.gBCContactInquiry.create({ data: active ? { ...data, edition: active.key } : data });
+  const inquiry = await prisma.gBCContactInquiry.create({
+    data: active ? { ...data, edition: active.key } : data,
+  });
 
   await sendGBCContactConfirmation(data.name, data.email, data.subject);
-  await sendGBCAdminNotification(data.type, data.name, data.email, undefined, data.subject, data.message);
+  await sendGBCAdminNotification(
+    data.type,
+    data.name,
+    data.email,
+    undefined,
+    data.subject,
+    data.message
+  );
 
   return inquiry;
 }
 
-export async function getInquiries(filters?: { status?: string; type?: string; edition?: string }) {
+export async function getInquiries(filters?: {
+  status?: string;
+  type?: string;
+  edition?: string;
+}) {
   const where: Prisma.GBCContactInquiryWhereInput = {};
   if (filters?.status) where.status = filters.status as any;
   if (filters?.type) where.type = filters.type;
   if (filters?.edition) where.edition = filters.edition;
-  return prisma.gBCContactInquiry.findMany({ where, orderBy: { createdAt: "desc" } });
+  return prisma.gBCContactInquiry.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+  });
 }
 
 export interface GetInquiriesPaginatedParams {
@@ -47,7 +63,9 @@ export interface GetInquiriesPaginatedParams {
 }
 
 /** Paginated/searchable sibling of getInquiries() — the admin Inquiries page. */
-export async function getInquiriesPaginated(params: GetInquiriesPaginatedParams) {
+export async function getInquiriesPaginated(
+  params: GetInquiriesPaginatedParams
+) {
   const { page, pageSize, status, type, edition, search } = params;
   const where: Prisma.GBCContactInquiryWhereInput = {};
   if (status) where.status = status as any;
@@ -62,7 +80,13 @@ export async function getInquiriesPaginated(params: GetInquiriesPaginatedParams)
   }
 
   return paginateQuery(
-    (skip, take) => prisma.gBCContactInquiry.findMany({ where, orderBy: { createdAt: "desc" }, skip, take }),
+    (skip, take) =>
+      prisma.gBCContactInquiry.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+      }),
     () => prisma.gBCContactInquiry.count({ where }),
     page,
     pageSize
@@ -74,29 +98,50 @@ export async function getInquiryStats(edition?: string) {
   const base: Prisma.GBCContactInquiryWhereInput = edition ? { edition } : {};
   const [total, pending, inProgress, resolved] = await Promise.all([
     prisma.gBCContactInquiry.count({ where: base }),
-    prisma.gBCContactInquiry.count({ where: { ...base, status: "PENDING" as any } }),
-    prisma.gBCContactInquiry.count({ where: { ...base, status: "IN_PROGRESS" as any } }),
-    prisma.gBCContactInquiry.count({ where: { ...base, status: "RESOLVED" as any } }),
+    prisma.gBCContactInquiry.count({
+      where: { ...base, status: "PENDING" as any },
+    }),
+    prisma.gBCContactInquiry.count({
+      where: { ...base, status: "IN_PROGRESS" as any },
+    }),
+    prisma.gBCContactInquiry.count({
+      where: { ...base, status: "RESOLVED" as any },
+    }),
   ]);
   return { total, pending, inProgress, resolved };
 }
 
 export async function updateInquiryStatus(id: string, status: string) {
-  return prisma.gBCContactInquiry.update({ where: { id }, data: { status: status as any } });
+  return prisma.gBCContactInquiry.update({
+    where: { id },
+    data: { status: status as any },
+  });
 }
 
 export async function deleteInquiry(id: string) {
   await prisma.gBCContactInquiry.delete({ where: { id } });
 }
 
-export async function replyToInquiry(id: string, replySubject: string, replyMessage: string) {
+export async function replyToInquiry(
+  id: string,
+  replySubject: string,
+  replyMessage: string
+) {
   const inquiry = await prisma.gBCContactInquiry.findUnique({ where: { id } });
   if (!inquiry) throw new NotFoundError("Inquiry");
 
-  const emailResult = await sendGBCInquiryReply(inquiry.email, inquiry.name, replySubject, replyMessage);
+  const emailResult = await sendGBCInquiryReply(
+    inquiry.email,
+    inquiry.name,
+    replySubject,
+    replyMessage
+  );
   if (!emailResult.success) {
     throw new Error(emailResult.error || "Failed to send reply email");
   }
 
-  await prisma.gBCContactInquiry.update({ where: { id }, data: { status: "IN_PROGRESS" } });
+  await prisma.gBCContactInquiry.update({
+    where: { id },
+    data: { status: "IN_PROGRESS" },
+  });
 }

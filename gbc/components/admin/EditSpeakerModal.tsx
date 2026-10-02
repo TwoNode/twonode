@@ -69,7 +69,10 @@ export function EditSpeakerModal({ speaker }: EditSpeakerModalProps) {
 
       // Handle photo upload if a new file is selected
       if (photoFile) {
-        const uploadResult = await gbcApi.uploads.file("speaker-photo", photoFile);
+        const uploadResult = await gbcApi.uploads.file(
+          "speaker-photo",
+          photoFile
+        );
 
         if (uploadResult.success && uploadResult.data) {
           photo = uploadResult.data.url;
@@ -228,7 +231,8 @@ export function EditSpeakerModal({ speaker }: EditSpeakerModalProps) {
                     conflict in the installed Radix version. Select still
                     holds the value; this only controls display. */}
                 <span>
-                  {editions.find((e) => e.key === selectedEdition)?.name ?? selectedEdition}
+                  {editions.find((e) => e.key === selectedEdition)?.name ??
+                    selectedEdition}
                 </span>
               </SelectTrigger>
               <SelectContent>

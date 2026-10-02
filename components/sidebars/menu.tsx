@@ -90,8 +90,12 @@ export function Menu({
   // The trailing Logout element item is pulled out of the scrollable nav
   // list and rendered together with the avatar in the pinned-bottom footer
   // instead — see the footer block below.
-  const linkItems = items.filter((item): item is LinkItem => !("element" in item));
-  const elementItems = items.filter((item): item is ElementItem => "element" in item);
+  const linkItems = items.filter(
+    (item): item is LinkItem => !("element" in item)
+  );
+  const elementItems = items.filter(
+    (item): item is ElementItem => "element" in item
+  );
 
   const isActive = (url: string) => pathname === url;
 
@@ -104,7 +108,10 @@ export function Menu({
     () =>
       new Set(
         linkItems
-          .filter((i): i is LinkItem & { section: string } => !!i.section && !!i.sectionCollapsedByDefault)
+          .filter(
+            (i): i is LinkItem & { section: string } =>
+              !!i.section && !!i.sectionCollapsedByDefault
+          )
           .map((i) => i.section)
       )
   );
@@ -123,7 +130,10 @@ export function Menu({
       if (next.has(section)) next.delete(section);
       else next.add(section);
       try {
-        localStorage.setItem(COLLAPSED_SECTIONS_STORAGE_KEY, JSON.stringify([...next]));
+        localStorage.setItem(
+          COLLAPSED_SECTIONS_STORAGE_KEY,
+          JSON.stringify([...next])
+        );
       } catch {
         // Non-fatal — the toggle still works for the current session.
       }
@@ -147,9 +157,12 @@ export function Menu({
   // toward never fired and the section stayed shut. Delaying the close lets
   // the very next mouseenter (on any sibling in the same group) cancel it.
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    },
+    []
+  );
 
   // contrastText in this codebase's palettes is always a 3-digit hex ("#fff"),
   // which breaks naive `${hex}99` alpha-suffix concatenation (produces the
@@ -158,8 +171,8 @@ export function Menu({
   const mutedTextColor = isDark
     ? "rgba(255, 255, 255, 0.5)"
     : colorPalette && colorPalette.primary && colorPalette.primary.contrastText
-    ? "rgba(255, 255, 255, 0.6)"
-    : colors.text?.muted ?? colors.primary.main;
+      ? "rgba(255, 255, 255, 0.6)"
+      : (colors.text?.muted ?? colors.primary.main);
 
   // Grouped by consecutive `section` so a whole group (heading + its items)
   // can share one hover region — otherwise a flat map has no single element
@@ -188,7 +201,8 @@ export function Menu({
         <ul className="flex flex-col gap-1 items-start px-2 justify-center w-full">
           {sectionGroups.map((group, groupIndex) => {
             const collapsedByToggle = isSectionCollapsed(group.section);
-            const isHovered = !!group.section && hoveredSection === group.section;
+            const isHovered =
+              !!group.section && hoveredSection === group.section;
             // Icon-only rail mode always shows every item as an icon — the
             // per-section accordion (for hiding less-used groups at full
             // width) doesn't apply when there's no label to hide.
@@ -209,9 +223,12 @@ export function Menu({
               if (group.section) setHoveredSection(group.section);
             };
             const onGroupMouseLeave = () => {
-              if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+              if (closeTimeoutRef.current)
+                clearTimeout(closeTimeoutRef.current);
               closeTimeoutRef.current = setTimeout(() => {
-                setHoveredSection((prev) => (prev === group.section ? null : prev));
+                setHoveredSection((prev) =>
+                  prev === group.section ? null : prev
+                );
               }, 150);
             };
 
@@ -219,7 +236,10 @@ export function Menu({
               <React.Fragment key={groupIndex}>
                 {group.section && iconOnly && groupIndex > 0 && (
                   <li className="w-full list-none px-3 py-1.5" aria-hidden>
-                    <div className="h-px w-full" style={{ background: "rgba(255,255,255,0.08)" }} />
+                    <div
+                      className="h-px w-full"
+                      style={{ background: "rgba(255,255,255,0.08)" }}
+                    />
                   </li>
                 )}
                 {group.section && !iconOnly && (
@@ -256,140 +276,147 @@ export function Menu({
                     onMouseEnter={onGroupMouseEnter}
                     onMouseLeave={onGroupMouseLeave}
                   >
-                    {!collapsed && <Link
-                  href={item.url}
-                  onClick={() => {
-                    sidebar?.toggleOpen();
-                  }}
-                  title={iconOnly ? item.label : undefined}
-                  className={cn(
-                    "group flex flex-row items-center gap-3 w-full h-11 lg:h-12 rounded-lg transition-all duration-200 ease-in-out",
-                    iconOnly ? "justify-center px-0" : "px-2.5"
-                  )}
-                  style={{
-                    background: isDark
-                      ? isActive(item.url)
-                        ? "color-mix(in srgb, var(--color-brand-primary) 28%, transparent)"
-                        : "transparent"
-                      : isActive(item.url)
-                      ? `${colors.primary.light}1A`
-                      : "transparent",
-                    borderLeft: isDark
-                      ? "3px solid transparent"
-                      : isActive(item.url)
-                      ? `3px solid ${colors.sidebar.itemBorderLeft}`
-                      : "3px solid transparent",
-                    color: isDark
-                      ? isActive(item.url)
-                        ? "#fff"
-                        : "rgba(255,255,255,0.78)"
-                      : colorPalette &&
-                        colorPalette.primary &&
-                        colorPalette.primary.contrastText
-                      ? colorPalette.primary.contrastText
-                      : colors.primary.dark,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive(item.url)) {
-                      e.currentTarget.style.backgroundColor = isDark
-                        ? "rgba(255,255,255,0.06)"
-                        : `${colors.primary.light}0D`;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive(item.url)) {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }
-                  }}
-                >
-                  <span
-                    className="relative shrink-0 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 border"
-                    style={{
-                      backgroundColor: isDark
-                        ? isActive(item.url)
-                          ? "color-mix(in srgb, var(--color-brand-primary) 20%, transparent)"
-                          : "transparent"
-                        : isActive(item.url)
-                        ? `${colors.primary.light}60`
-                        : `${colors.background.default}50`,
-                      borderColor: isDark
-                        ? "transparent"
-                        : isActive(item.url)
-                        ? `${colors.primary.main}60`
-                        : `${colors.primary.light}40`,
-                    }}
-                  >
-                    <item.icon
-                      className="w-4 h-4 transition-all duration-200"
-                      style={{
-                        color: isDark
-                          ? isActive(item.url)
-                            ? "var(--color-brand-primary-light)"
-                            : "rgba(255,255,255,0.6)"
-                          : colorPalette &&
-                            colorPalette.primary &&
-                            colorPalette.primary.contrastText
-                          ? colorPalette.primary.contrastText
-                          : isActive(item.url)
-                          ? colors.primary.dark
-                          : colors.primary.main,
-                      }}
-                    />
-                    {/* Icon-only rail still needs to surface "needs attention"
+                    {!collapsed && (
+                      <Link
+                        href={item.url}
+                        onClick={() => {
+                          sidebar?.toggleOpen();
+                        }}
+                        title={iconOnly ? item.label : undefined}
+                        className={cn(
+                          "group flex flex-row items-center gap-3 w-full h-11 lg:h-12 rounded-lg transition-all duration-200 ease-in-out",
+                          iconOnly ? "justify-center px-0" : "px-2.5"
+                        )}
+                        style={{
+                          background: isDark
+                            ? isActive(item.url)
+                              ? "color-mix(in srgb, var(--color-brand-primary) 28%, transparent)"
+                              : "transparent"
+                            : isActive(item.url)
+                              ? `${colors.primary.light}1A`
+                              : "transparent",
+                          borderLeft: isDark
+                            ? "3px solid transparent"
+                            : isActive(item.url)
+                              ? `3px solid ${colors.sidebar.itemBorderLeft}`
+                              : "3px solid transparent",
+                          color: isDark
+                            ? isActive(item.url)
+                              ? "#fff"
+                              : "rgba(255,255,255,0.78)"
+                            : colorPalette &&
+                                colorPalette.primary &&
+                                colorPalette.primary.contrastText
+                              ? colorPalette.primary.contrastText
+                              : colors.primary.dark,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isActive(item.url)) {
+                            e.currentTarget.style.backgroundColor = isDark
+                              ? "rgba(255,255,255,0.06)"
+                              : `${colors.primary.light}0D`;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isActive(item.url)) {
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }
+                        }}
+                      >
+                        <span
+                          className="relative shrink-0 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 border"
+                          style={{
+                            backgroundColor: isDark
+                              ? isActive(item.url)
+                                ? "color-mix(in srgb, var(--color-brand-primary) 20%, transparent)"
+                                : "transparent"
+                              : isActive(item.url)
+                                ? `${colors.primary.light}60`
+                                : `${colors.background.default}50`,
+                            borderColor: isDark
+                              ? "transparent"
+                              : isActive(item.url)
+                                ? `${colors.primary.main}60`
+                                : `${colors.primary.light}40`,
+                          }}
+                        >
+                          <item.icon
+                            className="w-4 h-4 transition-all duration-200"
+                            style={{
+                              color: isDark
+                                ? isActive(item.url)
+                                  ? "var(--color-brand-primary-light)"
+                                  : "rgba(255,255,255,0.6)"
+                                : colorPalette &&
+                                    colorPalette.primary &&
+                                    colorPalette.primary.contrastText
+                                  ? colorPalette.primary.contrastText
+                                  : isActive(item.url)
+                                    ? colors.primary.dark
+                                    : colors.primary.main,
+                            }}
+                          />
+                          {/* Icon-only rail still needs to surface "needs attention"
                         badges somehow — a dot stands in for the hidden count
                         pill so nothing urgent goes invisible when collapsed. */}
-                    {iconOnly && item.badge !== undefined && (
-                      <span
-                        className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border"
-                        style={{
-                          background: item.badgeAttention ? "#F59E0B" : "var(--color-brand-primary-light)",
-                          // Matches Sidebar's SIDEBAR_INK rail background so the
-                          // dot's border reads as a notch cut into the rail
-                          // rather than a mismatched outline (menu.tsx doesn't
-                          // import that constant to avoid a circular import
-                          // with sidebar.tsx, which imports Menu from here).
-                          borderColor: "#0A0F16",
-                        }}
-                      />
+                          {iconOnly && item.badge !== undefined && (
+                            <span
+                              className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border"
+                              style={{
+                                background: item.badgeAttention
+                                  ? "#F59E0B"
+                                  : "var(--color-brand-primary-light)",
+                                // Matches Sidebar's SIDEBAR_INK rail background so the
+                                // dot's border reads as a notch cut into the rail
+                                // rather than a mismatched outline (menu.tsx doesn't
+                                // import that constant to avoid a circular import
+                                // with sidebar.tsx, which imports Menu from here).
+                                borderColor: "#0A0F16",
+                              }}
+                            />
+                          )}
+                        </span>
+                        {!iconOnly && (
+                          <span
+                            className="text-[13px] font-['Eudoxus Sans'] transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap flex-1"
+                            style={{
+                              color: isDark
+                                ? isActive(item.url)
+                                  ? "#fff"
+                                  : "rgba(255,255,255,0.78)"
+                                : colorPalette &&
+                                    colorPalette.primary &&
+                                    colorPalette.primary.contrastText
+                                  ? colorPalette.primary.contrastText
+                                  : colors.primary.dark,
+                              fontWeight: isActive(item.url) ? "700" : "500",
+                            }}
+                          >
+                            {item.label}
+                          </span>
+                        )}
+                        {!iconOnly && item.badge !== undefined && (
+                          <span
+                            className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-md px-1.5 text-[10.5px] font-bold"
+                            style={{
+                              background: item.badgeAttention
+                                ? "#F59E0B"
+                                : isDark
+                                  ? "rgba(255,255,255,0.14)"
+                                  : `${colors.primary.light}26`,
+                              color: item.badgeAttention
+                                ? "#3D2600"
+                                : isDark
+                                  ? "#fff"
+                                  : colors.primary.dark,
+                            }}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
                     )}
-                  </span>
-                  {!iconOnly && <span
-                    className="text-[13px] font-['Eudoxus Sans'] transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap flex-1"
-                    style={{
-                      color: isDark
-                        ? isActive(item.url)
-                          ? "#fff"
-                          : "rgba(255,255,255,0.78)"
-                        : colorPalette &&
-                          colorPalette.primary &&
-                          colorPalette.primary.contrastText
-                        ? colorPalette.primary.contrastText
-                        : colors.primary.dark,
-                      fontWeight: isActive(item.url) ? "700" : "500",
-                    }}
-                  >
-                    {item.label}
-                  </span>}
-                  {!iconOnly && item.badge !== undefined && (
-                    <span
-                      className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-md px-1.5 text-[10.5px] font-bold"
-                      style={{
-                        background: item.badgeAttention
-                          ? "#F59E0B"
-                          : isDark
-                          ? "rgba(255,255,255,0.14)"
-                          : `${colors.primary.light}26`,
-                        color: item.badgeAttention
-                          ? "#3D2600"
-                          : isDark
-                          ? "#fff"
-                          : colors.primary.dark,
-                      }}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>}
                   </li>
                 ))}
               </React.Fragment>
@@ -406,90 +433,117 @@ export function Menu({
       <div
         className="mt-2 w-full shrink-0 border-t px-2.5 pt-3 pb-3"
         style={{
-          borderColor: isDark ? "rgba(255,255,255,0.1)" : `${colors.primary.light}22`,
+          borderColor: isDark
+            ? "rgba(255,255,255,0.1)"
+            : `${colors.primary.light}22`,
         }}
       >
-          <div className={cn("flex items-center gap-2.5", iconOnly && "flex-col gap-2")}>
-            <div className="relative shrink-0">
-              {userImageUrl && !avatarError ? (
-                <img
-                  className="h-10 w-10 rounded-full border-2 object-cover shadow-md"
-                  style={{
-                    borderColor: isDark ? "rgba(255,255,255,0.15)" : colors.border.light,
-                  }}
-                  src={userImageUrl}
-                  alt="User avatar"
-                  onError={() => setAvatarError(true)}
-                />
-              ) : userName ? (
-                // Google-style fallback: first letter of the user's name on a colored circle.
-                <div
-                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-bold shadow-md"
-                  style={{
-                    background: isDark
-                      ? "linear-gradient(to bottom right, var(--color-brand-primary), var(--color-brand-primary-dark))"
-                      : `linear-gradient(to bottom right, ${colors.primary.main}, ${
-                          "dark" in colors.primary ? colors.primary.dark : colors.primary.main
-                        })`,
-                    borderColor: isDark ? "rgba(255,255,255,0.15)" : colors.border.light,
-                    color: "#fff",
-                  }}
-                >
-                  {userName.charAt(0).toUpperCase()}
-                </div>
-              ) : (
-                <div
-                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 shadow-md"
-                  style={{
-                    background: isDark
-                      ? "rgba(255,255,255,0.08)"
-                      : `linear-gradient(to bottom right, ${colors.background.tertiary}, ${colors.gray[200]})`,
-                    borderColor: isDark ? "rgba(255,255,255,0.15)" : colors.border.light,
-                  }}
-                >
-                  <LucideUser
-                    size={18}
-                    style={{ color: isDark ? "rgba(255,255,255,0.55)" : colors.text.muted }}
-                  />
-                </div>
-              )}
-              <span
-                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2"
+        <div
+          className={cn(
+            "flex items-center gap-2.5",
+            iconOnly && "flex-col gap-2"
+          )}
+        >
+          <div className="relative shrink-0">
+            {userImageUrl && !avatarError ? (
+              <img
+                className="h-10 w-10 rounded-full border-2 object-cover shadow-md"
                 style={{
-                  backgroundColor: isDark ? "var(--color-success)" : colors.status?.success ?? "#10b981",
-                  borderColor: isDark ? "#0A0F16" : "#fff",
+                  borderColor: isDark
+                    ? "rgba(255,255,255,0.15)"
+                    : colors.border.light,
                 }}
+                src={userImageUrl}
+                alt="User avatar"
+                onError={() => setAvatarError(true)}
               />
-            </div>
-
-            {userName && !iconOnly && (
-              <div className="min-w-0 flex-1">
-                <strong
-                  className="block truncate text-[12.5px] font-semibold"
-                  style={{ color: isDark ? "#fff" : colors.text?.primary ?? colors.primary.dark }}
-                >
-                  {userName}
-                </strong>
-                {userRole && (
-                  <span
-                    className="block truncate text-[10.5px]"
-                    style={{
-                      color: isDark ? "rgba(255,255,255,0.45)" : colors.text?.muted ?? colors.primary.light,
-                    }}
-                  >
-                    {userRole}
-                  </span>
-                )}
+            ) : userName ? (
+              // Google-style fallback: first letter of the user's name on a colored circle.
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-bold shadow-md"
+                style={{
+                  background: isDark
+                    ? "linear-gradient(to bottom right, var(--color-brand-primary), var(--color-brand-primary-dark))"
+                    : `linear-gradient(to bottom right, ${colors.primary.main}, ${
+                        "dark" in colors.primary
+                          ? colors.primary.dark
+                          : colors.primary.main
+                      })`,
+                  borderColor: isDark
+                    ? "rgba(255,255,255,0.15)"
+                    : colors.border.light,
+                  color: "#fff",
+                }}
+              >
+                {userName.charAt(0).toUpperCase()}
+              </div>
+            ) : (
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-full border-2 shadow-md"
+                style={{
+                  background: isDark
+                    ? "rgba(255,255,255,0.08)"
+                    : `linear-gradient(to bottom right, ${colors.background.tertiary}, ${colors.gray[200]})`,
+                  borderColor: isDark
+                    ? "rgba(255,255,255,0.15)"
+                    : colors.border.light,
+                }}
+              >
+                <LucideUser
+                  size={18}
+                  style={{
+                    color: isDark
+                      ? "rgba(255,255,255,0.55)"
+                      : colors.text.muted,
+                  }}
+                />
               </div>
             )}
-
-            {elementItems.map((item, index) => (
-              <div key={index} className="ml-auto shrink-0">
-                {item.element}
-              </div>
-            ))}
+            <span
+              className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2"
+              style={{
+                backgroundColor: isDark
+                  ? "var(--color-success)"
+                  : (colors.status?.success ?? "#10b981"),
+                borderColor: isDark ? "#0A0F16" : "#fff",
+              }}
+            />
           </div>
+
+          {userName && !iconOnly && (
+            <div className="min-w-0 flex-1">
+              <strong
+                className="block truncate text-[12.5px] font-semibold"
+                style={{
+                  color: isDark
+                    ? "#fff"
+                    : (colors.text?.primary ?? colors.primary.dark),
+                }}
+              >
+                {userName}
+              </strong>
+              {userRole && (
+                <span
+                  className="block truncate text-[10.5px]"
+                  style={{
+                    color: isDark
+                      ? "rgba(255,255,255,0.45)"
+                      : (colors.text?.muted ?? colors.primary.light),
+                  }}
+                >
+                  {userRole}
+                </span>
+              )}
+            </div>
+          )}
+
+          {elementItems.map((item, index) => (
+            <div key={index} className="ml-auto shrink-0">
+              {item.element}
+            </div>
+          ))}
         </div>
+      </div>
     </nav>
   );
 }

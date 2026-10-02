@@ -6,7 +6,13 @@ import { gbcApi } from "@/gbc/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +24,17 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Plus, Trash2, Send, Users, Shield, Globe, Loader2, Search } from "lucide-react";
+import {
+  Bell,
+  Plus,
+  Trash2,
+  Send,
+  Users,
+  Shield,
+  Globe,
+  Loader2,
+  Search,
+} from "lucide-react";
 import { format } from "date-fns";
 import type { GBCNotificationItem } from "@/gbc/apiClient";
 import { useServerList } from "@/hooks/useServerList";
@@ -95,7 +111,8 @@ export default function GBCAdminNotificationsPage() {
   );
 
   const typeFilter = filters.type;
-  const setTypeFilter = (type: NotificationType | "ALL") => setFilters({ type });
+  const setTypeFilter = (type: NotificationType | "ALL") =>
+    setFilters({ type });
 
   const handleCreate = async () => {
     if (!formData.title.trim() || !formData.message.trim()) {
@@ -116,7 +133,13 @@ export default function GBCAdminNotificationsPage() {
       if (result.success) {
         toast.success("Notification created successfully");
         setShowCreateDialog(false);
-        setFormData({ type: "INFO", title: "", message: "", audience: "ALL_USERS", link: "" });
+        setFormData({
+          type: "INFO",
+          title: "",
+          message: "",
+          audience: "ALL_USERS",
+          link: "",
+        });
         reload();
       } else {
         toast.error(result.error || "Failed to create notification");
@@ -156,7 +179,9 @@ export default function GBCAdminNotificationsPage() {
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
             <Bell className="h-8 w-8 text-purple-600 shrink-0" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Notification Management</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              Notification Management
+            </h1>
           </div>
 
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -169,13 +194,20 @@ export default function GBCAdminNotificationsPage() {
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create New Notification</DialogTitle>
-                <DialogDescription>Send a notification to admins</DialogDescription>
+                <DialogDescription>
+                  Send a notification to admins
+                </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="type">Type</Label>
-                  <Select value={formData.type} onValueChange={(value: NotificationType) => setFormData({ ...formData, type: value })}>
+                  <Select
+                    value={formData.type}
+                    onValueChange={(value: NotificationType) =>
+                      setFormData({ ...formData, type: value })
+                    }
+                  >
                     <SelectTrigger id="type">
                       <SelectValue />
                     </SelectTrigger>
@@ -193,15 +225,21 @@ export default function GBCAdminNotificationsPage() {
                   <Label htmlFor="audience">Audience</Label>
                   <Select
                     value={formData.audience}
-                    onValueChange={(value: NotificationAudience) => setFormData({ ...formData, audience: value })}
+                    onValueChange={(value: NotificationAudience) =>
+                      setFormData({ ...formData, audience: value })
+                    }
                   >
                     <SelectTrigger id="audience">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ALL_USERS">All Admins (incl. Superadmins)</SelectItem>
+                      <SelectItem value="ALL_USERS">
+                        All Admins (incl. Superadmins)
+                      </SelectItem>
                       <SelectItem value="GENERAL_ADMINS">All Admins</SelectItem>
-                      <SelectItem value="SUPERADMIN">Superadmins Only</SelectItem>
+                      <SelectItem value="SUPERADMIN">
+                        Superadmins Only
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -211,7 +249,9 @@ export default function GBCAdminNotificationsPage() {
                   <Input
                     id="title"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                     placeholder="Enter notification title"
                   />
                 </div>
@@ -221,7 +261,9 @@ export default function GBCAdminNotificationsPage() {
                   <Textarea
                     id="message"
                     value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, message: e.target.value })
+                    }
                     placeholder="Enter notification message"
                     rows={4}
                   />
@@ -232,14 +274,20 @@ export default function GBCAdminNotificationsPage() {
                   <Input
                     id="link"
                     value={formData.link}
-                    onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, link: e.target.value })
+                    }
                     placeholder="/gbc-restricted/tickets"
                   />
                 </div>
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setShowCreateDialog(false)} disabled={creating}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateDialog(false)}
+                  disabled={creating}
+                >
                   Cancel
                 </Button>
                 <Button onClick={handleCreate} disabled={creating}>
@@ -272,7 +320,10 @@ export default function GBCAdminNotificationsPage() {
             className="pl-9"
           />
         </div>
-        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as NotificationType | "ALL")}>
+        <Select
+          value={typeFilter}
+          onValueChange={(v) => setTypeFilter(v as NotificationType | "ALL")}
+        >
           <SelectTrigger className="w-full sm:w-44">
             <SelectValue placeholder="Type" />
           </SelectTrigger>
@@ -298,11 +349,21 @@ export default function GBCAdminNotificationsPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Audience</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Title
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Audience
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Created
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -320,20 +381,37 @@ export default function GBCAdminNotificationsPage() {
                       <Badge variant="outline">{notification.type}</Badge>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{notification.title}</div>
-                      <div className="text-sm text-gray-500 truncate max-w-md">{notification.message}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {notification.title}
+                      </div>
+                      <div className="text-sm text-gray-500 truncate max-w-md">
+                        {notification.message}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
-                        {audienceIcons[notification.audience as NotificationAudience]}
-                        {audienceLabels[notification.audience as NotificationAudience]}
+                        {
+                          audienceIcons[
+                            notification.audience as NotificationAudience
+                          ]
+                        }
+                        {
+                          audienceLabels[
+                            notification.audience as NotificationAudience
+                          ]
+                        }
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {format(new Date(notification.createdAt), "MMM d, yyyy")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(notification.id)} className="text-red-600 hover:text-red-700">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(notification.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </td>
@@ -347,7 +425,13 @@ export default function GBCAdminNotificationsPage() {
               <p className="text-sm text-gray-600">
                 Page {page} of {totalPages} • {total} notifications
               </p>
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+              />
             </div>
           )}
         </div>

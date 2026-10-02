@@ -13,7 +13,10 @@ const bodySchema = z.object({ reference: z.string().min(1) });
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     await routeCtx.params; // batchId unused — verifyBatchPayment looks the batch up by reference, matching the source
     const { reference } = await validateBody(req, bodySchema);

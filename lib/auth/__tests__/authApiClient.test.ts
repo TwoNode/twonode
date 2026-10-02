@@ -18,7 +18,10 @@ describe("authApiClient email verification methods", () => {
   describe("verifyEmailOtp", () => {
     it("posts to /api/v1/auth/verify-email-otp with platform, code, and optional userId", async () => {
       const fetchMock = vi.fn().mockResolvedValue({
-        json: async () => ({ success: true, data: { message: "Email verified successfully." } }),
+        json: async () => ({
+          success: true,
+          data: { message: "Email verified successfully." },
+        }),
       });
       vi.stubGlobal("fetch", fetchMock);
 
@@ -37,7 +40,10 @@ describe("authApiClient email verification methods", () => {
           userId: "user-123",
         }),
       });
-      expect(result).toEqual({ success: true, data: { message: "Email verified successfully." } });
+      expect(result).toEqual({
+        success: true,
+        data: { message: "Email verified successfully." },
+      });
     });
   });
 
@@ -61,7 +67,9 @@ describe("authApiClient email verification methods", () => {
 
       const result = await getMe(Platform.SURFBOARD);
 
-      expect(fetchMock).toHaveBeenCalledWith("/api/v1/auth/me?platform=surfboard");
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/auth/me?platform=surfboard"
+      );
       expect(result).toEqual({ success: true, data: mockMeData });
     });
   });
@@ -71,7 +79,10 @@ describe("authApiClient email verification methods", () => {
       const fetchMock = vi.fn().mockResolvedValue({
         json: async () => ({
           success: true,
-          data: { message: "If that email is registered and unverified, we've sent a verification code or link to it." },
+          data: {
+            message:
+              "If that email is registered and unverified, we've sent a verification code or link to it.",
+          },
         }),
       });
       vi.stubGlobal("fetch", fetchMock);
@@ -81,14 +92,17 @@ describe("authApiClient email verification methods", () => {
         email: "admin@gbc.com",
       });
 
-      expect(fetchMock).toHaveBeenCalledWith("/api/v1/auth/resend-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          platform: Platform.GBC,
-          email: "admin@gbc.com",
-        }),
-      });
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/auth/resend-verification",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            platform: Platform.GBC,
+            email: "admin@gbc.com",
+          }),
+        }
+      );
       expect(result.success).toBe(true);
     });
   });
@@ -96,7 +110,10 @@ describe("authApiClient email verification methods", () => {
   describe("verifyEmail", () => {
     it("posts to /api/v1/auth/verify-email with token", async () => {
       const fetchMock = vi.fn().mockResolvedValue({
-        json: async () => ({ success: true, data: { message: "Email verified." } }),
+        json: async () => ({
+          success: true,
+          data: { message: "Email verified." },
+        }),
       });
       vi.stubGlobal("fetch", fetchMock);
 
@@ -119,7 +136,10 @@ describe("authApiClient email verification methods", () => {
 
   describe("register methods", () => {
     it("registerSendOtp posts to /api/v1/auth/register/send-otp", async () => {
-      const mockData = { pendingRegistrationId: "preg_1", method: "OTP" as const };
+      const mockData = {
+        pendingRegistrationId: "preg_1",
+        method: "OTP" as const,
+      };
       const fetchMock = vi.fn().mockResolvedValue({
         json: async () => ({ success: true, data: mockData }),
       });
@@ -180,7 +200,10 @@ describe("authApiClient email verification methods", () => {
 
     it("registerResendOtp posts to /api/v1/auth/register/resend-otp", async () => {
       const fetchMock = vi.fn().mockResolvedValue({
-        json: async () => ({ success: true, data: { message: "A fresh verification code has been sent." } }),
+        json: async () => ({
+          success: true,
+          data: { message: "A fresh verification code has been sent." },
+        }),
       });
       vi.stubGlobal("fetch", fetchMock);
 
@@ -189,14 +212,17 @@ describe("authApiClient email verification methods", () => {
         pendingRegistrationId: "preg_1",
       });
 
-      expect(fetchMock).toHaveBeenCalledWith("/api/v1/auth/register/resend-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          platform: Platform.SURFBOARD,
-          pendingRegistrationId: "preg_1",
-        }),
-      });
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/auth/register/resend-otp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            platform: Platform.SURFBOARD,
+            pendingRegistrationId: "preg_1",
+          }),
+        }
+      );
       expect(result.success).toBe(true);
     });
   });

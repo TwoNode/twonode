@@ -200,7 +200,6 @@ export default function SurfboardUserPanelLayout({
     checkSubscription();
   }, []);
 
-
   const menuList = [
     {
       icon: Home,
@@ -345,15 +344,22 @@ export default function SurfboardUserPanelLayout({
             // /newplan stays subscription-gated (proxy.ts + createSurfPlan's
             // requireActiveSubscription) — hide the CTA rather than send an
             // unsubscribed user into a page that will just redirect them out.
-            primaryAction={hasSubscriptionAccess ? {
-              label: "New Plan",
-              href: `${dashboardUrl}/newplan`,
-              icon: Plus,
-            } : undefined}
+            primaryAction={
+              hasSubscriptionAccess
+                ? {
+                    label: "New Plan",
+                    href: `${dashboardUrl}/newplan`,
+                    icon: Plus,
+                  }
+                : undefined
+            }
           />
         </div>
         <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
-          <VerificationNagBanner platform={Platform.SURFBOARD} verifyHref="/surfboard/verify-email" />
+          <VerificationNagBanner
+            platform={Platform.SURFBOARD}
+            verifyHref="/surfboard/verify-email"
+          />
           {!hasSubscriptionAccess && (
             <div className="mb-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
               <div className="flex">

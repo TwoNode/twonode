@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Platform } from "@/utils/platform";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { checkRateLimit, recordAttempt, getClientIp } from "@/lib/auth/rateLimit";
+import {
+  checkRateLimit,
+  recordAttempt,
+  getClientIp,
+} from "@/lib/auth/rateLimit";
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
 import { issuePendingRegistration } from "@/lib/auth/pendingRegistration";
@@ -27,32 +31,48 @@ const sendOtpSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
 
     const clientIp = getClientIp(req);
     if (!(await checkRateLimit(`register:${clientIp}`))) {
       return NextResponse.json(
-        { success: false, error: "Too many registration attempts. Please try again later." },
+        {
+          success: false,
+          error: "Too many registration attempts. Please try again later.",
+        },
         { status: 429 }
       );
     }
 
-    const { platform, email, password, firstName, lastName } = await validateBody(req, sendOtpSchema);
+    const { platform, email, password, firstName, lastName } =
+      await validateBody(req, sendOtpSchema);
 
     try {
-      const { pendingRegistrationId, method } = await issuePendingRegistration(platform, {
-        email,
-        password,
-        firstName,
-        lastName,
+      const { pendingRegistrationId, method } = await issuePendingRegistration(
+        platform,
+        {
+          email,
+          password,
+          firstName,
+          lastName,
+        }
+      );
+      return NextResponse.json({
+        success: true,
+        data: { pendingRegistrationId, method },
       });
-      return NextResponse.json({ success: true, data: { pendingRegistrationId, method } });
     } catch (err) {
       await recordAttempt(`register:${clientIp}`);
       throw err;
     }
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

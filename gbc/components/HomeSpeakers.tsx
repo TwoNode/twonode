@@ -70,7 +70,9 @@ export default function HomeSpeakers() {
                     <span className="text-sm">{speaker.company}</span>
                   </div>
                 )}
-                <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">{speaker.bio}</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
+                  {speaker.bio}
+                </p>
                 {(speaker.linkedin || speaker.twitter) && (
                   <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-white/10">
                     {speaker.linkedin && (

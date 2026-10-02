@@ -3,7 +3,12 @@ import { z } from "zod";
 import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { createInvitation, listInvitations, resendInvitation, revokeInvitation } from "@/lib/auth/adminInvitations";
+import {
+  createInvitation,
+  listInvitations,
+  resendInvitation,
+  revokeInvitation,
+} from "@/lib/auth/adminInvitations";
 import type { Platform } from "@/utils/platform";
 
 const inviteSchema = z.object({
@@ -16,18 +21,32 @@ const inviteSchema = z.object({
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
-const csrfBlocked = () => NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+const csrfBlocked = () =>
+  NextResponse.json(
+    { success: false, error: "Cross-origin request blocked" },
+    { status: 403 }
+  );
 
 /**
  * The four superadmin-only invitation endpoints, identical across products —
  * each product's route files just bind this to its own platform and its own
  * SUPERADMIN role (withAuth's role type is per-product).
  */
-export function adminInvitationRoutes<TRole extends string>(platform: Platform, superadminRole: TRole) {
+export function adminInvitationRoutes<TRole extends string>(
+  platform: Platform,
+  superadminRole: TRole
+) {
   const opts = { platform, roles: [superadminRole] };
 
   return {
-    list: withAuth<TRole>(async () => NextResponse.json({ success: true, data: await listInvitations(platform) }), opts),
+    list: withAuth<TRole>(
+      async () =>
+        NextResponse.json({
+          success: true,
+          data: await listInvitations(platform),
+        }),
+      opts
+    ),
 
     create: withAuth<TRole>(async (req, ctx) => {
       if (!validateCSRF(req)) return csrfBlocked();

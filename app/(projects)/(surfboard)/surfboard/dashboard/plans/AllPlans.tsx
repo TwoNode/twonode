@@ -183,7 +183,9 @@ export default function AllPlans() {
   // Independent of `scope`/`pagination.total` (which only reflect whichever
   // scope tab is currently active) — a dedicated lightweight fetch just to
   // badge the "Shared with me" tab with its own count up front.
-  const [sharedWithMeCount, setSharedWithMeCount] = useState<number | null>(null);
+  const [sharedWithMeCount, setSharedWithMeCount] = useState<number | null>(
+    null
+  );
 
   const loadPlans = async (
     page = pagination.page,
@@ -201,10 +203,25 @@ export default function AllPlans() {
       const sort = { field: "dateOnSurveyPlan" as any, order: "desc" as const };
       const result =
         scope === "sharedWithMe"
-          ? await surfboardApi.plans.sharedWithMe(page, pageSize, scopedFilters, sort)
+          ? await surfboardApi.plans.sharedWithMe(
+              page,
+              pageSize,
+              scopedFilters,
+              sort
+            )
           : scope === "mySharedPlans"
-            ? await surfboardApi.plans.shared(page, pageSize, scopedFilters, sort)
-            : await surfboardApi.plans.list({ page, pageSize, filters: scopedFilters, sort });
+            ? await surfboardApi.plans.shared(
+                page,
+                pageSize,
+                scopedFilters,
+                sort
+              )
+            : await surfboardApi.plans.list({
+                page,
+                pageSize,
+                filters: scopedFilters,
+                sort,
+              });
 
       if (result?.success && result?.data) {
         setPlans(result.data.plans || []);
@@ -528,7 +545,9 @@ export default function AllPlans() {
 
   const handleBatchSubmit = () => {
     if (!isKycValidated) {
-      toast.error("You must complete your KYC validation in the Settings page to submit plans for CoD.");
+      toast.error(
+        "You must complete your KYC validation in the Settings page to submit plans for CoD."
+      );
       return;
     }
 
@@ -609,7 +628,10 @@ export default function AllPlans() {
   const SharedBadge = ({ plan }: { plan: any }) => {
     if (scope === "sharedWithMe") {
       const owner = plan.user;
-      const ownerName = owner ? [owner.firstName, owner.lastName].filter(Boolean).join(" ") || owner.email : null;
+      const ownerName = owner
+        ? [owner.firstName, owner.lastName].filter(Boolean).join(" ") ||
+          owner.email
+        : null;
       return (
         <span
           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20"
@@ -626,7 +648,12 @@ export default function AllPlans() {
       // hover/tap, without a trip to the single-plan page — falls back to
       // just the count if the names somehow didn't come back with this
       // plan (e.g. a stale cached row).
-      const names: { id: string; firstName: string; lastName: string; email: string }[] = plan.sharedToUsers || [];
+      const names: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+      }[] = plan.sharedToUsers || [];
       return (
         <Popover>
           <PopoverTrigger asChild>
@@ -639,22 +666,32 @@ export default function AllPlans() {
               Shared ({plan.sharedTo.length})
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-64 p-3" onClick={(e) => e.stopPropagation()}>
+          <PopoverContent
+            className="w-64 p-3"
+            onClick={(e) => e.stopPropagation()}
+          >
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
               Shared with
             </p>
             {names.length > 0 ? (
               <ul className="space-y-1.5">
                 {names.map((u) => (
-                  <li key={u.id} className="text-sm text-gray-900 dark:text-white truncate">
-                    {[u.firstName, u.lastName].filter(Boolean).join(" ") || u.email}
-                    <span className="block text-xs text-gray-500 dark:text-gray-400 truncate">{u.email}</span>
+                  <li
+                    key={u.id}
+                    className="text-sm text-gray-900 dark:text-white truncate"
+                  >
+                    {[u.firstName, u.lastName].filter(Boolean).join(" ") ||
+                      u.email}
+                    <span className="block text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {u.email}
+                    </span>
                   </li>
                 ))}
               </ul>
             ) : (
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {plan.sharedTo.length} {plan.sharedTo.length === 1 ? "person" : "people"}
+                {plan.sharedTo.length}{" "}
+                {plan.sharedTo.length === 1 ? "person" : "people"}
               </p>
             )}
           </PopoverContent>
@@ -719,11 +756,15 @@ export default function AllPlans() {
     if (plan.recordsIIStatus === "QUERIED") queriers.push("Records II");
 
     const comments = [];
-    if (plan.accountsComment) comments.push(`Accounts: ${plan.accountsComment}`);
-    if (plan.chartingComment) comments.push(`Charting: ${plan.chartingComment}`);
+    if (plan.accountsComment)
+      comments.push(`Accounts: ${plan.accountsComment}`);
+    if (plan.chartingComment)
+      comments.push(`Charting: ${plan.chartingComment}`);
     if (plan.surconComment) comments.push(`SURCON: ${plan.surconComment}`);
-    if (plan.recordsIComment) comments.push(`Records I: ${plan.recordsIComment}`);
-    if (plan.recordsIIComment) comments.push(`Records II: ${plan.recordsIIComment}`);
+    if (plan.recordsIComment)
+      comments.push(`Records I: ${plan.recordsIComment}`);
+    if (plan.recordsIIComment)
+      comments.push(`Records II: ${plan.recordsIIComment}`);
 
     return {
       isQueried: queriers.length > 0,
@@ -1027,9 +1068,14 @@ export default function AllPlans() {
           <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 px-4 py-3 rounded-xl flex items-start gap-3 mb-6">
             <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
             <div>
-              <p className="font-medium text-sm">Action Required: Surveyor KYC Validation</p>
+              <p className="font-medium text-sm">
+                Action Required: Surveyor KYC Validation
+              </p>
               <p className="text-xs opacity-90 mt-1">
-                Your profile is pending validation. You will not be able to submit plans for CoD until an administrator has reviewed and validated your profile. Please ensure all your details are correctly set in the Settings page.
+                Your profile is pending validation. You will not be able to
+                submit plans for CoD until an administrator has reviewed and
+                validated your profile. Please ensure all your details are
+                correctly set in the Settings page.
               </p>
             </div>
           </div>
@@ -1047,12 +1093,18 @@ export default function AllPlans() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className={`text-2xl font-bold ${stat.color} tabular-nums leading-tight`}>
+                  <div
+                    className={`text-2xl font-bold ${stat.color} tabular-nums leading-tight`}
+                  >
                     {stat.value}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{stat.label}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                    {stat.label}
+                  </div>
                 </div>
-                <div className={`shrink-0 flex h-10 w-10 items-center justify-center rounded-lg ${stat.bgColor}`}>
+                <div
+                  className={`shrink-0 flex h-10 w-10 items-center justify-center rounded-lg ${stat.bgColor}`}
+                >
                   <stat.icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
               </div>
@@ -1121,7 +1173,9 @@ export default function AllPlans() {
                 <span
                   className={cn(
                     "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold",
-                    showFilters ? "bg-white/25 text-white" : "bg-blue-100 text-blue-700"
+                    showFilters
+                      ? "bg-white/25 text-white"
+                      : "bg-blue-100 text-blue-700"
                   )}
                 >
                   {filters.status.length +
@@ -1327,8 +1381,8 @@ export default function AllPlans() {
                           "border-2 border-gray-200 dark:border-white/10 hover:border-blue-300",
                           "shadow-sm hover:shadow-md",
                           !filters.dateFrom &&
-                          !filters.dateTo &&
-                          "text-muted-foreground"
+                            !filters.dateTo &&
+                            "text-muted-foreground"
                         )}
                       >
                         <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
@@ -1343,12 +1397,12 @@ export default function AllPlans() {
                                   <span className="text-[0.65rem] sm:text-xs font-semibold text-white whitespace-nowrap">
                                     {filters.dateFrom
                                       ? new Date(
-                                        filters.dateFrom
-                                      ).toLocaleDateString("en-US", {
-                                        month: "short",
-                                        day: "numeric",
-                                        year: "numeric",
-                                      })
+                                          filters.dateFrom
+                                        ).toLocaleDateString("en-US", {
+                                          month: "short",
+                                          day: "numeric",
+                                          year: "numeric",
+                                        })
                                       : "Start"}
                                   </span>
                                 </div>
@@ -1370,12 +1424,12 @@ export default function AllPlans() {
                                   <span className="text-[0.65rem] sm:text-xs font-semibold text-white whitespace-nowrap">
                                     {filters.dateTo
                                       ? new Date(
-                                        filters.dateTo
-                                      ).toLocaleDateString("en-US", {
-                                        month: "short",
-                                        day: "numeric",
-                                        year: "numeric",
-                                      })
+                                          filters.dateTo
+                                        ).toLocaleDateString("en-US", {
+                                          month: "short",
+                                          day: "numeric",
+                                          year: "numeric",
+                                        })
                                       : "End"}
                                   </span>
                                 </div>
@@ -1413,7 +1467,7 @@ export default function AllPlans() {
                     >
                       <div className="flex flex-col lg:flex-row max-h-[80vh] overflow-auto">
                         {/* Preset Options - Enhanced Design */}
-                        <div className="border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-white/10 bg-linear-to-br from-gray-50 to-white lg:min-w-[200px]">
+                        <div className="border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-white/10 bg-linear-to-br from-gray-50 to-white lg:min-w-50">
                           <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-surface">
                             <div className="flex items-center gap-2">
                               <div className="p-1.5 sm:p-2 bg-linear-to-br from-blue-500 to-purple-600 rounded-md">
@@ -1604,7 +1658,7 @@ export default function AllPlans() {
                                       ? date > filters.dateTo
                                       : false
                                   }
-                                  className="rounded-xl border-2 border-blue-100 p-1.5 sm:p-2 lg:p-3 w-full min-w-[200px] max-w-xs"
+                                  className="rounded-xl border-2 border-blue-100 p-1.5 sm:p-2 lg:p-3 w-full min-w-50 max-w-xs"
                                 />
                               </div>
                               <div>
@@ -1628,7 +1682,7 @@ export default function AllPlans() {
                                       ? date < filters.dateFrom
                                       : false
                                   }
-                                  className="rounded-xl border-2 border-purple-100 p-1.5 sm:p-2 lg:p-3 w-full min-w-[200px] max-w-xs"
+                                  className="rounded-xl border-2 border-purple-100 p-1.5 sm:p-2 lg:p-3 w-full min-w-50 max-w-xs"
                                 />
                               </div>
                             </div>
@@ -1692,7 +1746,9 @@ export default function AllPlans() {
                       <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gray-50 dark:bg-white/5">
                         <FileText className="w-6 h-6 text-gray-300 dark:text-gray-600" />
                       </div>
-                      <p className="text-gray-600 dark:text-gray-300 font-medium">No plans found</p>
+                      <p className="text-gray-600 dark:text-gray-300 font-medium">
+                        No plans found
+                      </p>
                       <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                         Try adjusting your search or filters
                       </p>
@@ -1796,7 +1852,9 @@ export default function AllPlans() {
                               </div>
                             )}
                             {!plan.ward && !plan.lga && (
-                              <div className="text-sm text-gray-500 dark:text-gray-400">N/A</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                N/A
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1805,7 +1863,7 @@ export default function AllPlans() {
                         <div className="flex items-start gap-2">
                           <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
                           <div
-                            className="text-sm text-gray-900 dark:text-white truncate max-w-[150px]"
+                            className="text-sm text-gray-900 dark:text-white truncate max-w-37.5"
                             title={plan.facilitator || "N/A"}
                           >
                             {plan.facilitator || "N/A"}
@@ -1826,11 +1884,13 @@ export default function AllPlans() {
                           <div className="mt-1">
                             <span
                               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200"
-                              title={`Queried by ${getQueryInfo(plan).queriedBy
-                                }${getQueryInfo(plan).comment
+                              title={`Queried by ${
+                                getQueryInfo(plan).queriedBy
+                              }${
+                                getQueryInfo(plan).comment
                                   ? `: ${getQueryInfo(plan).comment}`
                                   : ""
-                                }`}
+                              }`}
                             >
                               <AlertTriangle className="w-3 h-3" />
                               Queried
@@ -1844,8 +1904,8 @@ export default function AllPlans() {
                           <div className="text-sm text-gray-900 dark:text-white">
                             {plan.dateOnSurveyPlan
                               ? new Date(
-                                plan.dateOnSurveyPlan
-                              ).toLocaleDateString()
+                                  plan.dateOnSurveyPlan
+                                ).toLocaleDateString()
                               : "N/A"}
                           </div>
                         </div>
@@ -1897,7 +1957,9 @@ export default function AllPlans() {
                                   <DropdownMenuItem
                                     onClick={() => {
                                       if (!isKycValidated) {
-                                        toast.error("You must complete your KYC validation in the Settings page to submit plans for CoD.");
+                                        toast.error(
+                                          "You must complete your KYC validation in the Settings page to submit plans for CoD."
+                                        );
                                         return;
                                       }
                                       setSelectedPlans([plan.id]);
@@ -1908,7 +1970,9 @@ export default function AllPlans() {
                                     Submit for Certificate
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    onClick={() => handleGenerateQrCode(plan.id)}
+                                    onClick={() =>
+                                      handleGenerateQrCode(plan.id)
+                                    }
                                   >
                                     <QrCode className="w-4 h-4 mr-2" />
                                     QR Code
@@ -1916,13 +1980,15 @@ export default function AllPlans() {
                                   <DropdownMenuItem
                                     onClick={() => handleDeleteClick(plan.id)}
                                     disabled={
-                                      (isDeleting && planToDelete === plan.id) ||
+                                      (isDeleting &&
+                                        planToDelete === plan.id) ||
                                       isPlanLocked(plan)
                                     }
-                                    className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${isPlanLocked(plan)
+                                    className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${
+                                      isPlanLocked(plan)
                                         ? "opacity-50 cursor-not-allowed"
                                         : ""
-                                      }`}
+                                    }`}
                                   >
                                     {isDeleting && planToDelete === plan.id ? (
                                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1970,7 +2036,7 @@ export default function AllPlans() {
                   value={pagination.pageSize.toString()}
                   onValueChange={handlePageSizeChange}
                 >
-                  <SelectTrigger className="w-[110px] h-9">
+                  <SelectTrigger className="w-27.5 h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -2000,7 +2066,7 @@ export default function AllPlans() {
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-gray-200 dark:border-white/15 rounded-lg min-w-[100px] text-center">
+                  <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-gray-200 dark:border-white/15 rounded-lg min-w-25 text-center">
                     Page {pagination.page} of {pagination.totalPages}
                   </span>
                   <Button
@@ -2034,7 +2100,9 @@ export default function AllPlans() {
               <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gray-50 dark:bg-white/5">
                 <FileText className="w-6 h-6 text-gray-300 dark:text-gray-600" />
               </div>
-              <p className="text-gray-600 dark:text-gray-300 font-medium">No plans found</p>
+              <p className="text-gray-600 dark:text-gray-300 font-medium">
+                No plans found
+              </p>
               <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                 Try adjusting your search or filters
               </p>
@@ -2087,10 +2155,11 @@ export default function AllPlans() {
                         {isQueried(plan) && (
                           <span
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200"
-                            title={`Queried by ${getQueryInfo(plan).queriedBy}${getQueryInfo(plan).comment
+                            title={`Queried by ${getQueryInfo(plan).queriedBy}${
+                              getQueryInfo(plan).comment
                                 ? `: ${getQueryInfo(plan).comment}`
                                 : ""
-                              }`}
+                            }`}
                           >
                             <AlertTriangle className="w-3 h-3" />
                             Queried
@@ -2115,7 +2184,9 @@ export default function AllPlans() {
                           </div>
                         )}
                         {!plan.ward && !plan.lga && (
-                          <span className="text-gray-600 dark:text-gray-400">N/A</span>
+                          <span className="text-gray-600 dark:text-gray-400">
+                            N/A
+                          </span>
                         )}
                       </div>
                     </div>
@@ -2158,7 +2229,9 @@ export default function AllPlans() {
                     {/* Survey Date */}
                     <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                       <CalendarIcon className="w-3 h-3" />
-                      <span className="font-medium text-gray-600 dark:text-gray-400">Survey:</span>
+                      <span className="font-medium text-gray-600 dark:text-gray-400">
+                        Survey:
+                      </span>
                       <span>
                         {plan.dateOnSurveyPlan
                           ? new Date(plan.dateOnSurveyPlan).toLocaleDateString()
@@ -2222,7 +2295,9 @@ export default function AllPlans() {
                               <DropdownMenuItem
                                 onClick={() => {
                                   if (!isKycValidated) {
-                                    toast.error("You must complete your KYC validation in the Settings page to submit plans for CoD.");
+                                    toast.error(
+                                      "You must complete your KYC validation in the Settings page to submit plans for CoD."
+                                    );
                                     return;
                                   }
                                   setSelectedPlans([plan.id]);
@@ -2244,10 +2319,11 @@ export default function AllPlans() {
                                   (isDeleting && planToDelete === plan.id) ||
                                   isPlanLocked(plan)
                                 }
-                                className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${isPlanLocked(plan)
+                                className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${
+                                  isPlanLocked(plan)
                                     ? "opacity-50 cursor-not-allowed"
                                     : ""
-                                  }`}
+                                }`}
                               >
                                 {isDeleting && planToDelete === plan.id ? (
                                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -2295,7 +2371,7 @@ export default function AllPlans() {
               value={pagination.pageSize.toString()}
               onValueChange={handlePageSizeChange}
             >
-              <SelectTrigger className="w-[110px] h-9">
+              <SelectTrigger className="w-27.5 h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -2325,7 +2401,7 @@ export default function AllPlans() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-gray-200 dark:border-white/15 rounded-lg min-w-[100px] text-center">
+              <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-gray-200 dark:border-white/15 rounded-lg min-w-25 text-center">
                 Page {pagination.page} of {pagination.totalPages}
               </span>
               <Button
@@ -2449,6 +2525,7 @@ export default function AllPlans() {
                   </Dialog>
                 )}
                 <SurfboardPlanForm
+                  key={selectedPlan?.id || "edit-plan"}
                   mode="edit"
                   initial={selectedPlan}
                   onSuccess={handleEditSuccess}
@@ -2559,7 +2636,9 @@ export default function AllPlans() {
                   if (!nextSharedTo.includes(addedUser.id)) {
                     nextSharedTo.push(addedUser.id);
                   }
-                  if (!nextSharedToUsers.some((u: any) => u.id === addedUser.id)) {
+                  if (
+                    !nextSharedToUsers.some((u: any) => u.id === addedUser.id)
+                  ) {
                     nextSharedToUsers.push({
                       id: addedUser.id,
                       firstName: addedUser.firstName,
@@ -2570,8 +2649,12 @@ export default function AllPlans() {
                   }
                 }
                 if (removedUserId) {
-                  nextSharedTo = nextSharedTo.filter((id) => id !== removedUserId);
-                  nextSharedToUsers = nextSharedToUsers.filter((u: any) => u.id !== removedUserId);
+                  nextSharedTo = nextSharedTo.filter(
+                    (id) => id !== removedUserId
+                  );
+                  nextSharedToUsers = nextSharedToUsers.filter(
+                    (u: any) => u.id !== removedUserId
+                  );
                 }
                 return {
                   ...p,

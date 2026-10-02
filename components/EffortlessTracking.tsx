@@ -21,9 +21,7 @@ const EffortlessTracking: React.FC = () => {
           href={"/services"}
           className="max-w-[257px] w-full h-[67px] px-5 py-6 bg-sky-950 rounded-[50px] justify-center items-center gap-2.5 inline-flex"
         >
-          <div className="text-white text-lg font-semibold ">
-            View Services
-          </div>
+          <div className="text-white text-lg font-semibold ">View Services</div>
         </Link>
       </div>
     </div>

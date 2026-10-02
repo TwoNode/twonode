@@ -8,11 +8,16 @@ export async function GET(req: NextRequest) {
     const ticketNumber = req.nextUrl.searchParams.get("ticketNumber");
     const email = req.nextUrl.searchParams.get("email");
     if (!ticketNumber || !email) {
-      throw new ValidationError({ ticketNumber: "ticketNumber and email are required" });
+      throw new ValidationError({
+        ticketNumber: "ticketNumber and email are required",
+      });
     }
     const data = await lookupMyTicket(ticketNumber, email);
     return NextResponse.json({ success: true, data });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

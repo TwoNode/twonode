@@ -34,7 +34,9 @@ export async function computeMustVerifyNow(
 
   // Grandfathered account: check if grace period window has passed
   const gracePeriodDays = config.gracePeriodDays ?? 30;
-  const graceEndsAt = new Date(enforcedSince.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000);
+  const graceEndsAt = new Date(
+    enforcedSince.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000
+  );
 
   return Date.now() >= graceEndsAt.getTime();
 }
@@ -63,7 +65,9 @@ export async function computeVerificationGraceEndsAt(
   }
 
   const gracePeriodDays = config.gracePeriodDays ?? 30;
-  const graceEndsAt = new Date(enforcedSince.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000);
+  const graceEndsAt = new Date(
+    enforcedSince.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000
+  );
 
   // If already expired, grace period is over
   if (Date.now() >= graceEndsAt.getTime()) {

@@ -1,0 +1,16 @@
+node_modules
+.next
+out
+prisma/generated
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+.git
+.agents
+.gemini
+public
+dist
+build
+coverage
+*.min.js
+*.min.css

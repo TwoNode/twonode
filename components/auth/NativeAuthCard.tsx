@@ -1,6 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ClipboardEvent, type ReactNode } from "react";
+import {
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type ClipboardEvent,
+  type ReactNode,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +17,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { login, registerSendOtp, registerComplete, registerResendOtp, requestPasswordReset } from "@/lib/auth/authApiClient";
+import {
+  login,
+  registerSendOtp,
+  registerComplete,
+  registerResendOtp,
+  requestPasswordReset,
+} from "@/lib/auth/authApiClient";
 import { useTheme } from "@/hooks/useTheme";
 import type { Platform } from "@/utils/platform";
 
@@ -59,7 +74,9 @@ function NativeAuthCardInner({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { theme } = useTheme();
-  const [mode, setMode] = useState<"login" | "register" | "register-otp" | "forgot">("login");
+  const [mode, setMode] = useState<
+    "login" | "register" | "register-otp" | "forgot"
+  >("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -75,8 +92,12 @@ function NativeAuthCardInner({
   // boxes, or a "check your inbox" state for a link — per the platform's
   // admin-configured verification method (returned by send-otp, since
   // that's where it's actually decided, not guessed client-side).
-  const [pendingRegistrationId, setPendingRegistrationId] = useState<string | null>(null);
-  const [registrationMethod, setRegistrationMethod] = useState<"OTP" | "LINK">("OTP");
+  const [pendingRegistrationId, setPendingRegistrationId] = useState<
+    string | null
+  >(null);
+  const [registrationMethod, setRegistrationMethod] = useState<"OTP" | "LINK">(
+    "OTP"
+  );
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [submittingOtp, setSubmittingOtp] = useState(false);
@@ -85,12 +106,16 @@ function NativeAuthCardInner({
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
-    const timer = setInterval(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000);
+    const timer = setInterval(
+      () => setResendCooldown((s) => Math.max(0, s - 1)),
+      1000
+    );
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
   useEffect(() => {
-    if (mode === "register-otp" && registrationMethod === "OTP") otpInputRefs.current[0]?.focus();
+    if (mode === "register-otp" && registrationMethod === "OTP")
+      otpInputRefs.current[0]?.focus();
   }, [mode, registrationMethod]);
 
   // Middleware (proxy.ts) attaches this when it bounces an unauthenticated
@@ -99,7 +124,10 @@ function NativeAuthCardInner({
   // role's default dashboard. Restricted to a same-origin relative path —
   // never follow an absolute/protocol-relative URL from a query param.
   const returnTo = searchParams.get("post_login_redirect_url");
-  const safeReturnTo = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : null;
+  const safeReturnTo =
+    returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+      ? returnTo
+      : null;
 
   const dark = accentDark ?? accent;
   // accentDark is a near-black navy for every product — fine on the light
@@ -125,7 +153,9 @@ function NativeAuthCardInner({
         // here for a failure would defeat that.
         setForgotSubmitted(true);
       } catch {
-        setError("Couldn't reach the server. Check your connection and try again.");
+        setError(
+          "Couldn't reach the server. Check your connection and try again."
+        );
       } finally {
         setIsSubmitting(false);
       }
@@ -135,7 +165,13 @@ function NativeAuthCardInner({
     if (mode === "register") {
       setIsSubmitting(true);
       try {
-        const result = await registerSendOtp({ platform, email, password, firstName, lastName });
+        const result = await registerSendOtp({
+          platform,
+          email,
+          password,
+          firstName,
+          lastName,
+        });
         if (!result.success) {
           setError(result.error || "Something went wrong. Please try again.");
           setIsSubmitting(false);
@@ -147,7 +183,9 @@ function NativeAuthCardInner({
         setResendCooldown(60);
         setMode("register-otp");
       } catch {
-        setError("Couldn't reach the server. Check your connection and try again.");
+        setError(
+          "Couldn't reach the server. Check your connection and try again."
+        );
       } finally {
         setIsSubmitting(false);
       }
@@ -177,9 +215,15 @@ function NativeAuthCardInner({
       // locally as a ~1-in-3 failure rate with this call present). push()
       // already fetches a fresh RSC payload for the destination route on
       // its own, so refresh() was redundant here even when it didn't race.
-      router.push(mode === "login" && safeReturnTo ? safeReturnTo : resolveRedirect(result.data.role));
+      router.push(
+        mode === "login" && safeReturnTo
+          ? safeReturnTo
+          : resolveRedirect(result.data.role)
+      );
     } catch {
-      setError("Couldn't reach the server. Check your connection and try again.");
+      setError(
+        "Couldn't reach the server. Check your connection and try again."
+      );
       setIsSubmitting(false);
     }
   }
@@ -216,7 +260,10 @@ function NativeAuthCardInner({
 
   function handleOtpPaste(e: ClipboardEvent<HTMLInputElement>) {
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     if (!pasted) return;
     const updated = [...otp];
     for (let i = 0; i < 6; i++) updated[i] = pasted[i] || "";
@@ -235,7 +282,11 @@ function NativeAuthCardInner({
     setSubmittingOtp(true);
     setError(null);
     try {
-      const result = await registerComplete({ platform, pendingRegistrationId, code });
+      const result = await registerComplete({
+        platform,
+        pendingRegistrationId,
+        code,
+      });
       if (!result.success) {
         setError(result.error || "Invalid code. Please check and try again.");
         setSubmittingOtp(false);
@@ -243,7 +294,9 @@ function NativeAuthCardInner({
       }
       router.push(resolveRedirect(result.data.role));
     } catch {
-      setError("Couldn't reach the server. Check your connection and try again.");
+      setError(
+        "Couldn't reach the server. Check your connection and try again."
+      );
       setSubmittingOtp(false);
     }
   }
@@ -309,15 +362,23 @@ function NativeAuthCardInner({
         className="mb-6 text-base font-medium text-center"
         style={{ color: accent }}
       >
-        {mode === "login"
-          ? subtitle
-          : mode === "register"
-            ? (registerNotice ?? subtitle)
-            : mode === "register-otp"
-              ? registrationMethod === "OTP"
-                ? <>Enter the 6-digit code we sent to <strong>{email}</strong>.</>
-                : <>We've sent a verification link to <strong>{email}</strong>.</>
-              : "Enter your account email and we'll send you a link to reset your password."}
+        {mode === "login" ? (
+          subtitle
+        ) : mode === "register" ? (
+          (registerNotice ?? subtitle)
+        ) : mode === "register-otp" ? (
+          registrationMethod === "OTP" ? (
+            <>
+              Enter the 6-digit code we sent to <strong>{email}</strong>.
+            </>
+          ) : (
+            <>
+              We've sent a verification link to <strong>{email}</strong>.
+            </>
+          )
+        ) : (
+          "Enter your account email and we'll send you a link to reset your password."
+        )}
       </p>
 
       {error && (
@@ -351,7 +412,9 @@ function NativeAuthCardInner({
                 {otp.map((digit, i) => (
                   <input
                     key={i}
-                    ref={(el) => { otpInputRefs.current[i] = el; }}
+                    ref={(el) => {
+                      otpInputRefs.current[i] = el;
+                    }}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
@@ -361,7 +424,10 @@ function NativeAuthCardInner({
                     onKeyDown={(e) => handleOtpKeyDown(i, e)}
                     onPaste={handleOtpPaste}
                     className="w-11 h-12 text-center text-xl font-bold rounded-lg border border-gray-300 dark:border-white/15 dark:bg-white/5 dark:text-white focus:outline-none focus:ring-2"
-                    style={{ caretColor: accent, ["--tw-ring-color" as string]: accent }}
+                    style={{
+                      caretColor: accent,
+                      ["--tw-ring-color" as string]: accent,
+                    }}
                   />
                 ))}
               </div>
@@ -371,9 +437,15 @@ function NativeAuthCardInner({
                 disabled={submittingOtp || otp.some((d) => !d)}
                 onClick={() => handleSubmitOtp()}
                 className="w-full px-6 py-3 h-auto text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
-                style={{ background: `linear-gradient(90deg, ${dark}, ${accent})` }}
+                style={{
+                  background: `linear-gradient(90deg, ${dark}, ${accent})`,
+                }}
               >
-                {submittingOtp ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify & create account"}
+                {submittingOtp ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  "Verify & create account"
+                )}
               </Button>
             </>
           ) : (
@@ -385,7 +457,9 @@ function NativeAuthCardInner({
           )}
 
           {resendStatus && (
-            <p className="text-sm text-emerald-600 dark:text-emerald-400 text-center">{resendStatus}</p>
+            <p className="text-sm text-emerald-600 dark:text-emerald-400 text-center">
+              {resendStatus}
+            </p>
           )}
 
           <button
@@ -411,133 +485,140 @@ function NativeAuthCardInner({
           </button>
         </div>
       ) : (
-      <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4 text-left">
-        {mode === "register" && (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="firstName">First name</Label>
-              <Input
-                id="firstName"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                autoComplete="given-name"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="lastName">Last name</Label>
-              <Input
-                id="lastName"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-                autoComplete="family-name"
-              />
-            </div>
-          </div>
-        )}
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            placeholder="you@example.com"
-          />
-        </div>
-
-        {mode !== "forgot" && (
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              {mode === "login" && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setError(null);
-                    setMode("forgot");
-                  }}
-                  className="text-xs font-semibold hover:opacity-80"
-                  style={{ color: accent }}
-                >
-                  Forgot password?
-                </button>
-              )}
-            </div>
-            <PasswordInput
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={mode === "register" ? 6 : undefined}
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-            />
-          </div>
-        )}
-
-        {mode === "register" && (
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="confirmPassword">Confirm password</Label>
-            <PasswordInput
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-            />
-          </div>
-        )}
-
-        {mode === "login" && (
-          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 select-none">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
-              style={{ accentColor: accent }}
-            />
-            Keep me signed in
-          </label>
-        )}
-
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full px-6 py-3 h-auto text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
-          style={{ background: `linear-gradient(90deg, ${dark}, ${accent})` }}
+        <form
+          onSubmit={handleSubmit}
+          className="w-full flex flex-col gap-4 text-left"
         >
-          {isSubmitting ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : mode === "login" ? (
-            "Sign in"
-          ) : mode === "register" ? (
-            "Create account"
-          ) : (
-            "Send reset link"
+          {mode === "register" && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="firstName">First name</Label>
+                <Input
+                  id="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  autoComplete="given-name"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="lastName">Last name</Label>
+                <Input
+                  id="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  autoComplete="family-name"
+                />
+              </div>
+            </div>
           )}
-        </Button>
 
-        {mode === "forgot" && (
-          <button
-            type="button"
-            onClick={backToLogin}
-            className="text-sm font-semibold hover:opacity-80 text-center"
-            style={{ color: accent }}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              placeholder="you@example.com"
+            />
+          </div>
+
+          {mode !== "forgot" && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                {mode === "login" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError(null);
+                      setMode("forgot");
+                    }}
+                    className="text-xs font-semibold hover:opacity-80"
+                    style={{ color: accent }}
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
+              <PasswordInput
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={mode === "register" ? 6 : undefined}
+                autoComplete={
+                  mode === "login" ? "current-password" : "new-password"
+                }
+              />
+            </div>
+          )}
+
+          {mode === "register" && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="confirmPassword">Confirm password</Label>
+              <PasswordInput
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+              />
+            </div>
+          )}
+
+          {mode === "login" && (
+            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 select-none">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
+                style={{ accentColor: accent }}
+              />
+              Keep me signed in
+            </label>
+          )}
+
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full px-6 py-3 h-auto text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
+            style={{ background: `linear-gradient(90deg, ${dark}, ${accent})` }}
           >
-            Back to sign in
-          </button>
-        )}
-      </form>
+            {isSubmitting ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : mode === "login" ? (
+              "Sign in"
+            ) : mode === "register" ? (
+              "Create account"
+            ) : (
+              "Send reset link"
+            )}
+          </Button>
+
+          {mode === "forgot" && (
+            <button
+              type="button"
+              onClick={backToLogin}
+              className="text-sm font-semibold hover:opacity-80 text-center"
+              style={{ color: accent }}
+            >
+              Back to sign in
+            </button>
+          )}
+        </form>
       )}
 
       {allowRegister && mode !== "forgot" && mode !== "register-otp" && (
         <p className="text-sm text-gray-600 dark:text-gray-300 mt-4 text-center">
-          {mode === "login" ? "Don't have an account? " : "Already have an account? "}
+          {mode === "login"
+            ? "Don't have an account? "
+            : "Already have an account? "}
           <button
             type="button"
             onClick={() => {
@@ -556,7 +637,9 @@ function NativeAuthCardInner({
         <>
           <div className="w-full flex items-center gap-3 my-6">
             <div className="h-px flex-1 bg-gray-200 dark:bg-white/10" />
-            <span className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-500">or</span>
+            <span className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              or
+            </span>
             <div className="h-px flex-1 bg-gray-200 dark:bg-white/10" />
           </div>
           <div className="w-full">{alternateAuth}</div>

@@ -45,7 +45,9 @@ export interface GetAllAdminsPaginatedParams {
 }
 
 /** Paginated/searchable sibling of getAllAdmins() — that one stays as-is (has its own unit test). */
-export async function getAllAdminsPaginated(params: GetAllAdminsPaginatedParams) {
+export async function getAllAdminsPaginated(
+  params: GetAllAdminsPaginatedParams
+) {
   const { page, pageSize, search, roles, statuses } = params;
 
   const where: any = { email: { not: process.env.DEV_EMAIL } };
@@ -110,12 +112,19 @@ export async function getAdminStats() {
   return { total, superAdmins, admins: total - superAdmins };
 }
 
-export async function updateAdminRole(adminId: string, newRole: GBCRole, actorId: string) {
+export async function updateAdminRole(
+  adminId: string,
+  newRole: GBCRole,
+  actorId: string
+) {
   if (actorId === adminId && newRole !== "SUPERADMIN") {
     throw new ForbiddenError();
   }
 
-  const updated = await prisma.gBCUser.update({ where: { id: adminId }, data: { role: newRole } });
+  const updated = await prisma.gBCUser.update({
+    where: { id: adminId },
+    data: { role: newRole },
+  });
 
   await writeAudit(Platform.GBC, {
     userId: actorId,
@@ -142,10 +151,17 @@ export async function deleteAdmin(adminId: string, actorId: string) {
   });
 }
 
-export async function toggleAdminStatus(adminId: string, isActive: boolean, actorId: string) {
+export async function toggleAdminStatus(
+  adminId: string,
+  isActive: boolean,
+  actorId: string
+) {
   if (actorId === adminId && !isActive) throw new ForbiddenError();
 
-  const updated = await prisma.gBCUser.update({ where: { id: adminId }, data: { isActive } });
+  const updated = await prisma.gBCUser.update({
+    where: { id: adminId },
+    data: { isActive },
+  });
 
   await writeAudit(Platform.GBC, {
     userId: actorId,

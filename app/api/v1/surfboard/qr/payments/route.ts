@@ -17,10 +17,21 @@ const initiateSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
-    const { planId, serviceType, payerEmail, payerName } = await validateBody(req, initiateSchema);
-    const data = await initiateQRServicePayment(planId, serviceType, payerEmail, payerName);
+    const { planId, serviceType, payerEmail, payerName } = await validateBody(
+      req,
+      initiateSchema
+    );
+    const data = await initiateQRServicePayment(
+      planId,
+      serviceType,
+      payerEmail,
+      payerName
+    );
     return NextResponse.json({ success: true, data });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

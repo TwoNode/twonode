@@ -9,10 +9,11 @@ import { DashboardBadge } from "@/components/dashboard/DashboardBadge";
 const Home = async () => {
   let data, oneTimeRequests;
   try {
-    ({ properties: data, oneTimeRequests } = await getAllRequestsWithUserByAdmin({
-      limit: 5,
-      includeOneTimeRequests: true,
-    }));
+    ({ properties: data, oneTimeRequests } =
+      await getAllRequestsWithUserByAdmin({
+        limit: 5,
+        includeOneTimeRequests: true,
+      }));
   } catch {
     return <ErrorComponent />;
   }
@@ -66,13 +67,17 @@ const Home = async () => {
                         property.status === "Available"
                           ? "success"
                           : property.status === "Processing"
-                          ? "warning"
-                          : "info"
+                            ? "warning"
+                            : "info"
                       }
                     >
                       {property.status}
                     </DashboardBadge>
-                    <DashboardBadge tone={property.paymentStatus === "Paid" ? "success" : "danger"}>
+                    <DashboardBadge
+                      tone={
+                        property.paymentStatus === "Paid" ? "success" : "danger"
+                      }
+                    >
                       {property.paymentStatus}
                     </DashboardBadge>
                     <DashboardBadge
@@ -158,9 +163,7 @@ const Home = async () => {
                         d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    <span
-                      className="font-semibold text-[#032740] dark:text-white"
-                    >
+                    <span className="font-semibold text-[#032740] dark:text-white">
                       ₦{property.totalCost.toLocaleString()}
                     </span>
                   </div>
@@ -183,7 +186,10 @@ const Home = async () => {
             <li
               key={property.id}
               className="rounded-xl shadow-sm dark:shadow-none hover:shadow-xl transition-all duration-300 border overflow-hidden bg-white dark:bg-white/3"
-              style={{ borderTopWidth: 2, borderTopColor: REVA_COLORS.secondary.light }}
+              style={{
+                borderTopWidth: 2,
+                borderTopColor: REVA_COLORS.secondary.light,
+              }}
             >
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4">
@@ -193,16 +199,21 @@ const Home = async () => {
                   <div className="flex gap-2 flex-wrap">
                     <DashboardBadge
                       tone={
-                        property.status === "Completed" || property.status === "Available"
+                        property.status === "Completed" ||
+                        property.status === "Available"
                           ? "success"
                           : property.status === "Processing"
-                          ? "warning"
-                          : "info"
+                            ? "warning"
+                            : "info"
                       }
                     >
                       {property.status}
                     </DashboardBadge>
-                    <DashboardBadge tone={property.paymentStatus === "Paid" ? "success" : "danger"}>
+                    <DashboardBadge
+                      tone={
+                        property.paymentStatus === "Paid" ? "success" : "danger"
+                      }
+                    >
                       {property.paymentStatus}
                     </DashboardBadge>
                     <DashboardBadge
@@ -288,9 +299,7 @@ const Home = async () => {
                         d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    <span
-                      className="font-semibold text-[#032740] dark:text-white"
-                    >
+                    <span className="font-semibold text-[#032740] dark:text-white">
                       ₦{property.totalCost.toLocaleString()}
                     </span>
                   </div>

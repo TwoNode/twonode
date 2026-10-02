@@ -24,7 +24,11 @@ export default async function CertificatePage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-[#FBF8F2] flex items-center justify-center p-4 sm:p-8">
-      <CertificateClient ticket={ticket} verificationUrl={verificationUrl} qrCodeDataUrl={qrCodeDataUrl} />
+      <CertificateClient
+        ticket={ticket}
+        verificationUrl={verificationUrl}
+        qrCodeDataUrl={qrCodeDataUrl}
+      />
     </div>
   );
 }

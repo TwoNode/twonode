@@ -156,12 +156,12 @@ export function generatePaymentReference(
     ticketType === "COMPANY"
       ? "CMP"
       : ticketType === "EARLY_BIRD"
-      ? "EB"
-      : ticketType === "VIP"
-      ? "VIP"
-      : ticketType === "STUDENT"
-      ? "STD"
-      : "REG";
+        ? "EB"
+        : ticketType === "VIP"
+          ? "VIP"
+          : ticketType === "STUDENT"
+            ? "STD"
+            : "REG";
   return `${prefix}_${ticketNumber}_${timestamp}_REF`;
 }
 

@@ -27,7 +27,11 @@ const VerifyPaymentPage = async ({
 
   try {
     const user = await getUserContact(session.sub);
-    const data = await authPaymentSuccessful(reference, session.sub, user.email);
+    const data = await authPaymentSuccessful(
+      reference,
+      session.sub,
+      user.email
+    );
     return <VerifyPayment formData={data} />;
   } catch (error) {
     console.error("Error processing payment:", error);

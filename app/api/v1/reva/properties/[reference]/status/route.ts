@@ -18,11 +18,23 @@ type RouteCtx = { params: Promise<{ reference: string }> };
 export const PATCH = withAuth<RevaRole>(
   async (req, _ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { reference } = await routeCtx.params;
-    const { status, paymentStatus, statusMessage, error } = await validateBody(req, statusSchema);
-    const data = await updatePropertyTransactionStatus(reference, status, paymentStatus, statusMessage, error);
+    const { status, paymentStatus, statusMessage, error } = await validateBody(
+      req,
+      statusSchema
+    );
+    const data = await updatePropertyTransactionStatus(
+      reference,
+      status,
+      paymentStatus,
+      statusMessage,
+      error
+    );
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.REVA, roles: [RevaRole.ADMIN, RevaRole.SUPERADMIN] }

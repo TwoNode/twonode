@@ -44,7 +44,9 @@ export function isTierSize(value: string): value is TierSize {
 
 /** Tiers in display order: `order` ascending, then name so equal orders are stable. */
 export function sortTiers<T extends SponsorTierLike>(tiers: T[]): T[] {
-  return [...tiers].sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+  return [...tiers].sort(
+    (a, b) => a.order - b.order || a.name.localeCompare(b.name)
+  );
 }
 
 export interface TierGroup<S, T extends SponsorTierLike = SponsorTierLike> {
@@ -58,21 +60,33 @@ export interface TierGroup<S, T extends SponsorTierLike = SponsorTierLike> {
  * (should not happen — the database enforces it) still appears, under a
  * trailing group named after its key, rather than silently vanishing.
  */
-export function groupSponsorsByTier<S extends { tier: string }, T extends SponsorTierLike>(
+export function groupSponsorsByTier<
+  S extends { tier: string },
+  T extends SponsorTierLike,
+>(
   tiers: T[],
   sponsors: S[],
   { includeEmpty = false }: { includeEmpty?: boolean } = {}
 ): TierGroup<S, T | SponsorTierLike>[] {
   const known = new Set(tiers.map((t) => t.key));
-  const groups: TierGroup<S, T | SponsorTierLike>[] = sortTiers(tiers).map((tier) => ({
-    tier,
-    sponsors: sponsors.filter((s) => s.tier === tier.key),
-  }));
+  const groups: TierGroup<S, T | SponsorTierLike>[] = sortTiers(tiers).map(
+    (tier) => ({
+      tier,
+      sponsors: sponsors.filter((s) => s.tier === tier.key),
+    })
+  );
 
-  const orphanKeys = [...new Set(sponsors.filter((s) => !known.has(s.tier)).map((s) => s.tier))];
+  const orphanKeys = [
+    ...new Set(sponsors.filter((s) => !known.has(s.tier)).map((s) => s.tier)),
+  ];
   for (const key of orphanKeys) {
     groups.push({
-      tier: { key, name: key, size: "STANDARD", order: Number.MAX_SAFE_INTEGER },
+      tier: {
+        key,
+        name: key,
+        size: "STANDARD",
+        order: Number.MAX_SAFE_INTEGER,
+      },
       sponsors: sponsors.filter((s) => s.tier === key),
     });
   }

@@ -100,7 +100,11 @@ export function DashboardHero({
                   {secondaryCtaContent}
                 </Link>
               ) : (
-                <button type="button" onClick={secondaryCta.onClick} className="shrink-0">
+                <button
+                  type="button"
+                  onClick={secondaryCta.onClick}
+                  className="shrink-0"
+                >
                   {secondaryCtaContent}
                 </button>
               ))}
@@ -110,7 +114,11 @@ export function DashboardHero({
                   {ctaContent}
                 </Link>
               ) : (
-                <button type="button" onClick={cta.onClick} className="shrink-0">
+                <button
+                  type="button"
+                  onClick={cta.onClick}
+                  className="shrink-0"
+                >
                   {ctaContent}
                 </button>
               ))}

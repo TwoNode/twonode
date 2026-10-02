@@ -198,7 +198,9 @@ export default function SettingsPage() {
       <div className="min-h-full flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading settings...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Loading settings...
+          </p>
         </div>
       </div>
     );
@@ -210,7 +212,9 @@ export default function SettingsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Settings
+            </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               Manage your profile and preferences
             </p>
@@ -843,7 +847,9 @@ export default function SettingsPage() {
                 ) : (
                   <div className="text-center py-12">
                     <Shield className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">Failed to load MDA settings</p>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Failed to load MDA settings
+                    </p>
                     <button
                       onClick={fetchMdaSettings}
                       className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"

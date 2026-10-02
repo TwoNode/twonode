@@ -10,7 +10,9 @@ export const metadata = {
 // Real per-request DB lookup driven by searchParams — never safe to statically prerender.
 export const dynamic = "force-dynamic";
 
-type PageProps = { searchParams: Promise<{ ticketNumber?: string; email?: string }> };
+type PageProps = {
+  searchParams: Promise<{ ticketNumber?: string; email?: string }>;
+};
 
 export default async function MyTicketPage({ searchParams }: PageProps) {
   const { ticketNumber, email } = await searchParams;

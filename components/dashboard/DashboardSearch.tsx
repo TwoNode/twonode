@@ -88,7 +88,10 @@ export function DashboardSearch({
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
@@ -106,7 +109,10 @@ export function DashboardSearch({
   }
 
   return (
-    <div ref={containerRef} className={cn("relative w-full max-w-xs", className)}>
+    <div
+      ref={containerRef}
+      className={cn("relative w-full max-w-xs", className)}
+    >
       <div
         className={cn(
           "flex h-10 items-center gap-2 rounded-xl border px-3 text-sm transition-colors",
@@ -115,7 +121,9 @@ export function DashboardSearch({
             : "border-gray-200 bg-white text-gray-500 focus-within:border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:focus-within:border-white/20"
         )}
       >
-        <Search className={cn("h-4 w-4 shrink-0", isTranslucent && "text-white/60")} />
+        <Search
+          className={cn("h-4 w-4 shrink-0", isTranslucent && "text-white/60")}
+        />
         <input
           value={query}
           onChange={(e) => {
@@ -125,7 +133,11 @@ export function DashboardSearch({
           onFocus={() => setOpen(true)}
           onKeyDown={(e) => {
             if (e.key === "Escape") setOpen(false);
-            if (e.key === "Enter" && viewAllHref && trimmed.length >= minChars) {
+            if (
+              e.key === "Enter" &&
+              viewAllHref &&
+              trimmed.length >= minChars
+            ) {
               goTo(viewAllHref(trimmed));
             }
           }}
@@ -139,7 +151,10 @@ export function DashboardSearch({
         />
         {loading && (
           <Loader2
-            className={cn("h-3.5 w-3.5 shrink-0 animate-spin", isTranslucent && "text-white/70")}
+            className={cn(
+              "h-3.5 w-3.5 shrink-0 animate-spin",
+              isTranslucent && "text-white/70"
+            )}
           />
         )}
       </div>

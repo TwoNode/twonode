@@ -16,11 +16,26 @@ export const dynamic = "force-dynamic";
 export default async function AdminTicketsPage({
   searchParams,
 }: {
-  searchParams: { search?: string; status?: string; page?: string; pageSize?: string; edition?: string };
+  searchParams: {
+    search?: string;
+    status?: string;
+    page?: string;
+    pageSize?: string;
+    edition?: string;
+  };
 }) {
-  const { search, status, page: pageParam, pageSize: pageSizeParam, edition: editionParam } = await searchParams;
+  const {
+    search,
+    status,
+    page: pageParam,
+    pageSize: pageSizeParam,
+    edition: editionParam,
+  } = await searchParams;
   const edition = editionParam || (await getEditionCookieValue());
-  const { page, pageSize } = parsePageParams({ page: pageParam, pageSize: pageSizeParam });
+  const { page, pageSize } = parsePageParams({
+    page: pageParam,
+    pageSize: pageSizeParam,
+  });
   const result = await getTicketsPaginated({
     page,
     pageSize,
@@ -84,7 +99,8 @@ export default async function AdminTicketsPage({
       {result.pagination.totalPages > 1 && (
         <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-sm text-gray-600">
-            Page {result.pagination.page} of {result.pagination.totalPages} • {result.pagination.total} tickets
+            Page {result.pagination.page} of {result.pagination.totalPages} •{" "}
+            {result.pagination.total} tickets
           </p>
           <SearchParamsPagination
             page={result.pagination.page}

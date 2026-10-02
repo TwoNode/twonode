@@ -11,7 +11,7 @@ interface UseBatchLockProps {
   onLockAcquired?: (
     batchId: string,
     batchCode: string,
-    planCount: number,
+    planCount: number
   ) => void;
   onLockReleased?: () => void;
 }
@@ -52,7 +52,7 @@ export function useBatchLock({
   const [lockError, setLockError] = useState<string | null>(null);
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(
-    null,
+    null
   );
 
   const hasLock = useRef(false);
@@ -84,13 +84,13 @@ export function useBatchLock({
             setLockExpiresAt(
               result.data.lockExpiresAt
                 ? new Date(result.data.lockExpiresAt)
-                : null,
+                : null
             );
             hasLock.current = true;
             onLockAcquired?.(
               result.data.batchId,
               result.data.batchCode || "",
-              result.data.planCount,
+              result.data.planCount
             );
           } else {
             // No batches available to lock
@@ -152,7 +152,7 @@ export function useBatchLock({
     (batchId: string) => {
       return lockedBatchId === batchId;
     },
-    [lockedBatchId],
+    [lockedBatchId]
   );
 
   // Handle confirming navigation

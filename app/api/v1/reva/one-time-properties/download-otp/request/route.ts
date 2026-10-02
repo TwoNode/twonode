@@ -19,7 +19,10 @@ const requestOtpSchema = z.object({
 function genericResponse() {
   return NextResponse.json({
     success: true,
-    data: { message: "If that request is valid, a code has been sent to the associated email." },
+    data: {
+      message:
+        "If that request is valid, a code has been sent to the associated email.",
+    },
   });
 }
 
@@ -33,10 +36,16 @@ function genericResponse() {
 export async function POST(req: NextRequest) {
   try {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
 
-    const { reference, email, target } = await validateBody(req, requestOtpSchema);
+    const { reference, email, target } = await validateBody(
+      req,
+      requestOtpSchema
+    );
     const identifier = `download-otp:request:${reference}:${target}:${email}`;
 
     if (!(await checkRateLimit(identifier))) {
@@ -47,6 +56,9 @@ export async function POST(req: NextRequest) {
     await requestDownloadOtp({ reference, email, target });
     return genericResponse();
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

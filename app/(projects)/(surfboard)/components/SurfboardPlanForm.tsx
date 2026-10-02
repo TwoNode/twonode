@@ -20,6 +20,7 @@ import {
   PILLAR_TYPE_ADJOINING_FILTERS,
   ParcelInfo,
 } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
+import { formatDateForInput } from "@/utils/formatters";
 import { surfboardApi } from "@/surfboard/apiClient";
 import {
   generatePolygonFromPillars,
@@ -119,7 +120,7 @@ const FileList = ({ files, onDelete, type }: FileListProps) => {
   const [deletingIndex, setDeletingIndex] = useState<number | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(
-    null,
+    null
   );
 
   const getFileIcon = (fileName: string) => {
@@ -149,7 +150,7 @@ const FileList = ({ files, onDelete, type }: FileListProps) => {
   };
 
   const formatFileName = (
-    fileName: string,
+    fileName: string
   ): { displayText: string; isUrl: boolean; href?: string } => {
     // Check if it's an S3 URL
     const s3Match = fileName.match(/surfboard\/([^/]+)\/(.+)$/);
@@ -295,7 +296,7 @@ function Section({
           <div
             className={cn(
               "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-              badgeMap[accent],
+              badgeMap[accent]
             )}
           >
             Step {step}
@@ -345,8 +346,8 @@ const INITIALS = (initial: any) => ({
   pdfFilePaths: initial?.pdfFilePaths ?? [],
   cadFilePaths: initial?.cadFilePaths ?? [],
   certificateFilePaths: initial?.certificateFilePaths ?? [],
-  dateOnSurveyPlan: initial?.dateOnSurveyPlan ?? "",
-  dateLodged: initial?.dateLodged ?? null,
+  dateOnSurveyPlan: formatDateForInput(initial?.dateOnSurveyPlan),
+  dateLodged: formatDateForInput(initial?.dateLodged),
   locality: initial?.locality ?? "",
   ward: initial?.ward ?? null,
   lcda: initial?.lcda ?? null,
@@ -380,7 +381,7 @@ export default function SurfboardPlanForm({
       ? true
       : mode === "edit"
         ? false
-        : undefined,
+        : undefined
   );
   const [lockNonCert, setLockNonCert] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -397,7 +398,7 @@ export default function SurfboardPlanForm({
   const [csvFiles, setCsvFiles] = useState<File[]>([]);
   const [pillarGroups, setPillarGroups] = useState<PillarData[][]>([]);
   const [parcels, setParcels] = useState<ParcelInfo[]>(
-    () => initial?.parcels || [],
+    () => initial?.parcels || []
   );
   const [useSameTitleForAll, setUseSameTitleForAll] = useState(() => {
     // If we have parcels and they have different titles, set to false
@@ -416,6 +417,15 @@ export default function SurfboardPlanForm({
     // if (!created) return setLockNonCert(false);
     // setLockNonCert(Date.now() - created > 24 * 60 * 60 * 1000);
   }, [mode, isSuperAdmin, initial?.createdAt]);
+
+  useEffect(() => {
+    if (initial) {
+      setForm(INITIALS(initial));
+      if (initial.certificateFilePaths?.length) {
+        setCertificateReady(true);
+      }
+    }
+  }, [initial?.id]);
 
   // Facilitators dropdown (unchanged behavior)
   const [facilitators, setFacilitators] = useState<string[]>([]);
@@ -593,7 +603,7 @@ export default function SurfboardPlanForm({
       if (data.coordinates && data.coordinates.length > 0) {
         console.log("AI extracted coordinates:", data.coordinates);
         toast.info(
-          `AI also found ${data.coordinates.length} coordinate pairs (check console for details)`,
+          `AI also found ${data.coordinates.length} coordinate pairs (check console for details)`
         );
       }
     },
@@ -603,12 +613,12 @@ export default function SurfboardPlanForm({
       form.deededArea,
       form.dateOnSurveyPlan,
       form.locality,
-    ],
+    ]
   );
 
   function setField<K extends keyof SurfboardPlanDTO>(
     key: K,
-    val: SurfboardPlanDTO[K],
+    val: SurfboardPlanDTO[K]
   ) {
     setForm((f) => ({ ...f, [key]: val }));
   }
@@ -648,7 +658,7 @@ export default function SurfboardPlanForm({
         // Get admin boundaries for this polygon
         const tempPoly = await generatePolygonFromPillars(pillarsWithIndex);
         const adminData = await surfboardApi.plans.adminBoundaries(
-          tempPoly as any,
+          tempPoly as any
         );
 
         newParcels.push({
@@ -691,7 +701,7 @@ export default function SurfboardPlanForm({
       }
 
       toast.success(
-        `Added ${files.length} parcel(s). Total: ${newPillarGroups.length}`,
+        `Added ${files.length} parcel(s). Total: ${newPillarGroups.length}`
       );
     } catch (err: any) {
       toast.error(err?.message || "Failed to parse CSV");
@@ -706,8 +716,14 @@ export default function SurfboardPlanForm({
     // original uploaded file bytes — the raw File objects aren't kept once
     // parsed (see csvFiles' doc comment above).
     const headers = ["Pillar Number", "Easting", "Northing"];
-    const rows = pillars.map((p) => [p.pillarNumber ?? "", p.easting ?? "", p.northing ?? ""]);
-    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const rows = pillars.map((p) => [
+      p.pillarNumber ?? "",
+      p.easting ?? "",
+      p.northing ?? "",
+    ]);
+    const csvContent = [headers, ...rows]
+      .map((row) => row.join(","))
+      .join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -727,7 +743,7 @@ export default function SurfboardPlanForm({
 
     // Update polygonIndex in pillars
     const updatedGroups = nextGroups.map((group, i) =>
-      group.map((p) => ({ ...p, polygonIndex: i })),
+      group.map((p) => ({ ...p, polygonIndex: i }))
     );
 
     setPillarGroups(updatedGroups);
@@ -742,7 +758,13 @@ export default function SurfboardPlanForm({
       // Administrative Information fields instead of leaving them showing
       // whichever removed parcel last populated them, so a fresh CSV upload
       // fills them in from scratch rather than silently keeping stale data.
-      setForm((prev) => ({ ...prev, ward: null, lcda: null, lga: null, state: null }));
+      setForm((prev) => ({
+        ...prev,
+        ward: null,
+        lcda: null,
+        lga: null,
+        state: null,
+      }));
       return;
     }
 
@@ -770,7 +792,7 @@ export default function SurfboardPlanForm({
   // Upload helper (unchanged)
   async function uploadSelected(
     kind: "cad" | "pdf" | "certificate",
-    files: File[],
+    files: File[]
   ): Promise<string[]> {
     if (!files.length) return [];
     const formData = new FormData();
@@ -781,7 +803,7 @@ export default function SurfboardPlanForm({
       formData.append(`filename-${index}`, encodeURIComponent(file.name));
       formData.append(
         `filetype-${index}`,
-        file.type || "application/octet-stream",
+        file.type || "application/octet-stream"
       );
     });
     try {
@@ -792,7 +814,7 @@ export default function SurfboardPlanForm({
       throw new Error(
         `Failed to upload ${kind} files: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     }
   }
@@ -821,7 +843,7 @@ export default function SurfboardPlanForm({
         uploadSelected("pdf", selectedPdfFiles),
         uploadSelected(
           "certificate",
-          certificateReady ? selectedCertFiles : [],
+          certificateReady ? selectedCertFiles : []
         ),
       ]);
 
@@ -909,7 +931,7 @@ export default function SurfboardPlanForm({
     try {
       const checkResult = await surfboardApi.plans.checkNumberExists(
         form.planNumber,
-        form.id,
+        form.id
       );
       const exists = checkResult.success ? checkResult.data.exists : false;
       if (exists) {
@@ -1029,7 +1051,8 @@ export default function SurfboardPlanForm({
         pillarTypeReferencePlanNumber: "pillarTypeReferencePlan",
         parcels: "pillarsCsv",
       };
-      const targetId = ERROR_FIELD_TO_ELEMENT_ID[firstErrorField] ?? firstErrorField;
+      const targetId =
+        ERROR_FIELD_TO_ELEMENT_ID[firstErrorField] ?? firstErrorField;
       const el = document.getElementById(targetId);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1039,7 +1062,9 @@ export default function SurfboardPlanForm({
       }
       const count = Object.keys(errs).length;
       toast.error(
-        count > 1 ? `Please fill in ${count} required fields` : "Please fill in the required field",
+        count > 1
+          ? `Please fill in ${count} required fields`
+          : "Please fill in the required field"
       );
     }
 
@@ -1055,7 +1080,7 @@ export default function SurfboardPlanForm({
   // Handle title change and debounced recognition check
   const handleSurveyTitleChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>,
-    index?: number,
+    index?: number
   ) => {
     const newVal = e.target.value;
     if (index === undefined) {
@@ -1090,7 +1115,7 @@ export default function SurfboardPlanForm({
         setPersonCountAI(res.data.count);
         if (res.data.count !== personCountManual) {
           toast.warning(
-            `Note: AI detected ${res.data.count} persons, but you have ${personCountManual} lines.`,
+            `Note: AI detected ${res.data.count} persons, but you have ${personCountManual} lines.`
           );
         } else {
           toast.success(`Verified: ${res.data.count} persons detected.`);
@@ -1125,13 +1150,11 @@ export default function SurfboardPlanForm({
 
   const handleDeleteFile = async (
     file: string | File,
-    fileType: "cad" | "pdf" | "certificate",
+    fileType: "cad" | "pdf" | "certificate"
   ) => {
     try {
       const field = `${fileType}FilePaths` as
-        | "cadFilePaths"
-        | "pdfFilePaths"
-        | "certificateFilePaths";
+        "cadFilePaths" | "pdfFilePaths" | "certificateFilePaths";
 
       if (typeof file === "string") {
         // It's an existing file URL, delete from S3
@@ -1140,7 +1163,7 @@ export default function SurfboardPlanForm({
         } catch (s3Error) {
           console.error(
             "S3 delete failed, proceeding with DB update:",
-            s3Error,
+            s3Error
           );
         }
         await surfboardApi.plans.update(form.id!, {
@@ -1239,15 +1262,15 @@ export default function SurfboardPlanForm({
                       const invalidFiles = files.filter(
                         (file) =>
                           !VALID_CAD_EXTENSIONS.some((ext) =>
-                            file.name.toLowerCase().endsWith(ext),
-                          ),
+                            file.name.toLowerCase().endsWith(ext)
+                          )
                       );
 
                       if (invalidFiles.length > 0) {
                         toast.error(
                           `Invalid file type. Only ${VALID_CAD_EXTENSIONS.join(
-                            ", ",
-                          )} files are allowed.`,
+                            ", "
+                          )} files are allowed.`
                         );
                         // Clear the input
                         e.target.value = "";
@@ -1272,20 +1295,20 @@ export default function SurfboardPlanForm({
                       if (typeof fileToDelete === "string") {
                         const deleteSuccess = await handleDeleteFile(
                           fileToDelete,
-                          "cad",
+                          "cad"
                         );
                         if (!deleteSuccess) return;
                         setForm((prev) => ({
                           ...prev,
                           cadFilePaths: prev.cadFilePaths?.filter(
-                            (f) => f !== fileToDelete,
+                            (f) => f !== fileToDelete
                           ),
                         }));
                       } else {
                         const selectedIndex =
                           index - (form.cadFilePaths?.length || 0);
                         setSelectedCadFiles((prev) =>
-                          prev.filter((_, i) => i !== selectedIndex),
+                          prev.filter((_, i) => i !== selectedIndex)
                         );
                       }
                     }}
@@ -1341,20 +1364,20 @@ export default function SurfboardPlanForm({
                       if (typeof fileToDelete === "string") {
                         const deleteSuccess = await handleDeleteFile(
                           fileToDelete,
-                          "pdf",
+                          "pdf"
                         );
                         if (!deleteSuccess) return;
                         setForm((prev) => ({
                           ...prev,
                           pdfFilePaths: prev.pdfFilePaths?.filter(
-                            (f) => f !== fileToDelete,
+                            (f) => f !== fileToDelete
                           ),
                         }));
                       } else {
                         const selectedIndex =
                           index - (form.pdfFilePaths?.length || 0);
                         setSelectedPdfFiles((prev) =>
-                          prev.filter((_, i) => i !== selectedIndex),
+                          prev.filter((_, i) => i !== selectedIndex)
                         );
                       }
                     }}
@@ -1392,21 +1415,21 @@ export default function SurfboardPlanForm({
                         if (typeof fileToDelete === "string") {
                           const deleteSuccess = await handleDeleteFile(
                             fileToDelete,
-                            "certificate",
+                            "certificate"
                           );
                           if (!deleteSuccess) return;
                           setForm((prev) => ({
                             ...prev,
                             certificateFilePaths:
                               prev.certificateFilePaths?.filter(
-                                (f) => f !== fileToDelete,
+                                (f) => f !== fileToDelete
                               ),
                           }));
                         } else {
                           const selectedIndex =
                             index - (form.certificateFilePaths?.length || 0);
                           setSelectedCertFiles((prev) =>
-                            prev.filter((_, i) => i !== selectedIndex),
+                            prev.filter((_, i) => i !== selectedIndex)
                           );
                         }
                       }}
@@ -1448,7 +1471,7 @@ export default function SurfboardPlanForm({
                     className={cn(
                       inputBase,
                       errors.planNumber ? inputError : inputBorder,
-                      "pr-28",
+                      "pr-28"
                     )}
                     placeholder="Enter plan number"
                     disabled={
@@ -1501,7 +1524,7 @@ export default function SurfboardPlanForm({
                     className={cn(
                       inputBase,
                       errors.surveyTitle ? inputError : inputBorder,
-                      "min-h-15 resize-y",
+                      "min-h-15 resize-y"
                     )}
                     disabled={
                       (lockNonCert && mode === "edit") ||
@@ -1524,7 +1547,7 @@ export default function SurfboardPlanForm({
                                 prev.map((p) => ({
                                   ...p,
                                   surveyTitle: form.surveyTitle,
-                                })),
+                                }))
                               );
                             }}
                             className="w-4 h-4 text-indigo-600"
@@ -1562,7 +1585,7 @@ export default function SurfboardPlanForm({
                                 className={cn(
                                   inputBase,
                                   inputBorder,
-                                  "text-sm",
+                                  "text-sm"
                                 )}
                                 placeholder={`Title for Parcel ${idx + 1}`}
                               />
@@ -1628,7 +1651,7 @@ export default function SurfboardPlanForm({
                       onChange={(e) =>
                         setField(
                           "reasonForWithdrawalAndResubmission",
-                          e.target.value,
+                          e.target.value
                         )
                       }
                       rows={3}
@@ -1637,7 +1660,7 @@ export default function SurfboardPlanForm({
                         errors.reasonForWithdrawalAndResubmission
                           ? inputError
                           : inputBorder,
-                        "min-h-20 resize-y",
+                        "min-h-20 resize-y"
                       )}
                       disabled={lockNonCert && mode === "edit"}
                       placeholder="Please explain why the reference plan was withdrawn..."
@@ -1732,7 +1755,7 @@ export default function SurfboardPlanForm({
                     onChange={(e) => setField("deededArea", e.target.value)}
                     className={cn(
                       inputBase,
-                      errors.deededArea ? inputError : inputBorder,
+                      errors.deededArea ? inputError : inputBorder
                     )}
                     disabled={lockNonCert && mode === "edit"}
                     placeholder="e.g., 12,345.67 m²"
@@ -1758,7 +1781,7 @@ export default function SurfboardPlanForm({
                       }
                       className={cn(
                         inputBase,
-                        errors.facilitator ? inputError : inputBorder,
+                        errors.facilitator ? inputError : inputBorder
                       )}
                       disabled={lockNonCert && mode === "edit"}
                       placeholder="Type or select a facilitator"
@@ -1770,7 +1793,7 @@ export default function SurfboardPlanForm({
                           .filter((f) =>
                             f
                               .toLowerCase()
-                              .includes(form.facilitator.toLowerCase()),
+                              .includes(form.facilitator.toLowerCase())
                           )
                           .map((f) => (
                             <div
@@ -1802,7 +1825,7 @@ export default function SurfboardPlanForm({
                     onChange={(e) => setField("pillarType", e.target.value)}
                     className={cn(
                       inputBase,
-                      errors.pillarType ? inputError : inputBorder,
+                      errors.pillarType ? inputError : inputBorder
                     )}
                     disabled={lockNonCert && mode === "edit"}
                   >
@@ -1825,20 +1848,13 @@ export default function SurfboardPlanForm({
                   <input
                     id="dateOnSurveyPlan"
                     type="date"
-                    value={
-                      form.dateOnSurveyPlan &&
-                      typeof form.dateOnSurveyPlan == "object"
-                        ? new Date(form.dateOnSurveyPlan)
-                            ?.toISOString()
-                            .split("T")[0]
-                        : form.dateOnSurveyPlan
-                    }
+                    value={formatDateForInput(form.dateOnSurveyPlan)}
                     onChange={(e) =>
                       setField("dateOnSurveyPlan", e.target.value)
                     }
                     className={cn(
                       inputBase,
-                      errors.dateOnSurveyPlan ? inputError : inputBorder,
+                      errors.dateOnSurveyPlan ? inputError : inputBorder
                     )}
                     disabled={lockNonCert && mode === "edit"}
                   />
@@ -1865,7 +1881,7 @@ export default function SurfboardPlanForm({
                           setAdjQuery(e.target.value);
                           setField(
                             "pillarTypeReferencePlanNumber",
-                            e.target.value,
+                            e.target.value
                           );
                         }}
                         onFocus={() => setAdjOpen(true)}
@@ -1875,7 +1891,7 @@ export default function SurfboardPlanForm({
                           errors.pillarTypeReferencePlanNumber
                             ? inputError
                             : inputBorder,
-                          "pr-8",
+                          "pr-8"
                         )}
                         placeholder="Search for reference plan..."
                         aria-invalid={!!errors.pillarTypeReferencePlanNumber}
@@ -1957,7 +1973,7 @@ export default function SurfboardPlanForm({
                     }}
                     className={cn(
                       inputBase,
-                      errors.certificateReady ? inputError : inputBorder,
+                      errors.certificateReady ? inputError : inputBorder
                     )}
                     required
                   >
@@ -1979,17 +1995,11 @@ export default function SurfboardPlanForm({
                     <input
                       id="dateLodged"
                       type="date"
-                      value={
-                        form?.dateLodged
-                          ? new Date(form.dateLodged)
-                              .toISOString()
-                              .split("T")[0]
-                          : ""
-                      }
+                      value={formatDateForInput(form?.dateLodged)}
                       onChange={(e) => setField("dateLodged", e.target.value)}
                       className={cn(
                         inputBase,
-                        errors.dateLodged ? inputError : inputBorder,
+                        errors.dateLodged ? inputError : inputBorder
                       )}
                       disabled={lockNonCert && mode === "edit"}
                     />
@@ -2020,7 +2030,7 @@ export default function SurfboardPlanForm({
                   onChange={handleCsvUpload}
                   className={cn(
                     "block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100",
-                    errors.pillars ? "border-red-500" : "",
+                    errors.pillars ? "border-red-500" : ""
                   )}
                 />
                 {errors.pillars && <p className={errorCls}>{errors.pillars}</p>}
@@ -2142,7 +2152,7 @@ export default function SurfboardPlanForm({
                   className={cn(
                     "inline-flex items-center justify-center gap-2 w-full",
                     "bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-md font-medium",
-                    "shadow hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50",
+                    "shadow hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50"
                   )}
                 >
                   {busy
@@ -2163,7 +2173,7 @@ export default function SurfboardPlanForm({
                 aria-labelledby="pillar-summary-title"
                 className={cn(
                   sectionCardBase,
-                  "border-l-4 border-l-emerald-500",
+                  "border-l-4 border-l-emerald-500"
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -2229,7 +2239,7 @@ export default function SurfboardPlanForm({
                               geometry.coordinates.forEach(
                                 (
                                   ring: [number, number][],
-                                  ringIndex: number,
+                                  ringIndex: number
                                 ) => {
                                   if (Array.isArray(ring) && ring.length > 0) {
                                     boundaries.push({
@@ -2240,19 +2250,19 @@ export default function SurfboardPlanForm({
                                       points: ring,
                                     });
                                   }
-                                },
+                                }
                               );
                             } else if (geometry.type === "MultiPolygon") {
                               geometry.coordinates.forEach(
                                 (
                                   polygon: [number, number][][],
-                                  polyIndex: number,
+                                  polyIndex: number
                                 ) => {
                                   if (Array.isArray(polygon)) {
                                     polygon.forEach(
                                       (
                                         ring: [number, number][],
-                                        ringIndex: number,
+                                        ringIndex: number
                                       ) => {
                                         if (
                                           Array.isArray(ring) &&
@@ -2266,10 +2276,10 @@ export default function SurfboardPlanForm({
                                             points: ring,
                                           });
                                         }
-                                      },
+                                      }
                                     );
                                   }
-                                },
+                                }
                               );
                             } else {
                               return (
@@ -2385,7 +2395,7 @@ export default function SurfboardPlanForm({
                   "h-160 w-full rounded-lg overflow-hidden",
                   pillars?.length > 0
                     ? "border-4 border-blue-400"
-                    : "border border-gray-200",
+                    : "border border-gray-200"
                 )}
               >
                 <MaplibreMap processedPillars={pillars} state={form.state} />

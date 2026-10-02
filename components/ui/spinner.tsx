@@ -20,10 +20,20 @@ export type SpinnerSize = keyof typeof SIZE_CLASSES;
  * the codebase. Neutral violet accent so it reads consistently regardless
  * of which product's page it's dropped into.
  */
-export function Spinner({ size = "md", className }: { size?: SpinnerSize; className?: string }) {
+export function Spinner({
+  size = "md",
+  className,
+}: {
+  size?: SpinnerSize;
+  className?: string;
+}) {
   return (
     <Loader2
-      className={cn(SIZE_CLASSES[size], "animate-spin text-violet-600 dark:text-violet-400", className)}
+      className={cn(
+        SIZE_CLASSES[size],
+        "animate-spin text-violet-600 dark:text-violet-400",
+        className
+      )}
       aria-hidden="true"
     />
   );
@@ -43,15 +53,28 @@ export function PageLoader({
   className?: string;
 }) {
   return (
-    <div className={cn("flex min-h-[50vh] flex-col items-center justify-center gap-3 py-16 text-center", className)}>
+    <div
+      className={cn(
+        "flex min-h-[50vh] flex-col items-center justify-center gap-3 py-16 text-center",
+        className
+      )}
+    >
       <Spinner size={size} />
-      {label && <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>}
+      {label && (
+        <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+      )}
     </div>
   );
 }
 
 /** For a full-viewport overlay (initial app/shell load), not a section within an already-rendered page. */
-export function FullscreenLoader({ label, className }: { label?: string; className?: string }) {
+export function FullscreenLoader({
+  label,
+  className,
+}: {
+  label?: string;
+  className?: string;
+}) {
   return (
     <div
       className={cn(
@@ -60,7 +83,9 @@ export function FullscreenLoader({ label, className }: { label?: string; classNa
       )}
     >
       <Spinner size="xl" />
-      {label && <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>}
+      {label && (
+        <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+      )}
     </div>
   );
 }

@@ -15,7 +15,10 @@ export const GET = withAuth<SurfboardRole>(
 export const PATCH = withAuth<SurfboardRole>(
   async (req, ctx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const formData = await req.formData();
     const data = await updateProfile(ctx.session.sub, formData);

@@ -18,13 +18,21 @@ const resetSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
 
-    const { platform, token, newPassword } = await validateBody(req, resetSchema);
+    const { platform, token, newPassword } = await validateBody(
+      req,
+      resetSchema
+    );
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
-    const resetToken = await prisma.passwordResetToken.findUnique({ where: { tokenHash } });
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+    });
 
     if (
       !resetToken ||
@@ -32,7 +40,9 @@ export async function POST(req: NextRequest) {
       resetToken.usedAt ||
       resetToken.expiresAt < new Date()
     ) {
-      throw new ValidationError({ token: "This link is invalid or has expired. Request a new one." });
+      throw new ValidationError({
+        token: "This link is invalid or has expired. Request a new one.",
+      });
     }
 
     const newPasswordHash = await bcrypt.hash(newPassword, 12);
@@ -46,7 +56,12 @@ export async function POST(req: NextRequest) {
       // moot — burn them too, same "single use" guarantee change-password
       // gets by revoking refresh tokens below.
       prisma.passwordResetToken.updateMany({
-        where: { userId: resetToken.userId, platform, usedAt: null, id: { not: resetToken.id } },
+        where: {
+          userId: resetToken.userId,
+          platform,
+          usedAt: null,
+          id: { not: resetToken.id },
+        },
         data: { usedAt: new Date() },
       }),
       prisma.refreshToken.updateMany({
@@ -62,6 +77,9 @@ export async function POST(req: NextRequest) {
       data: { message: "Password updated. You can now sign in." },
     });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

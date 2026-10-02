@@ -11,12 +11,16 @@ type RouteCtx = { params: Promise<{ planId: string }> };
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { planId } = await routeCtx.params;
     const form = await req.formData();
     const file = form.get("file");
-    if (!(file instanceof File)) throw new ValidationError({ file: "Missing file" });
+    if (!(file instanceof File))
+      throw new ValidationError({ file: "Missing file" });
 
     const data = await submitRedCopy(ctx.session.sub, planId, file);
     return NextResponse.json({ success: true, data });

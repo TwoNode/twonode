@@ -9,14 +9,21 @@ import { Platform } from "@/utils/platform";
 const OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
 const MAX_ATTEMPTS = 5;
 
-type ResolvedTarget = { url: string; recordEmail: string; userId: string | null };
+type ResolvedTarget = {
+  url: string;
+  recordEmail: string;
+  userId: string | null;
+};
 
 /**
  * Shared by both request types — Property and OneTimeUserProperty have the
  * identical documentsUrls/report shape, so one function resolves a
  * "report" | "document:N" target against either row.
  */
-function resolveTargetUrl(row: { documentsUrls: string[]; report: unknown }, target: string): string {
+function resolveTargetUrl(
+  row: { documentsUrls: string[]; report: unknown },
+  target: string
+): string {
   if (target === "report") {
     const report = row.report as Record<string, unknown> | null;
     if (!report || typeof report !== "object" || !report.isApproved) {
@@ -35,22 +42,45 @@ function resolveTargetUrl(row: { documentsUrls: string[]; report: unknown }, tar
   return url;
 }
 
-async function resolveOneTimeTarget(reference: string, email: string, target: string): Promise<ResolvedTarget> {
-  const request = await prisma.oneTimeUserProperty.findFirst({ where: { reference, email } });
+async function resolveOneTimeTarget(
+  reference: string,
+  email: string,
+  target: string
+): Promise<ResolvedTarget> {
+  const request = await prisma.oneTimeUserProperty.findFirst({
+    where: { reference, email },
+  });
   if (!request) throw new NotFoundError("Request");
-  return { url: resolveTargetUrl(request, target), recordEmail: request.email, userId: null };
+  return {
+    url: resolveTargetUrl(request, target),
+    recordEmail: request.email,
+    userId: null,
+  };
 }
 
-async function resolvePropertyTarget(reference: string, userId: string, target: string): Promise<ResolvedTarget> {
+async function resolvePropertyTarget(
+  reference: string,
+  userId: string,
+  target: string
+): Promise<ResolvedTarget> {
   const property = await prisma.property.findFirst({
     where: { userId, OR: [{ reference }, { references: { has: reference } }] },
   });
   if (!property) throw new NotFoundError("Property");
   const user = await getUserContact(userId);
-  return { url: resolveTargetUrl(property, target), recordEmail: user.email, userId };
+  return {
+    url: resolveTargetUrl(property, target),
+    recordEmail: user.email,
+    userId,
+  };
 }
 
-async function resolveTarget(input: { reference: string; target: string; email?: string; userId?: string }): Promise<ResolvedTarget> {
+async function resolveTarget(input: {
+  reference: string;
+  target: string;
+  email?: string;
+  userId?: string;
+}): Promise<ResolvedTarget> {
   const { reference, target, email, userId } = input;
   if (userId) return resolvePropertyTarget(reference, userId, target);
   if (email) return resolveOneTimeTarget(reference, email, target);
@@ -71,7 +101,10 @@ export async function requestDownloadOtp(input: {
   email?: string;
   userId?: string;
 }): Promise<{ message: string }> {
-  const GENERIC_MESSAGE = { message: "If that request is valid, a code has been sent to the associated email." };
+  const GENERIC_MESSAGE = {
+    message:
+      "If that request is valid, a code has been sent to the associated email.",
+  };
 
   // Resolution failures (wrong email, wrong reference, not approved yet,
   // someone else's property) never surface to the caller as a distinct
@@ -118,7 +151,9 @@ export async function requestDownloadOtp(input: {
 
   // Dev convenience only — never persisted anywhere but this log line.
   if (process.env.NODE_ENV !== "production") {
-    console.log(`[dev] download OTP for ${recordEmail} (${reference}/${target}): ${code}`);
+    console.log(
+      `[dev] download OTP for ${recordEmail} (${reference}/${target}): ${code}`
+    );
   }
 
   return GENERIC_MESSAGE;
@@ -135,21 +170,36 @@ export async function verifyDownloadOtpAndGetUrl(input: {
   const { url, recordEmail } = await resolveTarget(input);
 
   const otp = await prisma.downloadOtp.findFirst({
-    where: { reference, target, email: recordEmail, usedAt: null, expiresAt: { gt: new Date() } },
+    where: {
+      reference,
+      target,
+      email: recordEmail,
+      usedAt: null,
+      expiresAt: { gt: new Date() },
+    },
     orderBy: { createdAt: "desc" },
   });
 
-  if (!otp) throw new ValidationError({ code: "No active code — request a new one" });
+  if (!otp)
+    throw new ValidationError({ code: "No active code — request a new one" });
   if (otp.attempts >= MAX_ATTEMPTS) {
-    throw new ValidationError({ code: "Too many attempts — request a new one" });
+    throw new ValidationError({
+      code: "Too many attempts — request a new one",
+    });
   }
 
   if (otp.codeHash !== hashCode(code)) {
-    await prisma.downloadOtp.update({ where: { id: otp.id }, data: { attempts: { increment: 1 } } });
+    await prisma.downloadOtp.update({
+      where: { id: otp.id },
+      data: { attempts: { increment: 1 } },
+    });
     throw new ValidationError({ code: "Incorrect code" });
   }
 
-  await prisma.downloadOtp.update({ where: { id: otp.id }, data: { usedAt: new Date() } });
+  await prisma.downloadOtp.update({
+    where: { id: otp.id },
+    data: { usedAt: new Date() },
+  });
 
   return { url: await getPresignedDownloadUrl(url) };
 }

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { notifyError, notifyInfo, notifySuccess } from "@/utils/notify";
+import { formatDateForInput } from "@/utils/formatters";
 import { revaApi } from "@/reva/apiClient";
 import { REVA_COLORS } from "@/reva/colors";
 import {
@@ -126,6 +127,8 @@ export function AdminReportUpload({
     setForm((prev) => ({
       ...prev,
       ...report,
+      titleDate: formatDateForInput(report.titleDate) || null,
+      dateOnSurveyPlan: formatDateForInput(report.dateOnSurveyPlan) || null,
       images: {
         transactionFlowImg: null,
         parcelCheck: null,
@@ -408,7 +411,7 @@ export function AdminReportUpload({
                       <Label>Title Date</Label>
                       <Input
                         type="date"
-                        value={form.titleDate || ""}
+                        value={formatDateForInput(form.titleDate)}
                         onChange={(e) =>
                           handleChange("titleDate", e.target.value)
                         }
@@ -530,7 +533,7 @@ export function AdminReportUpload({
                       <Label>Date on Survey Plan</Label>
                       <Input
                         type="date"
-                        value={form.dateOnSurveyPlan || ""}
+                        value={formatDateForInput(form.dateOnSurveyPlan)}
                         onChange={(e) =>
                           handleChange("dateOnSurveyPlan", e.target.value)
                         }

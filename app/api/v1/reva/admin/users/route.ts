@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { withAuth } from "@/lib/api/withAuth";
 import { ForbiddenError } from "@/lib/api/errors";
 import { parsePagination } from "@/lib/api/pagination";
-import { getAllUsers, getAllAdminUsers, getAllUsersPaginated } from "@/reva/services/adminUserService";
+import {
+  getAllUsers,
+  getAllAdminUsers,
+  getAllUsersPaginated,
+} from "@/reva/services/adminUserService";
 import { Platform, RevaRole } from "@/utils/platform";
 
 /**

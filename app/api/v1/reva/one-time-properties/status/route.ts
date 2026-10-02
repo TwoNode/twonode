@@ -15,10 +15,20 @@ const statusSchema = z.object({
 /** Public — matches the source (no auth check on this path today). */
 export async function PATCH(req: NextRequest) {
   try {
-    const { reference, status, paymentStatus, statusMessage, error } = await validateBody(req, statusSchema);
-    const data = await updateOneTimeTransactionStatus(reference, status, paymentStatus, statusMessage, error);
+    const { reference, status, paymentStatus, statusMessage, error } =
+      await validateBody(req, statusSchema);
+    const data = await updateOneTimeTransactionStatus(
+      reference,
+      status,
+      paymentStatus,
+      statusMessage,
+      error
+    );
     return NextResponse.json({ success: true, data });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

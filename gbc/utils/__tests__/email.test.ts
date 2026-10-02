@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockSendMail = vi.hoisted(() =>
-  vi.fn().mockResolvedValue({ response: "250 ok" }),
+  vi.fn().mockResolvedValue({ response: "250 ok" })
 );
 const mockCreateTransport = vi.hoisted(() =>
-  vi.fn(() => ({ sendMail: mockSendMail })),
+  vi.fn(() => ({ sendMail: mockSendMail }))
 );
 const mockGenerateCertificatePdfBuffer = vi.hoisted(() => vi.fn());
 const mockGetCertificateVerificationUrl = vi.hoisted(() => vi.fn());
@@ -41,7 +41,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockGenerateCertificatePdfBuffer.mockResolvedValue(fakePdf);
   mockGetCertificateVerificationUrl.mockReturnValue(
-    "https://www.twonodetechnologies.com/gbc/certificate/GBC2_ABC123",
+    "https://www.twonodetechnologies.com/gbc/certificate/GBC2_ABC123"
   );
 });
 
@@ -78,7 +78,7 @@ describe("sendGBCCertificateEmail", () => {
 
   it("surfaces a PDF generation failure the same way as a send failure", async () => {
     mockGenerateCertificatePdfBuffer.mockRejectedValueOnce(
-      new Error("font not found"),
+      new Error("font not found")
     );
     const result = await sendGBCCertificateEmail(ticket, "body");
     expect(result).toEqual({ success: false, error: "font not found" });

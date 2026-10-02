@@ -14,7 +14,12 @@ export class ApiError extends Error {
   code: string;
   details?: unknown;
 
-  constructor(status: number, code: string, message: string, details?: unknown) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details?: unknown
+  ) {
     super(message);
     this.status = status;
     this.code = code;
@@ -69,7 +74,9 @@ export class SubscriptionRequiredError extends ApiError {
  * blocked until your email is verified" apart from generic forbidden errors.
  */
 export class EmailVerificationRequiredError extends ApiError {
-  constructor(message = "Email verification is required to perform this action") {
+  constructor(
+    message = "Email verification is required to perform this action"
+  ) {
     super(403, "EMAIL_VERIFICATION_REQUIRED", message);
   }
 }
@@ -118,7 +125,13 @@ const PRISMA_ERROR_MESSAGES: Record<string, string> = {
 
 function prismaStatusFor(code: string): number {
   if (code === "P2002") return 409; // unique constraint
-  if (code === "P2025" || code === "P2001" || code === "P2015" || code === "P2018") return 404;
+  if (
+    code === "P2025" ||
+    code === "P2001" ||
+    code === "P2015" ||
+    code === "P2018"
+  )
+    return 404;
   if (code === "P2003" || code === "P2014" || code === "P2017") return 400;
   return 500;
 }
@@ -131,16 +144,28 @@ function prismaStatusFor(code: string): number {
  * calls. `context` is optional so existing callers keep working unchanged;
  * withAuth passes route/method/user context automatically.
  */
-export function handleApiError(err: unknown, context?: LogContext): NextResponse<ApiFailure> {
+export function handleApiError(
+  err: unknown,
+  context?: LogContext
+): NextResponse<ApiFailure> {
   if (err instanceof ApiError) {
     // 4xx ApiErrors (validation, not-found, unauthenticated, ...) are
     // expected control flow, not failures — logged at warn so they don't
     // drown out real 5xx errors, but still visible if you're debugging a
     // specific route or user.
     const level = err.status >= 500 ? "error" : "warn";
-    logger[level](err.message, { ...context, code: err.code, status: err.status });
+    logger[level](err.message, {
+      ...context,
+      code: err.code,
+      status: err.status,
+    });
     return NextResponse.json(
-      { success: false, error: err.message, code: err.code, details: err.details },
+      {
+        success: false,
+        error: err.message,
+        code: err.code,
+        details: err.details,
+      },
       { status: err.status }
     );
   }
@@ -160,7 +185,11 @@ export function handleApiError(err: unknown, context?: LogContext): NextResponse
   if (err instanceof Prisma.PrismaClientValidationError) {
     logger.error("Prisma validation error", context, err);
     return NextResponse.json(
-      { success: false, error: "Invalid data provided", code: "PRISMA_VALIDATION_ERROR" },
+      {
+        success: false,
+        error: "Invalid data provided",
+        code: "PRISMA_VALIDATION_ERROR",
+      },
       { status: 400 }
     );
   }

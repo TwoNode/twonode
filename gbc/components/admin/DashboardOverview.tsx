@@ -41,7 +41,11 @@ export function DashboardOverview({
           `${stats.pendingTickets} Pending`,
         ]}
         gradient={GBC_GRADIENTS.hero}
-        cta={{ label: "Tickets", href: "/gbc-restricted/tickets", icon: Ticket }}
+        cta={{
+          label: "Tickets",
+          href: "/gbc-restricted/tickets",
+          icon: Ticket,
+        }}
         className="mb-6 sm:mb-8"
       />
 

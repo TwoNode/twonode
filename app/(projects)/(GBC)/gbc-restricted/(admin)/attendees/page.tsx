@@ -1,10 +1,16 @@
-import { getAttendeeStats, getTicketsPaginated } from "@/gbc/services/ticketService";
+import {
+  getAttendeeStats,
+  getTicketsPaginated,
+} from "@/gbc/services/ticketService";
 import { getEditions } from "@/gbc/services/editionService";
 import { Card } from "@/components/ui/card";
 import { Users, CheckCircle, Clock } from "lucide-react";
 import { SearchParamsPagination } from "@/components/ui/search-params-pagination";
 import { TicketListFilters } from "@/gbc/components/admin/TicketListFilters";
-import { parseTicketListParams, toTicketFilters } from "@/gbc/utils/ticketListParams";
+import {
+  parseTicketListParams,
+  toTicketFilters,
+} from "@/gbc/utils/ticketListParams";
 import { getEditionCookieValue } from "@/gbc/utils/editionCookie";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
@@ -15,7 +21,11 @@ export default async function AdminAttendeesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const params = parseTicketListParams(await searchParams, { checkedIn: "all" }, await getEditionCookieValue());
+  const params = parseTicketListParams(
+    await searchParams,
+    { checkedIn: "all" },
+    await getEditionCookieValue()
+  );
   const filters = toTicketFilters(params);
 
   const [result, stats, editions] = await Promise.all([
@@ -29,7 +39,11 @@ export default async function AdminAttendeesPage({
     getEditions(),
   ]);
   const tickets = result.data;
-  const isFiltered = !!(filters.search || filters.edition || filters.checkedIn !== undefined);
+  const isFiltered = !!(
+    filters.search ||
+    filters.edition ||
+    filters.checkedIn !== undefined
+  );
 
   return (
     <div>
@@ -95,7 +109,11 @@ export default async function AdminAttendeesPage({
         </div>
 
         <div className="mb-4 sm:mb-6">
-          <TicketListFilters editions={editions} checkedIn={params.checkedIn} edition={params.edition} />
+          <TicketListFilters
+            editions={editions}
+            checkedIn={params.checkedIn}
+            edition={params.edition}
+          />
         </div>
 
         <div className="space-y-2 sm:space-y-3">
@@ -131,7 +149,9 @@ export default async function AdminAttendeesPage({
             ))
           ) : (
             <div className="text-center py-8 text-gray-500">
-              {isFiltered ? "No attendees match your filters" : "No attendees found"}
+              {isFiltered
+                ? "No attendees match your filters"
+                : "No attendees found"}
             </div>
           )}
         </div>
@@ -139,7 +159,8 @@ export default async function AdminAttendeesPage({
         {result.pagination.totalPages > 1 && (
           <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-sm text-gray-600">
-              Page {result.pagination.page} of {result.pagination.totalPages} • {result.pagination.total} attendees
+              Page {result.pagination.page} of {result.pagination.totalPages} •{" "}
+              {result.pagination.total} attendees
             </p>
             <SearchParamsPagination
               page={result.pagination.page}

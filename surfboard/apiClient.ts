@@ -1,4 +1,8 @@
-import type { AdminInvitationRow, InviteAdminInput, InviteResult } from "@/lib/api/adminInvitationTypes";
+import type {
+  AdminInvitationRow,
+  InviteAdminInput,
+  InviteResult,
+} from "@/lib/api/adminInvitationTypes";
 import type { ApiResult } from "@/lib/api/types";
 import { createAuditLogApi } from "@/lib/api/auditLogClient";
 import type { QREarningsSettingsData } from "@/surfboard/services/qrEarningsService";
@@ -28,7 +32,7 @@ const BASE = "/api/v1/surfboard";
 
 async function jsonFetch<T>(
   url: string,
-  init?: RequestInit,
+  init?: RequestInit
 ): Promise<ApiResult<T>> {
   const res = await fetch(url, {
     ...init,
@@ -41,7 +45,7 @@ async function jsonFetch<T>(
 async function formFetch<T>(
   url: string,
   formData: FormData,
-  init?: RequestInit,
+  init?: RequestInit
 ): Promise<ApiResult<T>> {
   const res = await fetch(url, {
     ...init,
@@ -57,7 +61,7 @@ function buildPlanListQuery(
   page?: number,
   pageSize?: number,
   filters?: PlanFilters,
-  sort?: PlanSort,
+  sort?: PlanSort
 ): string {
   const sp = new URLSearchParams();
   if (page) sp.set("page", String(page));
@@ -76,12 +80,16 @@ function buildPlanListQuery(
   return sp.toString();
 }
 
-export type AnalyticsDateRangeParam = { dateFrom?: string | Date; dateTo?: string | Date };
+export type AnalyticsDateRangeParam = {
+  dateFrom?: string | Date;
+  dateTo?: string | Date;
+};
 
 /** Appends `&dateFrom=...&dateTo=...` (URL-encoded, ISO) when either bound is set — shared by every analytics.* call that takes a date range. */
 function dateRangeQuery(range?: AnalyticsDateRangeParam): string {
   const sp = new URLSearchParams();
-  if (range?.dateFrom) sp.set("dateFrom", new Date(range.dateFrom).toISOString());
+  if (range?.dateFrom)
+    sp.set("dateFrom", new Date(range.dateFrom).toISOString());
   if (range?.dateTo) sp.set("dateTo", new Date(range.dateTo).toISOString());
   const qs = sp.toString();
   return qs ? `&${qs}` : "";
@@ -190,7 +198,7 @@ export const surfboardApi = {
   qr: {
     accessState: (planId: string, token?: string) =>
       jsonFetch<QRAccessState>(
-        `${BASE}/qr/access-state?planId=${encodeURIComponent(planId)}${token ? `&token=${encodeURIComponent(token)}` : ""}`,
+        `${BASE}/qr/access-state?planId=${encodeURIComponent(planId)}${token ? `&token=${encodeURIComponent(token)}` : ""}`
       ),
 
     initiatePayment: (input: {
@@ -218,7 +226,7 @@ export const surfboardApi = {
         {
           method: "POST",
           body: JSON.stringify({ reference, paystackRef }),
-        },
+        }
       ),
 
     earningsOverview: () => jsonFetch<any>(`${BASE}/qr/earnings-overview`),
@@ -257,28 +265,35 @@ export const surfboardApi = {
     qr: {
       stats: () => jsonFetch<any>(`${BASE}/admin/qr/stats`),
 
-      pendingWithdrawals: (params: { page?: number; pageSize?: number; search?: string } = {}) => {
+      pendingWithdrawals: (
+        params: { page?: number; pageSize?: number; search?: string } = {}
+      ) => {
         const qs = new URLSearchParams();
         qs.set("page", String(params.page ?? 1));
         if (params.pageSize) qs.set("pageSize", String(params.pageSize));
         if (params.search) qs.set("search", params.search);
         return jsonFetch<{
           data: any[];
-          pagination: { page: number; pageSize: number; total: number; totalPages: number };
+          pagination: {
+            page: number;
+            pageSize: number;
+            total: number;
+            totalPages: number;
+          };
         }>(`${BASE}/admin/qr/withdrawals?${qs.toString()}`);
       },
 
       processWithdrawal: (
         id: string,
         action: "APPROVE_PAYOUT" | "REJECT",
-        adminComment?: string,
+        adminComment?: string
       ) =>
         jsonFetch<{ message: string }>(
           `${BASE}/admin/qr/withdrawals/${encodeURIComponent(id)}`,
           {
             method: "PATCH",
             body: JSON.stringify({ action, adminComment }),
-          },
+          }
         ),
 
       updateSettings: (settings: QREarningsSettingsData) =>
@@ -294,13 +309,22 @@ export const surfboardApi = {
       list: () => jsonFetch<AdminInvitationRow[]>(`${BASE}/admin/invitations`),
 
       create: (input: InviteAdminInput) =>
-        jsonFetch<InviteResult>(`${BASE}/admin/invitations`, { method: "POST", body: JSON.stringify(input) }),
+        jsonFetch<InviteResult>(`${BASE}/admin/invitations`, {
+          method: "POST",
+          body: JSON.stringify(input),
+        }),
 
       resend: (id: string) =>
-        jsonFetch<InviteResult>(`${BASE}/admin/invitations/${encodeURIComponent(id)}/resend`, { method: "POST" }),
+        jsonFetch<InviteResult>(
+          `${BASE}/admin/invitations/${encodeURIComponent(id)}/resend`,
+          { method: "POST" }
+        ),
 
       revoke: (id: string) =>
-        jsonFetch<AdminInvitationRow>(`${BASE}/admin/invitations/${encodeURIComponent(id)}`, { method: "DELETE" }),
+        jsonFetch<AdminInvitationRow>(
+          `${BASE}/admin/invitations/${encodeURIComponent(id)}`,
+          { method: "DELETE" }
+        ),
     },
 
     users: {
@@ -313,7 +337,7 @@ export const surfboardApi = {
           role?: string;
           status?: "active" | "inactive";
           subscriptionStatus?: "expired" | "expiring_soon" | "active";
-        } = {},
+        } = {}
       ) => {
         const qs = new URLSearchParams();
         if (params.page) qs.set("page", String(params.page));
@@ -322,7 +346,8 @@ export const surfboardApi = {
         if (params.roleGroup) qs.set("roleGroup", params.roleGroup);
         if (params.role) qs.set("role", params.role);
         if (params.status) qs.set("status", params.status);
-        if (params.subscriptionStatus) qs.set("subscriptionStatus", params.subscriptionStatus);
+        if (params.subscriptionStatus)
+          qs.set("subscriptionStatus", params.subscriptionStatus);
         const query = qs.toString();
         return jsonFetch<any>(`${BASE}/admin/users${query ? `?${query}` : ""}`);
       },
@@ -350,26 +375,26 @@ export const surfboardApi = {
           interval: string;
           status: string;
           currentEnd?: string | Date | null;
-        },
+        }
       ) =>
         jsonFetch<any>(
           `${BASE}/admin/users/${encodeURIComponent(id)}/subscription`,
           {
             method: "PATCH",
             body: JSON.stringify(input),
-          },
+          }
         ),
 
       cancelSubscription: (id: string) =>
         jsonFetch<any>(
           `${BASE}/admin/users/${encodeURIComponent(id)}/subscription`,
-          { method: "DELETE" },
+          { method: "DELETE" }
         ),
 
       promote: (id: string) =>
         jsonFetch<any>(
           `${BASE}/admin/users/${encodeURIComponent(id)}/promote`,
-          { method: "POST" },
+          { method: "POST" }
         ),
     },
 
@@ -378,9 +403,12 @@ export const surfboardApi = {
       if (params.skip) qs.set("skip", String(params.skip));
       if (params.take) qs.set("take", String(params.take));
       const query = qs.toString();
-      return jsonFetch<{ plans: any[]; total: number; skip: number; take: number }>(
-        `${BASE}/admin/plans/map${query ? `?${query}` : ""}`,
-      );
+      return jsonFetch<{
+        plans: any[];
+        total: number;
+        skip: number;
+        take: number;
+      }>(`${BASE}/admin/plans/map${query ? `?${query}` : ""}`);
     },
 
     plans: {
@@ -391,7 +419,7 @@ export const surfboardApi = {
           search?: string;
           status?: string;
           tab?: "all" | "person-count" | "queries";
-        } = {},
+        } = {}
       ) => {
         const qs = new URLSearchParams();
         qs.set("page", String(params.page ?? 1));
@@ -401,14 +429,23 @@ export const surfboardApi = {
         if (params.tab) qs.set("tab", params.tab);
         return jsonFetch<{
           data: any[];
-          pagination: { page: number; pageSize: number; total: number; totalPages: number };
+          pagination: {
+            page: number;
+            pageSize: number;
+            total: number;
+            totalPages: number;
+          };
         }>(`${BASE}/admin/plans?${qs.toString()}`);
       },
 
       stats: () =>
-        jsonFetch<{ total: number; pending: number; underReview: number; lodged: number; queried: number }>(
-          `${BASE}/admin/plans/stats`,
-        ),
+        jsonFetch<{
+          total: number;
+          pending: number;
+          underReview: number;
+          lodged: number;
+          queried: number;
+        }>(`${BASE}/admin/plans/stats`),
     },
   },
 
@@ -441,7 +478,7 @@ export const surfboardApi = {
 
     get: (planId: string, forEdit?: boolean) =>
       jsonFetch<any>(
-        `${BASE}/plans/${encodeURIComponent(planId)}${forEdit ? "?forEdit=true" : ""}`,
+        `${BASE}/plans/${encodeURIComponent(planId)}${forEdit ? "?forEdit=true" : ""}`
       ),
 
     create: (input: CreatePlanInput) =>
@@ -463,7 +500,7 @@ export const surfboardApi = {
 
     checkNumberExists: (planNumber: string, excludeId?: string) =>
       jsonFetch<{ exists: boolean }>(
-        `${BASE}/plans/check-number?planNumber=${encodeURIComponent(planNumber)}${excludeId ? `&excludeId=${encodeURIComponent(excludeId)}` : ""}`,
+        `${BASE}/plans/check-number?planNumber=${encodeURIComponent(planNumber)}${excludeId ? `&excludeId=${encodeURIComponent(excludeId)}` : ""}`
       ),
 
     deleted: (page?: number, pageSize?: number) => {
@@ -472,13 +509,13 @@ export const surfboardApi = {
       if (pageSize) sp.set("pageSize", String(pageSize));
       const qs = sp.toString();
       return jsonFetch<PaginatedPlans>(
-        `${BASE}/plans/deleted${qs ? `?${qs}` : ""}`,
+        `${BASE}/plans/deleted${qs ? `?${qs}` : ""}`
       );
     },
 
     facilitators: (withPlanNumbers?: boolean) =>
       jsonFetch<any>(
-        `${BASE}/plans/facilitators${withPlanNumbers ? "?withPlanNumbers=true" : ""}`,
+        `${BASE}/plans/facilitators${withPlanNumbers ? "?withPlanNumbers=true" : ""}`
       ),
 
     boundaries: (geometry: any) =>
@@ -498,7 +535,7 @@ export const surfboardApi = {
 
     referenceNumbers: (planType: string) =>
       jsonFetch<string[]>(
-        `${BASE}/plans/reference-numbers?planType=${encodeURIComponent(planType)}`,
+        `${BASE}/plans/reference-numbers?planType=${encodeURIComponent(planType)}`
       ),
 
     adminBoundaries: (geometry: object) =>
@@ -516,33 +553,33 @@ export const surfboardApi = {
       page?: number,
       pageSize?: number,
       filters?: PlanFilters,
-      sort?: PlanSort,
+      sort?: PlanSort
     ) =>
       jsonFetch<PaginatedPlans>(
-        `${BASE}/plans/shared?${buildPlanListQuery(page ?? 1, pageSize ?? 10, filters, sort)}`,
+        `${BASE}/plans/shared?${buildPlanListQuery(page ?? 1, pageSize ?? 10, filters, sort)}`
       ),
 
     sharedWithMe: (
       page?: number,
       pageSize?: number,
       filters?: PlanFilters,
-      sort?: PlanSort,
+      sort?: PlanSort
     ) =>
       jsonFetch<PaginatedPlans>(
-        `${BASE}/plans/shared-with-me?${buildPlanListQuery(page ?? 1, pageSize ?? 10, filters, sort)}`,
+        `${BASE}/plans/shared-with-me?${buildPlanListQuery(page ?? 1, pageSize ?? 10, filters, sort)}`
       ),
 
     deleteAttachment: (
       planId: string,
       fileUrl: string,
-      fileType: "pdf" | "cad" | "certificate",
+      fileType: "pdf" | "cad" | "certificate"
     ) =>
       jsonFetch<any>(
         `${BASE}/plans/${encodeURIComponent(planId)}/attachments`,
         {
           method: "DELETE",
           body: JSON.stringify({ fileUrl, fileType }),
-        },
+        }
       ),
 
     permanentDelete: (planId: string) =>
@@ -557,7 +594,7 @@ export const surfboardApi = {
         {
           method: "PATCH",
           body: JSON.stringify({ count }),
-        },
+        }
       ),
 
     /** Admin-only correction of a survey title. */
@@ -570,7 +607,7 @@ export const surfboardApi = {
     /** Public, QR-gated: redacts geometry/pillars/centroid/user unless the caller has a PAID_ACTIVE or FREE QR-earnings session. */
     getPublic: (planId: string, token?: string) =>
       jsonFetch<any>(
-        `${BASE}/plans/${encodeURIComponent(planId)}/public${token ? `?token=${encodeURIComponent(token)}` : ""}`,
+        `${BASE}/plans/${encodeURIComponent(planId)}/public${token ? `?token=${encodeURIComponent(token)}` : ""}`
       ),
 
     /** Public, ungated — full plan data, no redaction. Increments the QR scan counter. */
@@ -587,7 +624,7 @@ export const surfboardApi = {
         scale?: number;
         width?: number;
         forceOpaque?: boolean;
-      },
+      }
     ) => {
       const sp = new URLSearchParams();
       if (options?.darkColor) sp.set("darkColor", options.darkColor);
@@ -601,7 +638,7 @@ export const surfboardApi = {
       if (options?.forceOpaque) sp.set("forceOpaque", "true");
       const qs = sp.toString();
       return jsonFetch<{ qrCodeDataUrl: string }>(
-        `${BASE}/plans/${encodeURIComponent(planId)}/qr${qs ? `?${qs}` : ""}`,
+        `${BASE}/plans/${encodeURIComponent(planId)}/qr${qs ? `?${qs}` : ""}`
       );
     },
 
@@ -617,14 +654,14 @@ export const surfboardApi = {
         {
           method: "PATCH",
           body: JSON.stringify({ redCopyFileUrl }),
-        },
+        }
       ),
 
     /** multipart/form-data — the red-copy file itself, not a JSON body. */
     submitRedCopy: (planId: string, formData: FormData) =>
       formFetch<any>(
         `${BASE}/plans/${encodeURIComponent(planId)}/red-copy`,
-        formData,
+        formData
       ),
 
     restore: (planId: string) =>
@@ -653,26 +690,52 @@ export const surfboardApi = {
     /** Shares by email, whether or not the recipient has an account yet — see invitePlanShareByEmail. */
     inviteByEmail: (planId: string, email: string) =>
       jsonFetch<
-        | { invited: boolean; email: string; expiresAt: string; inviteId: string; emailSent: boolean }
-        | { id: string; sharedTo: string[]; sharedUser?: { id: string; firstName: string; lastName: string; email: string; surconRegNumber: string | null } }
-      >(
-        `${BASE}/plans/${encodeURIComponent(planId)}/share/invite`,
-        { method: "POST", body: JSON.stringify({ email }) }
-      ),
+        | {
+            invited: boolean;
+            email: string;
+            expiresAt: string;
+            inviteId: string;
+            emailSent: boolean;
+          }
+        | {
+            id: string;
+            sharedTo: string[];
+            sharedUser?: {
+              id: string;
+              firstName: string;
+              lastName: string;
+              email: string;
+              surconRegNumber: string | null;
+            };
+          }
+      >(`${BASE}/plans/${encodeURIComponent(planId)}/share/invite`, {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      }),
 
     /** A recipient's own private attachments on a shared plan — never visible to the owner or other recipients. */
     viewerAttachments: {
       list: (planId: string) =>
-        jsonFetch<{ id: string; url: string; fileName: string; createdAt: string }[]>(
-          `${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments`
-        ),
+        jsonFetch<
+          { id: string; url: string; fileName: string; createdAt: string }[]
+        >(`${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments`),
       // Direct-to-S3: presign, PUT the bytes straight to S3 (bypasses
       // Vercel's Route Handler body-size cap, which broke multi-MB PDF
       // uploads), then finalize to record the attachment.
       upload: async (planId: string, file: File) => {
-        const presign = await jsonFetch<{ uploadUrl: string; key: string; fileUrl: string }>(
+        const presign = await jsonFetch<{
+          uploadUrl: string;
+          key: string;
+          fileUrl: string;
+        }>(
           `${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments/presign`,
-          { method: "POST", body: JSON.stringify({ fileName: file.name, contentType: file.type || "application/octet-stream" }) }
+          {
+            method: "POST",
+            body: JSON.stringify({
+              fileName: file.name,
+              contentType: file.type || "application/octet-stream",
+            }),
+          }
         );
         if (!presign.success) return presign as any;
 
@@ -682,13 +745,25 @@ export const surfboardApi = {
           headers: { "Content-Type": file.type || "application/octet-stream" },
         });
         if (!putRes.ok) {
-          return { success: false, error: "Failed to upload attachment" } as const;
+          return {
+            success: false,
+            error: "Failed to upload attachment",
+          } as const;
         }
 
-        return jsonFetch<{ id: string; url: string; fileName: string; createdAt: string }>(
-          `${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments`,
-          { method: "POST", body: JSON.stringify({ fileName: file.name, key: presign.data.key, fileUrl: presign.data.fileUrl }) }
-        );
+        return jsonFetch<{
+          id: string;
+          url: string;
+          fileName: string;
+          createdAt: string;
+        }>(`${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments`, {
+          method: "POST",
+          body: JSON.stringify({
+            fileName: file.name,
+            key: presign.data.key,
+            fileUrl: presign.data.fileUrl,
+          }),
+        });
       },
       delete: (planId: string, attachmentId: string) =>
         jsonFetch<{ id: string }>(
@@ -701,13 +776,31 @@ export const surfboardApi = {
     comments: {
       list: (planId: string) =>
         jsonFetch<
-          { id: string; planId: string; authorId: string; authorName: string; isOwner: boolean; body: string; createdAt: string; editedAt: string | null }[]
+          {
+            id: string;
+            planId: string;
+            authorId: string;
+            authorName: string;
+            isOwner: boolean;
+            body: string;
+            createdAt: string;
+            editedAt: string | null;
+          }[]
         >(`${BASE}/plans/${encodeURIComponent(planId)}/comments`),
       add: (planId: string, body: string) =>
-        jsonFetch<{ id: string; planId: string; authorId: string; authorName: string; isOwner: boolean; body: string; createdAt: string; editedAt: string | null }>(
-          `${BASE}/plans/${encodeURIComponent(planId)}/comments`,
-          { method: "POST", body: JSON.stringify({ body }) }
-        ),
+        jsonFetch<{
+          id: string;
+          planId: string;
+          authorId: string;
+          authorName: string;
+          isOwner: boolean;
+          body: string;
+          createdAt: string;
+          editedAt: string | null;
+        }>(`${BASE}/plans/${encodeURIComponent(planId)}/comments`, {
+          method: "POST",
+          body: JSON.stringify({ body }),
+        }),
       delete: (planId: string, commentId: string) =>
         jsonFetch<{ id: string }>(
           `${BASE}/plans/${encodeURIComponent(planId)}/comments/${encodeURIComponent(commentId)}`,
@@ -721,12 +814,12 @@ export const surfboardApi = {
         {
           method: "POST",
           body: JSON.stringify({ response }),
-        },
+        }
       ),
 
     updateStatus: (
       planId: string,
-      status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW",
+      status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW"
     ) =>
       jsonFetch<any>(`${BASE}/plans/${encodeURIComponent(planId)}/status`, {
         method: "PATCH",
@@ -742,7 +835,7 @@ export const surfboardApi = {
       /** For USER: their own batches. For ADMIN/SUPERADMIN: every batch, optionally filtered by status. */
       list: (status?: string) =>
         jsonFetch<any[]>(
-          `${BASE}/cod/batches${status ? `?status=${encodeURIComponent(status)}` : ""}`,
+          `${BASE}/cod/batches${status ? `?status=${encodeURIComponent(status)}` : ""}`
         ),
 
       /**
@@ -750,7 +843,15 @@ export const surfboardApi = {
        * is the admin Batch Management page (`status` filter); for USER it's
        * "My Batches"' Active/History tabs (`scope`, default "active").
        */
-      listPaginated: (params: { page?: number; pageSize?: number; status?: string; scope?: "active" | "history"; search?: string } = {}) => {
+      listPaginated: (
+        params: {
+          page?: number;
+          pageSize?: number;
+          status?: string;
+          scope?: "active" | "history";
+          search?: string;
+        } = {}
+      ) => {
         const qs = new URLSearchParams();
         qs.set("page", String(params.page ?? 1));
         if (params.pageSize) qs.set("pageSize", String(params.pageSize));
@@ -759,13 +860,18 @@ export const surfboardApi = {
         if (params.search) qs.set("search", params.search);
         return jsonFetch<{
           data: any[];
-          pagination: { page: number; pageSize: number; total: number; totalPages: number };
+          pagination: {
+            page: number;
+            pageSize: number;
+            total: number;
+            totalPages: number;
+          };
         }>(`${BASE}/cod/batches?${qs.toString()}`);
       },
 
       statsByStatus: (status: string) =>
         jsonFetch<{ count: number; totalPlans: number; totalAmount: number }>(
-          `${BASE}/cod/batches/stats?status=${encodeURIComponent(status)}`,
+          `${BASE}/cod/batches/stats?status=${encodeURIComponent(status)}`
         ),
 
       allStats: () =>
@@ -791,20 +897,20 @@ export const surfboardApi = {
       uploadLasgReceipt: (
         batchId: string,
         receiptUrl: string,
-        receiptS3Key: string,
+        receiptS3Key: string
       ) =>
         jsonFetch<any>(
           `${BASE}/cod/batches/${encodeURIComponent(batchId)}/lasg-receipt`,
           {
             method: "POST",
             body: JSON.stringify({ receiptUrl, receiptS3Key }),
-          },
+          }
         ),
 
       retryPayment: (batchId: string) =>
         jsonFetch<any>(
           `${BASE}/cod/batches/${encodeURIComponent(batchId)}/payment/retry`,
-          { method: "POST" },
+          { method: "POST" }
         ),
 
       /** Fallback single-receipt AI-analysis path (vs. the two-link cross-validated flow below). */
@@ -814,20 +920,20 @@ export const surfboardApi = {
           {
             method: "POST",
             body: JSON.stringify({ receiptUrl }),
-          },
+          }
         ),
 
       verifyPaymentLinks: (
         batchId: string,
         lasgReceiptUrl: string,
-        remitaReceiptUrl: string,
+        remitaReceiptUrl: string
       ) =>
         jsonFetch<any>(
           `${BASE}/cod/batches/${encodeURIComponent(batchId)}/payment/verify-links`,
           {
             method: "POST",
             body: JSON.stringify({ lasgReceiptUrl, remitaReceiptUrl }),
-          },
+          }
         ),
 
       /** Legacy single-reference Remita verification path — batchId is in the URL only, verifyBatchPayment looks the batch up by reference. */
@@ -837,7 +943,7 @@ export const surfboardApi = {
           {
             method: "POST",
             body: JSON.stringify({ reference }),
-          },
+          }
         ),
 
       /** Dev-only debug tool (SUPERADMIN, non-production) — resets every plan's batch/stage/lock fields and deletes all batches. */
@@ -865,7 +971,7 @@ export const surfboardApi = {
     }) =>
       jsonFetch<{ fee: number; isDoubleFee: boolean }>(
         `${BASE}/cod/fee-preview`,
-        { method: "POST", body: JSON.stringify(input) },
+        { method: "POST", body: JSON.stringify(input) }
       ),
 
     locks: {
@@ -891,7 +997,7 @@ export const surfboardApi = {
 
       getStatus: (planId: string, role: MDARole) =>
         jsonFetch<any>(
-          `${BASE}/cod/locks/${encodeURIComponent(planId)}?role=${encodeURIComponent(role)}`,
+          `${BASE}/cod/locks/${encodeURIComponent(planId)}?role=${encodeURIComponent(role)}`
         ),
 
       acquire: (planId: string, role: MDARole) =>
@@ -934,7 +1040,7 @@ export const surfboardApi = {
           | "surcon"
           | "records-i"
           | "records-ii"
-          | "intake",
+          | "intake"
       ) =>
         jsonFetch<string[]>(`${BASE}/mda/remarks/query-reasons?role=${role}`),
     },
@@ -942,7 +1048,7 @@ export const surfboardApi = {
     accounts: {
       batches: (view?: "history") =>
         jsonFetch<any[]>(
-          `${BASE}/mda/accounts/batches${view ? `?view=${view}` : ""}`,
+          `${BASE}/mda/accounts/batches${view ? `?view=${view}` : ""}`
         ),
 
       /** MDA_SUPERADMIN can view (the GET above) but not decide — matches the source's role check exactly. */
@@ -952,14 +1058,14 @@ export const surfboardApi = {
           {
             method: "POST",
             body: JSON.stringify({ approved, comment }),
-          },
+          }
         ),
     },
 
     archive: {
       batches: (view?: "history") =>
         jsonFetch<any[]>(
-          `${BASE}/mda/archive/batches${view ? `?view=${view}` : ""}`,
+          `${BASE}/mda/archive/batches${view ? `?view=${view}` : ""}`
         ),
 
       markArchived: (planId: string, notes?: string) =>
@@ -968,14 +1074,14 @@ export const surfboardApi = {
           {
             method: "POST",
             body: JSON.stringify({ notes }),
-          },
+          }
         ),
     },
 
     intake: {
       batches: (view?: "history") =>
         jsonFetch<any[]>(
-          `${BASE}/mda/intake/batches${view ? `?view=${view}` : ""}`,
+          `${BASE}/mda/intake/batches${view ? `?view=${view}` : ""}`
         ),
 
       /** Batch-level variant: approves/queries every eligible plan in the batch in one transaction. */
@@ -985,7 +1091,7 @@ export const surfboardApi = {
           {
             method: "POST",
             body: JSON.stringify({ approved, comment }),
-          },
+          }
         ),
     },
 
@@ -995,7 +1101,7 @@ export const surfboardApi = {
     recordsII: {
       batches: (view?: "history") =>
         jsonFetch<any[]>(
-          `${BASE}/mda/records-ii/batches${view ? `?view=${view}` : ""}`,
+          `${BASE}/mda/records-ii/batches${view ? `?view=${view}` : ""}`
         ),
 
       /** Approval here transmits to OSSG and sets the plan LODGED — kept separate from the shared /mda/:role decision route below. */
@@ -1005,7 +1111,7 @@ export const surfboardApi = {
           {
             method: "POST",
             body: JSON.stringify({ approved, comment }),
-          },
+          }
         ),
     },
 
@@ -1013,24 +1119,24 @@ export const surfboardApi = {
     stage: {
       plans: (
         role: "charting" | "surcon" | "records-i" | "records-ii",
-        view?: "history",
+        view?: "history"
       ) =>
         jsonFetch<any[]>(
-          `${BASE}/mda/${role}/plans${view ? `?view=${view}` : ""}`,
+          `${BASE}/mda/${role}/plans${view ? `?view=${view}` : ""}`
         ),
 
       decide: (
         role: "charting" | "surcon" | "records-i" | "intake",
         planId: string,
         approved: boolean,
-        comment?: string,
+        comment?: string
       ) =>
         jsonFetch<any>(
           `${BASE}/mda/${role}/plans/${encodeURIComponent(planId)}/decision`,
           {
             method: "POST",
             body: JSON.stringify({ approved, comment }),
-          },
+          }
         ),
     },
 
@@ -1041,12 +1147,12 @@ export const surfboardApi = {
   users: {
     lookup: (email: string, surconRegNumber: string) =>
       jsonFetch<any>(
-        `${BASE}/users/lookup?email=${encodeURIComponent(email)}&surconRegNumber=${encodeURIComponent(surconRegNumber)}`,
+        `${BASE}/users/lookup?email=${encodeURIComponent(email)}&surconRegNumber=${encodeURIComponent(surconRegNumber)}`
       ),
 
     search: (query: string) =>
       jsonFetch<SearchUser[]>(
-        `${BASE}/users/search?query=${encodeURIComponent(query)}`,
+        `${BASE}/users/search?query=${encodeURIComponent(query)}`
       ),
   },
 
@@ -1054,14 +1160,19 @@ export const surfboardApi = {
     /** ADMIN/SUPERADMIN get the full-population view, USER gets their own plans only (scoped server-side). */
     stats: () => jsonFetch<StatCards>(`${BASE}/analytics?section=stats`),
 
-    dimension: (dimension: AnalyticsDimension, range?: AnalyticsDateRangeParam) =>
+    dimension: (
+      dimension: AnalyticsDimension,
+      range?: AnalyticsDateRangeParam
+    ) =>
       jsonFetch<DimensionBreakdownRow[]>(
-        `${BASE}/analytics?section=dimension&dimension=${dimension}${dateRangeQuery(range)}`,
+        `${BASE}/analytics?section=dimension&dimension=${dimension}${dateRangeQuery(range)}`
       ),
 
     /** Surveyors ranked by plan count — ADMIN/SUPERADMIN only. */
     topSurveyors: (limit = 5, range?: AnalyticsDateRangeParam) =>
-      jsonFetch<TopSurveyorRow[]>(`${BASE}/analytics?section=top-surveyors&limit=${limit}${dateRangeQuery(range)}`),
+      jsonFetch<TopSurveyorRow[]>(
+        `${BASE}/analytics?section=top-surveyors&limit=${limit}${dateRangeQuery(range)}`
+      ),
 
     lodgementTrend: () =>
       jsonFetch<LodgementTrend>(`${BASE}/analytics?section=lodgement-trend`),
@@ -1071,7 +1182,9 @@ export const surfboardApi = {
 
     /** Own-plans-only dashboard analytics (facilitator/LGA/pillar breakdowns + pending certificates). Filtered by `dateOnSurveyPlan` when a range is given. */
     dashboard: (range?: AnalyticsDateRangeParam) =>
-      jsonFetch<any>(`${BASE}/analytics?section=dashboard${dateRangeQuery(range)}`),
+      jsonFetch<any>(
+        `${BASE}/analytics?section=dashboard${dateRangeQuery(range)}`
+      ),
 
     /** MDA stage roles use this instead — queue depth/time-in-stage, not the platform-wide numbers above. */
     mdaStageStats: () =>
@@ -1105,7 +1218,7 @@ export const surfboardApi = {
 
     userAndActiveSub: () =>
       jsonFetch<{ subscription: any | null; user: any }>(
-        `${BASE}/subscription/user-and-active`,
+        `${BASE}/subscription/user-and-active`
       ),
 
     initiate: (planId: string) =>
@@ -1152,7 +1265,7 @@ export const surfboardApi = {
       fileType: "pdf" | "cad" | "certificate" | "redcopy",
       userId: string,
       planNumber?: string,
-      filename?: string,
+      filename?: string
     ) => {
       const fd = new FormData();
       fd.append("file", file);
@@ -1173,7 +1286,7 @@ export const surfboardApi = {
     uploadSurfboardFileWithAuth: async (
       file: File,
       fileType: "pdf" | "cad" | "certificate" | "redcopy",
-      planNumber?: string,
+      planNumber?: string
     ) => {
       const fd = new FormData();
       fd.append("file", file);
@@ -1201,7 +1314,7 @@ export const surfboardApi = {
     deleteSurfboardFile: async (input: { key?: string; url?: string }) => {
       const result = await jsonFetch<{ success: boolean }>(
         `${BASE}/files/delete`,
-        { method: "POST", body: JSON.stringify(input) },
+        { method: "POST", body: JSON.stringify(input) }
       );
       if (!result.success) throw new Error(result.error);
     },
@@ -1219,20 +1332,22 @@ export const surfboardApi = {
       if (params?.limit) qs.set("limit", String(params.limit));
       const query = qs.toString();
       return jsonFetch<any[]>(
-        `${BASE}/notifications${query ? `?${query}` : ""}`,
+        `${BASE}/notifications${query ? `?${query}` : ""}`
       );
     },
 
     /** Paginated variant for the admin Notification Management page — passing `page` switches the route to the paginated envelope shape. */
-    listPaginated: (params: {
-      page?: number;
-      pageSize?: number;
-      search?: string;
-      includeRead?: boolean;
-      includeDismissed?: boolean;
-      type?: string;
-      audience?: string;
-    } = {}) => {
+    listPaginated: (
+      params: {
+        page?: number;
+        pageSize?: number;
+        search?: string;
+        includeRead?: boolean;
+        includeDismissed?: boolean;
+        type?: string;
+        audience?: string;
+      } = {}
+    ) => {
       const qs = new URLSearchParams();
       qs.set("page", String(params.page ?? 1));
       if (params.pageSize) qs.set("pageSize", String(params.pageSize));
@@ -1258,10 +1373,7 @@ export const surfboardApi = {
       title: string;
       message: string;
       audience:
-        | "SPECIFIC_USERS"
-        | "GENERAL_ADMINS"
-        | "SUPERADMIN"
-        | "ALL_USERS";
+        "SPECIFIC_USERS" | "GENERAL_ADMINS" | "SUPERADMIN" | "ALL_USERS";
       userIds?: string[];
       link?: string;
       metadata?: any;
@@ -1293,13 +1405,13 @@ export const surfboardApi = {
     markRead: (id: string) =>
       jsonFetch<{ success: boolean }>(
         `${BASE}/notifications/${encodeURIComponent(id)}/read`,
-        { method: "POST" },
+        { method: "POST" }
       ),
 
     dismiss: (id: string) =>
       jsonFetch<{ success: boolean }>(
         `${BASE}/notifications/${encodeURIComponent(id)}/dismiss`,
-        { method: "POST" },
+        { method: "POST" }
       ),
 
     update: (
@@ -1316,26 +1428,23 @@ export const surfboardApi = {
         title: string;
         message: string;
         audience:
-          | "SPECIFIC_USERS"
-          | "GENERAL_ADMINS"
-          | "SUPERADMIN"
-          | "ALL_USERS";
+          "SPECIFIC_USERS" | "GENERAL_ADMINS" | "SUPERADMIN" | "ALL_USERS";
         userIds: string[];
         link: string | null;
         showAsModal: boolean;
         startsAt: string | null;
         endsAt: string | null;
-      }>,
+      }>
     ) =>
       jsonFetch<{ id: string }>(
         `${BASE}/notifications/${encodeURIComponent(id)}`,
-        { method: "PATCH", body: JSON.stringify(input) },
+        { method: "PATCH", body: JSON.stringify(input) }
       ),
 
     remove: (id: string) =>
       jsonFetch<{ success: boolean }>(
         `${BASE}/notifications/${encodeURIComponent(id)}`,
-        { method: "DELETE" },
+        { method: "DELETE" }
       ),
   },
 
@@ -1352,28 +1461,28 @@ export const surfboardApi = {
         {
           method: "POST",
           body: JSON.stringify({ surveyTitle }),
-        },
+        }
       ),
   },
 
   recordCopy: {
     downloadPdf: (planId: string) =>
       jsonFetch<string>(
-        `${BASE}/plans/${encodeURIComponent(planId)}/record-copy/download`,
+        `${BASE}/plans/${encodeURIComponent(planId)}/record-copy/download`
       ),
 
     saveVerification: (
       planId: string,
       verdict: string,
       score: number,
-      verificationData: any,
+      verificationData: any
     ) =>
       jsonFetch<{ success: boolean }>(
         `${BASE}/plans/${encodeURIComponent(planId)}/record-copy/verification`,
         {
           method: "POST",
           body: JSON.stringify({ verdict, score, verificationData }),
-        },
+        }
       ),
   },
 
@@ -1391,7 +1500,7 @@ export const surfboardApi = {
     revert: (settingsId: string) =>
       jsonFetch<{ success: boolean }>(
         `${BASE}/settings/revert/${encodeURIComponent(settingsId)}`,
-        { method: "POST" },
+        { method: "POST" }
       ),
 
     reset: () =>
@@ -1417,7 +1526,7 @@ export const surfboardApi = {
         {
           method: "POST",
           body: JSON.stringify({ details }),
-        },
+        }
       ),
 
     toggleUserKyc: (userId: string, status: boolean) =>
@@ -1426,7 +1535,7 @@ export const surfboardApi = {
         {
           method: "PATCH",
           body: JSON.stringify({ status }),
-        },
+        }
       ),
   },
 };

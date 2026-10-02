@@ -71,11 +71,16 @@ export function useRevaAdminAccess() {
         if (!isMounted) return;
 
         // Multi-platform awareness: Get specifically the Reva portal session
-        const revaSession = fullUserData.platforms?.[Platform.REVA] || 
-                          (fullUserData.platform === Platform.REVA ? { role: fullUserData.role } : null);
+        const revaSession =
+          fullUserData.platforms?.[Platform.REVA] ||
+          (fullUserData.platform === Platform.REVA
+            ? { role: fullUserData.role }
+            : null);
 
         if (!revaSession || !revaSession.role) {
-          console.log("❌ No active Reva session found in current multi-platform login");
+          console.log(
+            "❌ No active Reva session found in current multi-platform login"
+          );
           if (isMounted) {
             setIsAdmin(false);
             router.push("/reva-restricted/login");
@@ -85,15 +90,18 @@ export function useRevaAdminAccess() {
 
         // Set the active session role/data for this platform
         setUserData({
-            ...fullUserData,
-            platform: Platform.REVA,
-            role: revaSession.role
+          ...fullUserData,
+          platform: Platform.REVA,
+          role: revaSession.role,
         });
 
         // 7. Admin Role Check — reva/access/routes.ts is the single source
         // of truth for who can reach the admin panel, same registry
         // proxy.ts and the layout's nav now read from.
-        const hasAdminRole = canAccessRoute("/reva-restricted/dashboard", revaSession.role);
+        const hasAdminRole = canAccessRoute(
+          "/reva-restricted/dashboard",
+          revaSession.role
+        );
 
         if (isMounted) {
           setIsAdmin(hasAdminRole);

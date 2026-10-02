@@ -14,7 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useConfirm } from "@/hooks/useConfirm";
-import { PendingInvitations, announceInviteResult } from "@/components/admin/PendingInvitations";
+import {
+  PendingInvitations,
+  announceInviteResult,
+} from "@/components/admin/PendingInvitations";
 import { useServerList } from "@/hooks/useServerList";
 import { Pagination } from "@/components/ui/pagination";
 import { ViewToggle } from "@/components/ui/view-toggle";
@@ -89,10 +92,10 @@ export default function UserManagementPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState<User | null>(
-    null,
+    null
   );
   const [currentUserRole, setCurrentUserRole] = useState<SurfboardRole | null>(
-    null,
+    null
   );
   const [viewMode, setViewMode] = useViewMode("user-management", "list");
   const router = useRouter();
@@ -138,7 +141,7 @@ export default function UserManagementPage() {
         role: "all",
         subscriptionStatus: "all",
       },
-    },
+    }
   );
 
   const activeTab = filters.roleGroup;
@@ -258,11 +261,11 @@ export default function UserManagementPage() {
 
     const result = await surfboardApi.admin.users.setStatus(
       userId,
-      !currentStatus,
+      !currentStatus
     );
     if (result.success) {
       toast.success(
-        `User ${!currentStatus ? "activated" : "deactivated"} successfully`,
+        `User ${!currentStatus ? "activated" : "deactivated"} successfully`
       );
       reload();
       loadStats();
@@ -330,7 +333,7 @@ export default function UserManagementPage() {
 
     const result = await surfboardApi.admin.users.updateSubscription(
       editingSubscription.id,
-      subscriptionForm,
+      subscriptionForm
     );
 
     if (result.success) {
@@ -464,7 +467,9 @@ export default function UserManagementPage() {
                     onClick={() => setShowAddAdminModal(true)}
                     className="sm:mr-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    {activeTab === "admins" ? "Invite Admin" : "Invite MDA User"}
+                    {activeTab === "admins"
+                      ? "Invite Admin"
+                      : "Invite MDA User"}
                   </button>
                 )}
                 <button
@@ -868,7 +873,7 @@ export default function UserManagementPage() {
                           >
                             <SelectTrigger
                               className={`h-auto w-auto min-w-0 gap-1.5 px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
-                                user.role,
+                                user.role
                               )} border-0 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-60`}
                             >
                               <SelectValue />
@@ -928,7 +933,7 @@ export default function UserManagementPage() {
                           <div>
                             <span
                               className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getSubscriptionStatusColor(
-                                user.subscription.status,
+                                user.subscription.status
                               )}`}
                             >
                               {user.subscription.planName}
@@ -940,7 +945,9 @@ export default function UserManagementPage() {
                               ).toLocaleString()}
                               /{user.subscription.interval}
                             </span>
-                            <SubscriptionExpiry currentEnd={user.subscription.currentEnd} />
+                            <SubscriptionExpiry
+                              currentEnd={user.subscription.currentEnd}
+                            />
                           </div>
                         ) : (
                           <span className="inline-flex w-fit px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 rounded-full">
@@ -1049,7 +1056,7 @@ export default function UserManagementPage() {
                           >
                             <SelectTrigger
                               className={`h-auto w-auto min-w-0 gap-1.5 px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
-                                user.role,
+                                user.role
                               )} border-0 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-60`}
                             >
                               <SelectValue />
@@ -1110,7 +1117,7 @@ export default function UserManagementPage() {
                             <div>
                               <span
                                 className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getSubscriptionStatusColor(
-                                  user.subscription.status,
+                                  user.subscription.status
                                 )}`}
                               >
                                 {user.subscription.planName}
@@ -1122,7 +1129,9 @@ export default function UserManagementPage() {
                                 ).toLocaleString()}
                                 /{user.subscription.interval}
                               </div>
-                              <SubscriptionExpiry currentEnd={user.subscription.currentEnd} />
+                              <SubscriptionExpiry
+                                currentEnd={user.subscription.currentEnd}
+                              />
                             </div>
                           ) : (
                             <span className="px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 rounded-full">
@@ -1267,7 +1276,7 @@ export default function UserManagementPage() {
                           </label>
                           <span
                             className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
-                              selectedUser.role,
+                              selectedUser.role
                             )}`}
                           >
                             {selectedUser.role}
@@ -1520,7 +1529,9 @@ export default function UserManagementPage() {
                 <div className="p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                      {activeTab === "admins" ? "Invite Admin" : "Invite MDA User"}
+                      {activeTab === "admins"
+                        ? "Invite Admin"
+                        : "Invite MDA User"}
                     </h3>
                     <button
                       onClick={() => setShowAddAdminModal(false)}

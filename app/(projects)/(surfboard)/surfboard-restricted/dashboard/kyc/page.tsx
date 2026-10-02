@@ -26,7 +26,8 @@ export default async function KycPage() {
           Surveyor's KYC
         </h1>
         <p className="text-gray-500 dark:text-gray-400">
-          Review and validate surveyor accounts to grant them full access to CoD submissions.
+          Review and validate surveyor accounts to grant them full access to CoD
+          submissions.
         </p>
       </div>
 

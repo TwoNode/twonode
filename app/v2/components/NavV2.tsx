@@ -15,15 +15,25 @@ export function NavV2() {
   return (
     <header
       className="sticky top-0 z-40 border-b backdrop-blur"
-      style={{ borderColor: "var(--v2-border)", background: "color-mix(in oklab, var(--v2-bg) 88%, transparent)" }}
+      style={{
+        borderColor: "var(--v2-border)",
+        background: "color-mix(in oklab, var(--v2-bg) 88%, transparent)",
+      }}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 sm:px-8">
-        <Link href="/v2" className="font-[family-name:var(--font-display)] text-lg font-medium tracking-tight">
+        <Link
+          href="/v2"
+          className="font-[family-name:var(--font-display)] text-lg font-medium tracking-tight"
+        >
           TwoNode
         </Link>
         <nav className="hidden items-center gap-8 text-sm md:flex">
           {LINKS.map((l) => (
-            <Link key={l.href} href={l.href} className="opacity-70 transition-opacity hover:opacity-100">
+            <Link
+              key={l.href}
+              href={l.href}
+              className="opacity-70 transition-opacity hover:opacity-100"
+            >
               {l.label}
             </Link>
           ))}

@@ -15,9 +15,15 @@ export const ACCENT_CLASSES: Record<string, string> = {
 
 export function Industries() {
   return (
-    <section id="industries" className="border-t" style={{ borderColor: "var(--v2-border)" }}>
+    <section
+      id="industries"
+      className="border-t"
+      style={{ borderColor: "var(--v2-border)" }}
+    >
       <div className="mx-auto max-w-6xl px-6 py-24 sm:px-8">
-        <p className="text-sm uppercase tracking-[0.2em] opacity-60">Start with an industry</p>
+        <p className="text-sm uppercase tracking-[0.2em] opacity-60">
+          Start with an industry
+        </p>
         <h2 className="mt-3 max-w-2xl font-[family-name:var(--font-display)] text-3xl font-medium sm:text-4xl">
           The industries we&apos;re building in.
         </h2>
@@ -28,13 +34,20 @@ export function Industries() {
               key={industry.slug}
               href={`/v2/industries/${industry.slug}`}
               className="group flex flex-col rounded-2xl border p-8 transition-colors hover:border-current"
-              style={{ borderColor: "var(--v2-border)", background: "var(--v2-surface)" }}
+              style={{
+                borderColor: "var(--v2-border)",
+                background: "var(--v2-surface)",
+              }}
             >
               <span className="text-xs uppercase tracking-widest opacity-50">
                 {industry.status === "active" ? "Active" : "Next"}
               </span>
-              <h3 className="mt-3 font-[family-name:var(--font-display)] text-2xl font-medium">{industry.name}</h3>
-              <p className="mt-1 text-sm italic opacity-70">{industry.positioning}</p>
+              <h3 className="mt-3 font-[family-name:var(--font-display)] text-2xl font-medium">
+                {industry.name}
+              </h3>
+              <p className="mt-1 text-sm italic opacity-70">
+                {industry.positioning}
+              </p>
               <p className="mt-5 text-sm leading-relaxed opacity-80">
                 {industry.context.slice(0, 180)}…
               </p>

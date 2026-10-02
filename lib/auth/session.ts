@@ -103,7 +103,10 @@ export async function issueSession(
 ): Promise<void> {
   const familyId = crypto.randomUUID();
   const rawRefreshToken = crypto.randomBytes(32).toString("hex");
-  const tokenHash = crypto.createHash("sha256").update(rawRefreshToken).digest("hex");
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(rawRefreshToken)
+    .digest("hex");
 
   await prisma.refreshToken.create({
     data: {
@@ -117,7 +120,9 @@ export async function issueSession(
 
   const user = userVerification ?? (await findUserById(platform, userId));
   const emailVerified = user?.emailVerified ?? false;
-  const mustVerifyNow = user ? await computeMustVerifyNow(platform, user) : false;
+  const mustVerifyNow = user
+    ? await computeMustVerifyNow(platform, user)
+    : false;
 
   const accessToken = await signAccessToken({
     sub: userId,
@@ -126,12 +131,16 @@ export async function issueSession(
     emailVerified,
     mustVerifyNow,
   });
-  await setAuthCookies(platform, accessToken, rawRefreshToken, refreshMaxAgeSeconds);
+  await setAuthCookies(
+    platform,
+    accessToken,
+    rawRefreshToken,
+    refreshMaxAgeSeconds
+  );
 }
 
 export type RefreshResult =
-  | { ok: true }
-  | { ok: false; reason: "invalid" | "inactive" };
+  { ok: true } | { ok: false; reason: "invalid" | "inactive" };
 
 /**
  * Rotates a refresh token into a fresh access+refresh pair, with reuse
@@ -147,15 +156,25 @@ export async function rotateRefreshToken(
   platform: Platform,
   rawRefreshToken: string
 ): Promise<RefreshResult> {
-  const tokenHash = crypto.createHash("sha256").update(rawRefreshToken).digest("hex");
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(rawRefreshToken)
+    .digest("hex");
 
   const rotated = await prisma.refreshToken.updateMany({
-    where: { tokenHash, platform, revokedAt: null, expiresAt: { gt: new Date() } },
+    where: {
+      tokenHash,
+      platform,
+      revokedAt: null,
+      expiresAt: { gt: new Date() },
+    },
     data: { revokedAt: new Date() },
   });
 
   if (rotated.count === 0) {
-    const existing = await prisma.refreshToken.findUnique({ where: { tokenHash } });
+    const existing = await prisma.refreshToken.findUnique({
+      where: { tokenHash },
+    });
     if (existing?.revokedAt) {
       await prisma.refreshToken.updateMany({
         where: { familyId: existing.familyId },
@@ -166,8 +185,12 @@ export async function rotateRefreshToken(
     return { ok: false, reason: "invalid" };
   }
 
-  const currentToken = await prisma.refreshToken.findUnique({ where: { tokenHash } });
-  const user = currentToken ? await findUserById(platform, currentToken.userId) : null;
+  const currentToken = await prisma.refreshToken.findUnique({
+    where: { tokenHash },
+  });
+  const user = currentToken
+    ? await findUserById(platform, currentToken.userId)
+    : null;
 
   if (!currentToken || !user || !user.isActive) {
     await clearAuthCookies(platform);
@@ -175,7 +198,10 @@ export async function rotateRefreshToken(
   }
 
   const newRawRefreshToken = crypto.randomBytes(32).toString("hex");
-  const newTokenHash = crypto.createHash("sha256").update(newRawRefreshToken).digest("hex");
+  const newTokenHash = crypto
+    .createHash("sha256")
+    .update(newRawRefreshToken)
+    .digest("hex");
 
   await prisma.$transaction([
     prisma.refreshToken.update({
@@ -209,7 +235,12 @@ export async function rotateRefreshToken(
     0,
     Math.floor((currentToken.expiresAt.getTime() - Date.now()) / 1000)
   );
-  await setAuthCookies(platform, newAccessToken, newRawRefreshToken, remainingSeconds);
+  await setAuthCookies(
+    platform,
+    newAccessToken,
+    newRawRefreshToken,
+    remainingSeconds
+  );
 
   return { ok: true };
 }

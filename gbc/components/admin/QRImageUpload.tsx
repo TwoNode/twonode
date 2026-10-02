@@ -127,7 +127,9 @@ export function QRImageUpload() {
             const result = await gbcApi.qr.verify(code.data);
 
             if (!result.success || !result.data.valid) {
-              const error = (result.success ? result.data.error : result.error) || "Invalid QR code";
+              const error =
+                (result.success ? result.data.error : result.error) ||
+                "Invalid QR code";
               toast.error(error);
               setLastResult({
                 success: false,

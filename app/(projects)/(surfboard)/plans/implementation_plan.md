@@ -52,10 +52,11 @@ Create a Remita API client similar to the existing `paystack.ts`:
 ```
 
 **API Endpoints:**
-| Environment | Auth URL | Biller URL |
-|-------------|----------|------------|
-| Demo | `https://remitademo.net/remita/exapp/api/v1/send/api` | `https://remitademo.net/.../bgatesvc/v3/billpayment` |
-| Live | `https://login.remita.net/remita/exapp/api/v1/send/api` | `https://login.remita.net/.../bgatesvc/v3/billpayment` |
+
+| Environment | Auth URL                                                | Biller URL                                             |
+| ----------- | ------------------------------------------------------- | ------------------------------------------------------ |
+| Demo        | `https://remitademo.net/remita/exapp/api/v1/send/api`   | `https://remitademo.net/.../bgatesvc/v3/billpayment`   |
+| Live        | `https://login.remita.net/remita/exapp/api/v1/send/api` | `https://login.remita.net/.../bgatesvc/v3/billpayment` |
 
 ---
 

@@ -13,6 +13,7 @@ import {
   REFERENCE_FILTERS,
 } from "../types/surfboardTypes";
 import { surfboardApi } from "@/surfboard/apiClient";
+import { formatDateForInput } from "@/utils/formatters";
 import { Badge } from "@/components/ui/badge";
 import MaplibreMap from "./maps/MaplibreMap";
 import { File, X, FileText, FileCheck, Save, Loader2 } from "lucide-react";
@@ -36,7 +37,8 @@ const INITIALS = (initial: any): SurfboardPlanDTO => {
     facilitator: initial?.facilitator || "",
     pillarType: initial?.pillarType || "",
     dateOnSurveyPlan:
-      initial?.dateOnSurveyPlan || new Date().toISOString().split("T")[0],
+      formatDateForInput(initial?.dateOnSurveyPlan) ||
+      new Date().toISOString().split("T")[0],
     geometry: initial?.geometry || null,
     pillars: initial?.pillars || [],
     pdfFilePaths: initial?.pdfFilePaths || [],
@@ -52,10 +54,11 @@ const INITIALS = (initial: any): SurfboardPlanDTO => {
     referencePlanNumber: initial?.referencePlanNumber || "",
     pillarTypeReferencePlanNumber: initial?.pillarTypeReferencePlanNumber || "",
     parcels: initial?.parcels || [],
-    dateLodged: initial?.dateLodged || null,
+    dateLodged: formatDateForInput(initial?.dateLodged) || null,
     id: initial?.id,
     userId: initial?.userId,
-    reasonForWithdrawalAndResubmission: initial?.reasonForWithdrawalAndResubmission || "",
+    reasonForWithdrawalAndResubmission:
+      initial?.reasonForWithdrawalAndResubmission || "",
   };
 };
 
@@ -63,7 +66,8 @@ const INITIALS = (initial: any): SurfboardPlanDTO => {
 const cn = (...classes: Array<string | false | undefined>) =>
   classes.filter(Boolean).join(" ");
 
-const labelCls = "block text-sm font-medium text-gray-800 dark:text-gray-200 mb-1";
+const labelCls =
+  "block text-sm font-medium text-gray-800 dark:text-gray-200 mb-1";
 const reqBadge = (
   <span className="text-red-500" aria-hidden="true">
     *
@@ -169,7 +173,8 @@ export default function OptimizedSurfboardPlanForm({
   const [certFiles, setCertFiles] = useState<File[]>([]);
 
   // Adjoining Pillar logic
-  const adjoiningFilterConf = PILLAR_TYPE_ADJOINING_FILTERS[formData.pillarType];
+  const adjoiningFilterConf =
+    PILLAR_TYPE_ADJOINING_FILTERS[formData.pillarType];
   const showAdjoiningField = adjoiningFilterConf?.showReferenceField;
   const isAdjoiningRequired = adjoiningFilterConf?.required;
 
@@ -201,7 +206,9 @@ export default function OptimizedSurfboardPlanForm({
   }, [adjOptions, adjQuery]);
 
   // Reference Plan Logic
-  const refFilterConf = formData.planType ? REFERENCE_FILTERS[formData.planType] : null;
+  const refFilterConf = formData.planType
+    ? REFERENCE_FILTERS[formData.planType]
+    : null;
   const showReferenceField = refFilterConf?.showField;
   const isReferenceRequired = refFilterConf?.required;
 
@@ -214,7 +221,9 @@ export default function OptimizedSurfboardPlanForm({
     const load = async () => {
       if (!formData.planType) return;
       try {
-        const res = await surfboardApi.plans.referenceNumbers(formData.planType);
+        const res = await surfboardApi.plans.referenceNumbers(
+          formData.planType
+        );
         setRefOptions((res.success ? res.data : []) || []);
       } catch (e) {
         console.error(e);
@@ -280,8 +289,13 @@ export default function OptimizedSurfboardPlanForm({
       newErrors.dateOnSurveyPlan = "Date on survey plan is required";
     }
 
-    if (showAdjoiningField && isAdjoiningRequired && !formData.pillarTypeReferencePlanNumber?.trim()) {
-      newErrors.pillarTypeReferencePlanNumber = "Adjoining reference plan number is required";
+    if (
+      showAdjoiningField &&
+      isAdjoiningRequired &&
+      !formData.pillarTypeReferencePlanNumber?.trim()
+    ) {
+      newErrors.pillarTypeReferencePlanNumber =
+        "Adjoining reference plan number is required";
     }
 
     if (showReferenceField) {
@@ -292,7 +306,8 @@ export default function OptimizedSurfboardPlanForm({
         !refFilterConf.allowFreeText &&
         !refOptions.includes(formData.referencePlanNumber)
       ) {
-        newErrors.referencePlanNumber = "Must select a valid plan number from the list";
+        newErrors.referencePlanNumber =
+          "Must select a valid plan number from the list";
       }
     }
 
@@ -300,7 +315,8 @@ export default function OptimizedSurfboardPlanForm({
       formData.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION &&
       !formData.reasonForWithdrawalAndResubmission?.trim()
     ) {
-      newErrors.reasonForWithdrawalAndResubmission = "Reason for withdrawal is required";
+      newErrors.reasonForWithdrawalAndResubmission =
+        "Reason for withdrawal is required";
     }
 
     // File validation for create mode
@@ -717,8 +733,7 @@ export default function OptimizedSurfboardPlanForm({
                 {showReferenceField && (
                   <div>
                     <label className={labelCls} htmlFor="referencePlan">
-                      Reference Plan No.{" "}
-                      {isReferenceRequired && reqBadge}
+                      Reference Plan No. {isReferenceRequired && reqBadge}
                     </label>
                     <div className="relative">
                       <input
@@ -765,7 +780,8 @@ export default function OptimizedSurfboardPlanForm({
                   </div>
                 )}
 
-                {formData.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION && (
+                {formData.planType ===
+                  PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION && (
                   <div className="md:col-span-2">
                     <label className={labelCls} htmlFor="reasonForWithdrawal">
                       Reason for Withdrawal {reqBadge}
@@ -854,14 +870,7 @@ export default function OptimizedSurfboardPlanForm({
                   <input
                     id="dateOnSurveyPlan"
                     type="date"
-                    value={
-                      formData.dateOnSurveyPlan &&
-                      typeof formData.dateOnSurveyPlan == "object"
-                        ? new Date(formData.dateOnSurveyPlan)
-                            ?.toISOString()
-                            .split("T")[0]
-                        : formData.dateOnSurveyPlan
-                    }
+                    value={formatDateForInput(formData.dateOnSurveyPlan)}
                     onChange={(e) =>
                       setField("dateOnSurveyPlan", e.target.value)
                     }
@@ -1185,7 +1194,10 @@ export default function OptimizedSurfboardPlanForm({
                     : "border border-gray-200"
                 )}
               >
-                <MaplibreMap processedPillars={formData.pillars} state={formData.state} />
+                <MaplibreMap
+                  processedPillars={formData.pillars}
+                  state={formData.state}
+                />
               </div>
             </section>
           </div>

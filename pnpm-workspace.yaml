@@ -1,5 +1,5 @@
 packages:
-  - '.'
+  - "."
 
 allowBuilds:
   "@prisma/client": true
@@ -10,4 +10,3 @@ allowBuilds:
   esbuild: true
   prisma: true
   sharp: true
-

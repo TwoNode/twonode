@@ -11,5 +11,8 @@ export const POST = withAuth<RevaRole>(
     const data = await dismissNotification(id, ctx.session.sub);
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.REVA, roles: [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN] }
+  {
+    platform: Platform.REVA,
+    roles: [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN],
+  }
 );

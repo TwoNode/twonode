@@ -62,31 +62,46 @@ export interface StatCards {
 export async function getStatCards(scope: AnalyticsScope): Promise<StatCards> {
   const where = scopeWhere(scope);
 
-  const [totalPlansCount, provisionalPlansCount, pendingBatchesCount, pendingCertificatePlansCount] =
-    await Promise.all([
-      prisma.surfboardPlan.count({
-        where: { ...where, deleted: false, planType: { notIn: PROVISIONAL_TYPES } },
-      }),
-      prisma.surfboardPlan.count({
-        where: { ...where, deleted: false, planType: { in: PROVISIONAL_TYPES } },
-      }),
-      prisma.certificateOfDepositBatch.count({
-        where: {
-          paymentStatus: { not: "COMPLETED" },
-          ...(scope.role === SurfboardRole.USER ? { submittedBy: scope.userId } : {}),
-        },
-      }),
-      prisma.surfboardPlan.count({
-        where: {
-          ...where,
-          deleted: false,
-          planType: { notIn: PROVISIONAL_TYPES },
-          redCopyStatus: { in: ["SUBMITTED", "QUERIED"] },
-        },
-      }),
-    ]);
+  const [
+    totalPlansCount,
+    provisionalPlansCount,
+    pendingBatchesCount,
+    pendingCertificatePlansCount,
+  ] = await Promise.all([
+    prisma.surfboardPlan.count({
+      where: {
+        ...where,
+        deleted: false,
+        planType: { notIn: PROVISIONAL_TYPES },
+      },
+    }),
+    prisma.surfboardPlan.count({
+      where: { ...where, deleted: false, planType: { in: PROVISIONAL_TYPES } },
+    }),
+    prisma.certificateOfDepositBatch.count({
+      where: {
+        paymentStatus: { not: "COMPLETED" },
+        ...(scope.role === SurfboardRole.USER
+          ? { submittedBy: scope.userId }
+          : {}),
+      },
+    }),
+    prisma.surfboardPlan.count({
+      where: {
+        ...where,
+        deleted: false,
+        planType: { notIn: PROVISIONAL_TYPES },
+        redCopyStatus: { in: ["SUBMITTED", "QUERIED"] },
+      },
+    }),
+  ]);
 
-  return { totalPlansCount, provisionalPlansCount, pendingBatchesCount, pendingCertificatePlansCount };
+  return {
+    totalPlansCount,
+    provisionalPlansCount,
+    pendingBatchesCount,
+    pendingCertificatePlansCount,
+  };
 }
 
 export interface DimensionBreakdownRow {
@@ -113,20 +128,32 @@ export async function getDimensionBreakdown(
 
   const grouped = await prisma.surfboardPlan.groupBy({
     by: [column],
-    where: { ...where, planType: { notIn: PROVISIONAL_TYPES }, [column]: { not: "" } } as any,
+    where: {
+      ...where,
+      planType: { notIn: PROVISIONAL_TYPES },
+      [column]: { not: "" },
+    } as any,
     _count: { id: true },
     orderBy: { _count: { id: "desc" } },
   });
 
   if (dimension !== "facilitator") {
-    return grouped.map((row: any) => ({ key: row[column] || "Unknown", count: row._count.id }));
+    return grouped.map((row: any) => ({
+      key: row[column] || "Unknown",
+      count: row._count.id,
+    }));
   }
 
   // Facilitator breakdown also sums deededArea (matches the source's
   // processedFacilitatorStats) — a second query rather than trying to sum a
   // free-text field in the groupBy itself.
   const plansWithArea = await prisma.surfboardPlan.findMany({
-    where: { ...where, planType: { notIn: PROVISIONAL_TYPES }, facilitator: { not: "" }, deededArea: { not: "" } },
+    where: {
+      ...where,
+      planType: { notIn: PROVISIONAL_TYPES },
+      facilitator: { not: "" },
+      deededArea: { not: "" },
+    },
     select: { facilitator: true, deededArea: true },
   });
 
@@ -166,7 +193,12 @@ export async function getTopSurveyors(
 
   const grouped = await prisma.surfboardPlan.groupBy({
     by: ["userId"],
-    where: { ...dateRangeWhere(range), deleted: false, userId: { not: null }, planType: { notIn: PROVISIONAL_TYPES } },
+    where: {
+      ...dateRangeWhere(range),
+      deleted: false,
+      userId: { not: null },
+      planType: { notIn: PROVISIONAL_TYPES },
+    },
     _count: { id: true },
     orderBy: { _count: { id: "desc" } },
   });
@@ -179,7 +211,9 @@ export async function getTopSurveyors(
   const byId = new Map(users.map((u) => [u.id, u]));
 
   return grouped
-    .flatMap((g) => (g.userId ? [{ userId: g.userId, count: g._count.id }] : []))
+    .flatMap((g) =>
+      g.userId ? [{ userId: g.userId, count: g._count.id }] : []
+    )
     .map((g) => {
       const u = byId.get(g.userId);
       return {
@@ -209,7 +243,9 @@ export interface LodgementTrend {
  * excluded from the histogram (a diff against null is meaningless) and
  * counted separately so the exclusion is visible, not silently dropped.
  */
-export async function getLodgementTrend(scope: AnalyticsScope): Promise<LodgementTrend> {
+export async function getLodgementTrend(
+  scope: AnalyticsScope
+): Promise<LodgementTrend> {
   const conditions = [
     Prisma.sql`deleted = false`,
     Prisma.sql`"dateLodged" IS NOT NULL`,
@@ -267,7 +303,10 @@ export interface TimeTrendPoint {
  * unfiltered admin time-trend section), falls back to the original
  * createdAt/12-months window.
  */
-export async function getTimeTrend(scope: AnalyticsScope, range?: AnalyticsDateRange): Promise<TimeTrendPoint[]> {
+export async function getTimeTrend(
+  scope: AnalyticsScope,
+  range?: AnalyticsDateRange
+): Promise<TimeTrendPoint[]> {
   const where: Prisma.SurfboardPlanWhereInput = {
     planType: { notIn: PROVISIONAL_TYPES },
   };
@@ -284,7 +323,10 @@ export async function getTimeTrend(scope: AnalyticsScope, range?: AnalyticsDateR
     where.createdAt = { gte: twelveMonthsAgo };
   }
 
-  const plans = await prisma.surfboardPlan.findMany({ where, select: { createdAt: true, dateOnSurveyPlan: true } });
+  const plans = await prisma.surfboardPlan.findMany({
+    where,
+    select: { createdAt: true, dateOnSurveyPlan: true },
+  });
 
   const counts = new Map<string, number>();
   for (const plan of plans) {
@@ -306,15 +348,24 @@ export async function getTimeTrend(scope: AnalyticsScope, range?: AnalyticsDateR
  * now. Deliberately per-share, not per-unique-recipient: sharing 3 plans
  * with the same unsubscribed facilitator counts 3 toward "none".
  */
-async function computeSharedAccessStats(userId: string): Promise<{ status: "active" | "expired" | "none"; count: number }[]> {
+async function computeSharedAccessStats(
+  userId: string
+): Promise<{ status: "active" | "expired" | "none"; count: number }[]> {
   const sharedPlans = await prisma.surfboardPlan.findMany({
     where: { userId, sharedTo: { isEmpty: false }, deleted: false },
     select: { sharedTo: true },
   });
   const recipientIds = [...new Set(sharedPlans.flatMap((p) => p.sharedTo))];
-  if (!recipientIds.length) return [{ status: "active", count: 0 }, { status: "expired", count: 0 }, { status: "none", count: 0 }];
+  if (!recipientIds.length)
+    return [
+      { status: "active", count: 0 },
+      { status: "expired", count: 0 },
+      { status: "none", count: 0 },
+    ];
 
-  const subs = await prisma.subscription.findMany({ where: { userId: { in: recipientIds } } });
+  const subs = await prisma.subscription.findMany({
+    where: { userId: { in: recipientIds } },
+  });
   const subByUserId = new Map(subs.map((s) => [s.userId, s]));
 
   const buckets = { active: 0, expired: 0, none: 0 };
@@ -322,7 +373,8 @@ async function computeSharedAccessStats(userId: string): Promise<{ status: "acti
     for (const recipientId of plan.sharedTo) {
       const sub = subByUserId.get(recipientId);
       if (!sub) buckets.none += 1;
-      else if (isSubActiveOrGrace(sub.status, sub.currentEnd)) buckets.active += 1;
+      else if (isSubActiveOrGrace(sub.status, sub.currentEnd))
+        buckets.active += 1;
       else buckets.expired += 1;
     }
   }
@@ -385,46 +437,87 @@ export async function getUserDashboardAnalytics(
     queriedCount,
     sharedAccessStats,
   ] = await Promise.all([
-      prisma.surfboardPlan.count({ where: { userId, planType: excludeProvisional, ...dateWhere } }),
-      prisma.surfboardPlan.count({ where: { userId, planType: { in: PROVISIONAL_TYPES }, ...dateWhere } }),
-      prisma.surfboardPlan.groupBy({
-        by: ["facilitator"],
-        where: { userId, planType: excludeProvisional, facilitator: { not: "" }, ...dateWhere },
-        _count: { id: true },
-        orderBy: { _count: { id: "desc" } },
-      }),
-      prisma.surfboardPlan.findMany({
-        where: { userId, planType: excludeProvisional, facilitator: { not: "" }, deededArea: { not: "" }, ...dateWhere },
-        select: { facilitator: true, deededArea: true },
-      }),
-      prisma.surfboardPlan.groupBy({
-        by: ["lga"],
-        where: { userId, planType: excludeProvisional, lga: { not: "" }, ...dateWhere },
-        _count: { id: true },
-        orderBy: { _count: { id: "desc" } },
-      }),
-      prisma.surfboardPlan.findMany({
-        where: pendingCertificateWhere,
-        select: { id: true, planNumber: true, surveyTitle: true, facilitator: true, updatedAt: true, planType: true, status: true },
-        orderBy: { updatedAt: "desc" },
-        take: 10,
-      }),
-      prisma.surfboardPlan.count({ where: pendingCertificateWhere }),
-      prisma.surfboardPlan.findMany({
-        where: { userId, planType: excludeProvisional, pillarType: { not: "" }, ...dateWhere },
-        select: { pillarType: true, pillars: true },
-      }),
-      getTimeTrend({ role: SurfboardRole.USER, userId }, range),
-      prisma.surfboardPlan.count({ where: { userId, status: "PENDING", ...dateWhere } }),
-      prisma.surfboardPlan.count({ where: { userId, status: "LODGED", ...dateWhere } }),
-      prisma.surfboardPlan.count({ where: { userId, status: "QUERIED", ...dateWhere } }),
-      computeSharedAccessStats(userId),
+    prisma.surfboardPlan.count({
+      where: { userId, planType: excludeProvisional, ...dateWhere },
+    }),
+    prisma.surfboardPlan.count({
+      where: { userId, planType: { in: PROVISIONAL_TYPES }, ...dateWhere },
+    }),
+    prisma.surfboardPlan.groupBy({
+      by: ["facilitator"],
+      where: {
+        userId,
+        planType: excludeProvisional,
+        facilitator: { not: "" },
+        ...dateWhere,
+      },
+      _count: { id: true },
+      orderBy: { _count: { id: "desc" } },
+    }),
+    prisma.surfboardPlan.findMany({
+      where: {
+        userId,
+        planType: excludeProvisional,
+        facilitator: { not: "" },
+        deededArea: { not: "" },
+        ...dateWhere,
+      },
+      select: { facilitator: true, deededArea: true },
+    }),
+    prisma.surfboardPlan.groupBy({
+      by: ["lga"],
+      where: {
+        userId,
+        planType: excludeProvisional,
+        lga: { not: "" },
+        ...dateWhere,
+      },
+      _count: { id: true },
+      orderBy: { _count: { id: "desc" } },
+    }),
+    prisma.surfboardPlan.findMany({
+      where: pendingCertificateWhere,
+      select: {
+        id: true,
+        planNumber: true,
+        surveyTitle: true,
+        facilitator: true,
+        updatedAt: true,
+        planType: true,
+        status: true,
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 10,
+    }),
+    prisma.surfboardPlan.count({ where: pendingCertificateWhere }),
+    prisma.surfboardPlan.findMany({
+      where: {
+        userId,
+        planType: excludeProvisional,
+        pillarType: { not: "" },
+        ...dateWhere,
+      },
+      select: { pillarType: true, pillars: true },
+    }),
+    getTimeTrend({ role: SurfboardRole.USER, userId }, range),
+    prisma.surfboardPlan.count({
+      where: { userId, status: "PENDING", ...dateWhere },
+    }),
+    prisma.surfboardPlan.count({
+      where: { userId, status: "LODGED", ...dateWhere },
+    }),
+    prisma.surfboardPlan.count({
+      where: { userId, status: "QUERIED", ...dateWhere },
+    }),
+    computeSharedAccessStats(userId),
   ]);
 
   const pillarBuckets = { Regular: 0, Special: 0 };
   for (const plan of pillarPlans) {
     const bucket = pillarBucket(plan.pillarType);
-    pillarBuckets[bucket] += Array.isArray(plan.pillars) ? plan.pillars.length : 0;
+    pillarBuckets[bucket] += Array.isArray(plan.pillars)
+      ? plan.pillars.length
+      : 0;
   }
   const pillarStats = [
     { type: "Regular", count: pillarBuckets.Regular, isRegular: true },
@@ -438,7 +531,11 @@ export async function getUserDashboardAnalytics(
         const areaValue = parseFloat(plan.deededArea.replace(/[^0-9.]/g, ""));
         return sum + (isNaN(areaValue) ? 0 : areaValue);
       }, 0);
-    return { facilitator: stat.facilitator || "Unknown", count: stat._count.id, totalArea: totalDeededArea };
+    return {
+      facilitator: stat.facilitator || "Unknown",
+      count: stat._count.id,
+      totalArea: totalDeededArea,
+    };
   });
 
   return {
@@ -446,7 +543,10 @@ export async function getUserDashboardAnalytics(
     provisionalPlansCount,
     facilitatorStats: processedFacilitatorStats,
     sharedAccessStats,
-    lgaStats: lgaStats.map((stat) => ({ lga: stat.lga || "Unknown", count: stat._count.id })),
+    lgaStats: lgaStats.map((stat) => ({
+      lga: stat.lga || "Unknown",
+      count: stat._count.id,
+    })),
     pendingCertificates: pendingCertificates.map((cert) => ({
       id: cert.id,
       planNumber: cert.planNumber,
@@ -467,7 +567,10 @@ export async function getUserDashboardAnalytics(
 
 // --- MDA stage-scoped analytics ---
 
-export type MdaStageRole = Exclude<SurfboardRole, "USER" | "ADMIN" | "SUPERADMIN" | "MDA_SUPERADMIN">;
+export type MdaStageRole = Exclude<
+  SurfboardRole,
+  "USER" | "ADMIN" | "SUPERADMIN" | "MDA_SUPERADMIN"
+>;
 
 interface StageConfig {
   statusField: string;
@@ -490,7 +593,9 @@ interface StageConfig {
  * this means Intake's avgTimeInStageDays reads slightly high (it includes
  * the parallel stages' own time), documented rather than hidden.
  */
-const STAGE_START_OVERRIDE: Partial<Record<Exclude<MdaStageRole, "ARCHIVE">, string>> = {
+const STAGE_START_OVERRIDE: Partial<
+  Record<Exclude<MdaStageRole, "ARCHIVE">, string>
+> = {
   RECORDS_II: "intakeApprovedAt",
 };
 
@@ -508,7 +613,9 @@ export interface MdaStageStats {
   avgTimeInStageDays: number | null;
 }
 
-export async function getMdaStageStats(role: MdaStageRole): Promise<MdaStageStats> {
+export async function getMdaStageStats(
+  role: MdaStageRole
+): Promise<MdaStageStats> {
   if (role === "ARCHIVE") {
     // No archiveStatus enum exists — markPlanArchived's own gate (all 6
     // upstream statuses APPROVED) is the real "ready for archive" queue.
@@ -536,7 +643,9 @@ export async function getMdaStageStats(role: MdaStageRole): Promise<MdaStageStat
 
   const cfg = stageConfigFor(role);
   const [queueDepth, rows] = await Promise.all([
-    prisma.surfboardPlan.count({ where: { deleted: false, [cfg.statusField]: "PENDING" } as any }),
+    prisma.surfboardPlan.count({
+      where: { deleted: false, [cfg.statusField]: "PENDING" } as any,
+    }),
     prisma.$queryRaw<{ avgDays: number | null }[]>`
       SELECT (AVG(EXTRACT(EPOCH FROM (${Prisma.raw(`"${cfg.approvedAtField}"`)} - ${Prisma.raw(`"${cfg.startAtField}"`)})) / 86400))::float8 as "avgDays"
       FROM "SurfboardPlan"

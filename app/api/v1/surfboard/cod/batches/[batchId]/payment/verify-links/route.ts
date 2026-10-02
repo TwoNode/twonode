@@ -7,17 +7,35 @@ import { verifyBatchPaymentWithLinks } from "@/surfboard/services/remitaVerifica
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 type RouteCtx = { params: Promise<{ batchId: string }> };
-const bodySchema = z.object({ lasgReceiptUrl: z.string().url(), remitaReceiptUrl: z.string().url() });
+const bodySchema = z.object({
+  lasgReceiptUrl: z.string().url(),
+  remitaReceiptUrl: z.string().url(),
+});
 
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { batchId } = await routeCtx.params;
-    const { lasgReceiptUrl, remitaReceiptUrl } = await validateBody(req, bodySchema);
-    const data = await verifyBatchPaymentWithLinks(ctx.session.sub, ctx.session.role, batchId, lasgReceiptUrl, remitaReceiptUrl);
+    const { lasgReceiptUrl, remitaReceiptUrl } = await validateBody(
+      req,
+      bodySchema
+    );
+    const data = await verifyBatchPaymentWithLinks(
+      ctx.session.sub,
+      ctx.session.role,
+      batchId,
+      lasgReceiptUrl,
+      remitaReceiptUrl
+    );
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER, SurfboardRole.SUPERADMIN] }
+  {
+    platform: Platform.SURFBOARD,
+    roles: [SurfboardRole.USER, SurfboardRole.SUPERADMIN],
+  }
 );

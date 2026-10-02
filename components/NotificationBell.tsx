@@ -6,7 +6,11 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { playNotificationSound } from "@/lib/notificationSound";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { revaApi } from "@/reva/apiClient";
 import { gbcApi } from "@/gbc/apiClient";
@@ -23,7 +27,9 @@ interface NotificationItem {
 }
 
 interface NotificationApi {
-  list: (params?: { limit?: number }) => Promise<{ success: boolean; data?: NotificationItem[] }>;
+  list: (params?: {
+    limit?: number;
+  }) => Promise<{ success: boolean; data?: NotificationItem[] }>;
   unreadCount: () => Promise<{ success: boolean; data?: { count: number } }>;
   markRead: (id: string) => Promise<{ success: boolean }>;
 }
@@ -53,7 +59,12 @@ interface NotificationBellProps {
  * endpoint — REVA and Surfboard's existing notification APIs don't have one,
  * and the dropdown only ever shows a handful of items at a time anyway.
  */
-export default function NotificationBell({ platform, viewAllHref, className = "", iconClassName = "" }: NotificationBellProps) {
+export default function NotificationBell({
+  platform,
+  viewAllHref,
+  className = "",
+  iconClassName = "",
+}: NotificationBellProps) {
   const api = API_BY_PLATFORM[platform];
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -82,12 +93,15 @@ export default function NotificationBell({ platform, viewAllHref, className = ""
       const result = await api.list({ limit: 5 });
       if (!result.success || !result.data?.length) return;
       const sorted = [...result.data].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
       const fresh = isFirstPollRef.current
         ? sorted.filter((n) => !n.isRead)
-        : sorted.filter((n) => new Date(n.createdAt).getTime() > lastSeenAtRef.current);
+        : sorted.filter(
+            (n) => new Date(n.createdAt).getTime() > lastSeenAtRef.current
+          );
 
       const wasFirstPoll = isFirstPollRef.current;
       isFirstPollRef.current = false;
@@ -99,11 +113,17 @@ export default function NotificationBell({ platform, viewAllHref, className = ""
         .forEach((n) => {
           toast(n.title, {
             description: n.message,
-            action: n.link ? { label: "View", onClick: () => (window.location.href = n.link!) } : undefined,
+            action: n.link
+              ? {
+                  label: "View",
+                  onClick: () => (window.location.href = n.link!),
+                }
+              : undefined,
           });
         });
 
-      if (fresh.length || wasFirstPoll) lastSeenAtRef.current = new Date(sorted[0].createdAt).getTime();
+      if (fresh.length || wasFirstPoll)
+        lastSeenAtRef.current = new Date(sorted[0].createdAt).getTime();
     } catch {
       // Non-fatal — a missed poll just means fewer toasts, the bell badge still works.
     }
@@ -126,7 +146,8 @@ export default function NotificationBell({ platform, viewAllHref, className = ""
     api
       .list({ limit: 8 })
       .then((result) => {
-        if (!cancelled && result.success && result.data) setItems(result.data.slice(0, 8));
+        if (!cancelled && result.success && result.data)
+          setItems(result.data.slice(0, 8));
       })
       .catch(() => {})
       .finally(() => {
@@ -168,7 +189,9 @@ export default function NotificationBell({ platform, viewAllHref, className = ""
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0 overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
-          <span className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Notifications</span>
+          <span className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Notifications
+          </span>
           <button
             type="button"
             onClick={handleMarkAllRead}
@@ -181,9 +204,13 @@ export default function NotificationBell({ platform, viewAllHref, className = ""
 
         <div className="max-h-80 overflow-y-auto">
           {loading ? (
-            <div className="px-4 py-10 text-center text-sm text-slate-400">Loading…</div>
+            <div className="px-4 py-10 text-center text-sm text-slate-400">
+              Loading…
+            </div>
           ) : items.length === 0 ? (
-            <div className="px-4 py-10 text-center text-sm text-slate-400">No notifications</div>
+            <div className="px-4 py-10 text-center text-sm text-slate-400">
+              No notifications
+            </div>
           ) : (
             items.map((n) => (
               <Link
@@ -194,10 +221,16 @@ export default function NotificationBell({ platform, viewAllHref, className = ""
                   n.isRead ? "" : "bg-violet-50/60 dark:bg-violet-500/5"
                 }`}
               >
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{n.title}</p>
-                <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{n.message}</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  {n.title}
+                </p>
+                <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
+                  {n.message}
+                </p>
                 <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
-                  {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(n.createdAt), {
+                    addSuffix: true,
+                  })}
                 </p>
               </Link>
             ))

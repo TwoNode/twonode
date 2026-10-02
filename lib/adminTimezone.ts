@@ -28,11 +28,18 @@ export function setAdminTimezone(timezone: string): void {
 /** Formats a date in the admin's saved timezone preference (falls back to DEFAULT_ADMIN_TIMEZONE). */
 export function formatInAdminTimezone(
   date: Date | string,
-  options: Intl.DateTimeFormatOptions = { year: "numeric", month: "short", day: "numeric" },
+  options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }
 ): string {
   const d = typeof date === "string" ? new Date(date) : date;
   try {
-    return new Intl.DateTimeFormat("en-US", { ...options, timeZone: getAdminTimezone() }).format(d);
+    return new Intl.DateTimeFormat("en-US", {
+      ...options,
+      timeZone: getAdminTimezone(),
+    }).format(d);
   } catch {
     // Invalid/unsupported IANA timezone string — fall back to local time rather than throwing.
     return new Intl.DateTimeFormat("en-US", options).format(d);

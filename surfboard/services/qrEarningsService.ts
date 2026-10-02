@@ -49,7 +49,10 @@ export async function getQREarningsSettings(): Promise<QREarningsSettingsData> {
   return DEFAULT_QR_SETTINGS;
 }
 
-export async function getPlanQRAccessState(planId: string, accessToken?: string) {
+export async function getPlanQRAccessState(
+  planId: string,
+  accessToken?: string
+) {
   const plan = await prisma.surfboardPlan.findFirst({
     where: { OR: [{ id: planId }, { planNumber: planId }], deleted: false },
     select: {
@@ -149,14 +152,19 @@ export async function initiateQRServicePayment(
   if (!plan || !plan.userId) throw new NotFoundError("Plan or surveyor");
 
   const settings = await getQREarningsSettings();
-  const serviceConfig = serviceType === "LOCATION_AUTHENTICITY" ? settings.service1 : settings.service2;
+  const serviceConfig =
+    serviceType === "LOCATION_AUTHENTICITY"
+      ? settings.service1
+      : settings.service2;
 
   const verificationFee = serviceConfig.verificationFee;
   const serviceFee = verificationFee * (serviceConfig.serviceFeePercent / 100);
 
   let mdaFee = 0;
   for (const fee of settings.customFees ?? []) {
-    mdaFee += fee.isPercentage ? verificationFee * (fee.amount / 100) : fee.amount;
+    mdaFee += fee.isPercentage
+      ? verificationFee * (fee.amount / 100)
+      : fee.amount;
   }
 
   const totalAmount = verificationFee + serviceFee + mdaFee;
@@ -181,7 +189,10 @@ export async function initiateQRServicePayment(
     },
   });
 
-  const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || process.env.PAYSTACK_PUBLIC_KEY || "";
+  const paystackKey =
+    process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ||
+    process.env.PAYSTACK_PUBLIC_KEY ||
+    "";
 
   return {
     reference: transaction.reference,
@@ -194,7 +205,10 @@ export async function initiateQRServicePayment(
   };
 }
 
-export async function verifyQRServicePayment(reference: string, paystackRef?: string) {
+export async function verifyQRServicePayment(
+  reference: string,
+  paystackRef?: string
+) {
   const transaction = await prisma.qREarningsTransaction.findUnique({
     where: { reference },
     include: { plan: { select: { id: true, planNumber: true } } },
@@ -203,7 +217,10 @@ export async function verifyQRServicePayment(reference: string, paystackRef?: st
   if (!transaction) throw new NotFoundError("Transaction reference");
 
   if (transaction.paymentStatus === "SUCCESS") {
-    return { accessToken: transaction.accessToken, expiresAt: transaction.expiresAt?.toISOString() };
+    return {
+      accessToken: transaction.accessToken,
+      expiresAt: transaction.expiresAt?.toISOString(),
+    };
   }
 
   // Confirm directly with Paystack before trusting this call at all — a
@@ -232,7 +249,8 @@ export async function verifyQRServicePayment(reference: string, paystackRef?: st
       expectedAmountKobo,
     });
     throw new ValidationError({
-      payment: "Payment could not be verified. If you were charged, contact support with your reference.",
+      payment:
+        "Payment could not be verified. If you were charged, contact support with your reference.",
     });
   }
 
@@ -241,7 +259,11 @@ export async function verifyQRServicePayment(reference: string, paystackRef?: st
 
   const updatedTransaction = await prisma.qREarningsTransaction.update({
     where: { reference },
-    data: { paymentStatus: "SUCCESS", paymentRef: paystackRef || reference, expiresAt },
+    data: {
+      paymentStatus: "SUCCESS",
+      paymentRef: paystackRef || reference,
+      expiresAt,
+    },
   });
 
   await prisma.surveyorWallet.upsert({
@@ -257,7 +279,10 @@ export async function verifyQRServicePayment(reference: string, paystackRef?: st
     },
   });
 
-  const serviceName = transaction.serviceType === "LOCATION_AUTHENTICITY" ? "Location Verification" : "Certificate of Deposit";
+  const serviceName =
+    transaction.serviceType === "LOCATION_AUTHENTICITY"
+      ? "Location Verification"
+      : "Certificate of Deposit";
 
   await createNotification({
     type: "SUCCESS",
@@ -281,13 +306,51 @@ export async function verifyQRServicePayment(reference: string, paystackRef?: st
         to: transaction.payerEmail,
         subject: `Access Granted: Survey Plan ${transaction.plan.planNumber}`,
         html: `
-          <h2>Your Survey Plan Access is Ready</h2>
-          <p>You have successfully purchased a 1-hour access pass for <strong>${serviceName}</strong> on Survey Plan <strong>${transaction.plan.planNumber}</strong>.</p>
-          <p>Click the secure link below to access your session immediately:</p>
-          <p><a href="${accessUrl}" style="padding: 10px 20px; background-color: #0284c7; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">Access Survey Plan</a></p>
-          <p><strong>Or use this Access Code if you are already on the page:</strong></p>
-          <p style="font-family: monospace; font-size: 1.2em; background-color: #f1f5f9; padding: 10px; border-radius: 5px;">${updatedTransaction.accessToken}</p>
-          <p><small>This access will expire 1 hour from the time of purchase.</small></p>
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Your Survey Plan Access is Ready</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1a1a1a;">
+              <div style="max-width: 520px; margin: 0 auto; padding: 24px 20px;">
+                <!-- Brand Header -->
+                <div style="padding: 20px 0 16px; border-bottom: 3px solid #233dff;">
+                  <span style="font-size: 16px; font-weight: 700; color: #141c4d; letter-spacing: .02em;">Surfboard</span>
+                  <span style="font-size: 13px; color: #888888; margin-left: 8px;">by TwoNode Technologies</span>
+                </div>
+
+                <!-- Body -->
+                <div style="padding: 28px 0 20px;">
+                  <h2 style="margin: 0 0 16px; font-size: 18px; font-weight: 600; color: #111827;">Your Survey Plan Access is Ready</h2>
+                  <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #374151;">
+                    You have successfully purchased a 1-hour access pass for <strong>${serviceName}</strong> on Survey Plan <strong>${transaction.plan.planNumber}</strong>.
+                  </p>
+                  
+                  <div style="margin: 24px 0;">
+                    <a href="${accessUrl}" style="background-color: #233dff; background-image: linear-gradient(135deg, #233dff, #141c4d); color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">Access Survey Plan</a>
+                  </div>
+
+                  <p style="margin: 20px 0 8px; font-size: 14px; font-weight: 600; color: #111827;">Or use this Access Code directly:</p>
+                  <p style="margin: 0 0 16px; text-align: center;">
+                    <span style="background: #f4f4f5; color: #141c4d; padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 20px; letter-spacing: .1em; font-family: monospace; display: inline-block;">${updatedTransaction.accessToken}</span>
+                  </p>
+                  <p style="color: #6b7280; font-size: 13px;">This access session expires in 1 hour from the time of purchase.</p>
+                </div>
+
+                <!-- Footer -->
+                <div style="padding: 20px 0; border-top: 1px solid #e5e5e5; color: #888888; font-size: 12px; line-height: 1.6;">
+                  <a href="https://www.twonodetechnologies.com" style="color: #141c4d; text-decoration: none; font-weight: 600;">TwoNode Technologies</a>
+                  &nbsp;&middot;&nbsp;
+                  <a href="mailto:info@twonodetechnologies.com" style="color: #888888; text-decoration: none;">info@twonodetechnologies.com</a>
+                  <p style="margin: 6px 0 0; color: #9ca3af; font-size: 11px;">
+                    This is an automated notification from Surfboard. Please do not reply directly to this email.
+                  </p>
+                </div>
+              </div>
+            </body>
+          </html>
         `,
       });
     } catch (err) {
@@ -295,16 +358,25 @@ export async function verifyQRServicePayment(reference: string, paystackRef?: st
     }
   }
 
-  return { accessToken: updatedTransaction.accessToken, expiresAt: expiresAt.toISOString() };
+  return {
+    accessToken: updatedTransaction.accessToken,
+    expiresAt: expiresAt.toISOString(),
+  };
 }
 
 export async function getSurveyorEarningsOverview(surveyorId: string) {
-  let wallet = await prisma.surveyorWallet.findUnique({ where: { userId: surveyorId } });
+  let wallet = await prisma.surveyorWallet.findUnique({
+    where: { userId: surveyorId },
+  });
   if (!wallet) {
-    wallet = await prisma.surveyorWallet.create({ data: { userId: surveyorId } });
+    wallet = await prisma.surveyorWallet.create({
+      data: { userId: surveyorId },
+    });
   }
 
-  const bankDetails = await prisma.surveyorBankDetails.findUnique({ where: { userId: surveyorId } });
+  const bankDetails = await prisma.surveyorBankDetails.findUnique({
+    where: { userId: surveyorId },
+  });
 
   const transactions = await prisma.qREarningsTransaction.findMany({
     where: { surveyorId, paymentStatus: "SUCCESS" },
@@ -327,12 +399,18 @@ export async function getSurveyorEarningsOverview(surveyorId: string) {
  * `getSurveyorEarningsOverview`'s `transactions` — that list is capped at 50
  * and could silently truncate a busy month.
  */
-export async function getSurveyorEarningsThisMonth(surveyorId: string): Promise<number> {
+export async function getSurveyorEarningsThisMonth(
+  surveyorId: string
+): Promise<number> {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const result = await prisma.qREarningsTransaction.aggregate({
-    where: { surveyorId, paymentStatus: "SUCCESS", createdAt: { gte: startOfMonth, lt: startOfNextMonth } },
+    where: {
+      surveyorId,
+      paymentStatus: "SUCCESS",
+      createdAt: { gte: startOfMonth, lt: startOfNextMonth },
+    },
     _sum: { surveyorEarned: true },
   });
   return result._sum.surveyorEarned ?? 0;
@@ -352,7 +430,9 @@ export async function saveSurveyorBankDetails(
   const resolveData = await resolveRes.json();
   if (!resolveRes.ok || !resolveData.status) {
     throw new ValidationError({
-      accountNumber: resolveData.message || "Could not verify bank account. Please check account number and bank.",
+      accountNumber:
+        resolveData.message ||
+        "Could not verify bank account. Please check account number and bank.",
     });
   }
 
@@ -360,17 +440,23 @@ export async function saveSurveyorBankDetails(
 
   let recipientCode: string | null = null;
   try {
-    const recipientRes = await fetch("https://api.paystack.co/transferrecipient", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${paystackSecretKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "nuban",
-        name: accountName,
-        account_number: input.accountNumber,
-        bank_code: input.bankCode,
-        currency: "NGN",
-      }),
-    });
+    const recipientRes = await fetch(
+      "https://api.paystack.co/transferrecipient",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${paystackSecretKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "nuban",
+          name: accountName,
+          account_number: input.accountNumber,
+          bank_code: input.bankCode,
+          currency: "NGN",
+        }),
+      }
+    );
     const recipientData = await recipientRes.json();
     if (recipientRes.ok && recipientData.status) {
       recipientCode = recipientData.data.recipient_code;
@@ -405,16 +491,22 @@ export async function saveSurveyorBankDetails(
 
 export async function requestWithdrawal(surveyorId: string, amount: number) {
   await requireActiveSubscription(surveyorId);
-  if (amount <= 0) throw new ValidationError({ amount: "Amount must be greater than zero" });
+  if (amount <= 0)
+    throw new ValidationError({ amount: "Amount must be greater than zero" });
 
-  const bankDetails = await prisma.surveyorBankDetails.findUnique({ where: { userId: surveyorId } });
+  const bankDetails = await prisma.surveyorBankDetails.findUnique({
+    where: { userId: surveyorId },
+  });
   if (!bankDetails || !bankDetails.isVerified) {
     throw new ValidationError({
-      bankDetails: "Your bank account is not verified yet. Please set up your bank account under Settings.",
+      bankDetails:
+        "Your bank account is not verified yet. Please set up your bank account under Settings.",
     });
   }
 
-  const wallet = await prisma.surveyorWallet.findUnique({ where: { userId: surveyorId } });
+  const wallet = await prisma.surveyorWallet.findUnique({
+    where: { userId: surveyorId },
+  });
   if (!wallet || wallet.availableBalance < amount) {
     throw new ValidationError({ amount: "Insufficient available balance" });
   }
@@ -422,7 +514,10 @@ export async function requestWithdrawal(surveyorId: string, amount: number) {
   const [, withdrawal] = await prisma.$transaction([
     prisma.surveyorWallet.update({
       where: { userId: surveyorId },
-      data: { availableBalance: { decrement: amount }, pendingWithdrawal: { increment: amount } },
+      data: {
+        availableBalance: { decrement: amount },
+        pendingWithdrawal: { increment: amount },
+      },
     }),
     prisma.withdrawalRequest.create({
       data: {
@@ -445,7 +540,8 @@ export async function requestWithdrawal(surveyorId: string, amount: number) {
   await createNotification({
     type: "SYSTEM",
     title: "New Withdrawal Request",
-    message: `${surveyor?.firstName ?? ""} ${surveyor?.lastName ?? ""}`.trim() +
+    message:
+      `${surveyor?.firstName ?? ""} ${surveyor?.lastName ?? ""}`.trim() +
       ` requested a withdrawal of ₦${amount.toLocaleString()}.`,
     audience: "GENERAL_ADMINS",
     link: "/surfboard-restricted/dashboard/qr-earnings",
@@ -478,7 +574,13 @@ export async function getSurveyorsForKyc() {
       isKycValidated: true,
       createdAt: true,
       bankDetails: {
-        select: { bankName: true, accountNumber: true, accountName: true, isVerified: true, verifiedAt: true },
+        select: {
+          bankName: true,
+          accountNumber: true,
+          accountName: true,
+          isVerified: true,
+          verifiedAt: true,
+        },
       },
     },
   });
@@ -489,8 +591,14 @@ export async function getSurveyorsForKyc() {
  * admin doing it, for the audit trail — approving a bank account is what lets
  * a surveyor withdraw earnings, so every change is recorded.
  */
-export async function toggleBankVerification(userId: string, status: boolean, actorId?: string) {
-  const bankDetails = await prisma.surveyorBankDetails.findUnique({ where: { userId } });
+export async function toggleBankVerification(
+  userId: string,
+  status: boolean,
+  actorId?: string
+) {
+  const bankDetails = await prisma.surveyorBankDetails.findUnique({
+    where: { userId },
+  });
   if (!bankDetails) {
     throw new NotFoundError("Bank details for this surveyor");
   }

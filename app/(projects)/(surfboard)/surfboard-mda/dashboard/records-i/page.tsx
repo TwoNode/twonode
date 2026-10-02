@@ -137,10 +137,14 @@ export default function RecordsIAdminPage() {
       const query = searchQuery.toLowerCase();
       result = plans.filter((plan) => {
         const matchesPlanNumber = plan.planNumber.toLowerCase().includes(query);
-        const matchesSurveyTitle = plan.surveyTitle.toLowerCase().includes(query);
+        const matchesSurveyTitle = plan.surveyTitle
+          .toLowerCase()
+          .includes(query);
         const matchesLga = plan.lga?.toLowerCase().includes(query);
         const matchesWard = plan.ward?.toLowerCase().includes(query);
-        const matchesBatch = plan.batch?.batchCode.toLowerCase().includes(query);
+        const matchesBatch = plan.batch?.batchCode
+          .toLowerCase()
+          .includes(query);
         const matchesUser =
           plan.user &&
           `${plan.user.firstName} ${plan.user.lastName}`
@@ -203,8 +207,6 @@ export default function RecordsIAdminPage() {
       );
     });
   }, [historyPlans, searchQuery]);
-
-
 
   const handleUnlock = async () => {
     setIsUnlocking(true);
@@ -349,7 +351,9 @@ export default function RecordsIAdminPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading plans...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Loading plans...
+          </p>
         </div>
       </div>
     );
@@ -362,14 +366,15 @@ export default function RecordsIAdminPage() {
     return (
       <Card
         key={plan.id}
-        className={`transition-all duration-200 ${isHistory
+        className={`transition-all duration-200 ${
+          isHistory
             ? plan.recordsIStatus === "QUERIED"
               ? "border-l-4 border-l-red-400"
               : "border-l-4 border-l-green-400"
             : isPlanLockedByMe
               ? "border-l-4 border-l-violet-500 ring-2 ring-violet-200"
               : "border-l-4 border-l-gray-300 opacity-60 grayscale-30"
-          }`}
+        }`}
       >
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -406,15 +411,21 @@ export default function RecordsIAdminPage() {
             {!isHistory && (
               <div className="flex flex-col items-end gap-1">
                 <div className="flex gap-2 items-center">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Accounts:</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Accounts:
+                  </span>
                   {getStatusBadge(plan.accountsStatus)}
                 </div>
                 <div className="flex gap-2 items-center">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Charting:</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Charting:
+                  </span>
                   {getStatusBadge(plan.chartingStatus)}
                 </div>
                 <div className="flex gap-2 items-center">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">SURCON:</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    SURCON:
+                  </span>
                   {getStatusBadge(plan.surconStatus)}
                 </div>
               </div>
@@ -437,7 +448,9 @@ export default function RecordsIAdminPage() {
               <p className="text-sm font-medium">{plan.lcda || "N/A"}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Deeded Area</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Deeded Area
+              </p>
               <p className="text-sm font-medium">{plan.deededArea}</p>
             </div>
           </div>
@@ -626,7 +639,9 @@ export default function RecordsIAdminPage() {
 
       <div className="container mx-auto p-6 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Records I Admin</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Records I Admin
+          </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Review uploaded record copies for quality and completeness
           </p>

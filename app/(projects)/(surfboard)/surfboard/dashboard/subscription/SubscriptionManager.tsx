@@ -146,9 +146,10 @@ export default function SubscriptionManager() {
 
   const getSubscriptionStatus = useMemo(() => {
     if (isSubscriptionActive) {
-      return `You're currently subscribed to the ${SUBSCRIPTION_PLANS[current?.interval as keyof typeof SUBSCRIPTION_PLANS]
+      return `You're currently subscribed to the ${
+        SUBSCRIPTION_PLANS[current?.interval as keyof typeof SUBSCRIPTION_PLANS]
           ?.name || current?.planName
-        }`;
+      }`;
     }
 
     if (isSubscriptionInGracePeriod && current?.currentEnd) {
@@ -184,7 +185,12 @@ export default function SubscriptionManager() {
     }
 
     return "No active subscription";
-  }, [current, isSubscriptionActive, isSubscriptionInGracePeriod, isOnetimeSubscription]);
+  }, [
+    current,
+    isSubscriptionActive,
+    isSubscriptionInGracePeriod,
+    isOnetimeSubscription,
+  ]);
 
   type TransactionObject = {
     reference: string;
@@ -209,7 +215,14 @@ export default function SubscriptionManager() {
         throw new Error(result?.error || "Failed to initiate subscription");
       }
 
-      const { reference, email, amount, currency = "NGN", plan, metadata } = result.data;
+      const {
+        reference,
+        email,
+        amount,
+        currency = "NGN",
+        plan,
+        metadata,
+      } = result.data;
 
       const paystack = new PaystackPop();
       paystack.newTransaction({
@@ -225,14 +238,17 @@ export default function SubscriptionManager() {
             console.log("Payment successful:", transaction);
             toast.loading("Verifying payment...", { id: "verify-payment" });
 
-            const verification = await surfboardApi.subscription.verify(reference);
+            const verification =
+              await surfboardApi.subscription.verify(reference);
 
             toast.dismiss("verify-payment");
 
             if (verification?.success) {
               toast.success("Subscription activated successfully!");
               const updatedSubResult = await surfboardApi.subscription.get();
-              setCurrent(updatedSubResult.success ? updatedSubResult.data : null);
+              setCurrent(
+                updatedSubResult.success ? updatedSubResult.data : null
+              );
               setPendingPlan(null);
               globalThis.location.reload();
             } else {
@@ -266,7 +282,9 @@ export default function SubscriptionManager() {
     }
   };
 
-  const [pendingOnetimePlan, setPendingOnetimePlan] = useState<PlanId | null>(null);
+  const [pendingOnetimePlan, setPendingOnetimePlan] = useState<PlanId | null>(
+    null
+  );
 
   /**
    * Same amount/period as onSubscribe, but no `planCode` passed to Paystack —
@@ -289,7 +307,13 @@ export default function SubscriptionManager() {
         throw new Error(result?.error || "Failed to initiate payment");
       }
 
-      const { reference, email, amount, currency = "NGN", metadata } = result.data;
+      const {
+        reference,
+        email,
+        amount,
+        currency = "NGN",
+        metadata,
+      } = result.data;
 
       const paystack = new PaystackPop();
       paystack.newTransaction({
@@ -301,14 +325,21 @@ export default function SubscriptionManager() {
         metadata,
         onSuccess: async (transaction: TransactionObject) => {
           try {
-            toast.loading("Verifying payment...", { id: "verify-onetime-payment" });
-            const verification = await surfboardApi.subscription.verifyOnetime(reference, planId);
+            toast.loading("Verifying payment...", {
+              id: "verify-onetime-payment",
+            });
+            const verification = await surfboardApi.subscription.verifyOnetime(
+              reference,
+              planId
+            );
             toast.dismiss("verify-onetime-payment");
 
             if (verification?.success) {
               toast.success("Payment successful — access activated!");
               const updatedSubResult = await surfboardApi.subscription.get();
-              setCurrent(updatedSubResult.success ? updatedSubResult.data : null);
+              setCurrent(
+                updatedSubResult.success ? updatedSubResult.data : null
+              );
               setPendingOnetimePlan(null);
               globalThis.location.reload();
             } else {
@@ -377,7 +408,9 @@ export default function SubscriptionManager() {
 
         setShowConfirmation(false);
       } else if (result.error?.toLowerCase().includes("sync pending")) {
-        toast.info("Subscription setup is still finalizing. Please try again in 1-2 minutes.");
+        toast.info(
+          "Subscription setup is still finalizing. Please try again in 1-2 minutes."
+        );
         setShowConfirmation(false);
       } else {
         toast.error(result.error || "Failed to cancel subscription");
@@ -406,7 +439,7 @@ export default function SubscriptionManager() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
@@ -416,7 +449,9 @@ export default function SubscriptionManager() {
             <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full animate-pulse" />
             <Loader2 className="h-12 w-12 animate-spin text-blue-600 relative z-10 mx-auto" />
           </div>
-          <p className="text-muted-foreground font-medium">Loading subscription plans...</p>
+          <p className="text-muted-foreground font-medium">
+            Loading subscription plans...
+          </p>
         </motion.div>
       </div>
     );
@@ -447,7 +482,10 @@ export default function SubscriptionManager() {
       className="space-y-16 pb-20 px-2 sm:px-4 lg:px-6 max-w-7xl mx-auto min-h-screen"
     >
       {/* Premium Hero Section */}
-      <motion.div variants={itemVariants} className="relative pt-0 pb-2 text-center">
+      <motion.div
+        variants={itemVariants}
+        className="relative pt-0 pb-2 text-center"
+      >
         {/* Animated Background Mesh */}
         <div className="absolute inset-0 -z-10 flex items-center justify-center pointer-events-none">
           <div className="absolute w-[600px] h-[400px] bg-blue-500/10 dark:bg-blue-600/10 blur-[100px] rounded-full mix-blend-screen animate-pulse" />
@@ -480,11 +518,11 @@ export default function SubscriptionManager() {
           >
             {/* Outer Glow */}
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 rounded-[2rem] blur-xl opacity-20 group-hover:opacity-40 transition duration-1000" />
-            
+
             <div className="relative overflow-hidden rounded-[2rem] border border-white/20 dark:border-white/10 bg-white/40 dark:bg-slate-950/40 backdrop-blur-3xl shadow-2xl">
               {/* Premium Sheen */}
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:animate-[shimmer_2s_infinite]" />
-              
+
               <div className="p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                 <div className="flex-1 text-center md:text-left space-y-4">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400 font-semibold text-sm mb-2">
@@ -492,20 +530,30 @@ export default function SubscriptionManager() {
                     {isOnetimeSubscription ? "One-Time Access" : "VIP Member"}
                   </div>
                   <h3 className="text-4xl font-extrabold tracking-tighter text-slate-900 dark:text-white">
-                    {SUBSCRIPTION_PLANS[current.interval as keyof typeof SUBSCRIPTION_PLANS]?.name || current.planName}
+                    {SUBSCRIPTION_PLANS[
+                      current.interval as keyof typeof SUBSCRIPTION_PLANS
+                    ]?.name || current.planName}
                   </h3>
                   <div className="flex flex-col sm:flex-row items-center gap-3 text-slate-600 dark:text-slate-400 font-medium">
                     <span className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-                      {isSubscriptionActive ? "Active Subscription" : "Grace Period"}
+                      {isSubscriptionActive
+                        ? "Active Subscription"
+                        : "Grace Period"}
                     </span>
-                    <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
+                    <span className="hidden sm:inline text-slate-300 dark:text-slate-700">
+                      •
+                    </span>
                     <span>{getNextBillingText}</span>
                   </div>
                 </div>
-                
+
                 {isSubscriptionActive && !isOnetimeSubscription && (
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="shrink-0 w-full md:w-auto">
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="shrink-0 w-full md:w-auto"
+                  >
                     <Button
                       variant="ghost"
                       onClick={() => setShowConfirmation(true)}
@@ -548,21 +596,24 @@ export default function SubscriptionManager() {
               <motion.div
                 key={plan.id}
                 variants={itemVariants}
-                className={`relative group h-full flex ${isPopular ? 'lg:-mt-4 lg:mb-4' : ''}`}
+                className={`relative group h-full flex ${isPopular ? "lg:-mt-4 lg:mb-4" : ""}`}
               >
                 {/* Spotlight Background effect */}
                 <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-b from-slate-200/50 to-transparent dark:from-white/5 dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                
+
                 {isPopular && (
                   <div className="absolute -inset-[1px] bg-gradient-to-b from-blue-500 to-purple-600 rounded-[2rem] z-0 opacity-50 group-hover:opacity-100 transition duration-500" />
                 )}
 
-                <div className={`relative z-10 flex flex-col w-full rounded-[2rem] backdrop-blur-xl border transition-all duration-300
-                  ${isPopular 
-                    ? 'bg-white/90 dark:bg-slate-900/95 border-transparent shadow-2xl' 
-                    : 'bg-white/50 dark:bg-slate-950/50 border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:shadow-xl'
-                  } ${isDisabled && !isCurrent ? 'opacity-60 grayscale-[0.2]' : ''}
-                `}>
+                <div
+                  className={`relative z-10 flex flex-col w-full rounded-[2rem] backdrop-blur-xl border transition-all duration-300
+                  ${
+                    isPopular
+                      ? "bg-white/90 dark:bg-slate-900/95 border-transparent shadow-2xl"
+                      : "bg-white/50 dark:bg-slate-950/50 border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:shadow-xl"
+                  } ${isDisabled && !isCurrent ? "opacity-60 grayscale-[0.2]" : ""}
+                `}
+                >
                   {isPopular && (
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
                       <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.3)] flex items-center gap-1.5 whitespace-nowrap">
@@ -574,7 +625,9 @@ export default function SubscriptionManager() {
 
                   <div className="p-8 flex-1 flex flex-col">
                     <div className="flex items-center gap-4 mb-6">
-                      <div className={`p-3 rounded-2xl shadow-sm ${isPopular ? 'bg-gradient-to-br from-blue-500 to-purple-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
+                      <div
+                        className={`p-3 rounded-2xl shadow-sm ${isPopular ? "bg-gradient-to-br from-blue-500 to-purple-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"}`}
+                      >
                         {getPlanIcon(plan.interval)}
                       </div>
                       <div>
@@ -600,9 +653,14 @@ export default function SubscriptionManager() {
                         </span>
                       </div>
                       <div className="text-slate-500 dark:text-slate-400 font-medium mt-1">
-                        per {plan.interval === 'quarterly' ? 'quarter' : plan.interval === 'annually' ? 'year' : 'month'}
+                        per{" "}
+                        {plan.interval === "quarterly"
+                          ? "quarter"
+                          : plan.interval === "annually"
+                            ? "year"
+                            : "month"}
                       </div>
-                      
+
                       {/* {plan.interval === 'quarterly' && (
                         <div className="mt-3 inline-flex text-sm font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 px-3 py-1 rounded-lg">
                           Save 15% vs monthly
@@ -620,13 +678,17 @@ export default function SubscriptionManager() {
                         "Full platform access",
                         `Billed ${plan.interval}`,
                         "24/7 Priority support",
-                        "Unlimited projects"
+                        "Unlimited projects",
                       ].map((feature, i) => (
                         <div key={i} className="flex items-center gap-3">
-                          <div className={`shrink-0 p-0.5 rounded-full ${isPopular ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
+                          <div
+                            className={`shrink-0 p-0.5 rounded-full ${isPopular ? "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}
+                          >
                             <Check className="h-3.5 w-3.5" />
                           </div>
-                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{feature}</span>
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            {feature}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -686,8 +748,9 @@ export default function SubscriptionManager() {
                 Cancel Subscription?
               </DialogTitle>
               <DialogDescription className="text-base text-slate-600 dark:text-slate-400 font-medium mt-3">
-                To switch plans, you must first cancel your current subscription. 
-                Don't worry, you'll retain full access until the end of your billing cycle.
+                To switch plans, you must first cancel your current
+                subscription. Don't worry, you'll retain full access until the
+                end of your billing cycle.
               </DialogDescription>
             </DialogHeader>
 
@@ -698,9 +761,12 @@ export default function SubscriptionManager() {
                     <Zap className="h-5 w-5 text-amber-500" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-slate-900 dark:text-white">Access guaranteed</h4>
+                    <h4 className="font-semibold text-slate-900 dark:text-white">
+                      Access guaranteed
+                    </h4>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                      Your VIP benefits remain active until {formatLocalDate(current.currentEnd)}.
+                      Your VIP benefits remain active until{" "}
+                      {formatLocalDate(current.currentEnd)}.
                     </p>
                   </div>
                 </div>
@@ -724,7 +790,11 @@ export default function SubscriptionManager() {
                 size="lg"
                 className="w-full sm:w-auto h-12 rounded-xl font-semibold bg-red-600 hover:bg-red-700"
               >
-                {isDisabling ? <Loader2 className="h-5 w-5 animate-spin" /> : "Cancel Plan"}
+                {isDisabling ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  "Cancel Plan"
+                )}
               </Button>
             </DialogFooter>
           </div>

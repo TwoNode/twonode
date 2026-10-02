@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { Prisma } from "@/prisma/generated";
-import { handlePrismaError, withPrismaErrorHandling } from "../prismaErrorHandler";
+import {
+  handlePrismaError,
+  withPrismaErrorHandling,
+} from "../prismaErrorHandler";
 
 /**
  * Converted from a hand-rolled console.log script (no assertion framework,
@@ -14,12 +17,17 @@ import { handlePrismaError, withPrismaErrorHandling } from "../prismaErrorHandle
 
 describe("handlePrismaError", () => {
   it("maps a unique constraint violation (P2002) to a friendly message", () => {
-    const error = new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
-      code: "P2002",
-      clientVersion: "5.0.0",
-      meta: { target: ["planNumber"] },
-    });
-    expect(handlePrismaError(error, "test")).toBe("A record with this value already exists");
+    const error = new Prisma.PrismaClientKnownRequestError(
+      "Unique constraint failed",
+      {
+        code: "P2002",
+        clientVersion: "5.0.0",
+        meta: { target: ["planNumber"] },
+      }
+    );
+    expect(handlePrismaError(error, "test")).toBe(
+      "A record with this value already exists"
+    );
   });
 
   it("maps record-not-found (P2025)", () => {
@@ -27,14 +35,19 @@ describe("handlePrismaError", () => {
       code: "P2025",
       clientVersion: "5.0.0",
     });
-    expect(handlePrismaError(error, "test")).toBe("Record to update/delete not found");
+    expect(handlePrismaError(error, "test")).toBe(
+      "Record to update/delete not found"
+    );
   });
 
   it("maps a foreign key constraint failure (P2003)", () => {
-    const error = new Prisma.PrismaClientKnownRequestError("Foreign key constraint failed", {
-      code: "P2003",
-      clientVersion: "5.0.0",
-    });
+    const error = new Prisma.PrismaClientKnownRequestError(
+      "Foreign key constraint failed",
+      {
+        code: "P2003",
+        clientVersion: "5.0.0",
+      }
+    );
     expect(handlePrismaError(error, "test")).toBe("Related record not found");
   });
 
@@ -43,7 +56,9 @@ describe("handlePrismaError", () => {
       code: "P9999",
       clientVersion: "5.0.0",
     });
-    expect(handlePrismaError(error, "test")).toBe("A database error occurred. Please try again later.");
+    expect(handlePrismaError(error, "test")).toBe(
+      "A database error occurred. Please try again later."
+    );
   });
 
   it("maps a Prisma validation error", () => {
@@ -69,14 +84,19 @@ describe("handlePrismaError", () => {
 
 describe("withPrismaErrorHandling", () => {
   it("returns the operation's result on success", async () => {
-    await expect(withPrismaErrorHandling(async () => "ok", "test")).resolves.toBe("ok");
+    await expect(
+      withPrismaErrorHandling(async () => "ok", "test")
+    ).resolves.toBe("ok");
   });
 
   it("rethrows as an Error carrying the friendly message", async () => {
-    const prismaError = new Prisma.PrismaClientKnownRequestError("Record not found", {
-      code: "P2025",
-      clientVersion: "5.0.0",
-    });
+    const prismaError = new Prisma.PrismaClientKnownRequestError(
+      "Record not found",
+      {
+        code: "P2025",
+        clientVersion: "5.0.0",
+      }
+    );
     await expect(
       withPrismaErrorHandling(async () => {
         throw prismaError;

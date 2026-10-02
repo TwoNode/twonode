@@ -59,12 +59,12 @@ export default function QREarningsSettingsPage() {
   const updateCustomFee = (
     index: number,
     field: "name" | "amount" | "isPercentage",
-    value: string | number | boolean,
+    value: string | number | boolean
   ) => {
     setSettings((prev) => ({
       ...prev,
       customFees: prev.customFees.map((fee, i) =>
-        i === index ? { ...fee, [field]: value } : fee,
+        i === index ? { ...fee, [field]: value } : fee
       ),
     }));
   };
@@ -102,8 +102,8 @@ export default function QREarningsSettingsPage() {
           QR Earnings Settings
         </h1>
         <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-          Configure the free-scan quota and service fees charged when a
-          member of the public unlocks a survey plan via its QR code.
+          Configure the free-scan quota and service fees charged when a member
+          of the public unlocks a survey plan via its QR code.
         </p>
       </div>
 
@@ -111,8 +111,7 @@ export default function QREarningsSettingsPage() {
         <CardHeader>
           <CardTitle>Free Scan Quota</CardTitle>
           <CardDescription>
-            Number of free scans allowed per plan before the paywall kicks
-            in.
+            Number of free scans allowed per plan before the paywall kicks in.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -228,8 +227,8 @@ export default function QREarningsSettingsPage() {
         <CardHeader>
           <CardTitle>Custom Fees</CardTitle>
           <CardDescription>
-            Additional fees (e.g. MDA cuts) applied on top of the
-            verification fee for both services.
+            Additional fees (e.g. MDA cuts) applied on top of the verification
+            fee for both services.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -266,7 +265,9 @@ export default function QREarningsSettingsPage() {
                     updateCustomFee(i, "isPercentage", checked)
                   }
                 />
-                <Label className="text-xs text-slate-500 dark:text-gray-400">Percentage</Label>
+                <Label className="text-xs text-slate-500 dark:text-gray-400">
+                  Percentage
+                </Label>
               </div>
               <Button
                 type="button"

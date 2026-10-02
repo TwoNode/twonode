@@ -5,5 +5,8 @@
 // an independent set of values, so a future GBC palette change doesn't
 // need a second manual copy.
 
-export { GBC_COLORS as MDA_COLORS, GBC_GRADIENTS as MDA_GRADIENTS } from "@/gbc/colors";
+export {
+  GBC_COLORS as MDA_COLORS,
+  GBC_GRADIENTS as MDA_GRADIENTS,
+} from "@/gbc/colors";
 export { GBC_COLORS as default } from "@/gbc/colors";

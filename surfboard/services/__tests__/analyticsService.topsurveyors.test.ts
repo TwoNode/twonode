@@ -9,7 +9,8 @@ const mockPrisma = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 
-const { getTopSurveyors } = await import("@/surfboard/services/analyticsService");
+const { getTopSurveyors } =
+  await import("@/surfboard/services/analyticsService");
 const { SurfboardRole } = await import("@/utils/platform");
 const { ForbiddenError } = await import("@/lib/api/errors");
 
@@ -21,7 +22,9 @@ beforeEach(() => {
 
 describe("getTopSurveyors", () => {
   it("refuses a surveyor — the ranking is whole-platform", async () => {
-    await expect(getTopSurveyors({ role: SurfboardRole.USER, userId: "u1" })).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(
+      getTopSurveyors({ role: SurfboardRole.USER, userId: "u1" })
+    ).rejects.toBeInstanceOf(ForbiddenError);
     expect(mockPrisma.surfboardPlan.groupBy).not.toHaveBeenCalled();
   });
 
@@ -42,7 +45,9 @@ describe("getTopSurveyors", () => {
     mockPrisma.surfboardPlan.groupBy.mockResolvedValue([]);
     const from = new Date("2026-01-01");
     await getTopSurveyors(admin, 5, { from });
-    expect(mockPrisma.surfboardPlan.groupBy.mock.calls[0][0].where.dateOnSurveyPlan).toEqual({ gte: from });
+    expect(
+      mockPrisma.surfboardPlan.groupBy.mock.calls[0][0].where.dateOnSurveyPlan
+    ).toEqual({ gte: from });
   });
 
   it("returns names with counts, most plans first, capped at the limit, ties by name", async () => {
@@ -53,7 +58,12 @@ describe("getTopSurveyors", () => {
       { userId: "d", _count: { id: 1 } },
     ]);
     mockPrisma.surfboardUser.findMany.mockResolvedValue([
-      { id: "a", firstName: "Ada", lastName: "Okoro", companyName: "Okoro Surveys" },
+      {
+        id: "a",
+        firstName: "Ada",
+        lastName: "Okoro",
+        companyName: "Okoro Surveys",
+      },
       { id: "b", firstName: "Bayo", lastName: "Ade", companyName: null },
       { id: "c", firstName: "Chi", lastName: "Eze", companyName: "Eze & Co" },
       { id: "d", firstName: "Dee", lastName: "Ola", companyName: null },
@@ -63,16 +73,28 @@ describe("getTopSurveyors", () => {
 
     expect(rows).toEqual([
       { userId: "c", name: "Chi Eze", companyName: "Eze & Co", count: 12 },
-      { userId: "a", name: "Ada Okoro", companyName: "Okoro Surveys", count: 7 },
+      {
+        userId: "a",
+        name: "Ada Okoro",
+        companyName: "Okoro Surveys",
+        count: 7,
+      },
       { userId: "b", name: "Bayo Ade", companyName: null, count: 7 },
     ]);
   });
 
   it("does not drop a surveyor whose account is gone — it shows as unknown", async () => {
-    mockPrisma.surfboardPlan.groupBy.mockResolvedValue([{ userId: "ghost", _count: { id: 2 } }]);
+    mockPrisma.surfboardPlan.groupBy.mockResolvedValue([
+      { userId: "ghost", _count: { id: 2 } },
+    ]);
     mockPrisma.surfboardUser.findMany.mockResolvedValue([]);
     expect(await getTopSurveyors(admin)).toEqual([
-      { userId: "ghost", name: "Unknown surveyor", companyName: null, count: 2 },
+      {
+        userId: "ghost",
+        name: "Unknown surveyor",
+        companyName: null,
+        count: 2,
+      },
     ]);
   });
 });

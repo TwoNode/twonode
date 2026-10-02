@@ -59,6 +59,7 @@ NODE_ENV=development
 ### Environment Detection
 
 The `isLive` field is automatically set based on the `NODE_ENV` environment variable:
+
 - `NODE_ENV=production` → `isLive=true`
 - `NODE_ENV=development` → `isLive=false`
 
@@ -98,7 +99,7 @@ metadata: {
 
 ## Files Modified
 
-*(Historical — this is the changelog from when the `isLive` feature was originally built, pre-dating the 2026-08 architecture rebuild. The REVA/Surfboard action-file paths below no longer exist; see `docs/payment/subscription-payments-flow.md` §6 for their current `surfboard/services/*` / `reva/services/*` replacements. `utils/addBaseUrl.ts` and `utils/paystackConfig.ts` are shared utilities, unaffected by the rebuild's per-product folder moves and still live at the paths below.)*
+_(Historical — this is the changelog from when the `isLive` feature was originally built, pre-dating the 2026-08 architecture rebuild. The REVA/Surfboard action-file paths below no longer exist; see `docs/payment/subscription-payments-flow.md` §6 for their current `surfboard/services/*` / `reva/services/*` replacements. `utils/addBaseUrl.ts` and `utils/paystackConfig.ts` are shared utilities, unaffected by the rebuild's per-product folder moves and still live at the paths below.)_
 
 - `prisma/schema.prisma` - Added `isLive` field to both models
 - `utils/addBaseUrl.ts` - Added `getPaystackCallbackUrl()` function
@@ -168,4 +169,4 @@ Make sure you have all these environment variables set:
 2. **Use different keys for test and live environments**
 3. **Rotate keys regularly**
 4. **Monitor webhook signatures for security**
-5. **Use environment-specific webhook URLs in Paystack dashboard** 
+5. **Use environment-specific webhook URLs in Paystack dashboard**

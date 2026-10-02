@@ -160,7 +160,12 @@ export async function findUserById(
  */
 export async function createNativeUser(
   platform: Platform,
-  data: { email: string; passwordHash: string; firstName: string; lastName: string }
+  data: {
+    email: string;
+    passwordHash: string;
+    firstName: string;
+    lastName: string;
+  }
 ): Promise<NativeAuthUser> {
   switch (platform) {
     case Platform.REVA: {
@@ -217,7 +222,10 @@ export async function updatePasswordHash(
       await prisma.revaUser.update({ where: { id }, data: { passwordHash } });
       return;
     case Platform.SURFBOARD:
-      await prisma.surfboardUser.update({ where: { id }, data: { passwordHash } });
+      await prisma.surfboardUser.update({
+        where: { id },
+        data: { passwordHash },
+      });
       return;
     case Platform.GBC:
       await prisma.gBCUser.update({ where: { id }, data: { passwordHash } });
@@ -232,19 +240,31 @@ export async function markEmailVerified(
 ): Promise<void> {
   switch (platform) {
     case Platform.REVA:
-      await prisma.revaUser.update({ where: { id }, data: { emailVerified: true, emailVerifiedVia: via } });
+      await prisma.revaUser.update({
+        where: { id },
+        data: { emailVerified: true, emailVerifiedVia: via },
+      });
       return;
     case Platform.SURFBOARD:
-      await prisma.surfboardUser.update({ where: { id }, data: { emailVerified: true, emailVerifiedVia: via } });
+      await prisma.surfboardUser.update({
+        where: { id },
+        data: { emailVerified: true, emailVerifiedVia: via },
+      });
       return;
     case Platform.GBC:
-      await prisma.gBCUser.update({ where: { id }, data: { emailVerified: true, emailVerifiedVia: via } });
+      await prisma.gBCUser.update({
+        where: { id },
+        data: { emailVerified: true, emailVerifiedVia: via },
+      });
       return;
   }
 }
 
 /** Case-insensitive, so an invitation can't create a second account that differs from an existing one only by capitalisation. */
-export async function emailInUse(platform: Platform, email: string): Promise<boolean> {
+export async function emailInUse(
+  platform: Platform,
+  email: string
+): Promise<boolean> {
   const where = { email: { equals: email, mode: "insensitive" as const } };
   const select = { id: true };
   switch (platform) {
@@ -270,7 +290,14 @@ type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
  */
 export async function createInvitedUser(
   platform: Platform,
-  data: { email: string; firstName: string; lastName: string; phone: string | null; role: string; passwordHash: string },
+  data: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    role: string;
+    passwordHash: string;
+  },
   db: TxClient | typeof prisma = prisma
 ): Promise<NativeAuthUser> {
   const common = {
@@ -286,18 +313,34 @@ export async function createInvitedUser(
 
   switch (platform) {
     case Platform.REVA: {
-      const u = await db.revaUser.create({ data: { ...common, role: data.role as "ADMIN" | "SUPERADMIN", is_active: true } });
+      const u = await db.revaUser.create({
+        data: {
+          ...common,
+          role: data.role as "ADMIN" | "SUPERADMIN",
+          is_active: true,
+        },
+      });
       return toNativeAuthUser.reva(u);
     }
     case Platform.SURFBOARD: {
       const u = await db.surfboardUser.create({
-        data: { ...common, role: data.role as Prisma.SurfboardUserCreateInput["role"], isActive: true, phoneNumber: data.phone },
+        data: {
+          ...common,
+          role: data.role as Prisma.SurfboardUserCreateInput["role"],
+          isActive: true,
+          phoneNumber: data.phone,
+        },
       });
       return toNativeAuthUser.surfboard(u);
     }
     case Platform.GBC: {
       const u = await db.gBCUser.create({
-        data: { ...common, role: data.role as "ADMIN" | "SUPERADMIN", isActive: true, phone: data.phone },
+        data: {
+          ...common,
+          role: data.role as "ADMIN" | "SUPERADMIN",
+          isActive: true,
+          phone: data.phone,
+        },
       });
       return toNativeAuthUser.gbc(u);
     }

@@ -46,7 +46,12 @@ export function Pagination({
   if (totalPages <= 1 && !showSizePicker) return null;
 
   return (
-    <div className={cn("flex flex-wrap items-center justify-between gap-3", className)}>
+    <div
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-3",
+        className
+      )}
+    >
       {showSizePicker ? (
         <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
           Rows per page
@@ -80,7 +85,10 @@ export function Pagination({
 
           {getPageWindow(page, totalPages).map((p, i) =>
             p === "…" ? (
-              <span key={`ellipsis-${i}`} className="px-1 text-sm text-gray-400 dark:text-gray-500">
+              <span
+                key={`ellipsis-${i}`}
+                className="px-1 text-sm text-gray-400 dark:text-gray-500"
+              >
                 …
               </span>
             ) : (

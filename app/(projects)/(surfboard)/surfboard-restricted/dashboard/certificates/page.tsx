@@ -203,7 +203,9 @@ export default function CertificatesPage() {
               <div className={`text-2xl font-bold ${stat.color} mb-1`}>
                 {stat.value}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {stat.label}
+              </div>
             </motion.div>
           ))}
         </div>
@@ -249,7 +251,9 @@ export default function CertificatesPage() {
           {batches.length === 0 ? (
             <div className="py-12 text-center">
               <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">No batches found</p>
+              <p className="text-gray-500 dark:text-gray-400">
+                No batches found
+              </p>
               <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                 Try adjusting your search or filters
               </p>
@@ -285,12 +289,16 @@ export default function CertificatesPage() {
                   {batch.submitter && (
                     <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
                       {batch.submitter.firstName} {batch.submitter.lastName}
-                      <span className="block text-xs text-gray-500 dark:text-gray-500 truncate">{batch.submitter.email}</span>
+                      <span className="block text-xs text-gray-500 dark:text-gray-500 truncate">
+                        {batch.submitter.email}
+                      </span>
                     </div>
                   )}
 
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">{batch.planCount} plans</span>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {batch.planCount} plans
+                    </span>
                     <span className="font-semibold text-gray-900 dark:text-white">
                       ₦{batch.totalAmount.toLocaleString()}
                     </span>
@@ -331,7 +339,13 @@ export default function CertificatesPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Page {page} of {totalPages} • {total} batches
               </p>
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+              />
             </div>
           )}
         </div>
@@ -372,7 +386,9 @@ export default function CertificatesPage() {
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center">
                       <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500 dark:text-gray-400">No batches found</p>
+                      <p className="text-gray-500 dark:text-gray-400">
+                        No batches found
+                      </p>
                       <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                         Try adjusting your search or filters
                       </p>
@@ -401,14 +417,17 @@ export default function CertificatesPage() {
                         {batch.submitter ? (
                           <div>
                             <div className="text-sm text-gray-900 dark:text-white">
-                              {batch.submitter.firstName} {batch.submitter.lastName}
+                              {batch.submitter.firstName}{" "}
+                              {batch.submitter.lastName}
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
                               {batch.submitter.email}
                             </div>
                           </div>
                         ) : (
-                          <span className="text-gray-400 dark:text-gray-500">Unknown</span>
+                          <span className="text-gray-400 dark:text-gray-500">
+                            Unknown
+                          </span>
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -470,7 +489,13 @@ export default function CertificatesPage() {
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 Page {page} of {totalPages} • {total} batches
               </div>
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+              />
             </div>
           )}
         </div>

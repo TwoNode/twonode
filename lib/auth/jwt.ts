@@ -9,7 +9,8 @@ if (!secretKey && process.env.NODE_ENV === "production") {
 }
 
 const JWT_SECRET = new TextEncoder().encode(
-  secretKey || "dev_twonodes_jwt_secret_key_2026_only_for_local_testing_environment"
+  secretKey ||
+    "dev_twonodes_jwt_secret_key_2026_only_for_local_testing_environment"
 );
 
 export interface JWTPayload {

@@ -1,6 +1,7 @@
 # CERTIFICATE OF DEPOSIT (CoD) - IMPLEMENTATION SPECIFICATION
 
 ## TABLE OF CONTENTS
+
 1. Overview & Completion Criteria
 2. Eligibility & Prerequisites
 3. User Workflow (Surveyor)
@@ -14,10 +15,13 @@
 ## 1. OVERVIEW & COMPLETION CRITERIA
 
 ### Transaction Completion
+
 A survey plan is considered **fully completed** on Surfboard when:
+
 - ✅ The corresponding certificate file is attached
 
 ### Purpose
+
 To generate this certificate, the surveyor must submit a "record copy" document to the MDA (Office of the State Surveyor General - OSSG).
 
 ---
@@ -25,14 +29,18 @@ To generate this certificate, the surveyor must submit a "record copy" document 
 ## 2. ELIGIBILITY & PREREQUISITES
 
 ### Plan Eligibility Criteria
+
 A plan can ONLY be submitted for Certificate of Deposit if:
+
 - `status` = `PENDING`
 - `redCopyStatus` = `NOT_SUBMITTED`
 - No certificate files attached
 - Record copy (PDF/Image) has been uploaded
 
 ### Editable Fields When Queried
+
 When `redCopyStatus` = `QUERIED`, the following fields become editable:
+
 - ✏️ Pillars field
 - ✏️ Record copy attachment field
 
@@ -41,22 +49,28 @@ When `redCopyStatus` = `QUERIED`, the following fields become editable:
 ## 3. USER WORKFLOW (SURVEYOR)
 
 ### Step 1: Select Plans
+
 On the "All Plans" page:
+
 1. User selects one or multiple plans using checkboxes
 2. All selected plans must meet eligibility criteria (Section 2)
 
 ### Step 2: Upload Record Copies
+
 Before submission:
+
 1. User must upload a record copy (PDF or image) for EACH selected plan
 2. System validates that all selected plans have record copies
 3. If any plan is missing a record copy, submission is blocked
 
 ### Step 3: Submit Batch
+
 1. Click "Submit Red Copy Request" button
 2. System creates batch and calculates fees
 3. User is redirected to payment page
 
 ### Step 4: Payment
+
 1. User pays total batch amount via Paystack
 2. After successful payment:
    - All Surfboard Admins receive email + notification
@@ -69,22 +83,27 @@ Before submission:
 When user clicks "Submit for Certificate of Deposit", the system performs:
 
 ### (A) Spatial Intersection (PostGIS)
+
 **Purpose**: Auto-populate charting remarks
 
 **Process**:
+
 - Intersect each survey plan geometry with PostGIS dataset: `LASG_charting_interpretation`
 - Read field: `interpretation`
 - Populate field: `possibleChartingRemarks`
 - Similar to existing `Nigeria_ward_admin_boundaries` intersection
 
 ### (B) Fee Calculation
+
 **Formula**: `Fee = (Rate per LGA × Area) + System Charges`
 
 **Configuration**:
+
 - LGA rates stored in `SurfboardSettings` table (editable by Super Admin)
 - System charges: 10% of base fee
 
 **Example**:
+
 ```
 LGA: Eti-Osa = ₦10/m²
 Survey size: 500 m²
@@ -96,6 +115,7 @@ Batch of 10 surveys: 10 × ₦5,500 = ₦55,000
 ```
 
 ### (C) Batch Code Assignment
+
 - System generates unique batch code (e.g., `COD_ABC12345`)
 - All survey plans in batch inherit this batch code
 - Batch code is stored in `batchId` field
@@ -103,12 +123,14 @@ Batch of 10 surveys: 10 × ₦5,500 = ₦55,000
 ### (D) Payment Flow (Two-Fold)
 
 #### Fold 1: User Payment (Paystack)
+
 1. User pays total batch amount
 2. **After successful payment**:
    - Email + notification → All Surfboard Admins
    - Batch status → `USER_PAID`
 
 #### Fold 2: Admin Payment to LASG (Manual)
+
 1. Surfboard Admin manually remits payment to Lagos State Government
 2. Admin uploads LASG receipt to the batch
 3. **Upon receipt upload**:
@@ -116,7 +138,9 @@ Batch of 10 surveys: 10 × ₦5,500 = ₦55,000
    - Batch status → `LASG_PAID`
 
 ### (E) Status Updates After Submission
+
 **Plan-level changes**:
+
 - `redCopyStatus`: `NOT_SUBMITTED` → `SUBMITTED`
 - `status`: Remains `PENDING`
 - `accountsStatus`: → `PENDING`
@@ -132,10 +156,13 @@ Batch of 10 surveys: 10 × ₦5,500 = ₦55,000
 **IMPORTANT RULES**:
 
 ### Rule 1: Simultaneous Processing
+
 All MDA role approvals (Accounts, Charting, SURCON, Records I) happen **SIMULTANEOUSLY**, not sequentially. Only Records II requires all others to be completed first.
 
 ### Rule 2: Concurrent Work Prevention (Lock Mechanism)
+
 When an MDA admin (e.g., SURCON) opens/starts working on a specific plan:
+
 - 🔒 **Lock is acquired**: Plan is locked to that specific user
 - ⏱️ **Lock duration**: 30 minutes (configurable)
 - 🚫 **Other users blocked**: Other users in the same role cannot work on that plan
@@ -143,18 +170,22 @@ When an MDA admin (e.g., SURCON) opens/starts working on a specific plan:
 - 🔓 **Manual release**: User can manually release lock by closing/canceling
 
 **Lock Indicators**:
+
 - Show "🔒 Currently being reviewed by [Name]" on locked plans
 - Display time remaining on lock
 - Option for Super Admin to force-release locks if needed
 
 ### Rule 3: Chronological Processing (FIFO - First In, First Out)
+
 MDA admins MUST process records in chronological order (oldest first):
+
 - ✅ **Allowed**: Working on batch from 2/12/2025 when it's the oldest pending
 - ❌ **Blocked**: Cannot work on batch from 3/12/2025 if batch from 2/12/2025 is still pending
 - 📅 **Sorting**: Plans are always displayed sorted by `redCopySubmittedAt` (oldest first)
 - 🔒 **Enforcement**: System prevents opening/locking plans that are not the oldest available
 
 **Example Scenario**:
+
 ```
 Pending Plans for SURCON:
 1. Plan A - Submitted: 2/12/2025 10:00 AM ← Must work on this first
@@ -162,11 +193,12 @@ Pending Plans for SURCON:
 3. Plan C - Submitted: 3/12/2025 09:00 AM ← Locked until Plan A & B are done
 
 User tries to click Plan C → System shows:
-"⚠️ Please complete older submissions first. 
+"⚠️ Please complete older submissions first.
 Next available: Plan A (submitted 2/12/2025)"
 ```
 
 **Exception**:
+
 - If a plan is locked by another user, the next oldest available plan can be worked on
 - Example: If Plan A is locked by User 1, User 2 can work on Plan B
 
@@ -175,22 +207,26 @@ Next available: Plan A (submitted 2/12/2025)"
 ### 5.1 ACCOUNTS ADMIN
 
 **Sees**:
+
 - Only batches with `paymentStatus` = `LASG_PAID`
 - Batches awaiting accounts approval
 - LASG receipt attachment
 
 **Task**:
+
 - Review LASG payment receipt
 - **Approve** OR **Disapprove** the payment
 
 **Actions**:
+
 - ✅ **Approve**: Batch status → `ACCOUNTS_APPROVED`
-- ❌ **Disapprove**: 
+- ❌ **Disapprove**:
   - Batch status → `ACCOUNTS_DISAPPROVED`
   - Email sent ONLY to Surfboard Admins (not user)
   - Must provide reason/comment
 
 **Next**:
+
 - Batch becomes invisible to Accounts Admin after action
 
 ---
@@ -198,6 +234,7 @@ Next available: Plan A (submitted 2/12/2025)"
 ### 5.2 CHARTING ADMIN
 
 **Sees**:
+
 - All submitted survey plans (`redCopyStatus` = `SUBMITTED`)
 - Plans with `chartingStatus` = `PENDING`
 - Fields visible:
@@ -212,11 +249,13 @@ Next available: Plan A (submitted 2/12/2025)"
   - Account Status
 
 **Task**:
+
 - Review `possibleChartingRemarks` (auto-populated from LASG dataset)
 - Edit or confirm remarks
 - Save to `chartingRemarks` field (final approved version)
 
 **Important Feature**:
+
 - Display pillar coordinates in copyable format:
   ```
   Pillar 1: (6.5244, 3.3792)
@@ -226,6 +265,7 @@ Next available: Plan A (submitted 2/12/2025)"
 - "Copy to Clipboard" button for pillar coordinates
 
 **Next**:
+
 - `chartingStatus` → `APPROVED`
 - Plan becomes invisible to Charting Admin
 
@@ -234,6 +274,7 @@ Next available: Plan A (submitted 2/12/2025)"
 ### 5.3 SURCON ADMIN
 
 **Sees**:
+
 - All submitted survey plans (`redCopyStatus` = `SUBMITTED`)
 - Plans with `surconStatus` = `PENDING`
 - Fields visible:
@@ -248,11 +289,13 @@ Next available: Plan A (submitted 2/12/2025)"
   - Charting Status
 
 **Task**:
+
 - Confirm pillar numbers match database
 - **Approve** OR **Query** (with comment)
 
 **Actions**:
-- ✅ **Approve**: 
+
+- ✅ **Approve**:
   - `surconStatus` → `APPROVED`
 - ❌ **Query**:
   - `surconStatus` → `QUERIED`
@@ -261,6 +304,7 @@ Next available: Plan A (submitted 2/12/2025)"
   - Email includes: query comment, query stage (SURCON)
 
 **Next**:
+
 - Plan becomes invisible to SURCON Admin after approval
 
 ---
@@ -268,6 +312,7 @@ Next available: Plan A (submitted 2/12/2025)"
 ### 5.4 RECORDS I ADMIN
 
 **Sees**:
+
 - All submitted survey plans (`redCopyStatus` = `SUBMITTED`)
 - Plans with `recordsIStatus` = `PENDING`
 - Fields visible:
@@ -282,12 +327,14 @@ Next available: Plan A (submitted 2/12/2025)"
   - SURCON Status
 
 **Task**:
+
 - Review uploaded Record Copy (PDF/Image)
 - Verify document quality and completeness
 - **Approve** OR **Query** (with comment)
 
 **Actions**:
-- ✅ **Approve**: 
+
+- ✅ **Approve**:
   - `recordsIStatus` → `APPROVED`
 - ❌ **Query**:
   - `recordsIStatus` → `QUERIED`
@@ -296,6 +343,7 @@ Next available: Plan A (submitted 2/12/2025)"
   - Email includes: query comment, query stage (Records I)
 
 **Next**:
+
 - Plan becomes invisible to Records I Admin after approval
 
 ---
@@ -303,6 +351,7 @@ Next available: Plan A (submitted 2/12/2025)"
 ### 5.5 RECORDS II ADMIN
 
 **Prerequisites**:
+
 - ALL other approvals must be completed:
   - ✅ `accountsStatus` = `APPROVED`
   - ✅ `chartingStatus` = `APPROVED`
@@ -310,6 +359,7 @@ Next available: Plan A (submitted 2/12/2025)"
   - ✅ `recordsIStatus` = `APPROVED`
 
 **Sees**:
+
 - Only plans where all 4 other approvals are complete
 - Plans with `recordsIIStatus` = `PENDING`
 - Fields visible:
@@ -321,11 +371,13 @@ Next available: Plan A (submitted 2/12/2025)"
   - All approval statuses
 
 **Important Feature**:
+
 - Display batch progress: "4/10 approved"
   - Numerator: Plans with all 4 approvals complete
   - Denominator: Total plans in batch
 
 **Task**:
+
 - Verify online uploaded copy matches physical copy submitted
 - Final approval before OSSG submission
 - **Approve** OR **Query** (with comment)
@@ -361,6 +413,7 @@ Next available: Plan A (submitted 2/12/2025)"
    - Plans become invisible to Records II Admin
 
 **Future Enhancement**:
+
 - Auto-retrieve certificate files from LASG portal
 - URL: `http://ossgdeposit.lagosstate.gov.ng/survey/check.php`
 - Input: Plan Number
@@ -371,38 +424,42 @@ Next available: Plan A (submitted 2/12/2025)"
 ## 6. DATA REQUIREMENTS
 
 ### Data Already Available in Surfboard
+
 The following fields are already stored and ready for OSSG submission:
 
-| Field | Database Column | Description |
-|-------|----------------|-------------|
-| Survey Title | `surveyTitle` | Plan title |
-| Parcel Area | Calculated from `geometry` | Plan area in m² |
-| LGA | `lga` | Local Government Area |
-| Ward | `ward` | Ward name |
-| LCDA | `lcda` | Local Council Development Area |
-| Deeded Area | `deededArea` | Recorded area (text) |
-| Pillar Numbers | `pillars` (JSON) | Array of pillar coordinates |
-| Record Copy | `redCopyFileUrl` | PDF/Image URL |
-| Locality | `locality` | Locality description |
-| Charting Remarks | `chartingRemarks` | Final approved remarks |
+| Field            | Database Column            | Description                    |
+| ---------------- | -------------------------- | ------------------------------ |
+| Survey Title     | `surveyTitle`              | Plan title                     |
+| Parcel Area      | Calculated from `geometry` | Plan area in m²                |
+| LGA              | `lga`                      | Local Government Area          |
+| Ward             | `ward`                     | Ward name                      |
+| LCDA             | `lcda`                     | Local Council Development Area |
+| Deeded Area      | `deededArea`               | Recorded area (text)           |
+| Pillar Numbers   | `pillars` (JSON)           | Array of pillar coordinates    |
+| Record Copy      | `redCopyFileUrl`           | PDF/Image URL                  |
+| Locality         | `locality`                 | Locality description           |
+| Charting Remarks | `chartingRemarks`          | Final approved remarks         |
 
 ---
 
 ## 7. TECHNICAL NOTES
 
 ### Database Models
+
 - `SurfboardPlan`: Main plan model
 - `CertificateOfDepositBatch`: Batch submissions
 - `SurfboardSettings`: LGA fees and system config
 - `LASG_charting_interpretation`: PostGIS dataset for charting
 
 ### Key Enums
+
 - `SurfboardPlanStatus`: PENDING, LODGED, QUERIED, UNDER_REVIEW
 - `SurfboardRedCopyStatus`: NOT_SUBMITTED, SUBMITTED, APPROVED, QUERIED
 - `ApprovalStatus`: PENDING, APPROVED, QUERIED
 - `BatchPaymentStatus`: PENDING_USER_PAYMENT, USER_PAID, LASG_PAID, ACCOUNTS_APPROVED, ACCOUNTS_DISAPPROVED
 
 ### Roles
+
 - `USER`: Regular surveyor
 - `ADMIN`: Surfboard admin
 - `SUPERADMIN`: Can edit LGA fees
@@ -413,7 +470,9 @@ The following fields are already stored and ready for OSSG submission:
 - `RECORDS_II`: Records II admin
 
 ### Notifications
+
 Email + in-app notifications sent for:
+
 - ✉️ User payment success → Surfboard Admins
 - ✉️ LASG receipt upload → All MDA roles
 - ✉️ Query action → User (with query details)
@@ -421,6 +480,7 @@ Email + in-app notifications sent for:
 - ✉️ Accounts disapproval → Surfboard Admins only
 
 ### Payment Integration
+
 - Provider: Paystack
 - Currency: NGN (Nigerian Naira)
 - Payment reference stored in `userPaymentRef`
@@ -501,83 +561,21 @@ Email + in-app notifications sent for:
 
 **END OF SPECIFICATION**
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 1. Payerid Type.
-2. Payerid 
-3. Email 
-4. Phone number 
+2. Payerid
+3. Email
+4. Phone number
 5. Agency Name: "4830000 — 61004 — Office of the State Surveyor General"
 6. Revenue Name: "4020002 — 32202 — Lands Registry Transactions"
 7. Period: it’s the current date (dd/mm/yyyy)
-
-
 
 Then the payment verification
 
 User input the RRR Number
 
-Request is sent to this link with the RRR number mapped into it 
+Request is sent to this link with the RRR number mapped into it
 E.g RRR Number: 191392819355
-"https://login.remita.net/remita/exapp/api/v1/send/api/print/billsvc/biller/191392819355/printrecieptRequest.pdf" 
+"https://login.remita.net/remita/exapp/api/v1/send/api/print/billsvc/biller/191392819355/printrecieptRequest.pdf"
 
 Then the information on page one is copied and Ai extract the payerid, payer id type and the Transaction id and transactions code and map it into the Lagos EBS Receipt URL..
 
@@ -585,14 +583,10 @@ E.g Trans Id : 60050629, Trans Code: ZCYYDEIA, PayerID: 16976764, PayerID type: 
 
 "https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=n&payerid=16976764&transid=60050629&transcode=ZCYYDEIA"
 
-
 Example of Page 1-Lagos revenue receipt from the Remita receipt URL
 
 "SMS: 0809-113-3778; 0809-…
-The Amount paid is verified with the Cod Fee...  then the Lagos revenue EBS  URL is now what the account officer should see..
-
-
-
+The Amount paid is verified with the Cod Fee... then the Lagos revenue EBS URL is now what the account officer should see..
 
 4830000 -- 61004 -- Office of Surveyor General
 4020002 -- 32202 -- Lands Registry Transactions

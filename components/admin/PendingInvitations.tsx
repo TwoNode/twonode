@@ -6,7 +6,12 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/hooks/useConfirm";
-import { roleLabel, type AdminInvitationRow, type AdminInvitationStatus, type InviteResult } from "@/lib/api/adminInvitationTypes";
+import {
+  roleLabel,
+  type AdminInvitationRow,
+  type AdminInvitationStatus,
+  type InviteResult,
+} from "@/lib/api/adminInvitationTypes";
 import type { ApiResult } from "@/lib/api/types";
 
 export interface InvitationsApi {
@@ -23,20 +28,34 @@ const INVITATIONS_CHANGED = "admin-invitations:changed";
  * the invite form and the list need no shared state — they can sit anywhere
  * on the page.
  */
-export function announceInviteResult(email: string, verb: "sent" | "resent", result: InviteResult) {
+export function announceInviteResult(
+  email: string,
+  verb: "sent" | "resent",
+  result: InviteResult
+) {
   if (result.emailSent) toast.success(`Invitation ${verb} to ${email}`);
-  else toast.warning(`Invitation saved for ${email}, but the email couldn't be sent. Use Resend to try again.`);
+  else
+    toast.warning(
+      `Invitation saved for ${email}, but the email couldn't be sent. Use Resend to try again.`
+    );
   window.dispatchEvent(new Event(INVITATIONS_CHANGED));
 }
 
 const STATUS_STYLE: Record<AdminInvitationStatus, string> = {
-  PENDING: "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300",
+  PENDING:
+    "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300",
   EXPIRED: "bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-300",
   REVOKED: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
-  ACCEPTED: "bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300",
+  ACCEPTED:
+    "bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300",
 };
 
-const formatDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
 /**
  * Invitations for new admins on one product — pending ones can be resent
@@ -113,7 +132,8 @@ export function PendingInvitations({ api }: { api: InvitationsApi }) {
       <div className="mb-4">
         <h2 className="text-lg sm:text-xl font-bold">Invitations</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          New admins get an emailed link to set their password. Links work once and expire after 7 days.
+          New admins get an emailed link to set their password. Links work once
+          and expire after 7 days.
         </p>
       </div>
 
@@ -122,9 +142,13 @@ export function PendingInvitations({ api }: { api: InvitationsApi }) {
           <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
         </div>
       ) : loadError ? (
-        <p className="text-sm text-red-600 py-4">Couldn&apos;t load invitations. Refresh the page to try again.</p>
+        <p className="text-sm text-red-600 py-4">
+          Couldn&apos;t load invitations. Refresh the page to try again.
+        </p>
       ) : rows!.length === 0 ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400 py-4">No invitations yet.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 py-4">
+          No invitations yet.
+        </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -140,14 +164,25 @@ export function PendingInvitations({ api }: { api: InvitationsApi }) {
             </thead>
             <tbody>
               {rows!.map((row) => (
-                <tr key={row.id} className="border-b last:border-0 dark:border-white/10 align-top">
+                <tr
+                  key={row.id}
+                  className="border-b last:border-0 dark:border-white/10 align-top"
+                >
                   <td className="py-3 pr-4">
-                    <div className="font-medium">{row.firstName} {row.lastName}</div>
-                    <div className="text-gray-500 dark:text-gray-400">{row.email}</div>
+                    <div className="font-medium">
+                      {row.firstName} {row.lastName}
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400">
+                      {row.email}
+                    </div>
                   </td>
-                  <td className="py-3 pr-4 whitespace-nowrap">{roleLabel(row.role)}</td>
+                  <td className="py-3 pr-4 whitespace-nowrap">
+                    {roleLabel(row.role)}
+                  </td>
                   <td className="py-3 pr-4">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[row.status]}`}>
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[row.status]}`}
+                    >
                       {row.status.charAt(0) + row.status.slice(1).toLowerCase()}
                     </span>
                   </td>
@@ -161,7 +196,12 @@ export function PendingInvitations({ api }: { api: InvitationsApi }) {
                   </td>
                   <td className="py-3 text-right whitespace-nowrap">
                     {(row.status === "PENDING" || row.status === "EXPIRED") && (
-                      <Button variant="ghost" size="sm" disabled={busyId === row.id} onClick={() => resend(row)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={busyId === row.id}
+                        onClick={() => resend(row)}
+                      >
                         <RefreshCw className="h-4 w-4 mr-1" />
                         Resend
                       </Button>

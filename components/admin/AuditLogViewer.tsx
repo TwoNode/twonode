@@ -22,7 +22,13 @@ const unknownActor = (log: AuditLogEntry) =>
  * Superadmin's read-only view of a product's audit log (who did what, to
  * which record, from which IP). The product's page just passes its API client.
  */
-export function AuditLogViewer({ api, viewModeKey }: { api: AuditLogApi; viewModeKey: string }) {
+export function AuditLogViewer({
+  api,
+  viewModeKey,
+}: {
+  api: AuditLogApi;
+  viewModeKey: string;
+}) {
   const [actions, setActions] = useState<string[]>([]);
   const [entities, setEntities] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -55,8 +61,10 @@ export function AuditLogViewer({ api, viewModeKey }: { api: AuditLogApi; viewMod
 
   const actionFilter = filters.action;
   const entityFilter = filters.entity;
-  const setActionFilter = (action: string) => setFilters((f) => ({ ...f, action }));
-  const setEntityFilter = (entity: string) => setFilters((f) => ({ ...f, entity }));
+  const setActionFilter = (action: string) =>
+    setFilters((f) => ({ ...f, action }));
+  const setEntityFilter = (entity: string) =>
+    setFilters((f) => ({ ...f, entity }));
 
   useEffect(() => {
     async function fetchFilterOptions() {
@@ -95,8 +103,12 @@ export function AuditLogViewer({ api, viewModeKey }: { api: AuditLogApi; viewMod
         <div className="flex items-center gap-3">
           <FileText className="w-8 h-8 text-blue-600 shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Audit Logs</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{total} total entries</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Audit Logs
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {total} total entries
+            </p>
           </div>
         </div>
 
@@ -197,10 +209,14 @@ export function AuditLogViewer({ api, viewModeKey }: { api: AuditLogApi; viewMod
                         <span className="font-medium">
                           {log.user.firstName} {log.user.lastName}
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 block">{log.user.email}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                          {log.user.email}
+                        </span>
                       </>
                     ) : (
-                      <span className="text-gray-400 dark:text-gray-500">{unknownActor(log)}</span>
+                      <span className="text-gray-400 dark:text-gray-500">
+                        {unknownActor(log)}
+                      </span>
                     )}
                   </div>
 
@@ -237,7 +253,13 @@ export function AuditLogViewer({ api, viewModeKey }: { api: AuditLogApi; viewMod
               <p className="text-sm text-gray-700 dark:text-gray-300">
                 Page {page} of {totalPages} • {total} entries
               </p>
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+              />
             </div>
           )}
         </div>
@@ -295,7 +317,9 @@ export function AuditLogViewer({ api, viewModeKey }: { api: AuditLogApi; viewMod
                             </span>
                           </div>
                         ) : (
-                          <span className="text-gray-400 dark:text-gray-500">{unknownActor(log)}</span>
+                          <span className="text-gray-400 dark:text-gray-500">
+                            {unknownActor(log)}
+                          </span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm">
@@ -323,7 +347,9 @@ export function AuditLogViewer({ api, viewModeKey }: { api: AuditLogApi; viewMod
                             </pre>
                           </details>
                         ) : (
-                          <span className="text-gray-400 dark:text-gray-500">-</span>
+                          <span className="text-gray-400 dark:text-gray-500">
+                            -
+                          </span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
@@ -341,7 +367,13 @@ export function AuditLogViewer({ api, viewModeKey }: { api: AuditLogApi; viewMod
               <p className="text-sm text-gray-700 dark:text-gray-300">
                 Page {page} of {totalPages} • {total} entries
               </p>
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+              />
             </div>
           )}
         </div>

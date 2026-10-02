@@ -173,9 +173,7 @@ export default function RecordsIIAdminPage() {
     }
 
     if (lockedBatchId) {
-      const lockedBatchIndex = result.findIndex(
-        (b) => b.id === lockedBatchId
-      );
+      const lockedBatchIndex = result.findIndex((b) => b.id === lockedBatchId);
       if (lockedBatchIndex > -1) {
         const lockedBatch = result[lockedBatchIndex];
         result = [
@@ -431,7 +429,9 @@ export default function RecordsIIAdminPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading batches...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Loading batches...
+          </p>
         </div>
       </div>
     );
@@ -494,7 +494,10 @@ export default function RecordsIIAdminPage() {
                       Locked by you
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="text-gray-500 dark:text-gray-400">
+                    <Badge
+                      variant="outline"
+                      className="text-gray-500 dark:text-gray-400"
+                    >
                       View Only
                     </Badge>
                   ))}
@@ -509,9 +512,7 @@ export default function RecordsIIAdminPage() {
                 batch._count.plans > batch.plans.length && (
                   <div className="flex items-center gap-2 mt-2">
                     <Progress
-                      value={
-                        (batch.plans.length / batch._count.plans) * 100
-                      }
+                      value={(batch.plans.length / batch._count.plans) * 100}
                       className="w-32 h-2"
                     />
                     <span className="text-xs text-gray-600 dark:text-gray-400">
@@ -608,7 +609,9 @@ export default function RecordsIIAdminPage() {
                         <span className="font-medium text-gray-900 dark:text-white">
                           {p.planNumber}
                         </span>
-                        <span className="text-gray-500 dark:text-gray-400">{p.surveyTitle}</span>
+                        <span className="text-gray-500 dark:text-gray-400">
+                          {p.surveyTitle}
+                        </span>
                         {p.planType && (
                           <Badge variant="secondary" className="text-xs">
                             {p.planType}
@@ -642,7 +645,9 @@ export default function RecordsIIAdminPage() {
                         <p className="font-medium">{p.lcda || "N/A"}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500 dark:text-gray-400">Deeded Area</p>
+                        <p className="text-gray-500 dark:text-gray-400">
+                          Deeded Area
+                        </p>
                         <p className="font-medium">{p.deededArea}</p>
                       </div>
                     </div>
@@ -677,9 +682,7 @@ export default function RecordsIIAdminPage() {
                           {isImageUrl(p.redCopyFileUrl) && (
                             <div
                               className="cursor-pointer inline-block"
-                              onClick={() =>
-                                setViewingImage(p.redCopyFileUrl)
-                              }
+                              onClick={() => setViewingImage(p.redCopyFileUrl)}
                             >
                               <img
                                 src={p.redCopyFileUrl}
@@ -706,23 +709,24 @@ export default function RecordsIIAdminPage() {
                             <ExternalLink className="w-3 h-3" />
                           </a>
 
-                          {p.recordCopyVerdict && p.recordCopyVerificationData && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="inline-flex items-center gap-1.5 ml-2 bg-white dark:bg-surface text-xs h-8"
-                              onClick={() =>
-                                setActiveVerificationModal({
-                                  isOpen: true,
-                                  data: p.recordCopyVerificationData,
-                                  planNumber: p.planNumber,
-                                })
-                              }
-                            >
-                              <CheckCircle className="w-3.5 h-3.5" />
-                              Verification Results
-                            </Button>
-                          )}
+                          {p.recordCopyVerdict &&
+                            p.recordCopyVerificationData && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="inline-flex items-center gap-1.5 ml-2 bg-white dark:bg-surface text-xs h-8"
+                                onClick={() =>
+                                  setActiveVerificationModal({
+                                    isOpen: true,
+                                    data: p.recordCopyVerificationData,
+                                    planNumber: p.planNumber,
+                                  })
+                                }
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" />
+                                Verification Results
+                              </Button>
+                            )}
                         </div>
                       ) : (
                         <p className="text-xs text-red-600">
@@ -747,9 +751,7 @@ export default function RecordsIIAdminPage() {
                         {p.recordsIIStatus === "QUERIED" &&
                           p.recordsIIComment && (
                             <p className="text-red-600 mt-2">
-                              <span className="font-medium">
-                                Query Reason:
-                              </span>{" "}
+                              <span className="font-medium">Query Reason:</span>{" "}
                               {p.recordsIIComment}
                             </p>
                           )}
@@ -865,7 +867,8 @@ export default function RecordsIIAdminPage() {
             <div className="flex items-center gap-2">
               <Lock className="w-4 h-4 text-violet-600" />
               <span className="text-sm text-violet-800">
-                <strong>Batch {lockedBatchCode}</strong> locked ({lockedPlanCount} plan{lockedPlanCount !== 1 ? "s" : ""})
+                <strong>Batch {lockedBatchCode}</strong> locked (
+                {lockedPlanCount} plan{lockedPlanCount !== 1 ? "s" : ""})
                 {lockExpiresAt && (
                   <span className="text-violet-600 ml-1">
                     • Expires {formatDate(lockExpiresAt)}
@@ -907,8 +910,11 @@ export default function RecordsIIAdminPage() {
             <p className="text-sm text-violet-700 mt-1">
               Only plans where all 5 approvals (Accounts, Charting, SURCON,
               Records I, Intake) are complete appear here. Batches are locked to
-              you for review — {lockedPlanCount > 0 ? `${lockedPlanCount * 3} minutes` : "3 minutes per plan"}.
-              Upon approval, plans are submitted to OSSG and marked as LODGED.
+              you for review —{" "}
+              {lockedPlanCount > 0
+                ? `${lockedPlanCount * 3} minutes`
+                : "3 minutes per plan"}
+              . Upon approval, plans are submitted to OSSG and marked as LODGED.
             </p>
           </div>
         </div>
@@ -925,17 +931,20 @@ export default function RecordsIIAdminPage() {
           />
         </div>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as any)}
-        >
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
           <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="pending" className="flex items-center gap-2 overflow-hidden">
+            <TabsTrigger
+              value="pending"
+              className="flex items-center gap-2 overflow-hidden"
+            >
               <Clock className="w-4 h-4 shrink-0" />
               <span className="truncate">
-                <span className="sm:hidden">Pending ({filteredBatches.length})</span>
+                <span className="sm:hidden">
+                  Pending ({filteredBatches.length})
+                </span>
                 <span className="hidden sm:inline">
-                  Pending ({filteredBatches.length} batches, {totalPendingPlans} plans)
+                  Pending ({filteredBatches.length} batches, {totalPendingPlans}{" "}
+                  plans)
                 </span>
               </span>
             </TabsTrigger>
@@ -964,9 +973,7 @@ export default function RecordsIIAdminPage() {
               </Card>
             ) : (
               <div className="grid gap-4">
-                {filteredBatches.map((batch) =>
-                  renderBatchCard(batch, false)
-                )}
+                {filteredBatches.map((batch) => renderBatchCard(batch, false))}
               </div>
             )}
           </TabsContent>
@@ -1035,7 +1042,9 @@ export default function RecordsIIAdminPage() {
                       {dialogMode === "batch" ? (
                         <>
                           <li>
-                            Physical record copies of ALL {selectedBatch?.plans.length} plans match uploaded versions
+                            Physical record copies of ALL{" "}
+                            {selectedBatch?.plans.length} plans match uploaded
+                            versions
                           </li>
                           <li>All information has been verified</li>
                           <li>All plans are ready to be submitted to OSSG</li>
@@ -1106,8 +1115,7 @@ export default function RecordsIIAdminPage() {
               <Button
                 onClick={handleSubmit}
                 disabled={
-                  processing ||
-                  (actionType === "query" && !comment.trim())
+                  processing || (actionType === "query" && !comment.trim())
                 }
                 className={
                   actionType === "approve"
@@ -1164,7 +1172,11 @@ export default function RecordsIIAdminPage() {
       <VerificationResultModal
         isOpen={activeVerificationModal.isOpen}
         onClose={() =>
-          setActiveVerificationModal({ isOpen: false, data: null, planNumber: "" })
+          setActiveVerificationModal({
+            isOpen: false,
+            data: null,
+            planNumber: "",
+          })
         }
         resultData={activeVerificationModal.data}
         planNumber={activeVerificationModal.planNumber}

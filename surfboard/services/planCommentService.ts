@@ -1,5 +1,9 @@
 import prisma from "@/lib/prisma";
-import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
+import {
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from "@/lib/api/errors";
 
 /**
  * Per-plan Comments — a shared discussion thread, visible to the plan's
@@ -21,8 +25,14 @@ export interface PlanCommentWithAuthor {
   editedAt: Date | null;
 }
 
-async function assertCanAccessComments(planId: string, userId: string): Promise<{ ownerId: string | null }> {
-  const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId }, select: { userId: true, sharedTo: true } });
+async function assertCanAccessComments(
+  planId: string,
+  userId: string
+): Promise<{ ownerId: string | null }> {
+  const plan = await prisma.surfboardPlan.findUnique({
+    where: { id: planId },
+    select: { userId: true, sharedTo: true },
+  });
   if (!plan) throw new NotFoundError("Plan");
   const isOwner = plan.userId === userId;
   const isRecipient = (plan.sharedTo || []).includes(userId);
@@ -30,17 +40,28 @@ async function assertCanAccessComments(planId: string, userId: string): Promise<
   return { ownerId: plan.userId };
 }
 
-async function withAuthorNames(planOwnerId: string | null, comments: { authorId: string }[]): Promise<Map<string, string>> {
+async function withAuthorNames(
+  planOwnerId: string | null,
+  comments: { authorId: string }[]
+): Promise<Map<string, string>> {
   const authorIds = [...new Set(comments.map((c) => c.authorId))];
   if (!authorIds.length) return new Map();
   const authors = await prisma.surfboardUser.findMany({
     where: { id: { in: authorIds } },
     select: { id: true, firstName: true, lastName: true },
   });
-  return new Map(authors.map((a) => [a.id, [a.firstName, a.lastName].filter(Boolean).join(" ") || "Unknown user"]));
+  return new Map(
+    authors.map((a) => [
+      a.id,
+      [a.firstName, a.lastName].filter(Boolean).join(" ") || "Unknown user",
+    ])
+  );
 }
 
-export async function getPlanComments(userId: string, planId: string): Promise<PlanCommentWithAuthor[]> {
+export async function getPlanComments(
+  userId: string,
+  planId: string
+): Promise<PlanCommentWithAuthor[]> {
   const { ownerId } = await assertCanAccessComments(planId, userId);
   const comments = await prisma.surfboardPlanComment.findMany({
     where: { planId },
@@ -59,13 +80,22 @@ export async function getPlanComments(userId: string, planId: string): Promise<P
   }));
 }
 
-export async function addPlanComment(userId: string, planId: string, body: string): Promise<PlanCommentWithAuthor> {
+export async function addPlanComment(
+  userId: string,
+  planId: string,
+  body: string
+): Promise<PlanCommentWithAuthor> {
   const { ownerId } = await assertCanAccessComments(planId, userId);
   const trimmed = body.trim();
   if (!trimmed) throw new ValidationError({ body: "Comment can't be empty" });
-  if (trimmed.length > 2000) throw new ValidationError({ body: "Comment is too long (max 2000 characters)" });
+  if (trimmed.length > 2000)
+    throw new ValidationError({
+      body: "Comment is too long (max 2000 characters)",
+    });
 
-  const comment = await prisma.surfboardPlanComment.create({ data: { planId, authorId: userId, body: trimmed } });
+  const comment = await prisma.surfboardPlanComment.create({
+    data: { planId, authorId: userId, body: trimmed },
+  });
   const names = await withAuthorNames(ownerId, [comment]);
   return {
     id: comment.id,
@@ -79,8 +109,14 @@ export async function addPlanComment(userId: string, planId: string, body: strin
   };
 }
 
-export async function deletePlanComment(userId: string, commentId: string): Promise<void> {
-  const comment = await prisma.surfboardPlanComment.findUnique({ where: { id: commentId } });
-  if (!comment || comment.authorId !== userId) throw new NotFoundError("Comment");
+export async function deletePlanComment(
+  userId: string,
+  commentId: string
+): Promise<void> {
+  const comment = await prisma.surfboardPlanComment.findUnique({
+    where: { id: commentId },
+  });
+  if (!comment || comment.authorId !== userId)
+    throw new NotFoundError("Comment");
   await prisma.surfboardPlanComment.delete({ where: { id: commentId } });
 }

@@ -1,11 +1,13 @@
 # GBC Authentication Implementation Summary
 
 ## Overview
+
 Added Kinde authentication for GBC2 (Global Business Conference) platform, following the same pattern as REVA and Surfboard implementations.
 
 ## Files Created
 
 ### 1. Authentication Utilities
+
 - **`/utils/gbcAuth.ts`**: Server-side authentication utilities for GBC
   - `getUserFromGBCDB()`: Fetch user from database
   - `getAuthenticatedGBCUser()`: Get authenticated user from Kinde
@@ -14,27 +16,33 @@ Added Kinde authentication for GBC2 (Global Business Conference) platform, follo
   - `verifyGBCUserAccess()`: Verify user panel access
 
 ### 2. Client Hooks
+
 - **`/hooks/useGBCUserAccess.ts`**: Client hook for user authentication checks
 - **`/hooks/useGBCAdminAccess.ts`**: Client hook for admin authentication checks
 
 ### 3. UI Components
+
 - **`/components/pageNotFound/GBCPageNotFound.tsx`**: 404 page component
 - **`/components/layouts/gbcUserPanelLayout.tsx`**: User dashboard layout with sidebar
 - **`/components/layouts/gbcAdminPanelLayout.tsx`**: Admin dashboard layout with sidebar
 
 ### 4. Color Palette
+
 - **`/gbc-colors.ts`**: Purple/violet themed color palette for GBC branding
 
 ### 5. API Routes
+
 - **`/app/api/auth/success/gbc/route.ts`**: User login success handler
 - **`/app/api/auth/success/gbc-restricted/route.ts`**: Admin login success handler
 
 ## Files Modified
 
 ### 1. Platform Configuration
+
 - **`/utils/platform.ts`**: Added `Platform.GBC` and `GBCRole` enum
 
 ### 2. Permissions
+
 - **`/permissions.ts`**: Added GBC permission functions:
   - `canAccessGBCAdminPanel()`
   - `canAccessGBCUserPanel()`
@@ -42,25 +50,30 @@ Added Kinde authentication for GBC2 (Global Business Conference) platform, follo
   - `isGBCAdmin()`, `isGBCSuperAdmin()`, `isGBCRegularUser()`
 
 ### 3. Encrypted Cookies
+
 - **`/utils/encryptedCookies.ts`**: Added `GBCRole` to type unions
 
 ### 4. Proxy Middleware
+
 - **`/proxy.ts`**: Added GBC routes to protected routes and authentication flow
   - Routes: `/gbc/restricted/*`
   - Login pages: `/gbc/login`, `/gbc/restricted/login`
   - Platform checks and role-based access control
 
 ### 5. Authentication Flow Routes
+
 - **`/app/api/auth/homepage/route.ts`**: Added GBC routing
 - **`/app/api/auth/login_redirect/route.ts`**: Added GBC login redirects
 - **`/app/api/auth/logout_redirect/route.ts`**: Added GBC logout redirects
 
 ### 6. Layout
+
 - **`/app/(projects)/(GBC)/layout.tsx`**: Updated with ToastProvider and GBC metadata (ToastProvider/`react-toastify` has since been removed; the root `ToasterComponent` serves every product)
 
 ## Route Structure
 
 ### User Routes (Public)
+
 - `/gbc` - Main landing page
 - `/gbc/login` - User login page
 - `/gbc/tickets` - View tickets
@@ -70,6 +83,7 @@ Added Kinde authentication for GBC2 (Global Business Conference) platform, follo
 - `/gbc/settings` - User settings
 
 ### Admin Routes (Protected)
+
 - `/gbc/restricted` - Admin dashboard
 - `/gbc/restricted/login` - Admin login
 - `/gbc/restricted/tickets` - Manage tickets
@@ -90,24 +104,28 @@ Added Kinde authentication for GBC2 (Global Business Conference) platform, follo
 ## Authorization Levels
 
 ### USER
+
 - Access to main dashboard and user features
 - View tickets, gallery, sponsors
 - Update personal settings
 
 ### ADMIN
+
 - All USER permissions
 - Access to admin panel (`/gbc/restricted`)
 - Manage tickets, check-in, QR codes
 - View attendee list
 
 ### SUPERADMIN
+
 - All ADMIN permissions
-- Access to superadmin panel  (`/gbc/restricted/superadmin`)
+- Access to superadmin panel (`/gbc/restricted/superadmin`)
 - Full system control
 
 ## Database Schema
 
 The implementation expects a `GBCUser` model in Prisma with the following fields:
+
 - `id`: String (primary key)
 - `kindeId`: String (unique, from Kinde auth)
 - `email`: String (unique)
@@ -120,6 +138,7 @@ The implementation expects a `GBCUser` model in Prisma with the following fields
 ## Color Theme
 
 The GBC platform uses a purple/violet color palette:
+
 - **Primary**: #7C3AED (Purple)
 - **Secondary**: #EC4899 (Pink)
 - **Accent**: #8B5CF6 (Violet)

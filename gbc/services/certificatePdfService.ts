@@ -3,8 +3,16 @@ import { execFile } from "child_process";
 import type { GBCCertificateTicket } from "@/gbc/components/certificates/types";
 import { generateVerificationQRDataURL } from "@/gbc/utils/qr_code";
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com";
-const WORKER_PATH = path.join(process.cwd(), "gbc", "pdf-worker", "certificate.render.cjs");
+const SITE_URL =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://www.twonodetechnologies.com";
+const WORKER_PATH = path.join(
+  process.cwd(),
+  "gbc",
+  "pdf-worker",
+  "certificate.render.cjs"
+);
 
 // Tracing hint only. The worker above requires @react-pdf/renderer (and
 // its transitive deps: fontkit, pdfkit, linebreak, unicode-properties,
@@ -63,7 +71,9 @@ export function getCertificateVerificationUrl(ticketNumber: string): string {
  * bulk-certificate-email flow (sendGBCCertificateEmail), so both produce
  * byte-identical certificates instead of drifting apart.
  */
-export async function generateCertificatePdfBuffer(ticket: GBCCertificateTicket): Promise<Buffer> {
+export async function generateCertificatePdfBuffer(
+  ticket: GBCCertificateTicket
+): Promise<Buffer> {
   const verificationUrl = getCertificateVerificationUrl(ticket.ticketNumber);
   const qrCodeDataUrl = await generateVerificationQRDataURL(verificationUrl);
   const input = JSON.stringify({ ticket, verificationUrl, qrCodeDataUrl });
@@ -75,7 +85,11 @@ export async function generateCertificatePdfBuffer(ticket: GBCCertificateTicket)
       { maxBuffer: 20 * 1024 * 1024, encoding: "buffer" },
       (err, stdout, stderr) => {
         if (err) {
-          reject(new Error(`Certificate PDF render failed: ${stderr?.toString("utf8") || err.message}`));
+          reject(
+            new Error(
+              `Certificate PDF render failed: ${stderr?.toString("utf8") || err.message}`
+            )
+          );
           return;
         }
         resolve(stdout as unknown as Buffer);

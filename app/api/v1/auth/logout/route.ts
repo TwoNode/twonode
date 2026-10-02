@@ -13,7 +13,10 @@ const logoutSchema = z.object({ platform: z.nativeEnum(Platform) });
 export async function POST(req: NextRequest) {
   try {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
 
     const { platform } = await validateBody(req, logoutSchema);
@@ -34,6 +37,9 @@ export async function POST(req: NextRequest) {
     await clearAuthCookies(platform);
     return NextResponse.json({ success: true, data: {} });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

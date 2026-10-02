@@ -55,14 +55,21 @@ export default function AdminLayout({
             <Suspense fallback={null}>
               <GBCEditionSwitcher />
             </Suspense>
-            <NotificationBell platform="gbc" viewAllHref="/gbc-restricted/notifications" iconClassName="h-5 w-5 text-gray-600" />
+            <NotificationBell
+              platform="gbc"
+              viewAllHref="/gbc-restricted/notifications"
+              iconClassName="h-5 w-5 text-gray-600"
+            />
             <GBCUserMenu />
           </div>
         </div>
 
         {/* Content */}
         <div className="container mx-auto p-4 sm:p-6 md:p-8">
-          <VerificationNagBanner platform={Platform.GBC} verifyHref="/gbc-restricted/verify-email" />
+          <VerificationNagBanner
+            platform={Platform.GBC}
+            verifyHref="/gbc-restricted/verify-email"
+          />
           {children}
         </div>
       </main>

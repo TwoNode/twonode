@@ -53,7 +53,7 @@ const containerStyle = {
 
 const center = { lat: 6.5244, lng: 3.3792 };
 
-const libraries: ("places")[] = ["places"];
+const libraries: "places"[] = ["places"];
 
 const watchTime = 30000;
 
@@ -1084,41 +1084,63 @@ const RevaDueDiligenceForm: React.FC = () => {
 
           <div className="space-y-4">
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">Email:</span>
-              <span className="text-gray-800 dark:text-gray-200 font-semibold">{email}</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">
+                Email:
+              </span>
+              <span className="text-gray-800 dark:text-gray-200 font-semibold">
+                {email}
+              </span>
             </div>
 
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">Requester Name:</span>
-              <span className="text-gray-800 dark:text-gray-200 font-semibold">{requester}</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">
+                Requester Name:
+              </span>
+              <span className="text-gray-800 dark:text-gray-200 font-semibold">
+                {requester}
+              </span>
             </div>
 
             <div className="flex justify-between items-center border-b pb-2">
               <span className="text-gray-600 dark:text-gray-400 font-medium">
                 Property Address:
               </span>
-              <span className="text-gray-800 dark:text-gray-200 font-semibold">{address}</span>
+              <span className="text-gray-800 dark:text-gray-200 font-semibold">
+                {address}
+              </span>
             </div>
 
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">Location:</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">
+                Location:
+              </span>
               <span className="text-gray-800 dark:text-gray-200 font-semibold">
                 {location ? `${location.lat}, ${location.lng}` : "Not set"}
               </span>
             </div>
 
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">Parcel ID:</span>
-              <span className="text-gray-800 dark:text-gray-200 font-semibold">{parcelId}</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">
+                Parcel ID:
+              </span>
+              <span className="text-gray-800 dark:text-gray-200 font-semibold">
+                {parcelId}
+              </span>
             </div>
 
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">LGA:</span>
-              <span className="text-gray-800 dark:text-gray-200 font-semibold">{lga}</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">
+                LGA:
+              </span>
+              <span className="text-gray-800 dark:text-gray-200 font-semibold">
+                {lga}
+              </span>
             </div>
 
             <div className="flex justify-between items-center border-b pb-2 gap-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">Files:</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">
+                Files:
+              </span>
               <div className="text-gray-800 dark:text-gray-200 font-semibold overflow-hidden">
                 <div className="flex flex-col">
                   {fileNames.map((name, index) => (
@@ -1134,7 +1156,9 @@ const RevaDueDiligenceForm: React.FC = () => {
             </div>
 
             <div className="flex justify-between items-center border-b pb-2 gap-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">Site Images:</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">
+                Site Images:
+              </span>
               <div className="text-gray-800 dark:text-gray-200 font-semibold overflow-hidden">
                 <div className="flex flex-col">
                   {siteImageNames.map((name, index) => (
@@ -1150,7 +1174,9 @@ const RevaDueDiligenceForm: React.FC = () => {
             </div>
 
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">Total Cost:</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">
+                Total Cost:
+              </span>
               <span className="font-semibold text-xl text-blue-600">
                 {totalCost.toLocaleString("en-NG", {
                   style: "currency",

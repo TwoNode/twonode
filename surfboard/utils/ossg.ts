@@ -27,7 +27,9 @@ export async function transmitToOSSG(plan: any, user: any) {
       parsedPillars = plan.pillars;
     }
 
-    const pillarsArray = Array.isArray(parsedPillars) ? parsedPillars.map((p: any) => p.pillarNumber) : [];
+    const pillarsArray = Array.isArray(parsedPillars)
+      ? parsedPillars.map((p: any) => p.pillarNumber)
+      : [];
     const compressedPillars = compressPillarNumbers(pillarsArray);
 
     const payload = {
@@ -50,10 +52,17 @@ export async function transmitToOSSG(plan: any, user: any) {
 
     return {
       success: true,
-      data: { documentHash, qrCodeBase64, message: "Successfully transmitted to OSSG dummy API" },
+      data: {
+        documentHash,
+        qrCodeBase64,
+        message: "Successfully transmitted to OSSG dummy API",
+      },
     };
   } catch (error: any) {
     console.error("Error transmitting to OSSG:", error);
-    return { success: false, error: error.message || "Failed to transmit to OSSG dummy API" };
+    return {
+      success: false,
+      error: error.message || "Failed to transmit to OSSG dummy API",
+    };
   }
 }

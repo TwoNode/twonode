@@ -36,7 +36,8 @@ const {
   completePendingRegistration,
 } = await import("@/lib/auth/pendingRegistration");
 
-const sha256 = (v: string) => crypto.createHash("sha256").update(v).digest("hex");
+const sha256 = (v: string) =>
+  crypto.createHash("sha256").update(v).digest("hex");
 
 describe("pendingRegistration", () => {
   beforeEach(() => {
@@ -45,7 +46,10 @@ describe("pendingRegistration", () => {
 
   describe("issuePendingRegistration", () => {
     it("throws ConflictError if email is already registered", async () => {
-      mockUserLookup.findUserByEmail.mockResolvedValueOnce({ id: "u_1", email: "existing@example.com" });
+      mockUserLookup.findUserByEmail.mockResolvedValueOnce({
+        id: "u_1",
+        email: "existing@example.com",
+      });
 
       await expect(
         issuePendingRegistration(Platform.SURFBOARD, {
@@ -61,7 +65,9 @@ describe("pendingRegistration", () => {
 
     it("upserts pendingRegistration with hashed secret and sends OTP when method is OTP", async () => {
       mockUserLookup.findUserByEmail.mockResolvedValueOnce(null);
-      mockSettings.getEmailVerificationSettings.mockResolvedValueOnce({ method: "OTP" });
+      mockSettings.getEmailVerificationSettings.mockResolvedValueOnce({
+        method: "OTP",
+      });
       mockPrisma.pendingRegistration.upsert.mockResolvedValueOnce({
         id: "preg_1",
         email: "new@example.com",
@@ -80,7 +86,12 @@ describe("pendingRegistration", () => {
       expect(res).toEqual({ pendingRegistrationId: "preg_1", method: "OTP" });
 
       expect(mockPrisma.pendingRegistration.upsert).toHaveBeenCalledWith({
-        where: { platform_email: { platform: Platform.SURFBOARD, email: "new@example.com" } },
+        where: {
+          platform_email: {
+            platform: Platform.SURFBOARD,
+            email: "new@example.com",
+          },
+        },
         update: expect.objectContaining({
           firstName: "John",
           lastName: "Doe",
@@ -141,14 +152,21 @@ describe("pendingRegistration", () => {
         emailVerified: false,
       });
 
-      const user = await completePendingRegistration(Platform.SURFBOARD, "preg_1", validCode);
+      const user = await completePendingRegistration(
+        Platform.SURFBOARD,
+        "preg_1",
+        validCode
+      );
 
-      expect(mockUserLookup.createNativeUser).toHaveBeenCalledWith(Platform.SURFBOARD, {
-        email: "user@example.com",
-        passwordHash: "hashed_pw",
-        firstName: "Jane",
-        lastName: "Doe",
-      });
+      expect(mockUserLookup.createNativeUser).toHaveBeenCalledWith(
+        Platform.SURFBOARD,
+        {
+          email: "user@example.com",
+          passwordHash: "hashed_pw",
+          firstName: "Jane",
+          lastName: "Doe",
+        }
+      );
       expect(mockUserLookup.markEmailVerified).toHaveBeenCalledWith(
         Platform.SURFBOARD,
         "usr_1",
@@ -180,7 +198,11 @@ describe("pendingRegistration", () => {
         emailVerified: true,
       });
 
-      const user = await completePendingRegistration(Platform.SURFBOARD, "preg_1", validCode);
+      const user = await completePendingRegistration(
+        Platform.SURFBOARD,
+        "preg_1",
+        validCode
+      );
 
       expect(user.email).toBe("user@example.com");
       expect(mockUserLookup.createNativeUser).not.toHaveBeenCalled();

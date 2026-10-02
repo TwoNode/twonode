@@ -92,7 +92,9 @@ export default function ChartingAdminPage() {
   const [processing, setProcessing] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [uniqueChartingRemarks, setUniqueChartingRemarks] = useState<string[]>([]);
+  const [uniqueChartingRemarks, setUniqueChartingRemarks] = useState<string[]>(
+    []
+  );
   const [uniqueQueryReasons, setUniqueQueryReasons] = useState<string[]>([]);
 
   // Plan lock management
@@ -176,8 +178,6 @@ export default function ChartingAdminPage() {
     });
   }, [historyPlans, searchQuery]);
 
-
-
   const handleUnlock = async () => {
     setIsUnlocking(true);
     try {
@@ -255,7 +255,9 @@ export default function ChartingAdminPage() {
   const handleActionClick = (plan: Plan, action: "approve" | "query") => {
     setSelectedPlan(plan);
     setActionType(action);
-    setChartingRemarks(action === "approve" ? (plan.possibleChartingRemarks || "") : "");
+    setChartingRemarks(
+      action === "approve" ? plan.possibleChartingRemarks || "" : ""
+    );
     setShowDialog(true);
   };
 
@@ -322,8 +324,10 @@ export default function ChartingAdminPage() {
       });
 
       const output: string[] = [];
-      const groupKeys = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
-      
+      const groupKeys = Object.keys(groups).sort(
+        (a, b) => Number(a) - Number(b)
+      );
+
       for (const key of groupKeys) {
         const group = groups[Number(key)];
         if (groupKeys.length > 1) {
@@ -364,7 +368,9 @@ export default function ChartingAdminPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading plans...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Loading plans...
+          </p>
         </div>
       </div>
     );
@@ -377,12 +383,13 @@ export default function ChartingAdminPage() {
     return (
       <Card
         key={plan.id}
-        className={`transition-all duration-200 ${isHistory
-          ? "border-l-4 border-l-green-400"
-          : isPlanLockedByMe
-            ? "border-l-4 border-l-violet-500 ring-2 ring-violet-200"
-            : "opacity-60 grayscale-30"
-          }`}
+        className={`transition-all duration-200 ${
+          isHistory
+            ? "border-l-4 border-l-green-400"
+            : isPlanLockedByMe
+              ? "border-l-4 border-l-violet-500 ring-2 ring-violet-200"
+              : "opacity-60 grayscale-30"
+        }`}
       >
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -449,7 +456,9 @@ export default function ChartingAdminPage() {
               <p className="text-sm font-medium">{plan.lcda || "N/A"}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Locality</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Locality
+              </p>
               <p className="text-sm font-medium">{plan.locality || "N/A"}</p>
             </div>
           </div>
@@ -460,7 +469,9 @@ export default function ChartingAdminPage() {
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Charting Remarks
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{plan.chartingRemarks}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {plan.chartingRemarks}
+              </p>
             </div>
           )}
 
@@ -519,34 +530,55 @@ export default function ChartingAdminPage() {
                 groups[idx].push(p);
               });
 
-              const groupKeys = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
+              const groupKeys = Object.keys(groups).sort(
+                (a, b) => Number(a) - Number(b)
+              );
 
               return groupKeys.map((key, index) => {
                 const group = groups[Number(key)];
                 const isMulti = groupKeys.length > 1;
-                const parcelLabel = isMulti ? `Parcel ${String.fromCharCode(65 + Number(key))}` : "Parcel";
-                
+                const parcelLabel = isMulti
+                  ? `Parcel ${String.fromCharCode(65 + Number(key))}`
+                  : "Parcel";
+
                 const groupText = [
                   "PL",
-                  ...group.map((p) => {
-                    const easting = p.easting ?? p.lng ?? "";
-                    const northing = p.northing ?? p.lat ?? "";
-                    return easting && northing ? `${easting},${northing}` : null;
-                  }).filter(Boolean)
+                  ...group
+                    .map((p) => {
+                      const easting = p.easting ?? p.lng ?? "";
+                      const northing = p.northing ?? p.lat ?? "";
+                      return easting && northing
+                        ? `${easting},${northing}`
+                        : null;
+                    })
+                    .filter(Boolean),
                 ].join("\n");
 
                 return (
-                  <div key={key} className={index > 0 ? "border-t border-gray-200 dark:border-white/10" : ""}>
+                  <div
+                    key={key}
+                    className={
+                      index > 0
+                        ? "border-t border-gray-200 dark:border-white/10"
+                        : ""
+                    }
+                  >
                     <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {isMulti ? `Pillar Coordinates - ${parcelLabel}` : "Pillar Coordinates"}
+                        {isMulti
+                          ? `Pillar Coordinates - ${parcelLabel}`
+                          : "Pillar Coordinates"}
                       </p>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          navigator.clipboard.writeText(`${isMulti ? parcelLabel + "\n\n" : ""}PL\n${groupText.substring(3)}`);
-                          toast.success(`${parcelLabel} coordinates copied to clipboard`);
+                          navigator.clipboard.writeText(
+                            `${isMulti ? parcelLabel + "\n\n" : ""}PL\n${groupText.substring(3)}`
+                          );
+                          toast.success(
+                            `${parcelLabel} coordinates copied to clipboard`
+                          );
                         }}
                       >
                         <Copy className="w-4 h-4 mr-1" />
@@ -554,10 +586,16 @@ export default function ChartingAdminPage() {
                       </Button>
                     </div>
                     <div className="px-4 py-2 bg-violet-50 border-b border-gray-200 dark:border-white/10">
-                      <span className="text-lg font-bold text-violet-800">{isMulti ? parcelLabel : "PL"}</span>
+                      <span className="text-lg font-bold text-violet-800">
+                        {isMulti ? parcelLabel : "PL"}
+                      </span>
                     </div>
                     <pre className="text-xs bg-white dark:bg-surface p-3 overflow-x-auto">
-                      {isMulti && <span className="font-bold text-violet-800">PL{"\n"}</span>}
+                      {isMulti && (
+                        <span className="font-bold text-violet-800">
+                          PL{"\n"}
+                        </span>
+                      )}
                       {groupText.substring(3) || "No valid coordinates"}
                     </pre>
                   </div>
@@ -675,7 +713,9 @@ export default function ChartingAdminPage() {
 
       <div className="container mx-auto p-6 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Charting Admin</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Charting Admin
+          </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Review and confirm charting remarks for submitted survey plans
           </p>
@@ -792,58 +832,78 @@ export default function ChartingAdminPage() {
             </DialogHeader>
 
             <div className="space-y-4">
-              {actionType === "approve" && selectedPlan?.possibleChartingRemarks && (
-                <div className="bg-violet-50 p-4 rounded-lg">
-                  <div className="flex items-start justify-between mb-2">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Possible Charting Remarks (from LASG)
+              {actionType === "approve" &&
+                selectedPlan?.possibleChartingRemarks && (
+                  <div className="bg-violet-50 p-4 rounded-lg">
+                    <div className="flex items-start justify-between mb-2">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Possible Charting Remarks (from LASG)
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCopyPossibleRemarks}
+                      >
+                        <Copy className="w-4 h-4 mr-1" />
+                        Use This
+                      </Button>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {selectedPlan.possibleChartingRemarks}
                     </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleCopyPossibleRemarks}
-                    >
-                      <Copy className="w-4 h-4 mr-1" />
-                      Use This
-                    </Button>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {selectedPlan.possibleChartingRemarks}
-                  </p>
-                </div>
-              )}
+                )}
 
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {actionType === "approve" ? "Final Charting Remarks *" : "Query Reason *"}
+                    {actionType === "approve"
+                      ? "Final Charting Remarks *"
+                      : "Query Reason *"}
                   </label>
-                  {actionType === "approve" && selectedPlan?.possibleChartingRemarks && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleCopyPossibleRemarks}
-                      className="text-violet-600 hover:text-violet-700 hover:bg-violet-50"
-                    >
-                      <Copy className="w-4 h-4 mr-1" />
-                      Copy Suggested Remarks
-                    </Button>
-                  )}
+                  {actionType === "approve" &&
+                    selectedPlan?.possibleChartingRemarks && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCopyPossibleRemarks}
+                        className="text-violet-600 hover:text-violet-700 hover:bg-violet-50"
+                      >
+                        <Copy className="w-4 h-4 mr-1" />
+                        Copy Suggested Remarks
+                      </Button>
+                    )}
                 </div>
-                
+
                 <div className="mb-2 mt-2">
                   <RemarkSelector
-                    options={actionType === "approve" ? uniqueChartingRemarks : uniqueQueryReasons}
+                    options={
+                      actionType === "approve"
+                        ? uniqueChartingRemarks
+                        : uniqueQueryReasons
+                    }
                     onSelect={(val) => setChartingRemarks(val)}
-                    placeholder={actionType === "approve" ? "Search previous charting remarks..." : "Search previous query reasons..."}
-                    buttonText={actionType === "approve" ? "Select from previous charting remarks..." : "Select from previous query reasons..."}
+                    placeholder={
+                      actionType === "approve"
+                        ? "Search previous charting remarks..."
+                        : "Search previous query reasons..."
+                    }
+                    buttonText={
+                      actionType === "approve"
+                        ? "Select from previous charting remarks..."
+                        : "Select from previous query reasons..."
+                    }
                   />
                 </div>
 
                 <Textarea
                   value={chartingRemarks}
                   onChange={(e) => setChartingRemarks(e.target.value)}
-                  placeholder={actionType === "approve" ? "Enter or edit charting remarks..." : "Explain why this plan is being queried..."}
+                  placeholder={
+                    actionType === "approve"
+                      ? "Enter or edit charting remarks..."
+                      : "Explain why this plan is being queried..."
+                  }
                   className="mt-1"
                   rows={6}
                 />

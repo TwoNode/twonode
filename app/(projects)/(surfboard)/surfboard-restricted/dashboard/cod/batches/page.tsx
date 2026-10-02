@@ -181,26 +181,32 @@ export default function BatchManagementPage() {
         {/* Batch Info */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Plans in Batch</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Plans in Batch
+            </p>
             <p className="text-lg font-semibold">{batch.planCount}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Base Fees</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Base Fees
+            </p>
             <p className="text-sm font-medium">
               {formatCurrency(batch.totalFees)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">System Charges</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              System Charges
+            </p>
             <p className="text-sm font-medium">
               {formatCurrency(batch.systemCharges)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Remita RRR</p>
-            <p className="text-sm font-mono">
-              {batch.userPaymentRef || "N/A"}
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Remita RRR
             </p>
+            <p className="text-sm font-mono">{batch.userPaymentRef || "N/A"}</p>
           </div>
         </div>
 
@@ -212,7 +218,9 @@ export default function BatchManagementPage() {
               <p className="text-sm font-medium text-gray-900 dark:text-white">
                 {batch.submitter.firstName} {batch.submitter.lastName}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{batch.submitter.email}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {batch.submitter.email}
+              </p>
             </div>
           </div>
         )}
@@ -239,7 +247,9 @@ export default function BatchManagementPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Batch Management</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+            Batch Management
+          </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             View Certificate of Deposit batches with verified Remita payments
           </p>
@@ -274,7 +284,9 @@ export default function BatchManagementPage() {
                 <div>
                   <p className="text-2xl font-bold">{stats?.count ?? 0}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {activeTab === "paid" ? "Ready for MDA Review" : "Approved Batches"}
+                    {activeTab === "paid"
+                      ? "Ready for MDA Review"
+                      : "Approved Batches"}
                   </p>
                 </div>
               </CardContent>
@@ -286,7 +298,9 @@ export default function BatchManagementPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats?.totalPlans ?? 0}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Plans</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Total Plans
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -296,8 +310,12 @@ export default function BatchManagementPage() {
                   <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{formatCurrency(stats?.totalAmount ?? 0)}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Amount</p>
+                  <p className="text-2xl font-bold">
+                    {formatCurrency(stats?.totalAmount ?? 0)}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Total Amount
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -324,7 +342,9 @@ export default function BatchManagementPage() {
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Receipt className="w-16 h-16 text-gray-300 mb-4" />
                 <p className="text-gray-500 dark:text-gray-400 text-lg">
-                  {activeTab === "paid" ? "No batches pending MDA review" : "No approved batches yet"}
+                  {activeTab === "paid"
+                    ? "No batches pending MDA review"
+                    : "No approved batches yet"}
                 </p>
                 <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                   {search
@@ -345,7 +365,13 @@ export default function BatchManagementPage() {
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Page {page} of {totalPages} • {total} batches
                   </p>
-                  <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+                  <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    pageSize={pageSize}
+                    onPageSizeChange={setPageSize}
+                  />
                 </div>
               )}
             </>

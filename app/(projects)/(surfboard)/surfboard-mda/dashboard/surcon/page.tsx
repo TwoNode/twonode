@@ -134,10 +134,14 @@ export default function SurconAdminPage() {
       const query = searchQuery.toLowerCase();
       result = plans.filter((plan) => {
         const matchesPlanNumber = plan.planNumber.toLowerCase().includes(query);
-        const matchesSurveyTitle = plan.surveyTitle.toLowerCase().includes(query);
+        const matchesSurveyTitle = plan.surveyTitle
+          .toLowerCase()
+          .includes(query);
         const matchesLga = plan.lga?.toLowerCase().includes(query);
         const matchesWard = plan.ward?.toLowerCase().includes(query);
-        const matchesBatch = plan.batch?.batchCode.toLowerCase().includes(query);
+        const matchesBatch = plan.batch?.batchCode
+          .toLowerCase()
+          .includes(query);
         const matchesUser =
           plan.user &&
           `${plan.user.firstName} ${plan.user.lastName}`
@@ -197,8 +201,6 @@ export default function SurconAdminPage() {
       );
     });
   }, [historyPlans, searchQuery]);
-
-
 
   const handleUnlock = async () => {
     setIsUnlocking(true);
@@ -330,8 +332,10 @@ export default function SurconAdminPage() {
       });
 
       const output: string[] = [];
-      const groupKeys = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
-      
+      const groupKeys = Object.keys(groups).sort(
+        (a, b) => Number(a) - Number(b)
+      );
+
       for (const key of groupKeys) {
         const group = groups[Number(key)];
         if (groupKeys.length > 1) {
@@ -394,7 +398,9 @@ export default function SurconAdminPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading plans...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Loading plans...
+          </p>
         </div>
       </div>
     );
@@ -407,14 +413,15 @@ export default function SurconAdminPage() {
     return (
       <Card
         key={plan.id}
-        className={`transition-all duration-200 ${isHistory
+        className={`transition-all duration-200 ${
+          isHistory
             ? plan.surconStatus === "QUERIED"
               ? "border-l-4 border-l-red-400"
               : "border-l-4 border-l-green-400"
             : isPlanLockedByMe
               ? "border-l-4 border-l-violet-500 ring-2 ring-violet-200"
               : "opacity-60 grayscale-30"
-          }`}
+        }`}
       >
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -451,11 +458,15 @@ export default function SurconAdminPage() {
             {!isHistory && (
               <div className="flex flex-col items-end gap-2">
                 <div className="flex gap-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Accounts:</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Accounts:
+                  </span>
                   {getStatusBadge(plan.accountsStatus)}
                 </div>
                 <div className="flex gap-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Charting:</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Charting:
+                  </span>
                   {getStatusBadge(plan.chartingStatus)}
                 </div>
               </div>
@@ -478,7 +489,9 @@ export default function SurconAdminPage() {
               <p className="text-sm font-medium">{plan.lcda || "N/A"}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Deeded Area</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Deeded Area
+              </p>
               <p className="text-sm font-medium">{plan.deededArea}</p>
             </div>
           </div>
@@ -594,14 +607,23 @@ export default function SurconAdminPage() {
                 groups[idx].push(p);
               });
 
-              const groupKeys = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
+              const groupKeys = Object.keys(groups).sort(
+                (a, b) => Number(a) - Number(b)
+              );
 
               return (
                 <div className="overflow-x-auto">
                   {groupKeys.map((key) => {
                     const group = groups[Number(key)];
                     return (
-                      <div key={key} className={key !== groupKeys[0] ? "mt-6 border-t border-violet-200" : ""}>
+                      <div
+                        key={key}
+                        className={
+                          key !== groupKeys[0]
+                            ? "mt-6 border-t border-violet-200"
+                            : ""
+                        }
+                      >
                         <div className="px-4 py-2 bg-violet-100 border-b border-violet-200 flex justify-between items-center">
                           <span className="text-sm font-bold text-violet-800 uppercase tracking-wider">
                             Parcel {String.fromCharCode(65 + Number(key))}
@@ -617,16 +639,27 @@ export default function SurconAdminPage() {
                               onClick={() => {
                                 const groupText = [
                                   "PL",
-                                  ...group.map((p: any) => {
-                                    const easting = p.easting ?? p.lng ?? "";
-                                    const northing = p.northing ?? p.lat ?? "";
-                                    return easting && northing ? `${easting},${northing}` : null;
-                                  }).filter(Boolean)
+                                  ...group
+                                    .map((p: any) => {
+                                      const easting = p.easting ?? p.lng ?? "";
+                                      const northing =
+                                        p.northing ?? p.lat ?? "";
+                                      return easting && northing
+                                        ? `${easting},${northing}`
+                                        : null;
+                                    })
+                                    .filter(Boolean),
                                 ].join("\n");
                                 const isMulti = groupKeys.length > 1;
-                                const parcelLabel = isMulti ? `Parcel ${String.fromCharCode(65 + Number(key))}` : "Parcel";
-                                navigator.clipboard.writeText(`${isMulti ? parcelLabel + "\n\n" : ""}PL\n${groupText.substring(3)}`);
-                                toast.success(`${parcelLabel} coordinates copied to clipboard`);
+                                const parcelLabel = isMulti
+                                  ? `Parcel ${String.fromCharCode(65 + Number(key))}`
+                                  : "Parcel";
+                                navigator.clipboard.writeText(
+                                  `${isMulti ? parcelLabel + "\n\n" : ""}PL\n${groupText.substring(3)}`
+                                );
+                                toast.success(
+                                  `${parcelLabel} coordinates copied to clipboard`
+                                );
                               }}
                             >
                               <Copy className="w-3 h-3 mr-1" />
@@ -661,8 +694,9 @@ export default function SurconAdminPage() {
                                     "N/A"}
                                 </td>
                                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">
-                                  {(pillar.northing ?? pillar.lat)?.toFixed(3) ||
-                                    "N/A"}
+                                  {(pillar.northing ?? pillar.lat)?.toFixed(
+                                    3
+                                  ) || "N/A"}
                                 </td>
                               </tr>
                             ))}
@@ -742,7 +776,9 @@ export default function SurconAdminPage() {
 
       <div className="container mx-auto p-6 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">SURCON Admin</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            SURCON Admin
+          </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Verify pillar numbers match database for submitted survey plans
           </p>

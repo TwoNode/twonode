@@ -25,7 +25,10 @@ export function VerificationNagBanner({
   useEffect(() => {
     // Check if dismissed in this session
     const dismissKey = `nag_dismissed_${platform}`;
-    if (typeof window !== "undefined" && sessionStorage.getItem(dismissKey) === "true") {
+    if (
+      typeof window !== "undefined" &&
+      sessionStorage.getItem(dismissKey) === "true"
+    ) {
       return;
     }
 
@@ -41,7 +44,10 @@ export function VerificationNagBanner({
             if (user.verificationGraceEndsAt) {
               const endsAt = new Date(user.verificationGraceEndsAt);
               const diffMs = endsAt.getTime() - Date.now();
-              const days = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+              const days = Math.max(
+                0,
+                Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+              );
               setDaysRemaining(days);
               setGraceDateStr(
                 endsAt.toLocaleDateString(undefined, {
@@ -99,17 +105,20 @@ export function VerificationNagBanner({
                     <span className="font-bold">
                       {daysRemaining} day{daysRemaining === 1 ? "" : "s"}
                     </span>
-                    {graceDateStr ? ` (before ${graceDateStr})` : ""} to avoid losing access to your
-                    dashboard.
+                    {graceDateStr ? ` (before ${graceDateStr})` : ""} to avoid
+                    losing access to your dashboard.
                   </>
                 ) : (
                   <>
-                    Your verification grace period expires today. Please verify your email now to
-                    prevent interruption.
+                    Your verification grace period expires today. Please verify
+                    your email now to prevent interruption.
                   </>
                 )
               ) : (
-                <>Please verify your email address to confirm your account and secure your access.</>
+                <>
+                  Please verify your email address to confirm your account and
+                  secure your access.
+                </>
               )}
             </p>
           </div>

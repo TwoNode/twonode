@@ -17,20 +17,37 @@ const verifyOtpSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
 
-    const { reference, email, target, code } = await validateBody(req, verifyOtpSchema);
+    const { reference, email, target, code } = await validateBody(
+      req,
+      verifyOtpSchema
+    );
     const identifier = `download-otp:verify:${reference}:${target}:${email}`;
 
     if (!(await checkRateLimit(identifier))) {
-      return NextResponse.json({ success: false, error: "Too many attempts. Try again later." }, { status: 429 });
+      return NextResponse.json(
+        { success: false, error: "Too many attempts. Try again later." },
+        { status: 429 }
+      );
     }
     await recordAttempt(identifier);
 
-    const data = await verifyDownloadOtpAndGetUrl({ reference, email, target, code });
+    const data = await verifyDownloadOtpAndGetUrl({
+      reference,
+      email,
+      target,
+      code,
+    });
     return NextResponse.json({ success: true, data });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

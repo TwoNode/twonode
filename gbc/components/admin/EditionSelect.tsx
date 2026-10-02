@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 import { gbcApi } from "@/gbc/apiClient";
 import type { GBCEdition } from "@/gbc/utils/settings";
 
@@ -49,7 +54,8 @@ export function EditionSelect({
     >
       <SelectTrigger aria-label="Edition">
         <span className={value ? "" : "text-slate-500 dark:text-slate-400"}>
-          {editions.find((e) => e.key === value)?.name ?? (value || "Select edition")}
+          {editions.find((e) => e.key === value)?.name ??
+            (value || "Select edition")}
         </span>
       </SelectTrigger>
       <SelectContent>

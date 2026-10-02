@@ -28,19 +28,25 @@ export function subscriptionExpiry(
 ): SubscriptionExpiry {
   if (!currentEnd) return { tone: "none", date: null, relative: "" };
   const date = new Date(currentEnd);
-  if (Number.isNaN(date.getTime())) return { tone: "none", date: null, relative: "" };
+  if (Number.isNaN(date.getTime()))
+    return { tone: "none", date: null, relative: "" };
 
   const diff = date.getTime() - now.getTime();
 
   if (diff < 0) {
     const daysAgo = Math.floor(-diff / DAY_MS);
-    return { tone: "expired", date, relative: daysAgo === 0 ? "today" : `${plural(daysAgo, "day")} ago` };
+    return {
+      tone: "expired",
+      date,
+      relative: daysAgo === 0 ? "today" : `${plural(daysAgo, "day")} ago`,
+    };
   }
 
   const daysLeft = Math.ceil(diff / DAY_MS);
   return {
     tone: diff <= EXPIRING_SOON_WINDOW_DAYS * DAY_MS ? "soon" : "ok",
     date,
-    relative: daysLeft <= 1 ? "today or tomorrow" : `in ${plural(daysLeft, "day")}`,
+    relative:
+      daysLeft <= 1 ? "today or tomorrow" : `in ${plural(daysLeft, "day")}`,
   };
 }

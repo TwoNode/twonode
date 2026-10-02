@@ -1,5 +1,9 @@
 import prisma from "@/lib/prisma";
-import { NotificationAudience, NotificationType, Role } from "@/prisma/generated";
+import {
+  NotificationAudience,
+  NotificationType,
+  Role,
+} from "@/prisma/generated";
 import { sendEmailToAdmin, sendEmailToAllAdmins } from "@/utils/email";
 import { paginatedResult } from "@/lib/api/pagination";
 
@@ -112,7 +116,11 @@ export async function getAdminNotificationsPaginated(
 
   const audiences =
     role === Role.SUPERADMIN
-      ? [NotificationAudience.SUPERADMIN, NotificationAudience.GENERAL_ADMINS, NotificationAudience.ALL_USERS]
+      ? [
+          NotificationAudience.SUPERADMIN,
+          NotificationAudience.GENERAL_ADMINS,
+          NotificationAudience.ALL_USERS,
+        ]
       : [NotificationAudience.GENERAL_ADMINS, NotificationAudience.ALL_USERS];
 
   const where: any = { audience: { in: audiences } };
@@ -148,40 +156,70 @@ export async function getAdminNotificationsPaginated(
   return paginatedResult(data, total, page, pageSize);
 }
 
-export async function markNotificationAsRead(notificationId: string, userId: string) {
-  const notification = await prisma.notification.findUnique({ where: { id: notificationId } });
+export async function markNotificationAsRead(
+  notificationId: string,
+  userId: string
+) {
+  const notification = await prisma.notification.findUnique({
+    where: { id: notificationId },
+  });
   if (!notification) return null;
 
-  const readBy = notification.readBy.includes(userId) ? notification.readBy : [...notification.readBy, userId];
-  return prisma.notification.update({ where: { id: notificationId }, data: { readBy } });
+  const readBy = notification.readBy.includes(userId)
+    ? notification.readBy
+    : [...notification.readBy, userId];
+  return prisma.notification.update({
+    where: { id: notificationId },
+    data: { readBy },
+  });
 }
 
-export async function dismissNotification(notificationId: string, userId: string) {
-  const notification = await prisma.notification.findUnique({ where: { id: notificationId } });
+export async function dismissNotification(
+  notificationId: string,
+  userId: string
+) {
+  const notification = await prisma.notification.findUnique({
+    where: { id: notificationId },
+  });
   if (!notification) return null;
 
   const dismissedBy = notification.dismissedBy.includes(userId)
     ? notification.dismissedBy
     : [...notification.dismissedBy, userId];
-  return prisma.notification.update({ where: { id: notificationId }, data: { dismissedBy } });
+  return prisma.notification.update({
+    where: { id: notificationId },
+    data: { dismissedBy },
+  });
 }
 
 export async function getUnreadNotificationCount(userId: string, role: Role) {
   const notifications = await getUserNotifications(userId, role);
-  return notifications.filter((n) => !n.readBy.includes(userId) && !n.dismissedBy.includes(userId)).length;
+  return notifications.filter(
+    (n) => !n.readBy.includes(userId) && !n.dismissedBy.includes(userId)
+  ).length;
 }
 
 /** Same audience scoping as getAdminNotificationsPaginated — getUnreadNotificationCount() uses getUserNotifications()'s condition set instead, which doesn't match what the admin list actually displays. */
-export async function getAdminNotificationUnreadCount(role: "ADMIN" | "SUPERADMIN", userId: string) {
+export async function getAdminNotificationUnreadCount(
+  role: "ADMIN" | "SUPERADMIN",
+  userId: string
+) {
   const audiences =
     role === Role.SUPERADMIN
-      ? [NotificationAudience.SUPERADMIN, NotificationAudience.GENERAL_ADMINS, NotificationAudience.ALL_USERS]
+      ? [
+          NotificationAudience.SUPERADMIN,
+          NotificationAudience.GENERAL_ADMINS,
+          NotificationAudience.ALL_USERS,
+        ]
       : [NotificationAudience.GENERAL_ADMINS, NotificationAudience.ALL_USERS];
 
   return prisma.notification.count({
     where: {
       audience: { in: audiences },
-      AND: [{ NOT: { readBy: { has: userId } } }, { NOT: { dismissedBy: { has: userId } } }],
+      AND: [
+        { NOT: { readBy: { has: userId } } },
+        { NOT: { dismissedBy: { has: userId } } },
+      ],
     },
   });
 }
@@ -195,16 +233,21 @@ export async function getAdminNotificationUnreadCount(role: "ADMIN" | "SUPERADMI
  * (null), and truthiness would have wrongly routed them down the Property
  * branch.
  */
-export async function notifyNewPropertyRequest(propertyData: any, userId?: string) {
+export async function notifyNewPropertyRequest(
+  propertyData: any,
+  userId?: string
+) {
   const isOneTimeRequest = "requester" in propertyData;
-  let requesterName = propertyData?.requester || propertyData?.email || "Unknown";
+  let requesterName =
+    propertyData?.requester || propertyData?.email || "Unknown";
 
   if (!isOneTimeRequest && propertyData?.userId) {
     const user = await prisma.revaUser.findUnique({
       where: { id: propertyData.userId },
       select: { firstName: true, lastName: true, email: true },
     });
-    if (user) requesterName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+    if (user)
+      requesterName = `${user.firstName} ${user.lastName}`.trim() || user.email;
   }
 
   await createNotification({
@@ -228,7 +271,11 @@ export async function notifyNewPropertyRequest(propertyData: any, userId?: strin
       message: `Your due diligence request for ${propertyData.address} has been submitted and is being processed.`,
       userIds: [userId],
       link: `/reva/dashboard/details?reference=${propertyData.reference}`,
-      metadata: { propertyReference: propertyData.reference, address: propertyData.address, oneTimeRequest: isOneTimeRequest },
+      metadata: {
+        propertyReference: propertyData.reference,
+        address: propertyData.address,
+        oneTimeRequest: isOneTimeRequest,
+      },
     });
   }
 
@@ -251,14 +298,21 @@ export async function notifyNewPropertyRequest(propertyData: any, userId?: strin
   }
 }
 
-export async function notifyPaymentReceived(propertyData: any, userId?: string) {
+export async function notifyPaymentReceived(
+  propertyData: any,
+  userId?: string
+) {
   await createNotification({
     type: "PAYMENT" as NotificationType,
     title: "Payment Received",
     message: `Payment of ₦${propertyData.totalCost?.toLocaleString()} received for property ${propertyData.reference}`,
     link: `/reva-restricted/dashboard/details?reference=${propertyData.reference}`,
     audience: NotificationAudience.GENERAL_ADMINS,
-    metadata: { propertyReference: propertyData.reference, amount: propertyData.totalCost, address: propertyData.address },
+    metadata: {
+      propertyReference: propertyData.reference,
+      amount: propertyData.totalCost,
+      address: propertyData.address,
+    },
   });
 
   if (userId) {
@@ -268,7 +322,10 @@ export async function notifyPaymentReceived(propertyData: any, userId?: string) 
       message: `Your payment of ₦${propertyData.totalCost?.toLocaleString()} for property ${propertyData.reference} has been confirmed.`,
       userIds: [userId],
       link: `/reva/dashboard/details?reference=${propertyData.reference}`,
-      metadata: { propertyReference: propertyData.reference, amount: propertyData.totalCost },
+      metadata: {
+        propertyReference: propertyData.reference,
+        amount: propertyData.totalCost,
+      },
     });
   }
 }
@@ -293,7 +350,11 @@ export async function notifyReportReady(propertyData: any, userId?: string) {
       message: `Your due diligence report for property ${propertyData.reference} is now available.`,
       userIds: [userId],
       link: `/reva/dashboard/details?reference=${propertyData.reference}`,
-      metadata: { propertyReference: propertyData.reference, address: propertyData.address, oneTimeRequest: false },
+      metadata: {
+        propertyReference: propertyData.reference,
+        address: propertyData.address,
+        oneTimeRequest: false,
+      },
     });
   } else if (isOneTimeRequest && propertyData?.email) {
     await createNotification({
@@ -318,12 +379,18 @@ export async function notifyReportReady(propertyData: any, userId?: string) {
   }
 }
 
-export async function notifySystemAlert(title: string, message: string, userIds?: string[]) {
+export async function notifySystemAlert(
+  title: string,
+  message: string,
+  userIds?: string[]
+) {
   await createNotification({
     type: "SYSTEM" as NotificationType,
     title,
     message,
     userIds,
-    audience: userIds?.length ? NotificationAudience.SPECIFIC_USERS : NotificationAudience.ALL_USERS,
+    audience: userIds?.length
+      ? NotificationAudience.SPECIFIC_USERS
+      : NotificationAudience.ALL_USERS,
   });
 }
