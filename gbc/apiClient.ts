@@ -39,6 +39,9 @@ export type GBCNotificationItem = {
  * more admin pages get repointed off their legacy "use server" actions.
  */
 
+import { Platform } from "@/utils/platform";
+import { clientRefreshManager } from "@/lib/auth/clientRefreshManager";
+
 const BASE = "/api/v1/gbc";
 
 const editionQuery = (edition?: string) =>
@@ -46,21 +49,39 @@ const editionQuery = (edition?: string) =>
 
 async function jsonFetch<T>(
   url: string,
-  init?: RequestInit
+  init?: RequestInit,
+  isRetry = false
 ): Promise<ApiResult<T>> {
   const res = await fetch(url, {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
   });
+
+  if (res.status === 401 && !isRetry && !url.includes("/api/v1/auth/")) {
+    const refreshed = await clientRefreshManager.refresh(Platform.GBC);
+    if (refreshed) {
+      return jsonFetch<T>(url, init, true);
+    }
+  }
+
   return res.json();
 }
 
 /** No Content-Type header — the browser sets the multipart boundary itself for a FormData body. */
 async function formFetch<T>(
   url: string,
-  formData: FormData
+  formData: FormData,
+  isRetry = false
 ): Promise<ApiResult<T>> {
   const res = await fetch(url, { method: "POST", body: formData });
+
+  if (res.status === 401 && !isRetry && !url.includes("/api/v1/auth/")) {
+    const refreshed = await clientRefreshManager.refresh(Platform.GBC);
+    if (refreshed) {
+      return formFetch<T>(url, formData, true);
+    }
+  }
+
   return res.json();
 }
 

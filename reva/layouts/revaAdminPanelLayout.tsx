@@ -41,9 +41,13 @@ export default function RevaAdminPanelLayout({
       element: (
         <ConfirmedLogoutLink
           key="logout"
-          onConfirm={() => {
-            fetch("/api/auth/logout_redirect?from=reva");
-            router.push("/reva-restricted/login");
+          onConfirm={async () => {
+            try {
+              await fetch("/api/auth/logout_redirect?from=reva");
+            } catch {
+            } finally {
+              window.location.href = "/reva-restricted/login";
+            }
           }}
           trigger={
             <button

@@ -136,15 +136,20 @@ function SurfboardUserDashboardNavbar({
         roleLabel="Surveyor"
         profileHref="/surfboard/dashboard/settings"
         settingsHref="/surfboard/dashboard/settings"
-        onLogout={() => {
+        onLogout={async () => {
           // Clear per-session announcement markers so the modal re-surfaces
           // on next login if a campaign is still active.
           Object.keys(sessionStorage)
             .filter((k) => k.startsWith("surf_announcement_seen_"))
             .forEach((k) => sessionStorage.removeItem(k));
-          fetch("/api/auth/logout_redirect?from=surfboard");
-          router.push("/surfboard/login");
+          try {
+            await fetch("/api/auth/logout_redirect?from=surfboard");
+          } catch {
+          } finally {
+            window.location.href = "/surfboard/login";
+          }
         }}
+
         className="ml-2 ring-2 ring-white/15"
       />
     </header>
@@ -258,15 +263,20 @@ export default function SurfboardUserPanelLayout({
       element: (
         <ConfirmedLogoutLink
           key="logout"
-          onConfirm={() => {
+          onConfirm={async () => {
             // Clear per-session announcement markers so the modal re-surfaces
             // on next login if a campaign is still active.
             Object.keys(sessionStorage)
               .filter((k) => k.startsWith("surf_announcement_seen_"))
               .forEach((k) => sessionStorage.removeItem(k));
-            fetch("/api/auth/logout_redirect?from=surfboard");
-            router.push("/surfboard/login");
+            try {
+              await fetch("/api/auth/logout_redirect?from=surfboard");
+            } catch {
+            } finally {
+              window.location.href = "/surfboard/login";
+            }
           }}
+
           trigger={
             <button
               type="button"

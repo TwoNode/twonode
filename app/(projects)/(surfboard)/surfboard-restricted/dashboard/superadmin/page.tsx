@@ -135,9 +135,13 @@ export default function SurfboardSuperAdminPage() {
                   Admin Dashboard
                 </button>
                 <ConfirmedLogoutLink
-                  onConfirm={() => {
-                    fetch("/api/auth/logout_redirect?from=surfboard");
-                    router.push("/surfboard-restricted/login");
+                  onConfirm={async () => {
+                    try {
+                      await fetch("/api/auth/logout_redirect?from=surfboard");
+                    } catch {
+                    } finally {
+                      window.location.href = "/surfboard-restricted/login";
+                    }
                   }}
                   trigger={
                     <button className="shrink-0 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
