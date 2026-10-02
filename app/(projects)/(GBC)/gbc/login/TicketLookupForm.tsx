@@ -23,7 +23,9 @@ export default function TicketLookupForm({ notFound }: { notFound?: boolean }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
-    router.push(`/gbc/login?ticketNumber=${encodeURIComponent(ticketNumber.trim())}&email=${encodeURIComponent(email.trim())}`);
+    router.push(
+      `/gbc/login?ticketNumber=${encodeURIComponent(ticketNumber.trim())}&email=${encodeURIComponent(email.trim())}`
+    );
   }
 
   return (
@@ -34,15 +36,19 @@ export default function TicketLookupForm({ notFound }: { notFound?: boolean }) {
             <Ticket className="w-10 h-10 text-white" />
           </div>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-purple-900 mb-2 text-center">My Ticket</h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-purple-900 mb-2 text-center">
+          My Ticket
+        </h1>
         <p className="text-gray-600 mb-8 text-center text-sm">
-          Look up your GBC ticket with your ticket number and the email you registered with
+          Look up your GBC ticket with your ticket number and the email you
+          registered with
         </p>
 
         {notFound && (
           <div className="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-            We couldn&apos;t find that ticket. Double-check your ticket number and email, or check your confirmation
-            email for the exact ticket number.
+            We couldn&apos;t find that ticket. Double-check your ticket number
+            and email, or check your confirmation email for the exact ticket
+            number.
           </div>
         )}
 
@@ -81,7 +87,10 @@ export default function TicketLookupForm({ notFound }: { notFound?: boolean }) {
         <div className="mt-6 pt-6 border-t border-gray-200 text-center">
           <p className="text-xs text-gray-500">
             Don&apos;t have a ticket yet?{" "}
-            <a href="/gbc/tickets" className="text-purple-600 hover:underline font-medium">
+            <a
+              href="/gbc/tickets"
+              className="text-purple-600 hover:underline font-medium"
+            >
               Get one here
             </a>
           </p>

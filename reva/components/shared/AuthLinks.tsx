@@ -26,9 +26,11 @@ export const AuthLinks = ({
   showRegister = true,
 }: AuthLinksProps) => {
   const loginHref =
-    customLoginRedirect || (dashboardType === "admin" ? "/reva-restricted/login" : "/reva/login");
+    customLoginRedirect ||
+    (dashboardType === "admin" ? "/reva-restricted/login" : "/reva/login");
   const registerHref =
-    customRegisterRedirect || (dashboardType === "admin" ? "/reva-restricted/login" : "/reva/login");
+    customRegisterRedirect ||
+    (dashboardType === "admin" ? "/reva-restricted/login" : "/reva/login");
 
   return (
     <div className="mt-6 flex justify-center gap-4">

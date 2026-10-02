@@ -1,4 +1,9 @@
-const ANSWERS = ["Sometimes the answer is software.", "Sometimes it's a better workflow.", "Sometimes it's bringing the right people into the same room.", "Sometimes it's all three."];
+const ANSWERS = [
+  "Sometimes the answer is software.",
+  "Sometimes it's a better workflow.",
+  "Sometimes it's bringing the right people into the same room.",
+  "Sometimes it's all three.",
+];
 
 export function BiggerIdea() {
   return (
@@ -14,9 +19,10 @@ export function BiggerIdea() {
             ))}
           </div>
           <p className="mt-6 max-w-xl text-sm leading-relaxed opacity-70">
-            This is why Surfboard, GBC and REVA can sit alongside each other without TwoNode
-            looking unfocused. The common thread isn&apos;t a product category — it&apos;s building
-            whatever an industry needs to work better.
+            This is why Surfboard, GBC and REVA can sit alongside each other
+            without TwoNode looking unfocused. The common thread isn&apos;t a
+            product category — it&apos;s building whatever an industry needs to
+            work better.
           </p>
         </div>
       </div>

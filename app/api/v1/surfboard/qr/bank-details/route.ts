@@ -15,7 +15,10 @@ const bankDetailsSchema = z.object({
 export const POST = withAuth<SurfboardRole>(
   async (req, { session }) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const input = await validateBody(req, bankDetailsSchema);
     const data = await saveSurveyorBankDetails(session.sub, input);

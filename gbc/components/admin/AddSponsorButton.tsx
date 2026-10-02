@@ -47,7 +47,9 @@ export function AddSponsorButton({ tiers }: { tiers: SponsorTier[] }) {
   // back as "" and clears the selection.
   useEffect(() => {
     if (editions.length === 0 || defaultEdition) return;
-    setDefaultEdition(editions.find((e) => e.status === "ACTIVE")?.key ?? editions[0].key);
+    setDefaultEdition(
+      editions.find((e) => e.status === "ACTIVE")?.key ?? editions[0].key
+    );
   }, [editions, defaultEdition]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -201,7 +203,8 @@ export function AddSponsorButton({ tiers }: { tiers: SponsorTier[] }) {
             </Select>
             {tiers.length === 0 && (
               <p className="mt-1 text-sm text-amber-700">
-                There are no tiers yet. Close this and use “Manage tiers” to add one first.
+                There are no tiers yet. Close this and use “Manage tiers” to add
+                one first.
               </p>
             )}
           </div>
@@ -219,8 +222,13 @@ export function AddSponsorButton({ tiers }: { tiers: SponsorTier[] }) {
                     passing children to SelectValue throws a ref/portal
                     conflict in the installed Radix version. Select still
                     holds the value; this only controls display. */}
-                <span className={defaultEdition ? "" : "text-slate-500 dark:text-slate-400"}>
-                  {editions.find((e) => e.key === defaultEdition)?.name ?? "Select edition"}
+                <span
+                  className={
+                    defaultEdition ? "" : "text-slate-500 dark:text-slate-400"
+                  }
+                >
+                  {editions.find((e) => e.key === defaultEdition)?.name ??
+                    "Select edition"}
                 </span>
               </SelectTrigger>
               <SelectContent>

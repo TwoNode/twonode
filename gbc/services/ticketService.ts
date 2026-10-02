@@ -1,6 +1,10 @@
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
-import { NotFoundError, ValidationError, ConflictError } from "@/lib/api/errors";
+import {
+  NotFoundError,
+  ValidationError,
+  ConflictError,
+} from "@/lib/api/errors";
 import { getSettings as fetchGBCSettings } from "@/gbc/services/settingsService";
 import {
   initializeTicketPayment,
@@ -44,8 +48,13 @@ async function getSettings(edition?: string) {
   return fetchGBCSettings(edition);
 }
 
-function resolveProfession(profession: string, otherProfession?: string): string {
-  return profession === "OTHER" && otherProfession ? `Other: ${otherProfession}` : profession;
+function resolveProfession(
+  profession: string,
+  otherProfession?: string
+): string {
+  return profession === "OTHER" && otherProfession
+    ? `Other: ${otherProfession}`
+    : profession;
 }
 
 /**
@@ -57,11 +66,22 @@ function resolveProfession(profession: string, otherProfession?: string): string
  * after a newer edition existed — now it always finds a real edition,
  * hardcoding "2.0" only if the table is genuinely empty.
  */
-async function getActiveEditionInfo(): Promise<{ key: string; ticketPrefix: string }> {
-  const active = await prisma.gBCEdition.findFirst({ where: { status: "ACTIVE" } });
+async function getActiveEditionInfo(): Promise<{
+  key: string;
+  ticketPrefix: string;
+}> {
+  const active = await prisma.gBCEdition.findFirst({
+    where: { status: "ACTIVE" },
+  });
   if (active) return { key: active.key, ticketPrefix: active.ticketPrefix };
-  const latest = await prisma.gBCEdition.findFirst({ where: { deletedAt: null }, orderBy: { startDate: "desc" } });
-  return { key: latest?.key ?? "2.0", ticketPrefix: latest?.ticketPrefix ?? "GBC2" };
+  const latest = await prisma.gBCEdition.findFirst({
+    where: { deletedAt: null },
+    orderBy: { startDate: "desc" },
+  });
+  return {
+    key: latest?.key ?? "2.0",
+    ticketPrefix: latest?.ticketPrefix ?? "GBC2",
+  };
 }
 
 /** Same shape as the old dbgenerated default (prefix + 6 hex chars), just computed in application code so the prefix can vary per edition. */
@@ -75,40 +95,64 @@ function generateTicketNumber(prefix: string): string {
  * the source duplicated this ~150 lines of per-attendee validation almost
  * byte-for-byte between the two functions, differing only in the count.
  */
-function validateAttendees(attendeesData: AttendeeInput[], count: number): AttendeeInput {
+function validateAttendees(
+  attendeesData: AttendeeInput[],
+  count: number
+): AttendeeInput {
   if (!attendeesData || attendeesData.length !== count) {
-    throw new ValidationError({ attendees: `Requires exactly ${count} attendees` });
+    throw new ValidationError({
+      attendees: `Requires exactly ${count} attendees`,
+    });
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const phoneRegex = /^[0-9]{11}$/;
-  const validGenders: Gender[] = ["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"];
+  const validGenders: Gender[] = [
+    "MALE",
+    "FEMALE",
+    "OTHER",
+    "PREFER_NOT_TO_SAY",
+  ];
 
   attendeesData.forEach((attendee, i) => {
     const label = `attendee${i + 1}`;
-    if (!attendee.name?.trim()) throw new ValidationError({ [label]: "Name is required" });
-    if (!attendee.email?.trim()) throw new ValidationError({ [label]: "Email is required" });
-    if (!emailRegex.test(attendee.email)) throw new ValidationError({ [label]: "Invalid email format" });
+    if (!attendee.name?.trim())
+      throw new ValidationError({ [label]: "Name is required" });
+    if (!attendee.email?.trim())
+      throw new ValidationError({ [label]: "Email is required" });
+    if (!emailRegex.test(attendee.email))
+      throw new ValidationError({ [label]: "Invalid email format" });
     if (!attendee.gender || !validGenders.includes(attendee.gender)) {
       throw new ValidationError({ [label]: "Invalid gender value" });
     }
-    if (!attendee.profession?.trim()) throw new ValidationError({ [label]: "Profession is required" });
+    if (!attendee.profession?.trim())
+      throw new ValidationError({ [label]: "Profession is required" });
     if (attendee.profession === "OTHER" && !attendee.otherProfession?.trim()) {
-      throw new ValidationError({ [label]: 'Please specify profession when selecting "Other"' });
+      throw new ValidationError({
+        [label]: 'Please specify profession when selecting "Other"',
+      });
     }
-    if (attendee.phone?.trim() && !phoneRegex.test(attendee.phone.replace(/\s/g, ""))) {
+    if (
+      attendee.phone?.trim() &&
+      !phoneRegex.test(attendee.phone.replace(/\s/g, ""))
+    ) {
       throw new ValidationError({ [label]: "Phone number must be 11 digits" });
     }
   });
 
   const emails = attendeesData.map((a) => a.email.toLowerCase());
   if (new Set(emails).size !== emails.length) {
-    throw new ValidationError({ attendees: "Each attendee must have a unique email address" });
+    throw new ValidationError({
+      attendees: "Each attendee must have a unique email address",
+    });
   }
 
   const primaryAttendees = attendeesData.filter((a) => a.isPrimary);
   if (primaryAttendees.length !== 1) {
-    throw new ValidationError({ attendees: "Exactly one attendee must be designated as the primary contact" });
+    throw new ValidationError({
+      attendees:
+        "Exactly one attendee must be designated as the primary contact",
+    });
   }
 
   return primaryAttendees[0];
@@ -123,7 +167,9 @@ async function assertCapacityAvailable(
     throw new ConflictError("Ticket registration is currently paused.");
   }
   // Capacity is that edition's own: another edition's sales must not count against it.
-  const soldTickets = await prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", edition } });
+  const soldTickets = await prisma.gBCTicket.count({
+    where: { paymentStatus: "COMPLETED", edition },
+  });
   const maxTickets = settings ? settings.tickets.maxCapacity : 1000;
   if (soldTickets + seatsNeeded > maxTickets) {
     const remaining = maxTickets - soldTickets;
@@ -141,15 +187,25 @@ export async function createTicket(data: TicketPurchaseInput) {
   await assertCapacityAvailable(1, settings, activeEdition.key);
 
   const soldEarlyBirdTickets = await prisma.gBCTicket.count({
-    where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD", edition: activeEdition.key },
+    where: {
+      paymentStatus: "COMPLETED",
+      ticketType: "EARLY_BIRD",
+      edition: activeEdition.key,
+    },
   });
 
-  const availability = isTicketTypeAvailable(data.ticketType as TicketType, soldEarlyBirdTickets, {
-    maxEarlyBirdCapacity: settings?.tickets.maxEarlyBirdCapacity,
-    earlyBirdDeadline: settings?.tickets.earlyBirdDeadline,
-  });
+  const availability = isTicketTypeAvailable(
+    data.ticketType as TicketType,
+    soldEarlyBirdTickets,
+    {
+      maxEarlyBirdCapacity: settings?.tickets.maxEarlyBirdCapacity,
+      earlyBirdDeadline: settings?.tickets.earlyBirdDeadline,
+    }
+  );
   if (!availability.available) {
-    throw new ConflictError(availability.reason || "This ticket type is not available");
+    throw new ConflictError(
+      availability.reason || "This ticket type is not available"
+    );
   }
 
   if (data.ticketType === "COMPANY" || data.ticketType === "REGULAR") {
@@ -158,7 +214,10 @@ export async function createTicket(data: TicketPurchaseInput) {
     });
   }
 
-  const price = calculateTicketPrice(data.ticketType as TicketType, settings?.tickets);
+  const price = calculateTicketPrice(
+    data.ticketType as TicketType,
+    settings?.tickets
+  );
 
   const ticket = await prisma.gBCTicket.create({
     data: {
@@ -180,12 +239,20 @@ export async function createTicket(data: TicketPurchaseInput) {
     price,
     ticket.ticketNumber,
     data.ticketType as TicketType,
-    { name: data.name, phone: data.phone, profession: resolveProfession(data.profession, data.otherProfession) }
+    {
+      name: data.name,
+      phone: data.phone,
+      profession: resolveProfession(data.profession, data.otherProfession),
+    }
   );
 
-  const existing = await prisma.gBCTicket.count({ where: { paymentRef: paymentResponse.data.reference } });
+  const existing = await prisma.gBCTicket.count({
+    where: { paymentRef: paymentResponse.data.reference },
+  });
   if (existing > 0) {
-    throw new ConflictError("Payment reference already exists. Please try again or contact support.");
+    throw new ConflictError(
+      "Payment reference already exists. Please try again or contact support."
+    );
   }
 
   await prisma.gBCTicket.update({
@@ -193,10 +260,18 @@ export async function createTicket(data: TicketPurchaseInput) {
     data: { paymentRef: paymentResponse.data.reference },
   });
 
-  return { ticket, reference: paymentResponse.data.reference, paymentUrl: paymentResponse.data.authorization_url };
+  return {
+    ticket,
+    reference: paymentResponse.data.reference,
+    paymentUrl: paymentResponse.data.authorization_url,
+  };
 }
 
-async function createMultiTicket(attendeesData: AttendeeInput[], count: number, ticketType: "COMPANY" | "REGULAR") {
+async function createMultiTicket(
+  attendeesData: AttendeeInput[],
+  count: number,
+  ticketType: "COMPANY" | "REGULAR"
+) {
   const primaryAttendee = validateAttendees(attendeesData, count);
   const activeEdition = await getActiveEditionInfo();
   const settings = await getSettings(activeEdition.key);
@@ -216,7 +291,10 @@ async function createMultiTicket(attendeesData: AttendeeInput[], count: number, 
           email: attendee.email,
           phone: attendee.phone || undefined,
           gender: attendee.gender,
-          profession: resolveProfession(attendee.profession, attendee.otherProfession),
+          profession: resolveProfession(
+            attendee.profession,
+            attendee.otherProfession
+          ),
           ticketType,
           price: price / count,
           paymentStatus: "PENDING",
@@ -251,7 +329,11 @@ async function createMultiTicket(attendeesData: AttendeeInput[], count: number, 
     )
   );
 
-  return { tickets, reference: paymentResponse.data.reference, paymentUrl: paymentResponse.data.authorization_url };
+  return {
+    tickets,
+    reference: paymentResponse.data.reference,
+    paymentUrl: paymentResponse.data.authorization_url,
+  };
 }
 
 export async function createGroupTicket(attendeesData: AttendeeInput[]) {
@@ -286,8 +368,14 @@ async function ensureQRAndEmail(
         email: ticket.email,
         ticketType: ticket.ticketType,
       });
-      const { url: qrCodeUrl, key: qrCodeS3Key } = await uploadQRCode(qrBuffer, ticket.ticketNumber);
-      await prisma.gBCTicket.update({ where: { id: ticket.id }, data: { qrCode: qrCodeUrl, qrCodeS3Key } });
+      const { url: qrCodeUrl, key: qrCodeS3Key } = await uploadQRCode(
+        qrBuffer,
+        ticket.ticketNumber
+      );
+      await prisma.gBCTicket.update({
+        where: { id: ticket.id },
+        data: { qrCode: qrCodeUrl, qrCodeS3Key },
+      });
       qrJustGenerated = true;
     } else if (forceSendEmail) {
       qrBuffer = await generateQRCodeBuffer({
@@ -309,10 +397,21 @@ async function ensureQRAndEmail(
       }
 
       const eventDate = settings?.event.date
-        ? new Date(settings.event.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+        ? new Date(settings.event.date).toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })
         : process.env.NEXT_PUBLIC_EVENT_DATE || "Event Day";
-      const eventLocation = settings?.contact.city || process.env.NEXT_PUBLIC_EVENT_LOCATION || "Lagos, Nigeria";
-      const eventVenue = settings?.event.venue || process.env.NEXT_PUBLIC_EVENT_VENUE || "Conference Center, Lagos";
+      const eventLocation =
+        settings?.contact.city ||
+        process.env.NEXT_PUBLIC_EVENT_LOCATION ||
+        "Lagos, Nigeria";
+      const eventVenue =
+        settings?.event.venue ||
+        process.env.NEXT_PUBLIC_EVENT_VENUE ||
+        "Conference Center, Lagos";
 
       // Receipt generation is best-effort — a failure here shouldn't block
       // the ticket confirmation email (which has the QR code attendees
@@ -322,7 +421,10 @@ async function ensureQRAndEmail(
         try {
           receiptPdfBuffer = await generateTicketReceiptPdfBuffer(ticket);
         } catch (error) {
-          console.error(`Receipt PDF generation failed for ticket ${ticket.ticketNumber}:`, error);
+          console.error(
+            `Receipt PDF generation failed for ticket ${ticket.ticketNumber}:`,
+            error
+          );
         }
       }
 
@@ -340,29 +442,44 @@ async function ensureQRAndEmail(
         receiptPdfBuffer,
       });
       if (!emailResult.success) {
-        console.error(`Failed to send confirmation email to ${ticket.email}:`, emailResult.error);
+        console.error(
+          `Failed to send confirmation email to ${ticket.email}:`,
+          emailResult.error
+        );
       }
     }
   } catch (error) {
     // QR/email failures are non-critical to payment verification succeeding.
-    console.error(`QR/email step failed for ticket ${ticket.ticketNumber}:`, error);
+    console.error(
+      `QR/email step failed for ticket ${ticket.ticketNumber}:`,
+      error
+    );
   }
 }
 
 export async function verifyPayment(reference: string, sendEmail?: boolean) {
-  if (!reference) throw new ValidationError({ reference: "Payment reference is required" });
+  if (!reference)
+    throw new ValidationError({ reference: "Payment reference is required" });
 
   const verification = await verifyPaystackPayment(reference);
   if (!verification.status || verification.data.status !== "success") {
-    throw new ConflictError(verification.message || "Payment verification failed");
+    throw new ConflictError(
+      verification.message || "Payment verification failed"
+    );
   }
 
-  const tickets = await prisma.gBCTicket.findMany({ where: { paymentRef: reference }, include: { editionRef: true } });
-  if (!tickets || tickets.length === 0) throw new NotFoundError("Tickets for this payment");
+  const tickets = await prisma.gBCTicket.findMany({
+    where: { paymentRef: reference },
+    include: { editionRef: true },
+  });
+  if (!tickets || tickets.length === 0)
+    throw new NotFoundError("Tickets for this payment");
 
   const firstTicketType = tickets[0].ticketType;
   if (!tickets.every((t) => t.ticketType === firstTicketType)) {
-    throw new ConflictError("Invalid payment: tickets with the same payment reference must have the same type");
+    throw new ConflictError(
+      "Invalid payment: tickets with the same payment reference must have the same type"
+    );
   }
   const expectedCount = EXPECTED_TICKET_COUNT[firstTicketType];
   if (expectedCount && tickets.length !== expectedCount) {
@@ -388,25 +505,42 @@ export async function verifyPayment(reference: string, sendEmail?: boolean) {
 
   // The confirmation email describes the event the ticket was bought for.
   const settings = await getSettings(updatedTickets[0]?.edition);
-  await Promise.all(updatedTickets.map((ticket) => ensureQRAndEmail(ticket, settings, sendEmail)));
+  await Promise.all(
+    updatedTickets.map((ticket) =>
+      ensureQRAndEmail(ticket, settings, sendEmail)
+    )
+  );
 
-  return { tickets: updatedTickets, count: updatedTickets.length, amount: koboToNaira(verification.data.amount) };
+  return {
+    tickets: updatedTickets,
+    count: updatedTickets.length,
+    amount: koboToNaira(verification.data.amount),
+  };
 }
 
 export async function getTicketAvailability() {
   const { key: edition } = await getActiveEditionInfo();
   const [completedTickets, soldEarlyBirdTickets] = await Promise.all([
     prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", edition } }),
-    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD", edition } }),
+    prisma.gBCTicket.count({
+      where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD", edition },
+    }),
   ]);
   const settings = await getSettings(edition);
   const maxTickets = settings ? settings.tickets.maxCapacity : 1000;
 
-  return { availableTickets: maxTickets - completedTickets, maxTickets, soldEarlyBirdTickets };
+  return {
+    availableTickets: maxTickets - completedTickets,
+    maxTickets,
+    soldEarlyBirdTickets,
+  };
 }
 
 export async function getTicketByNumber(ticketNumber: string) {
-  const ticket = await prisma.gBCTicket.findFirst({ where: { ticketNumber }, include: { editionRef: true } });
+  const ticket = await prisma.gBCTicket.findFirst({
+    where: { ticketNumber },
+    include: { editionRef: true },
+  });
   if (!ticket) throw new NotFoundError("Ticket");
   return ticket;
 }
@@ -430,16 +564,39 @@ export async function lookupMyTicket(ticketNumber: string, email: string) {
  */
 export async function getTicketStats(edition?: string) {
   const editionKey = edition ?? (await getActiveEditionInfo()).key;
-  const [statusStats, checkedInCount, soldEarlyBirdTickets, editionCompleted] = await Promise.all([
-    prisma.gBCTicket.groupBy({ by: ["paymentStatus"], _count: { id: true }, _sum: { price: true }, where: { edition: editionKey } }),
-    prisma.gBCTicket.count({ where: { checkedIn: true, edition: editionKey } }),
-    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD", edition: editionKey } }),
-    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", edition: editionKey } }),
-  ]);
+  const [statusStats, checkedInCount, soldEarlyBirdTickets, editionCompleted] =
+    await Promise.all([
+      prisma.gBCTicket.groupBy({
+        by: ["paymentStatus"],
+        _count: { id: true },
+        _sum: { price: true },
+        where: { edition: editionKey },
+      }),
+      prisma.gBCTicket.count({
+        where: { checkedIn: true, edition: editionKey },
+      }),
+      prisma.gBCTicket.count({
+        where: {
+          paymentStatus: "COMPLETED",
+          ticketType: "EARLY_BIRD",
+          edition: editionKey,
+        },
+      }),
+      prisma.gBCTicket.count({
+        where: { paymentStatus: "COMPLETED", edition: editionKey },
+      }),
+    ]);
 
-  const totalTickets = statusStats.reduce((sum, stat) => sum + stat._count.id, 0);
-  const completedStat = statusStats.find((stat) => stat.paymentStatus === "COMPLETED");
-  const pendingStat = statusStats.find((stat) => stat.paymentStatus === "PENDING");
+  const totalTickets = statusStats.reduce(
+    (sum, stat) => sum + stat._count.id,
+    0
+  );
+  const completedStat = statusStats.find(
+    (stat) => stat.paymentStatus === "COMPLETED"
+  );
+  const pendingStat = statusStats.find(
+    (stat) => stat.paymentStatus === "PENDING"
+  );
 
   const completedTickets = completedStat?._count.id || 0;
   const settings = await getSettings(editionKey);
@@ -486,9 +643,18 @@ function buildTicketWhere(filters?: {
  * RecentTickets' explicit `limit: 5` and the (uncalled) admin API route's
  * optional limit are both unaffected.
  */
-export async function getTickets(filters?: { status?: string; search?: string; limit?: number; edition?: string }) {
+export async function getTickets(filters?: {
+  status?: string;
+  search?: string;
+  limit?: number;
+  edition?: string;
+}) {
   const where = buildTicketWhere(filters);
-  return prisma.gBCTicket.findMany({ where, orderBy: { createdAt: "desc" }, take: filters?.limit });
+  return prisma.gBCTicket.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    take: filters?.limit,
+  });
 }
 
 export interface TicketListFilters {
@@ -509,7 +675,13 @@ export async function getTicketsPaginated(params: GetTicketsPaginatedParams) {
   const where = buildTicketWhere(filters);
 
   return paginateQuery(
-    (skip, take) => prisma.gBCTicket.findMany({ where, orderBy: { createdAt: "desc" }, skip, take }),
+    (skip, take) =>
+      prisma.gBCTicket.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+      }),
     () => prisma.gBCTicket.count({ where }),
     page,
     pageSize
@@ -517,7 +689,9 @@ export async function getTicketsPaginated(params: GetTicketsPaginatedParams) {
 }
 
 /** Every ticket number matching the filters — lets a "select all" span pages without shipping full rows. */
-export async function getTicketNumbers(filters: TicketListFilters): Promise<string[]> {
+export async function getTicketNumbers(
+  filters: TicketListFilters
+): Promise<string[]> {
   const rows = await prisma.gBCTicket.findMany({
     where: buildTicketWhere(filters),
     orderBy: { createdAt: "desc" },
@@ -532,7 +706,9 @@ export async function getAttendeeStats(edition?: string) {
   const [total, checkedIn, certificatesSent] = await Promise.all([
     prisma.gBCTicket.count({ where: base }),
     prisma.gBCTicket.count({ where: { ...base, checkedIn: true } }),
-    prisma.gBCTicket.count({ where: { ...base, certificateSentCount: { gt: 0 } } }),
+    prisma.gBCTicket.count({
+      where: { ...base, certificateSentCount: { gt: 0 } },
+    }),
   ]);
   return { total, checkedIn, pending: total - checkedIn, certificatesSent };
 }
@@ -567,7 +743,9 @@ export async function deleteTicket(id: string) {
   const ticket = await prisma.gBCTicket.findUnique({ where: { id } });
   if (!ticket) throw new NotFoundError("Ticket");
   if (ticket.paymentStatus === "COMPLETED") {
-    throw new ConflictError("Cannot delete completed ticket. Use refund instead.");
+    throw new ConflictError(
+      "Cannot delete completed ticket. Use refund instead."
+    );
   }
   await prisma.gBCTicket.delete({ where: { id } });
 }
@@ -583,7 +761,10 @@ export async function generateTicketQRCode(ticketId: string) {
     ticketType: ticket.ticketType,
   });
   const { url, key } = await uploadQRCode(qrBuffer, ticket.ticketNumber);
-  await prisma.gBCTicket.update({ where: { id: ticketId }, data: { qrCode: url, qrCodeS3Key: key } });
+  await prisma.gBCTicket.update({
+    where: { id: ticketId },
+    data: { qrCode: url, qrCodeS3Key: key },
+  });
 
   return { url, key };
 }
@@ -591,9 +772,12 @@ export async function generateTicketQRCode(ticketId: string) {
 export async function checkInTicket(ticketNumber: string, adminEmail: string) {
   const ticket = await prisma.gBCTicket.findUnique({ where: { ticketNumber } });
   if (!ticket) throw new NotFoundError("Ticket");
-  if (ticket.paymentStatus !== "COMPLETED") throw new ConflictError("Ticket payment not completed");
+  if (ticket.paymentStatus !== "COMPLETED")
+    throw new ConflictError("Ticket payment not completed");
   if (ticket.checkedIn) {
-    throw new ConflictError(`Ticket already checked in at ${ticket.checkedInAt?.toLocaleString()}`);
+    throw new ConflictError(
+      `Ticket already checked in at ${ticket.checkedInAt?.toLocaleString()}`
+    );
   }
 
   const updatedTicket = await prisma.gBCTicket.update({
@@ -603,7 +787,12 @@ export async function checkInTicket(ticketNumber: string, adminEmail: string) {
 
   if (ticket.phone) {
     try {
-      await sendGBCTicketSMS(ticket.phone, ticket.name, ticket.ticketNumber, process.env.NEXT_PUBLIC_EVENT_DATE || "Event Day");
+      await sendGBCTicketSMS(
+        ticket.phone,
+        ticket.name,
+        ticket.ticketNumber,
+        process.env.NEXT_PUBLIC_EVENT_DATE || "Event Day"
+      );
     } catch (smsError) {
       console.error("SMS sending failed (non-critical):", smsError);
     }
@@ -614,7 +803,10 @@ export async function checkInTicket(ticketNumber: string, adminEmail: string) {
 
 /** The native JWT session carries {sub, role, platform} only — routes that need the acting admin's email (e.g. for checkInTicket's checkedInBy) fetch it here. */
 export async function getAdminContact(userId: string) {
-  const user = await prisma.gBCUser.findUnique({ where: { id: userId }, select: { id: true, email: true } });
+  const user = await prisma.gBCUser.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true },
+  });
   if (!user) throw new NotFoundError("User");
   return user;
 }

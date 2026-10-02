@@ -32,7 +32,10 @@ export default function SurfboardErrorLogin() {
           </Button>
         </LoginLink>
         <RegisterLink postLoginRedirectURL="/api/auth/success/surfboard">
-          <Button variant="outline" className="w-full px-6 py-3 bg-blue-100 text-blue-900 rounded-lg font-semibold hover:bg-blue-200 transition text-lg shadow">
+          <Button
+            variant="outline"
+            className="w-full px-6 py-3 bg-blue-100 text-blue-900 rounded-lg font-semibold hover:bg-blue-200 transition text-lg shadow"
+          >
             Register New Account
           </Button>
         </RegisterLink>

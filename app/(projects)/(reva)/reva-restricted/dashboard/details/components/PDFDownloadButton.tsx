@@ -99,8 +99,8 @@ export function PDFDownloadButton({
             loading
               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
               : type === "report"
-              ? "bg-blue-600 hover:bg-blue-700 text-white"
-              : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white"
           } ${className}`}
         >
           {loading ? (

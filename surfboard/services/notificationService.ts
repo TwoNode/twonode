@@ -2,7 +2,11 @@ import { addBaseUrl } from "@/utils/addBaseUrl";
 import prisma from "@/lib/prisma";
 import { sendNotificationMail } from "@/utils/email";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
-import { SurfboardNotificationType, SurfboardNotificationAudience, SurfboardRole } from "@/prisma/generated";
+import {
+  SurfboardNotificationType,
+  SurfboardNotificationAudience,
+  SurfboardRole,
+} from "@/prisma/generated";
 import { NotFoundError } from "@/lib/api/errors";
 import { paginatedResult } from "@/lib/api/pagination";
 
@@ -106,7 +110,10 @@ export async function createNotification(input: CreateNotificationInput) {
  * createNotification, so correcting a typo after the fact can't re-notify
  * everyone a second time.
  */
-export async function updateNotification(id: string, input: UpdateNotificationInput) {
+export async function updateNotification(
+  id: string,
+  input: UpdateNotificationInput
+) {
   const notification = await prisma.surfboardNotification.update({
     where: { id },
     data: {
@@ -116,7 +123,9 @@ export async function updateNotification(id: string, input: UpdateNotificationIn
       ...(input.audience !== undefined && { audience: input.audience }),
       ...(input.userIds !== undefined && { userIds: input.userIds }),
       ...(input.link !== undefined && { link: input.link }),
-      ...(input.showAsModal !== undefined && { showAsModal: input.showAsModal }),
+      ...(input.showAsModal !== undefined && {
+        showAsModal: input.showAsModal,
+      }),
       ...(input.startsAt !== undefined && { startsAt: input.startsAt }),
       ...(input.endsAt !== undefined && { endsAt: input.endsAt }),
     },
@@ -127,7 +136,9 @@ export async function updateNotification(id: string, input: UpdateNotificationIn
 
 async function sendNotificationEmails(notificationId: string): Promise<void> {
   try {
-    const notification = await prisma.surfboardNotification.findUnique({ where: { id: notificationId } });
+    const notification = await prisma.surfboardNotification.findUnique({
+      where: { id: notificationId },
+    });
     if (!notification) {
       console.error("Notification not found:", notificationId);
       return;
@@ -152,7 +163,15 @@ async function sendNotificationEmails(notificationId: string): Promise<void> {
 async function getNotificationRecipients(notification: {
   audience: SurfboardNotificationAudience;
   userIds: string[];
-}): Promise<Array<{ id: string; email: string; firstName: string; lastName: string; phoneNumber: string | null }>> {
+}): Promise<
+  Array<{
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string | null;
+  }>
+> {
   const where: any = { isActive: true };
 
   switch (notification.audience) {
@@ -169,11 +188,22 @@ async function getNotificationRecipients(notification: {
       break;
   }
 
-  return prisma.surfboardUser.findMany({ where, select: { id: true, email: true, firstName: true, lastName: true, phoneNumber: true } });
+  return prisma.surfboardUser.findMany({
+    where,
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phoneNumber: true,
+    },
+  });
 }
 
 async function sendNotificationWhatsApp(notificationId: string): Promise<void> {
-  const notification = await prisma.surfboardNotification.findUnique({ where: { id: notificationId } });
+  const notification = await prisma.surfboardNotification.findUnique({
+    where: { id: notificationId },
+  });
   if (!notification) {
     console.error("Notification not found:", notificationId);
     return;
@@ -182,13 +212,23 @@ async function sendNotificationWhatsApp(notificationId: string): Promise<void> {
   const recipients = await getNotificationRecipients(notification);
   const sends = recipients
     .filter((r) => r.phoneNumber)
-    .map((r) => sendWhatsAppMessage(r.phoneNumber!, `${notification.title}\n\n${notification.message}`));
+    .map((r) =>
+      sendWhatsAppMessage(
+        r.phoneNumber!,
+        `${notification.title}\n\n${notification.message}`
+      )
+    );
 
   await Promise.allSettled(sends);
 }
 
 function generateNotificationEmailHtml(
-  notification: { title: string; message: string; type: SurfboardNotificationType; link: string | null },
+  notification: {
+    title: string;
+    message: string;
+    type: SurfboardNotificationType;
+    link: string | null;
+  },
   recipient: { firstName: string; lastName: string }
 ): string {
   const typeColors: Record<SurfboardNotificationType, string> = {
@@ -235,8 +275,9 @@ function generateNotificationEmailHtml(
                     <p style="margin: 0 0 25px; color: #4b5563; font-size: 15px; line-height: 1.6;">
                       ${notification.message}
                     </p>
-                    ${notification.link
-      ? `
+                    ${
+                      notification.link
+                        ? `
                     <table cellpadding="0" cellspacing="0" style="margin: 25px 0;">
                       <tr>
                         <td style="background-color: ${color}; border-radius: 6px; padding: 12px 30px;">
@@ -247,8 +288,8 @@ function generateNotificationEmailHtml(
                       </tr>
                     </table>
                     `
-      : ""
-    }
+                        : ""
+                    }
                   </td>
                 </tr>
                 <tr>
@@ -273,9 +314,17 @@ function generateNotificationEmailHtml(
 export async function getUserNotifications(
   userId: string,
   role: SurfboardRole,
-  options?: { includeRead?: boolean; includeDismissed?: boolean; limit?: number }
+  options?: {
+    includeRead?: boolean;
+    includeDismissed?: boolean;
+    limit?: number;
+  }
 ): Promise<NotificationWithUser[]> {
-  const { includeRead = true, includeDismissed = false, limit = 50 } = options || {};
+  const {
+    includeRead = true,
+    includeDismissed = false,
+    limit = 50,
+  } = options || {};
 
   const now = new Date();
   const where: any = {
@@ -289,10 +338,15 @@ export async function getUserNotifications(
       { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
     ],
   };
-  if (role === "ADMIN" || role === "SUPERADMIN") where.AND[0].OR.push({ audience: "GENERAL_ADMINS" });
+  if (role === "ADMIN" || role === "SUPERADMIN")
+    where.AND[0].OR.push({ audience: "GENERAL_ADMINS" });
   if (role === "SUPERADMIN") where.AND[0].OR.push({ audience: "SUPERADMIN" });
 
-  const notifications = await prisma.surfboardNotification.findMany({ where, orderBy: { createdAt: "desc" }, take: limit });
+  const notifications = await prisma.surfboardNotification.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
 
   return notifications
     .map((notification) => ({
@@ -339,7 +393,8 @@ export async function getActiveModalAnnouncement(
       { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
     ],
   };
-  if (role === "ADMIN" || role === "SUPERADMIN") where.OR.push({ audience: "GENERAL_ADMINS" });
+  if (role === "ADMIN" || role === "SUPERADMIN")
+    where.OR.push({ audience: "GENERAL_ADMINS" });
   if (role === "SUPERADMIN") where.OR.push({ audience: "SUPERADMIN" });
 
   const notification = await prisma.surfboardNotification.findFirst({
@@ -389,13 +444,18 @@ export async function getUserNotificationsPaginated(
 ) {
   const { includeRead = true, includeDismissed = false } = options;
 
-  const audienceOr: any[] = [{ audience: "ALL_USERS" }, { userIds: { has: userId } }];
-  if (role === "ADMIN" || role === "SUPERADMIN") audienceOr.push({ audience: "GENERAL_ADMINS" });
+  const audienceOr: any[] = [
+    { audience: "ALL_USERS" },
+    { userIds: { has: userId } },
+  ];
+  if (role === "ADMIN" || role === "SUPERADMIN")
+    audienceOr.push({ audience: "GENERAL_ADMINS" });
   if (role === "SUPERADMIN") audienceOr.push({ audience: "SUPERADMIN" });
 
   const where: any = { AND: [{ OR: audienceOr }] };
   if (!includeRead) where.AND.push({ NOT: { readBy: { has: userId } } });
-  if (!includeDismissed) where.AND.push({ NOT: { dismissedBy: { has: userId } } });
+  if (!includeDismissed)
+    where.AND.push({ NOT: { dismissedBy: { has: userId } } });
   if (options.type) where.AND.push({ type: options.type });
   if (options.audience) where.AND.push({ audience: options.audience });
   if (options.search) {
@@ -436,9 +496,16 @@ export async function getUserNotificationsPaginated(
 }
 
 /** Same audience-visibility scoping as getUserNotificationsPaginated, so the admin page's stat cards always agree with what the table can actually show. */
-export async function getNotificationStats(userId: string, role: SurfboardRole) {
-  const audienceOr: any[] = [{ audience: "ALL_USERS" }, { userIds: { has: userId } }];
-  if (role === "ADMIN" || role === "SUPERADMIN") audienceOr.push({ audience: "GENERAL_ADMINS" });
+export async function getNotificationStats(
+  userId: string,
+  role: SurfboardRole
+) {
+  const audienceOr: any[] = [
+    { audience: "ALL_USERS" },
+    { userIds: { has: userId } },
+  ];
+  if (role === "ADMIN" || role === "SUPERADMIN")
+    audienceOr.push({ audience: "GENERAL_ADMINS" });
   if (role === "SUPERADMIN") audienceOr.push({ audience: "SUPERADMIN" });
   const baseWhere = { OR: audienceOr };
 
@@ -447,38 +514,67 @@ export async function getNotificationStats(userId: string, role: SurfboardRole) 
 
   const [total, unread, sentToday, broadcastToAllUsers] = await Promise.all([
     prisma.surfboardNotification.count({ where: baseWhere }),
-    prisma.surfboardNotification.count({ where: { AND: [baseWhere, { NOT: { readBy: { has: userId } } }] } }),
-    prisma.surfboardNotification.count({ where: { AND: [baseWhere, { createdAt: { gte: startOfToday } }] } }),
-    prisma.surfboardNotification.count({ where: { AND: [baseWhere, { audience: "ALL_USERS" }] } }),
+    prisma.surfboardNotification.count({
+      where: { AND: [baseWhere, { NOT: { readBy: { has: userId } } }] },
+    }),
+    prisma.surfboardNotification.count({
+      where: { AND: [baseWhere, { createdAt: { gte: startOfToday } }] },
+    }),
+    prisma.surfboardNotification.count({
+      where: { AND: [baseWhere, { audience: "ALL_USERS" }] },
+    }),
   ]);
 
   return { total, unread, sentToday, broadcastToAllUsers };
 }
 
-export async function markNotificationAsRead(userId: string, notificationId: string) {
-  const notification = await prisma.surfboardNotification.findUnique({ where: { id: notificationId } });
+export async function markNotificationAsRead(
+  userId: string,
+  notificationId: string
+) {
+  const notification = await prisma.surfboardNotification.findUnique({
+    where: { id: notificationId },
+  });
   if (!notification) throw new NotFoundError("Notification");
 
   const readBy = [...new Set([...notification.readBy, userId])];
-  await prisma.surfboardNotification.update({ where: { id: notificationId }, data: { readBy } });
+  await prisma.surfboardNotification.update({
+    where: { id: notificationId },
+    data: { readBy },
+  });
 
   return { success: true };
 }
 
-export async function dismissNotification(userId: string, notificationId: string) {
-  const notification = await prisma.surfboardNotification.findUnique({ where: { id: notificationId } });
+export async function dismissNotification(
+  userId: string,
+  notificationId: string
+) {
+  const notification = await prisma.surfboardNotification.findUnique({
+    where: { id: notificationId },
+  });
   if (!notification) throw new NotFoundError("Notification");
 
   const dismissedBy = [...new Set([...notification.dismissedBy, userId])];
-  await prisma.surfboardNotification.update({ where: { id: notificationId }, data: { dismissedBy } });
+  await prisma.surfboardNotification.update({
+    where: { id: notificationId },
+    data: { dismissedBy },
+  });
 
   return { success: true };
 }
 
-export async function getUnreadNotificationCount(userId: string, role: SurfboardRole) {
+export async function getUnreadNotificationCount(
+  userId: string,
+  role: SurfboardRole
+) {
   const now = new Date();
-  const audienceOr: any[] = [{ audience: "ALL_USERS" }, { userIds: { has: userId } }];
-  if (role === "ADMIN" || role === "SUPERADMIN") audienceOr.push({ audience: "GENERAL_ADMINS" });
+  const audienceOr: any[] = [
+    { audience: "ALL_USERS" },
+    { userIds: { has: userId } },
+  ];
+  if (role === "ADMIN" || role === "SUPERADMIN")
+    audienceOr.push({ audience: "GENERAL_ADMINS" });
   if (role === "SUPERADMIN") audienceOr.push({ audience: "SUPERADMIN" });
 
   // Same startsAt/endsAt window as getUserNotifications, so the bell badge
@@ -542,7 +638,11 @@ export async function notifyPlanShared(params: {
       audience: "SPECIFIC_USERS",
       userIds: [params.sharedWithUserId],
       link: `/surfboard/dashboard/plan?planId=${params.planId}`,
-      metadata: { planId: params.planId, planNumber: params.planNumber, sharedBy: params.sharedByUser },
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        sharedBy: params.sharedByUser,
+      },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -564,7 +664,11 @@ export async function notifyPaymentReceived(params: {
       message: `Payment of ₦${params.amount.toLocaleString()} received for batch ${params.batchCode} from ${params.paidBy.firstName} ${params.paidBy.lastName}.`,
       audience: "GENERAL_ADMINS",
       link: `/surfboard-restricted/dashboard/cod/batches`,
-      metadata: { batchId: params.batchId, batchCode: params.batchCode, amount: params.amount },
+      metadata: {
+        batchId: params.batchId,
+        batchCode: params.batchCode,
+        amount: params.amount,
+      },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -580,7 +684,12 @@ export async function notifyLASGReceiptUploaded(params: {
 }): Promise<void> {
   try {
     const mdaUsers = await prisma.surfboardUser.findMany({
-      where: { role: { in: ["ACCOUNTS", "CHARTING", "SURCON", "RECORDS_I", "RECORDS_II"] }, isActive: true },
+      where: {
+        role: {
+          in: ["ACCOUNTS", "CHARTING", "SURCON", "RECORDS_I", "RECORDS_II"],
+        },
+        isActive: true,
+      },
       select: { id: true },
     });
 
@@ -592,7 +701,11 @@ export async function notifyLASGReceiptUploaded(params: {
         audience: "SPECIFIC_USERS",
         userIds: mdaUsers.map((u) => u.id),
         link: `/surfboard-mda/dashboard`,
-        metadata: { batchId: params.batchId, batchCode: params.batchCode, planCount: params.planCount },
+        metadata: {
+          batchId: params.batchId,
+          batchCode: params.batchCode,
+          planCount: params.planCount,
+        },
         sendEmail: params.sendEmail ?? true,
       });
     }
@@ -614,7 +727,11 @@ export async function notifyAccountsDisapproval(params: {
       message: `Batch ${params.batchCode} was disapproved by Accounts. ${params.comment ? `Reason: ${params.comment}` : ""}`,
       audience: "GENERAL_ADMINS",
       link: `/surfboard-restricted/dashboard/cod/batches`,
-      metadata: { batchId: params.batchId, batchCode: params.batchCode, comment: params.comment },
+      metadata: {
+        batchId: params.batchId,
+        batchCode: params.batchCode,
+        comment: params.comment,
+      },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -638,7 +755,12 @@ export async function notifyPlanQueried(params: {
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
       link: `/surfboard/dashboard/plans?tab=queried`,
-      metadata: { planId: params.planId, planNumber: params.planNumber, queriedBy: params.queriedBy, comment: params.comment },
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        queriedBy: params.queriedBy,
+        comment: params.comment,
+      },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -654,7 +776,9 @@ export async function notifyConsolidatedQueries(params: {
   sendEmail?: boolean;
 }): Promise<void> {
   try {
-    const queryList = params.queries.map((q) => `- **${q.role}**: ${q.comment || "Please review."}`).join("\n");
+    const queryList = params.queries
+      .map((q) => `- **${q.role}**: ${q.comment || "Please review."}`)
+      .join("\n");
 
     await createNotification({
       type: "WARNING",
@@ -663,7 +787,11 @@ export async function notifyConsolidatedQueries(params: {
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
       link: `/surfboard/dashboard/plans?tab=queried`,
-      metadata: { planId: params.planId, planNumber: params.planNumber, queries: params.queries },
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        queries: params.queries,
+      },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -686,7 +814,11 @@ export async function notifyPlanApproved(params: {
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
       link: `/surfboard/dashboard/plans`,
-      metadata: { planId: params.planId, planNumber: params.planNumber, batchCode: params.batchCode },
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        batchCode: params.batchCode,
+      },
       sendEmail: params.sendEmail ?? true,
       sendWhatsApp: true,
     });
@@ -710,7 +842,11 @@ export async function notifyPlanCreated(params: {
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
       link: `/surfboard/dashboard/plan?planId=${params.planId}`,
-      metadata: { planId: params.planId, planNumber: params.planNumber, surveyTitle: params.surveyTitle },
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        surveyTitle: params.surveyTitle,
+      },
       sendEmail: params.sendEmail ?? true,
       sendWhatsApp: true,
     });
@@ -757,7 +893,12 @@ export async function notifyRecordCopySubmitted(params: {
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
       link: `/surfboard/dashboard/plans`,
-      metadata: { batchId: params.batchId, batchCode: params.batchCode, planCount: params.planCount, totalAmount: params.totalAmount },
+      metadata: {
+        batchId: params.batchId,
+        batchCode: params.batchCode,
+        planCount: params.planCount,
+        totalAmount: params.totalAmount,
+      },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -783,6 +924,9 @@ export async function notifyReadyForPhysicalSubmission(params: {
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
-    console.error("Error sending ready for physical submission notification:", error);
+    console.error(
+      "Error sending ready for physical submission notification:",
+      error
+    );
   }
 }

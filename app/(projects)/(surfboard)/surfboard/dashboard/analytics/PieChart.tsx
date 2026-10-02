@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { useTheme } from '@/hooks/useTheme';
+import React, { useRef, useEffect, useState } from "react";
+import { useTheme } from "@/hooks/useTheme";
 
 interface PieChartData {
   label: string;
@@ -47,8 +47,8 @@ export function PieChart({
     };
 
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [width, height]);
 
   // Draw the pie chart
@@ -56,63 +56,70 @@ export function PieChart({
     const canvas = canvasRef.current;
     if (!canvas || total === 0) return;
 
-    const ctx = canvas.getContext('2d');;
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const centerX = dimensions.width / 2;
     const centerY = dimensions.height / 2;
     const radius = Math.min(dimensions.width, dimensions.height) * 0.4;
     const innerRadius = donut ? radius * 0.6 : 0;
-    
+
     // Set canvas dimensions
     canvas.width = dimensions.width;
     canvas.height = dimensions.height;
-    
+
     // Clear canvas
     ctx.clearRect(0, 0, dimensions.width, dimensions.height);
-    
+
     // Draw pie slices
     let startAngle = -Math.PI / 2; // Start from top (-90 degrees)
-    
+
     data.forEach((item, index) => {
       const sliceAngle = (2 * Math.PI * item.value) / total;
-      
+
       // Draw outer arc
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
-      ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle, false);
+      ctx.arc(
+        centerX,
+        centerY,
+        radius,
+        startAngle,
+        startAngle + sliceAngle,
+        false
+      );
       ctx.closePath();
-      
+
       // Fill with color
       ctx.fillStyle = item.color;
       ctx.fill();
-      
+
       // If donut, cut out the center
       if (donut) {
-        ctx.globalCompositeOperation = 'destination-out';
+        ctx.globalCompositeOperation = "destination-out";
         ctx.beginPath();
         ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2, false);
         ctx.fill();
-        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalCompositeOperation = "source-over";
       }
-      
+
       startAngle += sliceAngle;
     });
-    
+
     // Add center text for donut chart
     if (donut && donutValue !== undefined) {
-      ctx.fillStyle = theme === 'dark' ? '#F9FAFB' : '#1F2937'; // gray-50 / gray-800
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      ctx.fillStyle = theme === "dark" ? "#F9FAFB" : "#1F2937"; // gray-50 / gray-800
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
 
       // Main value
-      ctx.font = 'bold 24px Inter, sans-serif';
+      ctx.font = "bold 24px Inter, sans-serif";
       ctx.fillText(String(donutValue), centerX, centerY - 10);
 
       // Label
       if (donutLabel) {
-        ctx.font = '12px Inter, sans-serif';
-        ctx.fillStyle = theme === 'dark' ? '#9CA3AF' : '#6B7280'; // gray-400 / gray-500
+        ctx.font = "12px Inter, sans-serif";
+        ctx.fillStyle = theme === "dark" ? "#9CA3AF" : "#6B7280"; // gray-400 / gray-500
         ctx.fillText(donutLabel, centerX, centerY + 20);
       }
     }
@@ -121,8 +128,14 @@ export function PieChart({
   if (total === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6 dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">{title}</h3>
-        {subtitle && <p className="text-sm text-gray-500 mb-4 dark:text-gray-400">{subtitle}</p>}
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+          {title}
+        </h3>
+        {subtitle && (
+          <p className="text-sm text-gray-500 mb-4 dark:text-gray-400">
+            {subtitle}
+          </p>
+        )}
         <div className="flex items-center justify-center" style={{ height }}>
           <p className="text-gray-500 dark:text-gray-400">No data available</p>
         </div>
@@ -133,8 +146,12 @@ export function PieChart({
   return (
     <div className="bg-white rounded-lg shadow p-6 dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
       <div className="mb-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">{title}</h3>
-        {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>}
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+          {title}
+        </h3>
+        {subtitle && (
+          <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>
+        )}
       </div>
 
       <div className="flex flex-col items-center justify-center">
@@ -155,7 +172,9 @@ export function PieChart({
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: item.color }}
                 />
-                <span className="text-gray-700 truncate dark:text-gray-300">{item.label}</span>
+                <span className="text-gray-700 truncate dark:text-gray-300">
+                  {item.label}
+                </span>
                 <span className="text-gray-500 ml-auto dark:text-gray-400">
                   {Math.round((item.value / total) * 100)}%
                 </span>
@@ -171,18 +190,18 @@ export function PieChart({
 // Generate colors for pie chart segments
 export function generateColors(count: number): string[] {
   const colors = [
-    '#3B82F6', // blue-500
-    '#10B981', // emerald-500
-    '#F59E0B', // amber-500
-    '#8B5CF6', // violet-500
-    '#EC4899', // pink-500
-    '#14B8A6', // teal-500
-    '#F97316', // orange-500
-    '#6366F1', // indigo-500
-    '#84CC16', // lime-500
-    '#EF4444', // red-500
+    "#3B82F6", // blue-500
+    "#10B981", // emerald-500
+    "#F59E0B", // amber-500
+    "#8B5CF6", // violet-500
+    "#EC4899", // pink-500
+    "#14B8A6", // teal-500
+    "#F97316", // orange-500
+    "#6366F1", // indigo-500
+    "#84CC16", // lime-500
+    "#EF4444", // red-500
   ];
-  
+
   // If we need more colors than we have defined, generate some
   if (count > colors.length) {
     const additionalColors = [];
@@ -195,6 +214,6 @@ export function generateColors(count: number): string[] {
     }
     return [...colors, ...additionalColors];
   }
-  
+
   return colors.slice(0, count);
 }

@@ -4,8 +4,10 @@
 
 I've built a comprehensive PDF generation system for REVA with the following components:
 
-### 1. **RevaReportPDF.tsx** 
+### 1. **RevaReportPDF.tsx**
+
 A dynamic, multi-page due diligence report generator that:
+
 - ✅ Adapts to available data (shows only relevant sections)
 - ✅ Includes front page with REVA branding
 - ✅ Title Investigation section (Lands Bureau)
@@ -15,7 +17,9 @@ A dynamic, multi-page due diligence report generator that:
 - ✅ Professional styling matching REVA brand colors
 
 ### 2. **RevaReceiptPDF.tsx**
+
 A premium payment receipt generator with:
+
 - ✅ Professional design with REVA branding
 - ✅ Payment status indicators
 - ✅ "PAID" watermark for completed payments
@@ -24,7 +28,9 @@ A premium payment receipt generator with:
 - ✅ Company contact information
 
 ### 3. **PDFDownloadButton.tsx**
+
 A reusable download button component that:
+
 - ✅ Handles both report and receipt downloads
 - ✅ Shows loading states during PDF generation
 - ✅ Supports conditional disabling
@@ -56,9 +62,9 @@ import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/de
 ### Advanced Usage
 
 ```tsx
-import { 
-  RevaReportPDF, 
-  RevaReceiptPDF 
+import {
+  RevaReportPDF,
+  RevaReceiptPDF,
 } from "@/app/(projects)/reva-restricted/dashboard/details/components";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 
@@ -72,7 +78,7 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
       {loading ? "Generating PDF..." : "Download Report"}
     </button>
   )}
-</PDFDownloadLink>
+</PDFDownloadLink>;
 ```
 
 ## Integration Steps
@@ -90,7 +96,7 @@ import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/de
   type="receipt"
   disabled={property?.paymentStatus?.toLowerCase() !== "paid"}
   className="max-sm:w-full"
-/>
+/>;
 ```
 
 ### Step 2: Prepare Your Data
@@ -104,11 +110,11 @@ const propertyData = {
   title: "Property Title",
   address: "123 Main Street, Lagos",
   lga: "Ibeju-Lekki",
-  
+
   // Payment Info
   totalCost: 150000,
   paymentStatus: "Paid",
-  
+
   // Report Data (optional, shows only if available)
   report: {
     centroid: "6.5244, 3.3792",
@@ -121,8 +127,8 @@ const propertyData = {
       transactionFlowImg: "/path/to/image.png",
       parcelCheck: "/path/to/image.png",
       // ... other images
-    }
-  }
+    },
+  },
 };
 ```
 
@@ -149,6 +155,7 @@ app/(projects)/reva-restricted/dashboard/details/components/
 ## Required Assets
 
 Make sure these assets exist in `/public/reva/`:
+
 - ✅ `reva_pdf_logo.png` - Main REVA logo
 - ✅ `redIcon.png` - Red icon for information boxes
 
@@ -173,14 +180,18 @@ const styles = StyleSheet.create({
 Add new sections to the report by editing `RevaReportPDF.tsx`:
 
 ```tsx
-{/* New Section */}
-{hasNewData && (
-  <Page size="LETTER" orientation="portrait" style={styles.page}>
-    <HeaderAndFooter />
-    <Text style={styles.heading}>New Section Title</Text>
-    {/* Your content here */}
-  </Page>
-)}
+{
+  /* New Section */
+}
+{
+  hasNewData && (
+    <Page size="LETTER" orientation="portrait" style={styles.page}>
+      <HeaderAndFooter />
+      <Text style={styles.heading}>New Section Title</Text>
+      {/* Your content here */}
+    </Page>
+  );
+}
 ```
 
 ### Modify Receipt Layout
@@ -199,7 +210,8 @@ Edit `RevaReceiptPDF.tsx` to change the receipt design:
 ### PDFs Not Generating
 
 **Issue**: PDF download button doesn't work
-**Solution**: 
+**Solution**:
+
 1. Check browser console for errors
 2. Verify `@react-pdf/renderer` is installed: `npm install @react-pdf/renderer`
 3. Ensure all required data fields are present
@@ -208,6 +220,7 @@ Edit `RevaReceiptPDF.tsx` to change the receipt design:
 
 **Issue**: Images don't appear in the PDF
 **Solution**:
+
 1. Verify image URLs are absolute paths
 2. Check that images are accessible (not blocked by CORS)
 3. Ensure images are in supported formats (PNG, JPG, WEBP)
@@ -216,6 +229,7 @@ Edit `RevaReceiptPDF.tsx` to change the receipt design:
 
 **Issue**: PDF styling looks wrong
 **Solution**:
+
 1. Remember @react-pdf/renderer uses a subset of CSS
 2. Use `StyleSheet.create()` for all styles
 3. Avoid using standard CSS properties not supported by @react-pdf/renderer
@@ -232,6 +246,7 @@ Edit `RevaReceiptPDF.tsx` to change the receipt design:
 ### Future Enhancements
 
 Consider adding:
+
 - [ ] Email integration (auto-send PDFs to clients)
 - [ ] QR codes for verification
 - [ ] Digital signatures
@@ -242,6 +257,7 @@ Consider adding:
 ## Support
 
 For questions or issues:
+
 - Check the [README.md](./README.md) for detailed documentation
 - Review [SAMPLES_ANALYSIS.md](./SAMPLES_ANALYSIS.md) for design reference
 - Contact: reva@twonodetechnologies.com

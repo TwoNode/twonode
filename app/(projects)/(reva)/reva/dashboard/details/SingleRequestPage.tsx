@@ -19,10 +19,7 @@ import {
 
 import { PropertyWithoutUser } from "@/reva/services/propertyRequestService";
 import Link from "next/link";
-import {
-  notifyInfo,
-  notifyWarning,
-} from "@/utils/notify";
+import { notifyInfo, notifyWarning } from "@/utils/notify";
 import { PDFDownloadButton } from "@/app/(projects)/(reva)/reva-restricted/dashboard/details/components/PDFDownloadButton";
 import { SecureDownloadDialog } from "@/reva/components/SecureDownloadDialog";
 
@@ -202,7 +199,9 @@ const SingleRequestPage = ({
         {/* Site Images */}
         <Card className="overflow-hidden border-none shadow-md">
           <CardHeader className="bg-linear-to-r from-yellow-50 to-orange-50 border-b dark:from-background dark:to-background">
-            <CardTitle className="text-xl text-gray-800 dark:text-gray-200">Site Images</CardTitle>
+            <CardTitle className="text-xl text-gray-800 dark:text-gray-200">
+              Site Images
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {Array.isArray(property?.site_images) &&
@@ -439,7 +438,9 @@ const Info = ({
   color?: string;
 }) => (
   <div className="bg-white dark:bg-surface p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{label}</p>
+    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+      {label}
+    </p>
     <p
       className={`text-base ${bold ? "font-semibold" : ""} ${
         color || "text-gray-900"

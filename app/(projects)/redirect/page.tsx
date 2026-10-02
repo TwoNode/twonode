@@ -16,8 +16,8 @@ export default async function RedirectPage({ searchParams }: PageProps) {
     (typeof params?.redirectionPage === "string"
       ? params.redirectionPage
       : Array.isArray(params.redirectionPage)
-      ? params.redirectionPage[0]
-      : null) || "/";
+        ? params.redirectionPage[0]
+        : null) || "/";
 
   return (
     <Suspense

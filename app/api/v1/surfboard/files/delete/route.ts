@@ -6,12 +6,18 @@ import { validateCSRF } from "@/lib/auth/csrf";
 import { deleteSurfboardFileFromS3 } from "@/surfboard/services/awsService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
-const schema = z.object({ key: z.string().optional(), url: z.string().optional() });
+const schema = z.object({
+  key: z.string().optional(),
+  url: z.string().optional(),
+});
 
 export const POST = withAuth<SurfboardRole>(
   async (req) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const body = await validateBody(req, schema);
     await deleteSurfboardFileFromS3(body);

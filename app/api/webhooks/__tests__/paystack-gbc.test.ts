@@ -14,14 +14,20 @@ const mockPrisma = vi.hoisted(() => ({ gBCTicket: { findMany: vi.fn() } }));
 const mockVerifyPayment = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
-vi.mock("@/gbc/services/ticketService", () => ({ verifyPayment: mockVerifyPayment }));
+vi.mock("@/gbc/services/ticketService", () => ({
+  verifyPayment: mockVerifyPayment,
+}));
 vi.mock("@/reva/services/propertyRequestService", () => ({
   updatePropertyTransactionStatus: vi.fn(),
   updateOneTimeTransactionStatus: vi.fn(),
 }));
-vi.mock("@/reva/services/notificationService", () => ({ notifyPaymentReceived: vi.fn() }));
+vi.mock("@/reva/services/notificationService", () => ({
+  notifyPaymentReceived: vi.fn(),
+}));
 vi.mock("@/utils/email", () => ({}));
-vi.mock("@/app/(projects)/(surfboard)/utils/computePeriod", () => ({ computePeriodPerTimestamp: vi.fn() }));
+vi.mock("@/app/(projects)/(surfboard)/utils/computePeriod", () => ({
+  computePeriodPerTimestamp: vi.fn(),
+}));
 
 const { handleGBC } = await import("@/app/api/webhooks/paystack/route");
 
@@ -43,7 +49,11 @@ describe("handleGBC", () => {
 
   it("calls ticketService.verifyPayment for a reference with no matching tickets yet (first-ever webhook)", async () => {
     mockPrisma.gBCTicket.findMany.mockResolvedValue([]);
-    await handleGBC("charge.success", { reference: "EB_GBC2_abc123_REF", amount: 100000, metadata: {} } as any);
+    await handleGBC("charge.success", {
+      reference: "EB_GBC2_abc123_REF",
+      amount: 100000,
+      metadata: {},
+    } as any);
     expect(mockVerifyPayment).toHaveBeenCalledWith("EB_GBC2_abc123_REF");
   });
 
@@ -52,7 +62,11 @@ describe("handleGBC", () => {
       { paymentStatus: "COMPLETED" },
       { paymentStatus: "COMPLETED" },
     ]);
-    await handleGBC("charge.success", { reference: "GRP_GBC2_abc123_REF", amount: 250000, metadata: {} } as any);
+    await handleGBC("charge.success", {
+      reference: "GRP_GBC2_abc123_REF",
+      amount: 250000,
+      metadata: {},
+    } as any);
     expect(mockVerifyPayment).not.toHaveBeenCalled();
   });
 
@@ -61,15 +75,25 @@ describe("handleGBC", () => {
       { paymentStatus: "COMPLETED" },
       { paymentStatus: "PENDING" },
     ]);
-    await handleGBC("charge.success", { reference: "GRP_GBC2_abc123_REF", amount: 250000, metadata: {} } as any);
+    await handleGBC("charge.success", {
+      reference: "GRP_GBC2_abc123_REF",
+      amount: 250000,
+      metadata: {},
+    } as any);
     expect(mockVerifyPayment).toHaveBeenCalledWith("GRP_GBC2_abc123_REF");
   });
 
   it("lets verifyPayment's error propagate so the outer handler fails the ledger entry and Paystack retries", async () => {
     mockPrisma.gBCTicket.findMany.mockResolvedValue([]);
-    mockVerifyPayment.mockRejectedValue(new Error("Payment verification failed"));
+    mockVerifyPayment.mockRejectedValue(
+      new Error("Payment verification failed")
+    );
     await expect(
-      handleGBC("charge.success", { reference: "EB_GBC2_bad_REF", amount: 100000, metadata: {} } as any)
+      handleGBC("charge.success", {
+        reference: "EB_GBC2_bad_REF",
+        amount: 100000,
+        metadata: {},
+      } as any)
     ).rejects.toThrow("Payment verification failed");
   });
 });

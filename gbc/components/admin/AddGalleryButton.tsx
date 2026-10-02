@@ -17,7 +17,10 @@ import { Plus, Loader2, Image, Video } from "lucide-react";
 import { toast } from "sonner";
 import { gbcApi } from "@/gbc/apiClient";
 import { Switch } from "@/components/ui/switch";
-import { EditionSelect, useEditions } from "@/gbc/components/admin/EditionSelect";
+import {
+  EditionSelect,
+  useEditions,
+} from "@/gbc/components/admin/EditionSelect";
 
 export function AddGalleryButton() {
   const [open, setOpen] = useState(false);
@@ -33,7 +36,9 @@ export function AddGalleryButton() {
   // list has rendered — see the Radix note on EditionSelect.
   useEffect(() => {
     if (editions.length === 0 || edition) return;
-    setEdition(editions.find((e) => e.status === "ACTIVE")?.key ?? editions[0].key);
+    setEdition(
+      editions.find((e) => e.status === "ACTIVE")?.key ?? editions[0].key
+    );
   }, [editions, edition]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -74,7 +79,10 @@ export function AddGalleryButton() {
         return;
       }
 
-      const uploadResult = await gbcApi.uploads.file("gallery-media", mediaFile);
+      const uploadResult = await gbcApi.uploads.file(
+        "gallery-media",
+        mediaFile
+      );
 
       if (!uploadResult.success || !uploadResult.data) {
         toast.error("Failed to upload media");

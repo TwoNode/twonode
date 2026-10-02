@@ -126,7 +126,7 @@ describe("createTicket", () => {
         gender: "MALE",
         profession: "OTHER",
         ticketType: "EARLY_BIRD",
-      } as any),
+      } as any)
     ).rejects.toMatchObject({ status: 409 });
   });
 
@@ -139,7 +139,7 @@ describe("createTicket", () => {
         gender: "MALE",
         profession: "X",
         ticketType: "COMPANY",
-      } as any),
+      } as any)
     ).rejects.toMatchObject({ status: 400 });
   });
 
@@ -271,7 +271,7 @@ describe("lookupMyTicket", () => {
   it("throws NotFoundError on any mismatch (never distinguishes which field)", async () => {
     mockPrisma.gBCTicket.findFirst.mockResolvedValue(null);
     await expect(
-      lookupMyTicket("GBC2_X", "nope@test.com"),
+      lookupMyTicket("GBC2_X", "nope@test.com")
     ).rejects.toMatchObject({ status: 404 });
   });
 
@@ -308,47 +308,98 @@ describe("getTicketByNumber", () => {
 });
 
 describe("capacity and settings are per edition", () => {
-  const editionKeyOfCounts = () => mockPrisma.gBCTicket.count.mock.calls.map((c) => c[0]?.where?.edition);
+  const editionKeyOfCounts = () =>
+    mockPrisma.gBCTicket.count.mock.calls.map((c) => c[0]?.where?.edition);
 
   it("createTicket reads the settings of, and counts sales in, the edition it will sell under", async () => {
-    mockPrisma.gBCEdition.findFirst.mockResolvedValue({ key: "3.0", status: "ACTIVE", ticketPrefix: "GBC3" });
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue({
+      key: "3.0",
+      status: "ACTIVE",
+      ticketPrefix: "GBC3",
+    });
     mockPrisma.gBCTicket.count.mockResolvedValue(0);
-    mockPrisma.gBCTicket.create.mockResolvedValue({ id: "t1", ticketNumber: "GBC3_ABC" });
+    mockPrisma.gBCTicket.create.mockResolvedValue({
+      id: "t1",
+      ticketNumber: "GBC3_ABC",
+    });
     mockPrisma.gBCTicket.update.mockResolvedValue({});
 
-    await createTicket({ name: "A", email: "a@test.com", gender: "MALE", profession: "OTHER", ticketType: "EARLY_BIRD" } as any);
+    await createTicket({
+      name: "A",
+      email: "a@test.com",
+      gender: "MALE",
+      profession: "OTHER",
+      ticketType: "EARLY_BIRD",
+    } as any);
 
     expect(mockSettingsService.getSettings).toHaveBeenCalledWith("3.0");
     // sold-capacity count and early-bird count are both restricted to 3.0
-    expect(mockPrisma.gBCTicket.count).toHaveBeenNthCalledWith(1, { where: { paymentStatus: "COMPLETED", edition: "3.0" } });
+    expect(mockPrisma.gBCTicket.count).toHaveBeenNthCalledWith(1, {
+      where: { paymentStatus: "COMPLETED", edition: "3.0" },
+    });
     expect(mockPrisma.gBCTicket.count).toHaveBeenNthCalledWith(2, {
-      where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD", edition: "3.0" },
+      where: {
+        paymentStatus: "COMPLETED",
+        ticketType: "EARLY_BIRD",
+        edition: "3.0",
+      },
     });
   });
 
   it("another edition's sales don't count against this edition's capacity", async () => {
     // 2.0 sold 1000 (its full capacity); 3.0 has sold nothing, so a 3.0 purchase must go through.
-    mockPrisma.gBCEdition.findFirst.mockResolvedValue({ key: "3.0", status: "ACTIVE", ticketPrefix: "GBC3" });
-    mockPrisma.gBCTicket.count.mockImplementation(async ({ where }) => (where.edition === "2.0" ? 1000 : 0));
-    mockPrisma.gBCTicket.create.mockResolvedValue({ id: "t1", ticketNumber: "GBC3_ABC" });
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue({
+      key: "3.0",
+      status: "ACTIVE",
+      ticketPrefix: "GBC3",
+    });
+    mockPrisma.gBCTicket.count.mockImplementation(async ({ where }) =>
+      where.edition === "2.0" ? 1000 : 0
+    );
+    mockPrisma.gBCTicket.create.mockResolvedValue({
+      id: "t1",
+      ticketNumber: "GBC3_ABC",
+    });
     mockPrisma.gBCTicket.update.mockResolvedValue({});
 
     await expect(
-      createTicket({ name: "A", email: "a@test.com", gender: "MALE", profession: "OTHER", ticketType: "EARLY_BIRD" } as any)
+      createTicket({
+        name: "A",
+        email: "a@test.com",
+        gender: "MALE",
+        profession: "OTHER",
+        ticketType: "EARLY_BIRD",
+      } as any)
     ).resolves.toBeDefined();
   });
 
   it("still reports sold out when this edition's own capacity is used up", async () => {
-    mockPrisma.gBCEdition.findFirst.mockResolvedValue({ key: "3.0", status: "ACTIVE", ticketPrefix: "GBC3" });
-    mockPrisma.gBCTicket.count.mockImplementation(async ({ where }) => (where.edition === "3.0" ? 1000 : 0));
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue({
+      key: "3.0",
+      status: "ACTIVE",
+      ticketPrefix: "GBC3",
+    });
+    mockPrisma.gBCTicket.count.mockImplementation(async ({ where }) =>
+      where.edition === "3.0" ? 1000 : 0
+    );
 
     await expect(
-      createTicket({ name: "A", email: "a@test.com", gender: "MALE", profession: "OTHER", ticketType: "EARLY_BIRD" } as any)
+      createTicket({
+        name: "A",
+        email: "a@test.com",
+        gender: "MALE",
+        profession: "OTHER",
+        ticketType: "EARLY_BIRD",
+      } as any)
     ).rejects.toMatchObject({ status: 409 });
   });
 
   it("the public availability is the selling edition's, not the all-time total", async () => {
-    mockPrisma.gBCEdition.findFirst.mockResolvedValue({ key: "3.0", status: "ACTIVE", ticketPrefix: "GBC3" });
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue({
+      key: "3.0",
+      status: "ACTIVE",
+      ticketPrefix: "GBC3",
+    });
     mockPrisma.gBCTicket.count.mockResolvedValue(5);
 
     await getTicketAvailability();
@@ -411,7 +462,7 @@ describe("checkInTicket", () => {
   it("throws NotFoundError for an unknown ticket number", async () => {
     mockPrisma.gBCTicket.findUnique.mockResolvedValue(null);
     await expect(
-      checkInTicket("GBC2_NOPE", "admin@test.com"),
+      checkInTicket("GBC2_NOPE", "admin@test.com")
     ).rejects.toMatchObject({ status: 404 });
   });
 
@@ -421,7 +472,7 @@ describe("checkInTicket", () => {
       checkedIn: false,
     });
     await expect(
-      checkInTicket("GBC2_X", "admin@test.com"),
+      checkInTicket("GBC2_X", "admin@test.com")
     ).rejects.toMatchObject({ status: 409 });
   });
 
@@ -432,7 +483,7 @@ describe("checkInTicket", () => {
       checkedInAt: new Date(),
     });
     await expect(
-      checkInTicket("GBC2_X", "admin@test.com"),
+      checkInTicket("GBC2_X", "admin@test.com")
     ).rejects.toMatchObject({ status: 409 });
   });
 
@@ -492,8 +543,15 @@ describe("getTicketsPaginated", () => {
       skip: 20,
       take: 10,
     });
-    expect(mockPrisma.gBCTicket.count).toHaveBeenCalledWith({ where: expectedWhere });
-    expect(result.pagination).toEqual({ page: 3, pageSize: 10, total: 45, totalPages: 5 });
+    expect(mockPrisma.gBCTicket.count).toHaveBeenCalledWith({
+      where: expectedWhere,
+    });
+    expect(result.pagination).toEqual({
+      page: 3,
+      pageSize: 10,
+      total: 45,
+      totalPages: 5,
+    });
   });
 
   it("treats checkedIn=false as a real filter, not as 'unset'", async () => {
@@ -502,7 +560,9 @@ describe("getTicketsPaginated", () => {
 
     await getTicketsPaginated({ page: 1, pageSize: 10, checkedIn: false });
 
-    expect(mockPrisma.gBCTicket.count).toHaveBeenCalledWith({ where: { checkedIn: false } });
+    expect(mockPrisma.gBCTicket.count).toHaveBeenCalledWith({
+      where: { checkedIn: false },
+    });
   });
 
   it("omits filters that weren't supplied", async () => {
@@ -515,12 +575,16 @@ describe("getTicketsPaginated", () => {
   });
 
   it("falls back to the last real page when the requested page is past the end", async () => {
-    mockPrisma.gBCTicket.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: "last" }]);
+    mockPrisma.gBCTicket.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: "last" }]);
     mockPrisma.gBCTicket.count.mockResolvedValue(11);
 
     const result = await getTicketsPaginated({ page: 7, pageSize: 10 });
 
-    expect(mockPrisma.gBCTicket.findMany).toHaveBeenLastCalledWith(expect.objectContaining({ skip: 10, take: 10 }));
+    expect(mockPrisma.gBCTicket.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({ skip: 10, take: 10 })
+    );
     expect(result.data).toEqual([{ id: "last" }]);
     expect(result.pagination.page).toBe(2);
   });
@@ -528,9 +592,16 @@ describe("getTicketsPaginated", () => {
 
 describe("getTicketNumbers", () => {
   it("returns only ticket numbers for the filtered set, unpaginated", async () => {
-    mockPrisma.gBCTicket.findMany.mockResolvedValue([{ ticketNumber: "GBC2-1" }, { ticketNumber: "GBC2-2" }]);
+    mockPrisma.gBCTicket.findMany.mockResolvedValue([
+      { ticketNumber: "GBC2-1" },
+      { ticketNumber: "GBC2-2" },
+    ]);
 
-    const numbers = await getTicketNumbers({ status: "COMPLETED", checkedIn: true, edition: "2.0" });
+    const numbers = await getTicketNumbers({
+      status: "COMPLETED",
+      checkedIn: true,
+      edition: "2.0",
+    });
 
     expect(numbers).toEqual(["GBC2-1", "GBC2-2"]);
     expect(mockPrisma.gBCTicket.findMany).toHaveBeenCalledWith({
@@ -550,8 +621,15 @@ describe("getAttendeeStats", () => {
 
     const stats = await getAttendeeStats();
 
-    expect(stats).toEqual({ total: 50, checkedIn: 32, pending: 18, certificatesSent: 20 });
-    expect(mockPrisma.gBCTicket.count).toHaveBeenCalledWith({ where: { paymentStatus: "COMPLETED" } });
+    expect(stats).toEqual({
+      total: 50,
+      checkedIn: 32,
+      pending: 18,
+      certificatesSent: 20,
+    });
+    expect(mockPrisma.gBCTicket.count).toHaveBeenCalledWith({
+      where: { paymentStatus: "COMPLETED" },
+    });
     expect(mockPrisma.gBCTicket.count).toHaveBeenCalledWith({
       where: { paymentStatus: "COMPLETED", checkedIn: true },
     });
@@ -566,7 +644,10 @@ describe("getAttendeeStats", () => {
     await getAttendeeStats("1.0");
 
     for (const [args] of mockPrisma.gBCTicket.count.mock.calls) {
-      expect(args.where).toMatchObject({ paymentStatus: "COMPLETED", edition: "1.0" });
+      expect(args.where).toMatchObject({
+        paymentStatus: "COMPLETED",
+        edition: "1.0",
+      });
     }
   });
 });

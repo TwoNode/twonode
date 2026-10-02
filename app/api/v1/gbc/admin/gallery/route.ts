@@ -3,7 +3,10 @@ import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
 import { gallerySchema } from "@/gbc/utils/validations";
-import { getAllGalleryItems, createGalleryItem } from "@/gbc/services/cmsService";
+import {
+  getAllGalleryItems,
+  createGalleryItem,
+} from "@/gbc/services/cmsService";
 import { Platform, GBCRole } from "@/utils/platform";
 
 export const GET = withAuth<GBCRole>(
@@ -18,7 +21,10 @@ export const GET = withAuth<GBCRole>(
 export const POST = withAuth<GBCRole>(
   async (req) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const data = await validateBody(req, gallerySchema);
     const item = await createGalleryItem(data);

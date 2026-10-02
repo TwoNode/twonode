@@ -202,7 +202,9 @@ export function GenericLoadingSpinner({
         <div className="w-16 h-16 border-4 border-blue-100 rounded-full"></div>
         <div className="w-16 h-16 border-4 border-blue-600 rounded-full border-t-transparent animate-spin absolute top-0 left-0"></div>
       </div>
-      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{message}</p>
+      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        {message}
+      </p>
     </div>
   );
 }

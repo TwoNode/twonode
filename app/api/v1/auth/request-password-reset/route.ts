@@ -4,7 +4,11 @@ import { z } from "zod";
 import { Platform } from "@/utils/platform";
 import prisma from "@/lib/prisma";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { checkRateLimit, recordAttempt, getClientIp } from "@/lib/auth/rateLimit";
+import {
+  checkRateLimit,
+  recordAttempt,
+  getClientIp,
+} from "@/lib/auth/rateLimit";
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
 import { findUserByEmail } from "@/lib/auth/userLookup";
@@ -39,7 +43,10 @@ function genericResponse() {
 export async function POST(req: NextRequest) {
   try {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
 
     const { platform, email } = await validateBody(req, requestSchema);
@@ -56,7 +63,10 @@ export async function POST(req: NextRequest) {
     const user = await findUserByEmail(platform, email);
     if (user && user.isActive) {
       const rawToken = crypto.randomBytes(32).toString("hex");
-      const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(rawToken)
+        .digest("hex");
 
       await prisma.passwordResetToken.create({
         data: {
@@ -67,7 +77,9 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com";
+      const siteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL ||
+        "https://www.twonodetechnologies.com";
       const resetPath =
         platform === Platform.SURFBOARD
           ? "/surfboard/reset-password"
@@ -104,6 +116,9 @@ export async function POST(req: NextRequest) {
 
     return genericResponse();
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

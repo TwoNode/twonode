@@ -53,10 +53,7 @@ export function getRemitaEnv(): RemitaEnv {
  * Generate API hash for Remita Biller API authentication
  * Hash = SHA512(publicKey + requestId + secretKey)
  */
-function generateBillerApiHash(
-  env: RemitaEnv,
-  requestId: string
-): string {
+function generateBillerApiHash(env: RemitaEnv, requestId: string): string {
   const hashString = `${env.publicKey}${requestId}${env.secretKey}`;
   return crypto.createHash("sha512").update(hashString).digest("hex");
 }
@@ -125,7 +122,12 @@ export async function generateRRR(
     description: params.description,
   };
 
-  console.log("\n\n\n\n\n\n Remita request body:", requestBody, env, "\n\n\n\n\n\n");
+  console.log(
+    "\n\n\n\n\n\n Remita request body:",
+    requestBody,
+    env,
+    "\n\n\n\n\n\n"
+  );
 
   try {
     // Use the correct Remita Biller API endpoint
@@ -133,20 +135,16 @@ export async function generateRRR(
 
     console.log("Remita API URL:", url);
 
-    const response = await axios.post(
-      url,
-      requestBody,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `remitaConsumerKey=${env.publicKey},remitaConsumerToken=${apiHash}`,
-        },
-        timeout: 30000,
-        // Prevent redirects from changing POST to GET
-        maxRedirects: 0,
-        validateStatus: (status) => status < 400 || status === 303,
-      }
-    );
+    const response = await axios.post(url, requestBody, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `remitaConsumerKey=${env.publicKey},remitaConsumerToken=${apiHash}`,
+      },
+      timeout: 30000,
+      // Prevent redirects from changing POST to GET
+      maxRedirects: 0,
+      validateStatus: (status) => status < 400 || status === 303,
+    });
 
     // Remita returns JSONP-style response, need to parse it
     let data = response.data;
@@ -167,7 +165,8 @@ export async function generateRRR(
       };
     } else {
       throw new Error(
-        `RRR generation failed: ${data.statusMessage || data.status || "Unknown error"
+        `RRR generation failed: ${
+          data.statusMessage || data.status || "Unknown error"
         }`
       );
     }
@@ -274,8 +273,8 @@ export async function fetchRemitaReceiptPdf(rrr: string): Promise<Buffer> {
   // const env = getRemitaEnv();
   // Construct the URL. Note: The user provided URL structure seems to confirm it's under the base URL.
   // We'll use the environment's base URL to support demo/live, assuming the path is consistent.
-  // If the user's provided link is constant regardless of env, we might need to stick to the specific one, 
-  // but usually it depends on the environment. 
+  // If the user's provided link is constant regardless of env, we might need to stick to the specific one,
+  // but usually it depends on the environment.
   // User provided: "https://login.remita.net/remita/exapp/api/v1/send/api/print/billsvc/biller/191392819355/printrecieptRequest.pdf"
 
   // Clean RRR just in case
@@ -300,7 +299,11 @@ export async function fetchRemitaReceiptPdf(rrr: string): Promise<Buffer> {
     return Buffer.from(response.data);
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error("Error fetching Remita PDF:", error.message, error.response?.status);
+      console.error(
+        "Error fetching Remita PDF:",
+        error.message,
+        error.response?.status
+      );
       throw new Error(`Failed to download Remita Receipt: ${error.message}`);
     }
     throw error;

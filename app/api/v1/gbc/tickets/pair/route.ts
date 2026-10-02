@@ -22,6 +22,9 @@ export async function POST(req: NextRequest) {
     const result = await createPairTicket(attendees);
     return NextResponse.json({ success: true, data: result });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

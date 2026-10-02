@@ -41,7 +41,8 @@ export function GalleryGrid({ items, editions }: GalleryGridProps) {
     }
     group.items.push(item);
   }
-  const editionName = (key: string) => editions.find((e) => e.key === key)?.name ?? `Edition ${key}`;
+  const editionName = (key: string) =>
+    editions.find((e) => e.key === key)?.name ?? `Edition ${key}`;
 
   async function handleDelete(id: string) {
     setIsDeleting(true);

@@ -10,7 +10,10 @@ import { Platform, GBCRole } from "@/utils/platform";
 export const POST = withAuth<GBCRole>(
   async (req) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const data = await validateBody(req, partnerSchema);
     const partner = await createPartner(data);

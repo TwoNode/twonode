@@ -1,4 +1,9 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Readable } from "stream";
 
@@ -21,14 +26,20 @@ import { Readable } from "stream";
 const s3 = new S3Client({
   region: process.env.SURFBOARD_AWS_REGION || process.env.REVA_AWS_REGION!,
   credentials: {
-    accessKeyId: process.env.SURFBOARD_AWS_ACCESS_KEY_ID || process.env.REVA_AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.SURFBOARD_AWS_SECRET_ACCESS_KEY || process.env.REVA_AWS_SECRET_ACCESS_KEY!,
+    accessKeyId:
+      process.env.SURFBOARD_AWS_ACCESS_KEY_ID ||
+      process.env.REVA_AWS_ACCESS_KEY_ID!,
+    secretAccessKey:
+      process.env.SURFBOARD_AWS_SECRET_ACCESS_KEY ||
+      process.env.REVA_AWS_SECRET_ACCESS_KEY!,
   },
   endpoint: `https://s3.${process.env.SURFBOARD_AWS_REGION || process.env.REVA_AWS_REGION}.amazonaws.com`,
   forcePathStyle: true,
 });
 const REGION = process.env.SURFBOARD_AWS_REGION || process.env.REVA_AWS_REGION;
-const BUCKET = process.env.SURFBOARD_AWS_BUCKET_NAME || (process.env.REVA_AWS_BUCKET_NAME as string);
+const BUCKET =
+  process.env.SURFBOARD_AWS_BUCKET_NAME ||
+  (process.env.REVA_AWS_BUCKET_NAME as string);
 
 export async function uploadSurfboardFileToS3(
   file: File,
@@ -40,8 +51,12 @@ export async function uploadSurfboardFileToS3(
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    const uniqueSuffix = planNumber ? `${planNumber}__${Date.now()}` : `${Date.now()}__${Math.random().toString(36).substring(2, 15)}`;
-    const prefix = userId ? `surfboard/${userId}/${fileType}` : `surfboard/${fileType}`;
+    const uniqueSuffix = planNumber
+      ? `${planNumber}__${Date.now()}`
+      : `${Date.now()}__${Math.random().toString(36).substring(2, 15)}`;
+    const prefix = userId
+      ? `surfboard/${userId}/${fileType}`
+      : `surfboard/${fileType}`;
     const key = `${prefix}/${uniqueSuffix}__${filename || file.name}`;
 
     await s3.send(
@@ -64,7 +79,9 @@ export async function uploadSurfboardFileToS3(
     return { url: fileUrl, key, originalName: file.name };
   } catch (error) {
     console.error(`Error uploading ${fileType} file to S3:`, error);
-    throw new Error(`Failed to upload ${fileType} file to S3: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Failed to upload ${fileType} file to S3: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
   }
 }
 
@@ -83,13 +100,21 @@ export async function getPresignedUploadUrl(
   contentType: string,
   planNumber?: string
 ) {
-  const uniqueSuffix = planNumber ? `${planNumber}__${Date.now()}` : `${Date.now()}__${Math.random().toString(36).substring(2, 15)}`;
-  const prefix = userId ? `surfboard/${userId}/${fileType}` : `surfboard/${fileType}`;
+  const uniqueSuffix = planNumber
+    ? `${planNumber}__${Date.now()}`
+    : `${Date.now()}__${Math.random().toString(36).substring(2, 15)}`;
+  const prefix = userId
+    ? `surfboard/${userId}/${fileType}`
+    : `surfboard/${fileType}`;
   const key = `${prefix}/${uniqueSuffix}__${fileName}`;
 
   const uploadUrl = await getSignedUrl(
     s3,
-    new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType }),
+    new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      ContentType: contentType,
+    }),
     { expiresIn: 300 }
   );
   const fileUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${key}`;
@@ -106,13 +131,19 @@ export async function uploadSurfboardFileWithAuth(
   return uploadSurfboardFileToS3(file, fileType, userId, planNumber, file.name);
 }
 
-export async function deleteSurfboardFileFromS3(input: { key?: string; url?: string }) {
+export async function deleteSurfboardFileFromS3(input: {
+  key?: string;
+  url?: string;
+}) {
   const { key, url } = input;
   let objectKey = key;
 
   if (!objectKey && url) {
-    const bucketName = process.env.SURFBOARD_AWS_BUCKET_NAME || process.env.REVA_AWS_BUCKET_NAME!;
-    const region = process.env.SURFBOARD_AWS_REGION || process.env.REVA_AWS_REGION!;
+    const bucketName =
+      process.env.SURFBOARD_AWS_BUCKET_NAME ||
+      process.env.REVA_AWS_BUCKET_NAME!;
+    const region =
+      process.env.SURFBOARD_AWS_REGION || process.env.REVA_AWS_REGION!;
     const bucketHost = `${bucketName}.s3.${region}.amazonaws.com/`;
     const idx = url.indexOf(bucketHost);
     if (idx === -1) throw new Error("Invalid S3 URL format");
@@ -125,19 +156,27 @@ export async function deleteSurfboardFileFromS3(input: { key?: string; url?: str
   try {
     await s3.send(
       new DeleteObjectCommand({
-        Bucket: process.env.SURFBOARD_AWS_BUCKET_NAME || process.env.REVA_AWS_BUCKET_NAME!,
+        Bucket:
+          process.env.SURFBOARD_AWS_BUCKET_NAME ||
+          process.env.REVA_AWS_BUCKET_NAME!,
         Key: objectKey,
       })
     );
   } catch (error) {
     console.error("Error deleting file from S3:", error);
-    throw new Error(`Failed to delete file from S3: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Failed to delete file from S3: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
   }
 }
 
-export async function deleteMultipleSurfboardFilesFromS3(items: { key?: string; url?: string }[]) {
-  const bucket = process.env.SURFBOARD_AWS_BUCKET_NAME || process.env.REVA_AWS_BUCKET_NAME!;
-  const region = process.env.SURFBOARD_AWS_REGION || process.env.REVA_AWS_REGION!;
+export async function deleteMultipleSurfboardFilesFromS3(
+  items: { key?: string; url?: string }[]
+) {
+  const bucket =
+    process.env.SURFBOARD_AWS_BUCKET_NAME || process.env.REVA_AWS_BUCKET_NAME!;
+  const region =
+    process.env.SURFBOARD_AWS_REGION || process.env.REVA_AWS_REGION!;
   const bucketHost = `${bucket}.s3.${region}.amazonaws.com/`;
 
   const keys = items
@@ -155,10 +194,17 @@ export async function deleteMultipleSurfboardFilesFromS3(items: { key?: string; 
   if (keys.length === 0) throw new Error("No valid keys or URLs provided");
 
   try {
-    await s3.send(new DeleteObjectsCommand({ Bucket: bucket, Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: false } }));
+    await s3.send(
+      new DeleteObjectsCommand({
+        Bucket: bucket,
+        Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: false },
+      })
+    );
   } catch (error) {
     console.error("Error deleting multiple files from S3:", error);
-    throw new Error(`Failed to delete files from S3: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Failed to delete files from S3: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
   }
 }
 
@@ -166,8 +212,12 @@ export async function deleteMultipleSurfboardFilesFromS3WithUrl(
   files: Array<string | { url: string }>
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const normalizedFiles = files.map((file) => ({ url: typeof file === "string" ? file : file.url }));
-    const bucketName = process.env.SURFBOARD_AWS_BUCKET_NAME || process.env.REVA_AWS_BUCKET_NAME!;
+    const normalizedFiles = files.map((file) => ({
+      url: typeof file === "string" ? file : file.url,
+    }));
+    const bucketName =
+      process.env.SURFBOARD_AWS_BUCKET_NAME ||
+      process.env.REVA_AWS_BUCKET_NAME!;
 
     const deletePromises = normalizedFiles.map(({ url }) => {
       if (!url) return Promise.resolve();
@@ -186,7 +236,10 @@ export async function deleteMultipleSurfboardFilesFromS3WithUrl(
     return { success: true };
   } catch (error) {
     console.error("Error in deleteMultipleSurfboardFilesFromS3WithUrl:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 
@@ -200,12 +253,17 @@ export interface UploadTarget {
 }
 
 /** Create many presigned-style upload targets (uploads directly server-side, not truly presigned) for a multi-file plan submission. */
-export async function getSurfboardUploadTargetsMulti(userId: string, formData: FormData): Promise<UploadTarget[]> {
+export async function getSurfboardUploadTargetsMulti(
+  userId: string,
+  formData: FormData
+): Promise<UploadTarget[]> {
   const planNumber = formData.get("planNumber") as string;
   const category = formData.get("category") as UploadCategory;
 
   if (!planNumber || !category) {
-    throw new Error("Missing required fields: planNumber and category are required");
+    throw new Error(
+      "Missing required fields: planNumber and category are required"
+    );
   }
 
   const files: { file: File; name: string; type: string }[] = [];
@@ -214,7 +272,9 @@ export async function getSurfboardUploadTargetsMulti(userId: string, formData: F
   while (formData.has(`file-${index}`)) {
     const file = formData.get(`file-${index}`) as File;
     const name = formData.get(`filename-${index}`) as string;
-    const type = (formData.get(`filetype-${index}`) as string) || "application/octet-stream";
+    const type =
+      (formData.get(`filetype-${index}`) as string) ||
+      "application/octet-stream";
 
     if (file && name) {
       const decodedName = decodeURIComponent(name);
@@ -238,7 +298,9 @@ export async function getSurfboardUploadTargetsMulti(userId: string, formData: F
     }
 
     const prefix = `surfboard/${userId}/${category}`;
-    const key = `${prefix}/${newFilename}`.replace(/^\/+/, "").replace(/\/+/g, "/");
+    const key = `${prefix}/${newFilename}`
+      .replace(/^\/+/, "")
+      .replace(/\/+/g, "/");
 
     try {
       const buffer = Buffer.from(await file.arrayBuffer());
@@ -262,7 +324,9 @@ export async function getSurfboardUploadTargetsMulti(userId: string, formData: F
       targets.push({ key, url: publicUrl, publicUrl });
     } catch (error) {
       console.error(`Error uploading file ${name}:`, error);
-      throw new Error(`Failed to upload file ${name}: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw new Error(
+        `Failed to upload file ${name}: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     }
   }
 
@@ -296,7 +360,9 @@ export async function uploadFile(
       }
       fileBuffer = Buffer.concat(chunks as unknown as readonly Uint8Array[]);
     } else {
-      throw new Error("Unsupported file type. Must be File, Buffer, or Readable");
+      throw new Error(
+        "Unsupported file type. Must be File, Buffer, or Readable"
+      );
     }
 
     const cleanName = (filename || originalName)
@@ -308,10 +374,14 @@ export async function uploadFile(
       .replace(/-+/g, "-")
       .toLowerCase();
 
-    const uniqueSuffix = planNumber ? `${planNumber}__${Date.now()}` : `${Date.now()}__${Math.random().toString(36).substring(2, 8)}`;
+    const uniqueSuffix = planNumber
+      ? `${planNumber}__${Date.now()}`
+      : `${Date.now()}__${Math.random().toString(36).substring(2, 8)}`;
 
     const prefix = `surfboard/${userId}/${fileType}`;
-    const key = `${prefix}/${uniqueSuffix}__${cleanName}`.replace(/\/+/g, "/").replace(/^\/+/, "");
+    const key = `${prefix}/${uniqueSuffix}__${cleanName}`
+      .replace(/\/+/g, "/")
+      .replace(/^\/+/, "");
 
     await s3.send(
       new PutObjectCommand({
@@ -334,6 +404,8 @@ export async function uploadFile(
     return { url: fileUrl, key, originalName: cleanName };
   } catch (error) {
     console.error("Error uploading file to S3:", error);
-    throw new Error(`Failed to upload file to S3: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Failed to upload file to S3: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
   }
 }

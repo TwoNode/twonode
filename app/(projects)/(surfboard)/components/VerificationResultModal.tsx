@@ -14,7 +14,11 @@ interface TraverseCanvasMapProps {
   anchor: any;
 }
 
-export function TraverseCanvasMap({ csvVertices, legResults, anchor }: TraverseCanvasMapProps) {
+export function TraverseCanvasMap({
+  csvVertices,
+  legResults,
+  anchor,
+}: TraverseCanvasMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -58,13 +62,13 @@ export function TraverseCanvasMap({ csvVertices, legResults, anchor }: TraverseC
     ctx.strokeStyle = "#1e293b"; // slate-800
     ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i++) {
-      const x = pad + (W - pad * 2) * i / 4;
+      const x = pad + ((W - pad * 2) * i) / 4;
       ctx.beginPath();
       ctx.moveTo(x, pad);
       ctx.lineTo(x, H - pad);
       ctx.stroke();
 
-      const y = pad + (H - pad * 2) * i / 4;
+      const y = pad + ((H - pad * 2) * i) / 4;
       ctx.beginPath();
       ctx.moveTo(pad, y);
       ctx.lineTo(W - pad, y);
@@ -73,8 +77,18 @@ export function TraverseCanvasMap({ csvVertices, legResults, anchor }: TraverseC
 
     const legStatus: Record<string, boolean> = {};
     (legResults || []).forEach((lr) => {
-      const fromId = lr.fromVertex?.id || lr.fromVertex?.pillarNumber || lr.fromVertex?.pillar || lr.fromVertex?.point || lr.fromVertex?.no;
-      const toId = lr.toVertex?.id || lr.toVertex?.pillarNumber || lr.toVertex?.pillar || lr.toVertex?.point || lr.toVertex?.no;
+      const fromId =
+        lr.fromVertex?.id ||
+        lr.fromVertex?.pillarNumber ||
+        lr.fromVertex?.pillar ||
+        lr.fromVertex?.point ||
+        lr.fromVertex?.no;
+      const toId =
+        lr.toVertex?.id ||
+        lr.toVertex?.pillarNumber ||
+        lr.toVertex?.pillar ||
+        lr.toVertex?.point ||
+        lr.toVertex?.no;
       if (fromId && toId) {
         legStatus[`${fromId}->${toId}`] = lr.accepted;
       }
@@ -95,7 +109,8 @@ export function TraverseCanvasMap({ csvVertices, legResults, anchor }: TraverseC
     for (let i = 0; i < nv; i++) {
       const from = csvVertices[i];
       const to = csvVertices[(i + 1) % nv];
-      const fromId = from.id || from.pillarNumber || from.pillar || from.point || from.no;
+      const fromId =
+        from.id || from.pillarNumber || from.pillar || from.point || from.no;
       const toId = to.id || to.pillarNumber || to.pillar || to.point || to.no;
       const key = `${fromId}->${toId}`;
       const st = legStatus[key];
@@ -122,7 +137,13 @@ export function TraverseCanvasMap({ csvVertices, legResults, anchor }: TraverseC
     // Draw vertices
     csvVertices.forEach((v) => {
       ctx.beginPath();
-      ctx.arc(toX(Number(v.easting)), toY(Number(v.northing)), 5, 0, Math.PI * 2);
+      ctx.arc(
+        toX(Number(v.easting)),
+        toY(Number(v.northing)),
+        5,
+        0,
+        Math.PI * 2
+      );
       ctx.fillStyle = "#10b981"; // emerald-500
       ctx.fill();
 
@@ -130,7 +151,11 @@ export function TraverseCanvasMap({ csvVertices, legResults, anchor }: TraverseC
       ctx.fillStyle = "#cbd5e1"; // slate-300
       ctx.font = "bold 11px monospace";
       const name = v.id || v.pillarNumber || v.pillar || v.point || v.no || "";
-      ctx.fillText(String(name), toX(Number(v.easting)) + 8, toY(Number(v.northing)) - 4);
+      ctx.fillText(
+        String(name),
+        toX(Number(v.easting)) + 8,
+        toY(Number(v.northing)) - 4
+      );
     });
 
     // Draw anchor highlight if present
@@ -166,7 +191,6 @@ export function TraverseCanvasMap({ csvVertices, legResults, anchor }: TraverseC
     ctx.rotate(-Math.PI / 2);
     ctx.fillText(`N: ${maxN.toFixed(0)}`, 0, 0);
     ctx.restore();
-
   }, [csvVertices, legResults, anchor]);
 
   return (
@@ -256,8 +280,8 @@ export function VerificationResultModal({
                   {resultData.overallVerdict === "VERIFIED"
                     ? "VERIFIED - PASS"
                     : resultData.overallVerdict === "REVIEW"
-                    ? "NEEDS REVIEW"
-                    : "NOT VERIFIED - FAIL"}
+                      ? "NEEDS REVIEW"
+                      : "NOT VERIFIED - FAIL"}
                 </h3>
                 <p className="text-sm opacity-80">
                   Overall Match Confidence:{" "}
@@ -269,7 +293,8 @@ export function VerificationResultModal({
 
           {resultData.parcelResults?.map((parcel: any, idx: number) => {
             // Reconstruct vertices from computedLegs
-            const csvVertices = parcel.traverse?.computedLegs?.map((leg: any) => leg.from) || [];
+            const csvVertices =
+              parcel.traverse?.computedLegs?.map((leg: any) => leg.from) || [];
 
             // Compute detailed list of issues
             const issues: string[] = [];
@@ -278,18 +303,42 @@ export function VerificationResultModal({
                 issues.push(`❌ ${e.msg}`);
               });
             }
-            if (parcel.pdfArea !== null && parcel.pdfArea !== undefined && !parcel.areaMatch) {
-              const diffVal = parcel.areaDiff !== null && parcel.areaDiff !== undefined ? parcel.areaDiff.toFixed(4) : "N/A";
-              const csvAreaVal = parcel.csvArea ? parcel.csvArea.toFixed(3) : "N/A";
-              const pdfAreaVal = parcel.pdfArea ? parcel.pdfArea.toFixed(3) : "N/A";
-              issues.push(`❌ Area mismatch: CSV ${csvAreaVal} sq m vs PDF ${pdfAreaVal} sq m (diff ${diffVal} sq m)`);
+            if (
+              parcel.pdfArea !== null &&
+              parcel.pdfArea !== undefined &&
+              !parcel.areaMatch
+            ) {
+              const diffVal =
+                parcel.areaDiff !== null && parcel.areaDiff !== undefined
+                  ? parcel.areaDiff.toFixed(4)
+                  : "N/A";
+              const csvAreaVal = parcel.csvArea
+                ? parcel.csvArea.toFixed(3)
+                : "N/A";
+              const pdfAreaVal = parcel.pdfArea
+                ? parcel.pdfArea.toFixed(3)
+                : "N/A";
+              issues.push(
+                `❌ Area mismatch: CSV ${csvAreaVal} sq m vs PDF ${pdfAreaVal} sq m (diff ${diffVal} sq m)`
+              );
             }
-            
+
             // Check reference coordinate is first vertex
             const firstVertexId = parcel.firstCsvVertexId;
-            const anchorVertexId = parcel.anchor?.vertex?.id || parcel.anchor?.vertex?.pillarNumber || parcel.anchor?.vertex?.pillar || parcel.anchor?.vertex?.point || parcel.anchor?.vertex?.no;
-            if (anchorVertexId && firstVertexId && String(anchorVertexId).trim() !== String(firstVertexId).trim()) {
-              issues.push(`⚠️ The reference coordinate matched CSV vertex ${anchorVertexId} which is not the first coordinate in your CSV (first is ${firstVertexId}). Please reconfirm you have quoted the correct reference coordinate to avoid query from the MDA.`);
+            const anchorVertexId =
+              parcel.anchor?.vertex?.id ||
+              parcel.anchor?.vertex?.pillarNumber ||
+              parcel.anchor?.vertex?.pillar ||
+              parcel.anchor?.vertex?.point ||
+              parcel.anchor?.vertex?.no;
+            if (
+              anchorVertexId &&
+              firstVertexId &&
+              String(anchorVertexId).trim() !== String(firstVertexId).trim()
+            ) {
+              issues.push(
+                `⚠️ The reference coordinate matched CSV vertex ${anchorVertexId} which is not the first coordinate in your CSV (first is ${firstVertexId}). Please reconfirm you have quoted the correct reference coordinate to avoid query from the MDA.`
+              );
             }
 
             if (parcel.pdfArea === null || parcel.pdfArea === undefined) {
@@ -302,7 +351,10 @@ export function VerificationResultModal({
             }
 
             return (
-              <div key={idx} className="bg-white dark:bg-surface rounded-xl shadow-sm border p-6 space-y-6">
+              <div
+                key={idx}
+                className="bg-white dark:bg-surface rounded-xl shadow-sm border p-6 space-y-6"
+              >
                 <h4 className="font-bold text-gray-900 dark:text-white border-b pb-2">
                   Parcel {parcel.parcelIndex}
                 </h4>
@@ -338,20 +390,31 @@ export function VerificationResultModal({
                     </h5>
                     <div className="bg-gray-50 dark:bg-white/5 border rounded-lg p-3 text-sm font-mono flex flex-wrap gap-4">
                       <div>
-                        <span className="text-gray-500 dark:text-gray-400">Ref:</span> E{" "}
-                        {parcel.anchor.ref.easting} · N{" "}
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Ref:
+                        </span>{" "}
+                        E {parcel.anchor.ref.easting} · N{" "}
                         {parcel.anchor.ref.northing}
                       </div>
                       <div>
-                        <span className="text-gray-500 dark:text-gray-400">Vertex:</span>{" "}
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Vertex:
+                        </span>{" "}
                         <span className="text-blue-600 font-bold">
-                          {parcel.anchor.vertex.id || parcel.anchor.vertex.pillarNumber || parcel.anchor.vertex.pillar || parcel.anchor.vertex.point || parcel.anchor.vertex.no || "Anchor"}
+                          {parcel.anchor.vertex.id ||
+                            parcel.anchor.vertex.pillarNumber ||
+                            parcel.anchor.vertex.pillar ||
+                            parcel.anchor.vertex.point ||
+                            parcel.anchor.vertex.no ||
+                            "Anchor"}
                         </span>{" "}
                         (E {parcel.anchor.vertex.easting} · N{" "}
                         {parcel.anchor.vertex.northing})
                       </div>
                       <div>
-                        <span className="text-gray-500 dark:text-gray-400">Residual:</span>{" "}
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Residual:
+                        </span>{" "}
                         {parcel.anchor.residual.toFixed(3)}m
                       </div>
                     </div>
@@ -369,62 +432,111 @@ export function VerificationResultModal({
                         <thead className="bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 text-xs uppercase">
                           <tr>
                             <th className="px-4 py-2 border-b">Leg</th>
-                            <th className="px-4 py-2 border-b text-center" colSpan={2}>
+                            <th
+                              className="px-4 py-2 border-b text-center"
+                              colSpan={2}
+                            >
                               Computed (CSV)
                             </th>
-                            <th className="px-4 py-2 border-b text-center" colSpan={2}>
+                            <th
+                              className="px-4 py-2 border-b text-center"
+                              colSpan={2}
+                            >
                               Extracted (PDF)
                             </th>
-                            <th className="px-4 py-2 border-b text-center">Status</th>
+                            <th className="px-4 py-2 border-b text-center">
+                              Status
+                            </th>
                           </tr>
                           <tr className="bg-gray-50 dark:bg-white/5">
                             <th className="px-4 py-1 border-b text-gray-400 dark:text-gray-500"></th>
-                            <th className="px-4 py-1 border-b text-center text-gray-500 dark:text-gray-400 font-normal">WCB</th>
-                            <th className="px-4 py-1 border-b text-center text-gray-500 dark:text-gray-400 font-normal">Dist</th>
-                            <th className="px-4 py-1 border-b text-center text-gray-500 dark:text-gray-400 font-normal">WCB</th>
-                            <th className="px-4 py-1 border-b text-center text-gray-500 dark:text-gray-400 font-normal">Dist</th>
+                            <th className="px-4 py-1 border-b text-center text-gray-500 dark:text-gray-400 font-normal">
+                              WCB
+                            </th>
+                            <th className="px-4 py-1 border-b text-center text-gray-500 dark:text-gray-400 font-normal">
+                              Dist
+                            </th>
+                            <th className="px-4 py-1 border-b text-center text-gray-500 dark:text-gray-400 font-normal">
+                              WCB
+                            </th>
+                            <th className="px-4 py-1 border-b text-center text-gray-500 dark:text-gray-400 font-normal">
+                              Dist
+                            </th>
                             <th className="px-4 py-1 border-b"></th>
                           </tr>
                         </thead>
                         <tbody>
-                          {parcel.traverse.legResults.map((lr: any, i: number) => (
-                            <tr key={i} className="border-b last:border-b-0 hover:bg-gray-50">
-                              <td className="px-4 py-2 font-bold text-gray-700 dark:text-gray-300">
-                                {(lr.fromVertex?.id || lr.fromVertex?.pillarNumber || lr.fromVertex?.pillar || lr.fromVertex?.point || lr.fromVertex?.no || "?")} → {(lr.toVertex?.id || lr.toVertex?.pillarNumber || lr.toVertex?.pillar || lr.toVertex?.point || lr.toVertex?.no || "?")}
-                              </td>
-                              <td className="px-4 py-2 text-center text-blue-600">
-                                {lr.computedWCB.toFixed(4)}°
-                              </td>
-                              <td className="px-4 py-2 text-center text-blue-600">
-                                {lr.computedDist.toFixed(2)}m
-                              </td>
-                              <td className="px-4 py-2 text-center">
-                                {lr.extractedWCB !== null ? (
-                                  <span className={lr.accepted ? "text-green-600" : "text-red-600"}>
-                                    {lr.extractedWCB.toFixed(4)}°
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-400 dark:text-gray-500">-</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-2 text-center">
-                                {lr.extractedDist !== null ? (
-                                  <span className={lr.accepted ? "text-green-600" : "text-red-600"}>
-                                    {lr.extractedDist.toFixed(2)}m
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-400 dark:text-gray-500">-</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-2 text-center flex justify-center">
-                                {lr.accepted ? (
-                                  <Check className="w-4 h-4 text-green-500" />
-                                ) : (
-                                  <XCircle className="w-4 h-4 text-red-500" />
-                                )}
-                              </td>
-                            </tr>
-                          ))}
+                          {parcel.traverse.legResults.map(
+                            (lr: any, i: number) => (
+                              <tr
+                                key={i}
+                                className="border-b last:border-b-0 hover:bg-gray-50"
+                              >
+                                <td className="px-4 py-2 font-bold text-gray-700 dark:text-gray-300">
+                                  {lr.fromVertex?.id ||
+                                    lr.fromVertex?.pillarNumber ||
+                                    lr.fromVertex?.pillar ||
+                                    lr.fromVertex?.point ||
+                                    lr.fromVertex?.no ||
+                                    "?"}{" "}
+                                  →{" "}
+                                  {lr.toVertex?.id ||
+                                    lr.toVertex?.pillarNumber ||
+                                    lr.toVertex?.pillar ||
+                                    lr.toVertex?.point ||
+                                    lr.toVertex?.no ||
+                                    "?"}
+                                </td>
+                                <td className="px-4 py-2 text-center text-blue-600">
+                                  {lr.computedWCB.toFixed(4)}°
+                                </td>
+                                <td className="px-4 py-2 text-center text-blue-600">
+                                  {lr.computedDist.toFixed(2)}m
+                                </td>
+                                <td className="px-4 py-2 text-center">
+                                  {lr.extractedWCB !== null ? (
+                                    <span
+                                      className={
+                                        lr.accepted
+                                          ? "text-green-600"
+                                          : "text-red-600"
+                                      }
+                                    >
+                                      {lr.extractedWCB.toFixed(4)}°
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400 dark:text-gray-500">
+                                      -
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2 text-center">
+                                  {lr.extractedDist !== null ? (
+                                    <span
+                                      className={
+                                        lr.accepted
+                                          ? "text-green-600"
+                                          : "text-red-600"
+                                      }
+                                    >
+                                      {lr.extractedDist.toFixed(2)}m
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400 dark:text-gray-500">
+                                      -
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2 text-center flex justify-center">
+                                  {lr.accepted ? (
+                                    <Check className="w-4 h-4 text-green-500" />
+                                  ) : (
+                                    <XCircle className="w-4 h-4 text-red-500" />
+                                  )}
+                                </td>
+                              </tr>
+                            )
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -443,8 +555,8 @@ export function VerificationResultModal({
                           s.legPct >= 95
                             ? "bg-green-500"
                             : s.legPct >= 80
-                            ? "bg-amber-500"
-                            : "bg-red-500";
+                              ? "bg-amber-500"
+                              : "bg-red-500";
                         return (
                           <div
                             key={i}
@@ -466,16 +578,23 @@ export function VerificationResultModal({
                 )}
 
                 {/* Reference Coordinate Warning Banner */}
-                {anchorVertexId && firstVertexId && anchorVertexId !== firstVertexId && (
-                  <div className="bg-amber-50/80 border border-amber-300 rounded-lg p-4 shadow-sm">
-                    <p className="text-sm text-amber-900 flex items-start gap-2">
-                      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
-                      <span>
-                        The reference coordinate matched CSV vertex <strong>{anchorVertexId}</strong> which is not the first coordinate in your CSV (first is <strong>{firstVertexId}</strong>). Please reconfirm you have quoted the correct reference coordinate to avoid query from the MDA.
-                      </span>
-                    </p>
-                  </div>
-                )}
+                {anchorVertexId &&
+                  firstVertexId &&
+                  anchorVertexId !== firstVertexId && (
+                    <div className="bg-amber-50/80 border border-amber-300 rounded-lg p-4 shadow-sm">
+                      <p className="text-sm text-amber-900 flex items-start gap-2">
+                        <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+                        <span>
+                          The reference coordinate matched CSV vertex{" "}
+                          <strong>{anchorVertexId}</strong> which is not the
+                          first coordinate in your CSV (first is{" "}
+                          <strong>{firstVertexId}</strong>). Please reconfirm
+                          you have quoted the correct reference coordinate to
+                          avoid query from the MDA.
+                        </span>
+                      </p>
+                    </div>
+                  )}
 
                 {/* Issues section */}
                 {issues.length > 0 && (

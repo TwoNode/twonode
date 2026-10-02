@@ -6,7 +6,11 @@ import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { Platform } from "@/utils/platform";
 import { useTheme } from "@/hooks/useTheme";
-import { DEFAULT_ADMIN_TIMEZONE, getAdminTimezone, setAdminTimezone } from "@/lib/adminTimezone";
+import {
+  DEFAULT_ADMIN_TIMEZONE,
+  getAdminTimezone,
+  setAdminTimezone,
+} from "@/lib/adminTimezone";
 
 interface AdminProfile {
   id: string;
@@ -150,8 +154,10 @@ export default function SettingsPage() {
 
       const role =
         sessionRes.success && sessionRes.data
-          ? sessionRes.data.platforms?.[Platform.SURFBOARD]?.role ??
-            (sessionRes.data.platform === Platform.SURFBOARD ? sessionRes.data.role : null)
+          ? (sessionRes.data.platforms?.[Platform.SURFBOARD]?.role ??
+            (sessionRes.data.platform === Platform.SURFBOARD
+              ? sessionRes.data.role
+              : null))
           : null;
 
       // useTheme() (the navbar toggle) is the single live source of truth
@@ -251,11 +257,13 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveEmailVerification = async (updates: Partial<{
-    enabled: boolean;
-    method: "OTP" | "LINK";
-    gracePeriodDays: number;
-  }>) => {
+  const handleSaveEmailVerification = async (
+    updates: Partial<{
+      enabled: boolean;
+      method: "OTP" | "LINK";
+      gracePeriodDays: number;
+    }>
+  ) => {
     const currentVerification = settings.emailVerification || {
       enabled: false,
       method: "OTP" as const,
@@ -280,7 +288,9 @@ export default function SettingsPage() {
         toast.success("Email verification settings updated successfully");
         setOriginalSettings(updatedSettings);
       } else {
-        toast.error(result.error || "Failed to update email verification settings");
+        toast.error(
+          result.error || "Failed to update email verification settings"
+        );
         setSettings(originalSettings);
       }
     } catch (error) {
@@ -295,7 +305,7 @@ export default function SettingsPage() {
   const handleUpdateZoneFee = (
     index: number,
     field: keyof ZoneFeeRow,
-    value: number,
+    value: number
   ) => {
     const updatedFees = [...settings.zoneFees];
     updatedFees[index] = {
@@ -311,7 +321,7 @@ export default function SettingsPage() {
   const handleCoordinateShiftChange = (
     stateName: string,
     field: "eastingShift" | "northingShift",
-    value: string,
+    value: string
   ) => {
     const numValue = value === "" ? 0 : parseFloat(value);
     const key = stateName.toLowerCase();
@@ -527,7 +537,7 @@ export default function SettingsPage() {
       link.setAttribute("href", url);
       link.setAttribute(
         "download",
-        `zone-fees-${new Date().toISOString().split("T")[0]}.csv`,
+        `zone-fees-${new Date().toISOString().split("T")[0]}.csv`
       );
       link.style.visibility = "hidden";
 
@@ -617,7 +627,7 @@ export default function SettingsPage() {
   const handlePreferenceChange = (
     category: string,
     setting: string,
-    value: any,
+    value: any
   ) => {
     if (!profile) return;
 
@@ -640,13 +650,15 @@ export default function SettingsPage() {
 
   const handleTimezoneChange = (timezone: string) => {
     setAdminTimezone(timezone);
-    setProfile((prev) => (prev ? { ...prev, preferences: { ...prev.preferences, timezone } } : prev));
+    setProfile((prev) =>
+      prev ? { ...prev, preferences: { ...prev.preferences, timezone } } : prev
+    );
   };
 
   const handlePasswordChange = async (
     currentPassword: string,
     newPassword: string,
-    confirmPassword: string,
+    confirmPassword: string
   ) => {
     if (newPassword !== confirmPassword) {
       alert("New passwords do not match!");
@@ -684,7 +696,7 @@ export default function SettingsPage() {
     alert(
       `Two-factor authentication ${
         profile.security.twoFactorEnabled ? "disabled" : "enabled"
-      } successfully!`,
+      } successfully!`
     );
   };
 
@@ -693,7 +705,9 @@ export default function SettingsPage() {
       <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading settings...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Loading settings...
+          </p>
         </div>
       </div>
     );
@@ -703,7 +717,9 @@ export default function SettingsPage() {
     return (
       <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400">Failed to load profile data</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Failed to load profile data
+          </p>
         </div>
       </div>
     );
@@ -718,7 +734,9 @@ export default function SettingsPage() {
           <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6 mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  Settings
+                </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2">
                   Manage your profile, preferences, and security settings
                 </p>
@@ -809,9 +827,7 @@ export default function SettingsPage() {
                         value={profile.firstName}
                         onChange={(e) =>
                           setProfile((prev) =>
-                            prev
-                              ? { ...prev, firstName: e.target.value }
-                              : null,
+                            prev ? { ...prev, firstName: e.target.value } : null
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -827,7 +843,7 @@ export default function SettingsPage() {
                         value={profile.lastName}
                         onChange={(e) =>
                           setProfile((prev) =>
-                            prev ? { ...prev, lastName: e.target.value } : null,
+                            prev ? { ...prev, lastName: e.target.value } : null
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -843,7 +859,7 @@ export default function SettingsPage() {
                         value={profile.email}
                         onChange={(e) =>
                           setProfile((prev) =>
-                            prev ? { ...prev, email: e.target.value } : null,
+                            prev ? { ...prev, email: e.target.value } : null
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -859,7 +875,7 @@ export default function SettingsPage() {
                         value={profile.phone}
                         onChange={(e) =>
                           setProfile((prev) =>
-                            prev ? { ...prev, phone: e.target.value } : null,
+                            prev ? { ...prev, phone: e.target.value } : null
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -941,8 +957,8 @@ export default function SettingsPage() {
                         <option value="UTC">UTC</option>
                       </select>
                       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Controls how dates are displayed across the admin
-                        panel on this device.
+                        Controls how dates are displayed across the admin panel
+                        on this device.
                       </p>
                     </div>
                   </div>
@@ -976,7 +992,7 @@ export default function SettingsPage() {
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             Last changed:{" "}
                             {new Date(
-                              profile.security.lastPasswordChange,
+                              profile.security.lastPasswordChange
                             ).toLocaleDateString()}
                           </p>
                         </div>
@@ -1000,8 +1016,9 @@ export default function SettingsPage() {
                               Email Verification Enforcement
                             </h3>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                              Require new accounts to verify their email before accessing the dashboard. Existing
-                              accounts are grandfathered in with a configurable grace period.
+                              Require new accounts to verify their email before
+                              accessing the dashboard. Existing accounts are
+                              grandfathered in with a configurable grace period.
                             </p>
                           </div>
                         </div>
@@ -1009,11 +1026,17 @@ export default function SettingsPage() {
                           <input
                             type="checkbox"
                             className="sr-only peer"
-                            checked={settings.emailVerification?.enabled ?? false}
-                            onChange={(e) =>
-                              handleSaveEmailVerification({ enabled: e.target.checked })
+                            checked={
+                              settings.emailVerification?.enabled ?? false
                             }
-                            disabled={emailVerificationSaving || settingsLoading}
+                            onChange={(e) =>
+                              handleSaveEmailVerification({
+                                enabled: e.target.checked,
+                              })
+                            }
+                            disabled={
+                              emailVerificationSaving || settingsLoading
+                            }
                           />
                           <div className="w-11 h-6 bg-gray-200 dark:bg-white/20 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 disabled:opacity-50"></div>
                         </label>
@@ -1028,10 +1051,15 @@ export default function SettingsPage() {
                           <div className="grid grid-cols-2 gap-2">
                             <button
                               type="button"
-                              onClick={() => handleSaveEmailVerification({ method: "OTP" })}
-                              disabled={emailVerificationSaving || settingsLoading}
+                              onClick={() =>
+                                handleSaveEmailVerification({ method: "OTP" })
+                              }
+                              disabled={
+                                emailVerificationSaving || settingsLoading
+                              }
                               className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-sm font-medium transition ${
-                                (settings.emailVerification?.method ?? "OTP") === "OTP"
+                                (settings.emailVerification?.method ??
+                                  "OTP") === "OTP"
                                   ? "border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-200 font-semibold"
                                   : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10"
                               }`}
@@ -1041,8 +1069,12 @@ export default function SettingsPage() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleSaveEmailVerification({ method: "LINK" })}
-                              disabled={emailVerificationSaving || settingsLoading}
+                              onClick={() =>
+                                handleSaveEmailVerification({ method: "LINK" })
+                              }
+                              disabled={
+                                emailVerificationSaving || settingsLoading
+                              }
                               className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-sm font-medium transition ${
                                 settings.emailVerification?.method === "LINK"
                                   ? "border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-200 font-semibold"
@@ -1054,7 +1086,8 @@ export default function SettingsPage() {
                             </button>
                           </div>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {(settings.emailVerification?.method ?? "OTP") === "OTP"
+                            {(settings.emailVerification?.method ?? "OTP") ===
+                            "OTP"
                               ? "Sends a 6-digit one-time code valid for 15 minutes."
                               : "Sends a magic link that verifies account upon click."}
                           </p>
@@ -1073,9 +1106,15 @@ export default function SettingsPage() {
                               type="number"
                               min={1}
                               max={365}
-                              value={settings.emailVerification?.gracePeriodDays ?? 30}
+                              value={
+                                settings.emailVerification?.gracePeriodDays ??
+                                30
+                              }
                               onChange={(e) => {
-                                const days = Math.max(1, parseInt(e.target.value) || 1);
+                                const days = Math.max(
+                                  1,
+                                  parseInt(e.target.value) || 1
+                                );
                                 setSettings((prev) => ({
                                   ...prev,
                                   emailVerification: {
@@ -1090,16 +1129,26 @@ export default function SettingsPage() {
                                 }));
                               }}
                               onBlur={(e) => {
-                                const days = Math.max(1, parseInt(e.target.value) || 1);
-                                handleSaveEmailVerification({ gracePeriodDays: days });
+                                const days = Math.max(
+                                  1,
+                                  parseInt(e.target.value) || 1
+                                );
+                                handleSaveEmailVerification({
+                                  gracePeriodDays: days,
+                                });
                               }}
-                              disabled={emailVerificationSaving || settingsLoading}
+                              disabled={
+                                emailVerificationSaving || settingsLoading
+                              }
                               className="w-24 px-3 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 rounded-lg text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
-                            <span className="text-sm text-gray-500 dark:text-gray-400">days</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              days
+                            </span>
                           </div>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Pre-existing accounts have this many days to verify before lockout.
+                            Pre-existing accounts have this many days to verify
+                            before lockout.
                           </p>
                         </div>
                       </div>
@@ -1156,7 +1205,7 @@ export default function SettingsPage() {
                           handlePreferenceChange(
                             "notifications",
                             "email",
-                            !profile.preferences.notifications.email,
+                            !profile.preferences.notifications.email
                           )
                         }
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -1189,7 +1238,7 @@ export default function SettingsPage() {
                           handlePreferenceChange(
                             "notifications",
                             "push",
-                            !profile.preferences.notifications.push,
+                            !profile.preferences.notifications.push
                           )
                         }
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -1222,7 +1271,7 @@ export default function SettingsPage() {
                           handlePreferenceChange(
                             "notifications",
                             "sms",
-                            !profile.preferences.notifications.sms,
+                            !profile.preferences.notifications.sms
                           )
                         }
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -1403,7 +1452,9 @@ export default function SettingsPage() {
                         className="w-32 px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         disabled={settingsLoading}
                       />
-                      <span className="text-gray-600 dark:text-gray-400">%</span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        %
+                      </span>
                     </div>
                     <div className="mt-4 p-4 bg-blue-50 rounded-lg">
                       <p className="text-sm text-blue-900">
@@ -1466,7 +1517,7 @@ export default function SettingsPage() {
                                     handleCoordinateShiftChange(
                                       state,
                                       "eastingShift",
-                                      e.target.value,
+                                      e.target.value
                                     )
                                   }
                                   className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded focus:ring-blue-500 focus:border-blue-500"
@@ -1489,7 +1540,7 @@ export default function SettingsPage() {
                                     handleCoordinateShiftChange(
                                       state,
                                       "northingShift",
-                                      e.target.value,
+                                      e.target.value
                                     )
                                   }
                                   className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded focus:ring-blue-500 focus:border-blue-500"
@@ -1579,7 +1630,7 @@ export default function SettingsPage() {
                                     handleUpdateZoneFee(
                                       index,
                                       "lagosZoneA",
-                                      parseFloat(e.target.value) || 0,
+                                      parseFloat(e.target.value) || 0
                                     )
                                   }
                                   className="w-28 px-2 py-1 text-right border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -1596,7 +1647,7 @@ export default function SettingsPage() {
                                     handleUpdateZoneFee(
                                       index,
                                       "lagosZoneB",
-                                      parseFloat(e.target.value) || 0,
+                                      parseFloat(e.target.value) || 0
                                     )
                                   }
                                   className="w-28 px-2 py-1 text-right border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -1613,7 +1664,7 @@ export default function SettingsPage() {
                                     handleUpdateZoneFee(
                                       index,
                                       "lagosZoneC",
-                                      parseFloat(e.target.value) || 0,
+                                      parseFloat(e.target.value) || 0
                                     )
                                   }
                                   className="w-28 px-2 py-1 text-right border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -1630,7 +1681,7 @@ export default function SettingsPage() {
                                     handleUpdateZoneFee(
                                       index,
                                       "lagosZoneD",
-                                      parseFloat(e.target.value) || 0,
+                                      parseFloat(e.target.value) || 0
                                     )
                                   }
                                   className="w-28 px-2 py-1 text-right border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -1711,7 +1762,9 @@ export default function SettingsPage() {
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <p className="text-gray-500 dark:text-gray-400">No settings history available</p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No settings history available
+                  </p>
                 </div>
               ) : (
                 settingsHistory.map((item) => (

@@ -1,7 +1,12 @@
 import path from "path";
 import { execFile } from "child_process";
 
-const WORKER_PATH = path.join(process.cwd(), "gbc", "pdf-worker", "receipt.render.cjs");
+const WORKER_PATH = path.join(
+  process.cwd(),
+  "gbc",
+  "pdf-worker",
+  "receipt.render.cjs"
+);
 
 // Tracing hint only — see certificatePdfService.ts's identical comment for
 // the full explanation. This worker also renders via @react-pdf/renderer
@@ -28,7 +33,9 @@ export type GBCReceiptTicket = {
  * a receipt and a certificate are rendered at very different moments
  * (payment vs. post-event) with no shared content.
  */
-export async function generateTicketReceiptPdfBuffer(ticket: GBCReceiptTicket): Promise<Buffer> {
+export async function generateTicketReceiptPdfBuffer(
+  ticket: GBCReceiptTicket
+): Promise<Buffer> {
   const input = JSON.stringify({ ticket });
 
   return new Promise<Buffer>((resolve, reject) => {
@@ -38,7 +45,11 @@ export async function generateTicketReceiptPdfBuffer(ticket: GBCReceiptTicket): 
       { maxBuffer: 20 * 1024 * 1024, encoding: "buffer" },
       (err, stdout, stderr) => {
         if (err) {
-          reject(new Error(`Receipt PDF render failed: ${stderr?.toString("utf8") || err.message}`));
+          reject(
+            new Error(
+              `Receipt PDF render failed: ${stderr?.toString("utf8") || err.message}`
+            )
+          );
           return;
         }
         resolve(stdout as unknown as Buffer);

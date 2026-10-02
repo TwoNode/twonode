@@ -13,7 +13,8 @@ export default function NotFoundPage() {
         <span
           className="select-none text-[6rem] font-extrabold leading-none tracking-tight sm:text-[8rem]"
           style={{
-            backgroundImage: "linear-gradient(135deg, #082f49 0%, #0369a1 55%, #0ea5e9 100%)",
+            backgroundImage:
+              "linear-gradient(135deg, #082f49 0%, #0369a1 55%, #0ea5e9 100%)",
             WebkitBackgroundClip: "text",
             backgroundClip: "text",
             color: "transparent",

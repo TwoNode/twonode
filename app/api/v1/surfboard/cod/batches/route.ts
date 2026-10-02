@@ -4,7 +4,13 @@ import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
 import { parsePagination } from "@/lib/api/pagination";
-import { getBatchesByStatus, getBatchesByStatusPaginated, getUserBatches, getUserBatchesPaginated, submitRedCopyBatch } from "@/surfboard/services/remitaVerificationService";
+import {
+  getBatchesByStatus,
+  getBatchesByStatusPaginated,
+  getUserBatches,
+  getUserBatchesPaginated,
+  submitRedCopyBatch,
+} from "@/surfboard/services/remitaVerificationService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 /**
@@ -22,7 +28,10 @@ import { Platform, SurfboardRole } from "@/utils/platform";
 export const GET = withAuth<SurfboardRole>(
   async (req, ctx) => {
     const params = req.nextUrl.searchParams;
-    if (ctx.session.role === SurfboardRole.ADMIN || ctx.session.role === SurfboardRole.SUPERADMIN) {
+    if (
+      ctx.session.role === SurfboardRole.ADMIN ||
+      ctx.session.role === SurfboardRole.SUPERADMIN
+    ) {
       const status = params.get("status") ?? undefined;
       if (params.has("page")) {
         const pagination = parsePagination(params);
@@ -49,7 +58,10 @@ export const GET = withAuth<SurfboardRole>(
     const data = await getUserBatches(ctx.session.sub);
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER, SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN] }
+  {
+    platform: Platform.SURFBOARD,
+    roles: [SurfboardRole.USER, SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN],
+  }
 );
 
 const submitSchema = z.object({
@@ -60,10 +72,20 @@ const submitSchema = z.object({
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
-    const { planIds, acceptanceAcknowledged } = await validateBody(req, submitSchema);
-    const data = await submitRedCopyBatch(ctx.session.sub, planIds, acceptanceAcknowledged);
+    const { planIds, acceptanceAcknowledged } = await validateBody(
+      req,
+      submitSchema
+    );
+    const data = await submitRedCopyBatch(
+      ctx.session.sub,
+      planIds,
+      acceptanceAcknowledged
+    );
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] }

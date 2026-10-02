@@ -40,31 +40,52 @@ export const GET = withAuth<SurfboardRole>(
         : undefined;
 
     if (section === "stats") {
-      return NextResponse.json({ success: true, data: await getStatCards(scope) });
+      return NextResponse.json({
+        success: true,
+        data: await getStatCards(scope),
+      });
     }
 
     if (section === "dimension") {
       const dimension = req.nextUrl.searchParams.get("dimension");
       if (!DIMENSIONS.includes(dimension as (typeof DIMENSIONS)[number])) {
-        throw new ValidationError({ dimension: `must be one of ${DIMENSIONS.join("|")}` });
+        throw new ValidationError({
+          dimension: `must be one of ${DIMENSIONS.join("|")}`,
+        });
       }
       return NextResponse.json({
         success: true,
-        data: await getDimensionBreakdown(scope, dimension as AnalyticsDimension, range),
+        data: await getDimensionBreakdown(
+          scope,
+          dimension as AnalyticsDimension,
+          range
+        ),
       });
     }
 
     if (section === "lodgement-trend") {
-      return NextResponse.json({ success: true, data: await getLodgementTrend(scope) });
+      return NextResponse.json({
+        success: true,
+        data: await getLodgementTrend(scope),
+      });
     }
 
     if (section === "time-trend") {
-      return NextResponse.json({ success: true, data: await getTimeTrend(scope) });
+      return NextResponse.json({
+        success: true,
+        data: await getTimeTrend(scope),
+      });
     }
 
     if (section === "top-surveyors") {
-      const limit = Math.min(20, Math.max(1, Number(req.nextUrl.searchParams.get("limit")) || 5));
-      return NextResponse.json({ success: true, data: await getTopSurveyors(scope, limit, range) });
+      const limit = Math.min(
+        20,
+        Math.max(1, Number(req.nextUrl.searchParams.get("limit")) || 5)
+      );
+      return NextResponse.json({
+        success: true,
+        data: await getTopSurveyors(scope, limit, range),
+      });
     }
 
     if (section === "dashboard") {
@@ -74,7 +95,13 @@ export const GET = withAuth<SurfboardRole>(
       });
     }
 
-    throw new ValidationError({ section: "must be one of stats|dimension|lodgement-trend|time-trend|top-surveyors|dashboard" });
+    throw new ValidationError({
+      section:
+        "must be one of stats|dimension|lodgement-trend|time-trend|top-surveyors|dashboard",
+    });
   },
-  { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER, SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN] }
+  {
+    platform: Platform.SURFBOARD,
+    roles: [SurfboardRole.USER, SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN],
+  }
 );

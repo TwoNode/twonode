@@ -10,7 +10,8 @@ function dateParam(params: URLSearchParams, name: string): Date | undefined {
   const raw = params.get(name);
   if (!raw) return undefined;
   const date = new Date(raw);
-  if (Number.isNaN(date.getTime())) throw new ValidationError({ [name]: "Must be a valid date" });
+  if (Number.isNaN(date.getTime()))
+    throw new ValidationError({ [name]: "Must be a valid date" });
   return date;
 }
 
@@ -19,7 +20,10 @@ function dateParam(params: URLSearchParams, name: string): Date | undefined {
  * each product's route files just bind this to its own platform and its own
  * SUPERADMIN role (withAuth's role type is per-product).
  */
-export function auditLogRoutes<TRole extends string>(platform: Platform, superadminRole: TRole) {
+export function auditLogRoutes<TRole extends string>(
+  platform: Platform,
+  superadminRole: TRole
+) {
   const opts = { platform, roles: [superadminRole] };
 
   return {
@@ -40,7 +44,11 @@ export function auditLogRoutes<TRole extends string>(platform: Platform, superad
     }, opts),
 
     filters: withAuth<TRole>(
-      async () => NextResponse.json({ success: true, data: await getAuditLogFilterOptions(platform) }),
+      async () =>
+        NextResponse.json({
+          success: true,
+          data: await getAuditLogFilterOptions(platform),
+        }),
       opts
     ),
   };

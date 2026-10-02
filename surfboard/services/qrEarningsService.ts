@@ -49,7 +49,10 @@ export async function getQREarningsSettings(): Promise<QREarningsSettingsData> {
   return DEFAULT_QR_SETTINGS;
 }
 
-export async function getPlanQRAccessState(planId: string, accessToken?: string) {
+export async function getPlanQRAccessState(
+  planId: string,
+  accessToken?: string
+) {
   const plan = await prisma.surfboardPlan.findFirst({
     where: { OR: [{ id: planId }, { planNumber: planId }], deleted: false },
     select: {
@@ -149,14 +152,19 @@ export async function initiateQRServicePayment(
   if (!plan || !plan.userId) throw new NotFoundError("Plan or surveyor");
 
   const settings = await getQREarningsSettings();
-  const serviceConfig = serviceType === "LOCATION_AUTHENTICITY" ? settings.service1 : settings.service2;
+  const serviceConfig =
+    serviceType === "LOCATION_AUTHENTICITY"
+      ? settings.service1
+      : settings.service2;
 
   const verificationFee = serviceConfig.verificationFee;
   const serviceFee = verificationFee * (serviceConfig.serviceFeePercent / 100);
 
   let mdaFee = 0;
   for (const fee of settings.customFees ?? []) {
-    mdaFee += fee.isPercentage ? verificationFee * (fee.amount / 100) : fee.amount;
+    mdaFee += fee.isPercentage
+      ? verificationFee * (fee.amount / 100)
+      : fee.amount;
   }
 
   const totalAmount = verificationFee + serviceFee + mdaFee;
@@ -181,7 +189,10 @@ export async function initiateQRServicePayment(
     },
   });
 
-  const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || process.env.PAYSTACK_PUBLIC_KEY || "";
+  const paystackKey =
+    process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ||
+    process.env.PAYSTACK_PUBLIC_KEY ||
+    "";
 
   return {
     reference: transaction.reference,
@@ -194,7 +205,10 @@ export async function initiateQRServicePayment(
   };
 }
 
-export async function verifyQRServicePayment(reference: string, paystackRef?: string) {
+export async function verifyQRServicePayment(
+  reference: string,
+  paystackRef?: string
+) {
   const transaction = await prisma.qREarningsTransaction.findUnique({
     where: { reference },
     include: { plan: { select: { id: true, planNumber: true } } },
@@ -203,7 +217,10 @@ export async function verifyQRServicePayment(reference: string, paystackRef?: st
   if (!transaction) throw new NotFoundError("Transaction reference");
 
   if (transaction.paymentStatus === "SUCCESS") {
-    return { accessToken: transaction.accessToken, expiresAt: transaction.expiresAt?.toISOString() };
+    return {
+      accessToken: transaction.accessToken,
+      expiresAt: transaction.expiresAt?.toISOString(),
+    };
   }
 
   // Confirm directly with Paystack before trusting this call at all — a
@@ -232,7 +249,8 @@ export async function verifyQRServicePayment(reference: string, paystackRef?: st
       expectedAmountKobo,
     });
     throw new ValidationError({
-      payment: "Payment could not be verified. If you were charged, contact support with your reference.",
+      payment:
+        "Payment could not be verified. If you were charged, contact support with your reference.",
     });
   }
 
@@ -241,7 +259,11 @@ export async function verifyQRServicePayment(reference: string, paystackRef?: st
 
   const updatedTransaction = await prisma.qREarningsTransaction.update({
     where: { reference },
-    data: { paymentStatus: "SUCCESS", paymentRef: paystackRef || reference, expiresAt },
+    data: {
+      paymentStatus: "SUCCESS",
+      paymentRef: paystackRef || reference,
+      expiresAt,
+    },
   });
 
   await prisma.surveyorWallet.upsert({
@@ -257,7 +279,10 @@ export async function verifyQRServicePayment(reference: string, paystackRef?: st
     },
   });
 
-  const serviceName = transaction.serviceType === "LOCATION_AUTHENTICITY" ? "Location Verification" : "Certificate of Deposit";
+  const serviceName =
+    transaction.serviceType === "LOCATION_AUTHENTICITY"
+      ? "Location Verification"
+      : "Certificate of Deposit";
 
   await createNotification({
     type: "SUCCESS",
@@ -295,16 +320,25 @@ export async function verifyQRServicePayment(reference: string, paystackRef?: st
     }
   }
 
-  return { accessToken: updatedTransaction.accessToken, expiresAt: expiresAt.toISOString() };
+  return {
+    accessToken: updatedTransaction.accessToken,
+    expiresAt: expiresAt.toISOString(),
+  };
 }
 
 export async function getSurveyorEarningsOverview(surveyorId: string) {
-  let wallet = await prisma.surveyorWallet.findUnique({ where: { userId: surveyorId } });
+  let wallet = await prisma.surveyorWallet.findUnique({
+    where: { userId: surveyorId },
+  });
   if (!wallet) {
-    wallet = await prisma.surveyorWallet.create({ data: { userId: surveyorId } });
+    wallet = await prisma.surveyorWallet.create({
+      data: { userId: surveyorId },
+    });
   }
 
-  const bankDetails = await prisma.surveyorBankDetails.findUnique({ where: { userId: surveyorId } });
+  const bankDetails = await prisma.surveyorBankDetails.findUnique({
+    where: { userId: surveyorId },
+  });
 
   const transactions = await prisma.qREarningsTransaction.findMany({
     where: { surveyorId, paymentStatus: "SUCCESS" },
@@ -327,12 +361,18 @@ export async function getSurveyorEarningsOverview(surveyorId: string) {
  * `getSurveyorEarningsOverview`'s `transactions` — that list is capped at 50
  * and could silently truncate a busy month.
  */
-export async function getSurveyorEarningsThisMonth(surveyorId: string): Promise<number> {
+export async function getSurveyorEarningsThisMonth(
+  surveyorId: string
+): Promise<number> {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const result = await prisma.qREarningsTransaction.aggregate({
-    where: { surveyorId, paymentStatus: "SUCCESS", createdAt: { gte: startOfMonth, lt: startOfNextMonth } },
+    where: {
+      surveyorId,
+      paymentStatus: "SUCCESS",
+      createdAt: { gte: startOfMonth, lt: startOfNextMonth },
+    },
     _sum: { surveyorEarned: true },
   });
   return result._sum.surveyorEarned ?? 0;
@@ -352,7 +392,9 @@ export async function saveSurveyorBankDetails(
   const resolveData = await resolveRes.json();
   if (!resolveRes.ok || !resolveData.status) {
     throw new ValidationError({
-      accountNumber: resolveData.message || "Could not verify bank account. Please check account number and bank.",
+      accountNumber:
+        resolveData.message ||
+        "Could not verify bank account. Please check account number and bank.",
     });
   }
 
@@ -360,17 +402,23 @@ export async function saveSurveyorBankDetails(
 
   let recipientCode: string | null = null;
   try {
-    const recipientRes = await fetch("https://api.paystack.co/transferrecipient", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${paystackSecretKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "nuban",
-        name: accountName,
-        account_number: input.accountNumber,
-        bank_code: input.bankCode,
-        currency: "NGN",
-      }),
-    });
+    const recipientRes = await fetch(
+      "https://api.paystack.co/transferrecipient",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${paystackSecretKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "nuban",
+          name: accountName,
+          account_number: input.accountNumber,
+          bank_code: input.bankCode,
+          currency: "NGN",
+        }),
+      }
+    );
     const recipientData = await recipientRes.json();
     if (recipientRes.ok && recipientData.status) {
       recipientCode = recipientData.data.recipient_code;
@@ -405,16 +453,22 @@ export async function saveSurveyorBankDetails(
 
 export async function requestWithdrawal(surveyorId: string, amount: number) {
   await requireActiveSubscription(surveyorId);
-  if (amount <= 0) throw new ValidationError({ amount: "Amount must be greater than zero" });
+  if (amount <= 0)
+    throw new ValidationError({ amount: "Amount must be greater than zero" });
 
-  const bankDetails = await prisma.surveyorBankDetails.findUnique({ where: { userId: surveyorId } });
+  const bankDetails = await prisma.surveyorBankDetails.findUnique({
+    where: { userId: surveyorId },
+  });
   if (!bankDetails || !bankDetails.isVerified) {
     throw new ValidationError({
-      bankDetails: "Your bank account is not verified yet. Please set up your bank account under Settings.",
+      bankDetails:
+        "Your bank account is not verified yet. Please set up your bank account under Settings.",
     });
   }
 
-  const wallet = await prisma.surveyorWallet.findUnique({ where: { userId: surveyorId } });
+  const wallet = await prisma.surveyorWallet.findUnique({
+    where: { userId: surveyorId },
+  });
   if (!wallet || wallet.availableBalance < amount) {
     throw new ValidationError({ amount: "Insufficient available balance" });
   }
@@ -422,7 +476,10 @@ export async function requestWithdrawal(surveyorId: string, amount: number) {
   const [, withdrawal] = await prisma.$transaction([
     prisma.surveyorWallet.update({
       where: { userId: surveyorId },
-      data: { availableBalance: { decrement: amount }, pendingWithdrawal: { increment: amount } },
+      data: {
+        availableBalance: { decrement: amount },
+        pendingWithdrawal: { increment: amount },
+      },
     }),
     prisma.withdrawalRequest.create({
       data: {
@@ -445,7 +502,8 @@ export async function requestWithdrawal(surveyorId: string, amount: number) {
   await createNotification({
     type: "SYSTEM",
     title: "New Withdrawal Request",
-    message: `${surveyor?.firstName ?? ""} ${surveyor?.lastName ?? ""}`.trim() +
+    message:
+      `${surveyor?.firstName ?? ""} ${surveyor?.lastName ?? ""}`.trim() +
       ` requested a withdrawal of ₦${amount.toLocaleString()}.`,
     audience: "GENERAL_ADMINS",
     link: "/surfboard-restricted/dashboard/qr-earnings",
@@ -478,7 +536,13 @@ export async function getSurveyorsForKyc() {
       isKycValidated: true,
       createdAt: true,
       bankDetails: {
-        select: { bankName: true, accountNumber: true, accountName: true, isVerified: true, verifiedAt: true },
+        select: {
+          bankName: true,
+          accountNumber: true,
+          accountName: true,
+          isVerified: true,
+          verifiedAt: true,
+        },
       },
     },
   });
@@ -489,8 +553,14 @@ export async function getSurveyorsForKyc() {
  * admin doing it, for the audit trail — approving a bank account is what lets
  * a surveyor withdraw earnings, so every change is recorded.
  */
-export async function toggleBankVerification(userId: string, status: boolean, actorId?: string) {
-  const bankDetails = await prisma.surveyorBankDetails.findUnique({ where: { userId } });
+export async function toggleBankVerification(
+  userId: string,
+  status: boolean,
+  actorId?: string
+) {
+  const bankDetails = await prisma.surveyorBankDetails.findUnique({
+    where: { userId },
+  });
   if (!bankDetails) {
     throw new NotFoundError("Bank details for this surveyor");
   }

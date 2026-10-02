@@ -13,12 +13,22 @@ const bodySchema = z.object({ notes: z.string().optional() });
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { planId } = await routeCtx.params;
     const { notes } = await validateBody(req, bodySchema);
     const data = await markPlanArchived(ctx.session.sub, planId, notes);
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: [SurfboardRole.ARCHIVE, SurfboardRole.SUPERADMIN, SurfboardRole.MDA_SUPERADMIN] }
+  {
+    platform: Platform.SURFBOARD,
+    roles: [
+      SurfboardRole.ARCHIVE,
+      SurfboardRole.SUPERADMIN,
+      SurfboardRole.MDA_SUPERADMIN,
+    ],
+  }
 );

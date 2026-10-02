@@ -19,7 +19,12 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { Plan, PillarData, PLAN_TYPES } from "../../types/surfboardTypes";
 import proj4 from "proj4";
 import { surfboardApi } from "@/surfboard/apiClient";
-import { applyVisualizationShift, normalizeCsvHeader, resolvePillarColumnIndices, findCsvColumnIndex } from "../../utils/surfboardUtils";
+import {
+  applyVisualizationShift,
+  normalizeCsvHeader,
+  resolvePillarColumnIndices,
+  findCsvColumnIndex,
+} from "../../utils/surfboardUtils";
 
 interface AllPlansMapProps {
   plans: Plan[];
@@ -27,7 +32,8 @@ interface AllPlansMapProps {
   getPlanDetailUrl?: (id: string) => string;
 }
 
-const defaultGetPlanDetailUrl = (id: string) => `/surfboard/dashboard/plan?planId=${id}`;
+const defaultGetPlanDetailUrl = (id: string) =>
+  `/surfboard/dashboard/plan?planId=${id}`;
 
 // Temporary plan structure for uploaded CSVs
 interface TempPlan extends Omit<Plan, "status"> {
@@ -38,7 +44,7 @@ interface TempPlan extends Omit<Plan, "status"> {
 // Define the coordinate reference system for pillar conversion
 proj4.defs(
   "EPSG:26331",
-  "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-92,-93,122,0,0,0,0 +units=m +no_defs",
+  "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-92,-93,122,0,0,0,0 +units=m +no_defs"
 );
 
 // Helper to generate a unique signature from pillar data to detect duplicates
@@ -46,10 +52,10 @@ const generatePlanSignature = (pillars: PillarData[]): string => {
   if (!pillars || pillars.length === 0) return "";
   // Sort by pillar number to ensure consistent order, then create a string
   const sortedPillars = [...pillars].sort((a, b) =>
-    a.pillarNumber.localeCompare(b.pillarNumber),
+    a.pillarNumber.localeCompare(b.pillarNumber)
   );
   return JSON.stringify(
-    sortedPillars.map((p) => [p.easting.toFixed(2), p.northing.toFixed(2)]),
+    sortedPillars.map((p) => [p.easting.toFixed(2), p.northing.toFixed(2)])
   );
 };
 
@@ -72,7 +78,8 @@ const fallbackColorCache = new Map<string, string>();
 const getColorForPlanType = (planType: string | undefined | null): string => {
   if (!planType) return "#6b7280";
   if (PLAN_TYPE_COLORS[planType]) return PLAN_TYPE_COLORS[planType];
-  if (fallbackColorCache.has(planType)) return fallbackColorCache.get(planType)!;
+  if (fallbackColorCache.has(planType))
+    return fallbackColorCache.get(planType)!;
   let hash = 0;
   for (let i = 0; i < planType.length; i++) {
     hash = planType.charCodeAt(i) + ((hash << 5) - hash);
@@ -109,7 +116,12 @@ interface SearchFiltersPanelProps {
    * dropdown under the input itself, since previously the only feedback for a
    * search was the (easy to miss) filtered "Database Plans" checklist elsewhere
    * on the page. */
-  searchSuggestions: Array<{ id: string; planNumber: string; surveyTitle: string; facilitator: string }>;
+  searchSuggestions: Array<{
+    id: string;
+    planNumber: string;
+    surveyTitle: string;
+    facilitator: string;
+  }>;
   onSelectSearchSuggestion: (planId: string) => void;
   statusFilter: string[];
   onToggleStatus: (s: string) => void;
@@ -175,145 +187,150 @@ const SearchFiltersPanel = React.memo(function SearchFiltersPanel({
         )}
       </button>
       {!collapsed && (
-      <>
-      <div className="grid grid-cols-[1fr_1fr_auto] max-sm:grid-cols-[1fr] gap-3">
-        <div className="relative">
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-            Location
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={locQuery}
-              onChange={(e) => onLocQueryChange(e.target.value)}
-              placeholder="Search location..."
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
-            />
-            {locLoading && (
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent" />
-              </div>
-            )}
-          </div>
-          {locResults.length > 0 && (
-            <div className="absolute z-10 mt-1 w-full bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-lg shadow-md max-h-48 overflow-y-auto">
-              {locResults.map((r, i) => (
-                <button
-                  key={`${r.lon}-${i}`}
-                  className="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5"
-                  onClick={() => {
-                    onFlyTo(r.lat, r.lon);
-                    onLocResultsChange([]);
-                    onLocQueryChange(r.name);
-                  }}
-                >
-                  {r.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="relative">
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-            Search Plans
-          </label>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchQueryChange(e.target.value)}
-            placeholder="Plan number, title, surveyor..."
-            className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
-          />
-          {searchQuery.trim() && !suggestionsDismissed && searchSuggestions.length > 0 && (
-            <div className="absolute z-10 mt-1 w-full bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-lg shadow-md max-h-48 overflow-y-auto">
-              {searchSuggestions.map((plan) => (
-                <button
-                  key={plan.id}
-                  type="button"
-                  className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/5"
-                  onClick={() => {
-                    onSelectSearchSuggestion(plan.id);
-                    onSearchQueryChange(plan.planNumber);
-                    setSuggestionsDismissed(true);
-                  }}
-                >
-                  <div className="font-medium text-gray-900 dark:text-white truncate">{plan.planNumber}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {plan.surveyTitle}{plan.facilitator ? ` · ${plan.facilitator}` : ""}
+        <>
+          <div className="grid grid-cols-[1fr_1fr_auto] max-sm:grid-cols-[1fr] gap-3">
+            <div className="relative">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                Location
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={locQuery}
+                  onChange={(e) => onLocQueryChange(e.target.value)}
+                  placeholder="Search location..."
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
+                />
+                {locLoading && (
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent" />
                   </div>
-                </button>
-              ))}
+                )}
+              </div>
+              {locResults.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-lg shadow-md max-h-48 overflow-y-auto">
+                  {locResults.map((r, i) => (
+                    <button
+                      key={`${r.lon}-${i}`}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5"
+                      onClick={() => {
+                        onFlyTo(r.lat, r.lon);
+                        onLocResultsChange([]);
+                        onLocQueryChange(r.name);
+                      }}
+                    >
+                      {r.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+            <div className="relative">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                Search Plans
+              </label>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchQueryChange(e.target.value)}
+                placeholder="Plan number, title, surveyor..."
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
+              />
+              {searchQuery.trim() &&
+                !suggestionsDismissed &&
+                searchSuggestions.length > 0 && (
+                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-lg shadow-md max-h-48 overflow-y-auto">
+                    {searchSuggestions.map((plan) => (
+                      <button
+                        key={plan.id}
+                        type="button"
+                        className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/5"
+                        onClick={() => {
+                          onSelectSearchSuggestion(plan.id);
+                          onSearchQueryChange(plan.planNumber);
+                          setSuggestionsDismissed(true);
+                        }}
+                      >
+                        <div className="font-medium text-gray-900 dark:text-white truncate">
+                          {plan.planNumber}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {plan.surveyTitle}
+                          {plan.facilitator ? ` · ${plan.facilitator}` : ""}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+            </div>
 
-        <div className="flex flex-col max-sm:grid grid-cols-2 gap-1 items-center">
-          {" "}
-          <input
-            type="file"
-            ref={fileInputRef}
-            multiple
-            accept=".csv"
-            onChange={onCsvUpload}
-            className="hidden"
-          />{" "}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full py-1 px-3 text-xs rounded-lg bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 border border-green-500 dark:border-green-500/40 hover:bg-green-100 dark:hover:bg-green-500/25 transition-colors whitespace-nowrap"
-          >
-            Upload CSV
-          </button>
-          <button
-            onClick={onClearAll}
-            className="w-full py-1 px-3 text-xs rounded-lg bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border border-red-400 dark:border-red-500/40 hover:bg-red-200 dark:hover:bg-red-500/20 transition-colors"
-          >
-            Clear Filters
-          </button>
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-4">
-        <div className="p-2 rounded-md border border-gray-100 dark:border-white/5">
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-            Status
-          </label>
-          <div className="flex flex-wrap gap-1.5">
-            {allStatuses.map((s) => (
+            <div className="flex flex-col max-sm:grid grid-cols-2 gap-1 items-center">
+              {" "}
+              <input
+                type="file"
+                ref={fileInputRef}
+                multiple
+                accept=".csv"
+                onChange={onCsvUpload}
+                className="hidden"
+              />{" "}
               <button
-                key={s}
-                onClick={() => onToggleStatus(s)}
-                className={`px-2 py-0.5 rounded-full text-xs border ${
-                  statusFilter.includes(s)
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
-                }`}
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full py-1 px-3 text-xs rounded-lg bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 border border-green-500 dark:border-green-500/40 hover:bg-green-100 dark:hover:bg-green-500/25 transition-colors whitespace-nowrap"
               >
-                {s}
+                Upload CSV
               </button>
-            ))}
-          </div>
-        </div>
-        <div className="p-2 rounded-md border border-gray-100 dark:border-white/5">
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-            Plan Type
-          </label>
-          <div className="flex flex-wrap gap-1.5">
-            {allTypes.map((t) => (
               <button
-                key={t}
-                onClick={() => onToggleType(t)}
-                className={`px-2 py-0.5 rounded-full text-xs border ${
-                  typeFilter.includes(t)
-                    ? "bg-emerald-600 text-white border-emerald-600"
-                    : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
-                }`}
+                onClick={onClearAll}
+                className="w-full py-1 px-3 text-xs rounded-lg bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border border-red-400 dark:border-red-500/40 hover:bg-red-200 dark:hover:bg-red-500/20 transition-colors"
               >
-                {t}
+                Clear Filters
               </button>
-            ))}
+            </div>
           </div>
-        </div>
-      </div>
-      </>
+          <div className="flex flex-wrap gap-4">
+            <div className="p-2 rounded-md border border-gray-100 dark:border-white/5">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                Status
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {allStatuses.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => onToggleStatus(s)}
+                    className={`px-2 py-0.5 rounded-full text-xs border ${
+                      statusFilter.includes(s)
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="p-2 rounded-md border border-gray-100 dark:border-white/5">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                Plan Type
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {allTypes.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => onToggleType(t)}
+                    className={`px-2 py-0.5 rounded-full text-xs border ${
+                      typeFilter.includes(t)
+                        ? "bg-emerald-600 text-white border-emerald-600"
+                        : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
@@ -353,7 +370,7 @@ const DisplayPanel = React.memo(function DisplayPanel({
   const [collapsed, setCollapsed] = useState(true);
   const dbPlans = useMemo(
     () => filteredPlans.filter((p) => p.status !== "UPLOADED"),
-    [filteredPlans],
+    [filteredPlans]
   );
 
   return (
@@ -373,138 +390,149 @@ const DisplayPanel = React.memo(function DisplayPanel({
         )}
       </button>
       {!collapsed && (
-      <>
-      <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-white/5 p-1 mb-2">
-        <button
-          type="button"
-          onClick={() => onDisplayModeChange("shape")}
-          className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-            displayMode === "shape"
-              ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
-              : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-          }`}
-        >
-          Shape
-        </button>
-        <button
-          type="button"
-          onClick={() => onDisplayModeChange("dots")}
-          className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-            displayMode === "dots"
-              ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
-              : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-          }`}
-        >
-          Points
-        </button>
-        <button
-          type="button"
-          onClick={() => onDisplayModeChange("dots-lines")}
-          className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-            displayMode === "dots-lines"
-              ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
-              : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-          }`}
-        >
-          Points + Lines
-        </button>
-      </div>
-      <hr className="my-2 border-gray-200 dark:border-white/10" />
-      <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Basemap</div>
-      {(["roadmap", "satellite", "hybrid", "terrain", "osm"] as const).map(
-        (k) => (
-          <label
-            key={k}
-            className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
-          >
-            <input
-              type="radio"
-              name="basemap"
-              value={k}
-              checked={activeBasemap === k}
-              onChange={() => onBasemapChange(k)}
-            />{" "}
-            <span className="capitalize">{k}</span>
-          </label>
-        ),
-      )}
-      {tempPlans.length > 0 && (
         <>
-          <hr className="my-2 border-gray-200 dark:border-white/10" />
-          <div className="flex justify-between items-center">
-            <div className="text-sm font-semibold text-gray-900 dark:text-white">
-              Uploaded Layers ({visibleTempPlanIds.length})
-            </div>
+          <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-white/5 p-1 mb-2">
             <button
-              onClick={onClearTempPlans}
-              className="text-xs text-red-500 dark:text-red-400 hover:underline"
+              type="button"
+              onClick={() => onDisplayModeChange("shape")}
+              className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                displayMode === "shape"
+                  ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              }`}
             >
-              Clear All
+              Shape
+            </button>
+            <button
+              type="button"
+              onClick={() => onDisplayModeChange("dots")}
+              className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                displayMode === "dots"
+                  ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              }`}
+            >
+              Points
+            </button>
+            <button
+              type="button"
+              onClick={() => onDisplayModeChange("dots-lines")}
+              className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                displayMode === "dots-lines"
+                  ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              }`}
+            >
+              Points + Lines
             </button>
           </div>
-          <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1 mt-1">
-            {tempPlans.map((p) => (
-              <div key={p.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <label className="flex items-center gap-2 cursor-pointer grow truncate">
-                  <input
-                    type="checkbox"
-                    checked={visibleTempPlanIds.includes(p.id)}
-                    onChange={(e) => onToggleVisibleTempPlan(p.id, e.target.checked)}
-                  />{" "}
-                  <span
-                    className="inline-block w-3 h-3 rounded-sm shrink-0"
-                    style={{ background: getColorForPlanType(p.planType as string) }}
-                  />
-                  <button
-                    className="hover:underline truncate text-left"
-                    onClick={() => zoomToPlan(p.id)}
-                    title={p.planNumber}
-                  >
-                    {p.planNumber}
-                  </button>
-                </label>
+          <hr className="my-2 border-gray-200 dark:border-white/10" />
+          <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+            Basemap
+          </div>
+          {(["roadmap", "satellite", "hybrid", "terrain", "osm"] as const).map(
+            (k) => (
+              <label
+                key={k}
+                className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
+              >
+                <input
+                  type="radio"
+                  name="basemap"
+                  value={k}
+                  checked={activeBasemap === k}
+                  onChange={() => onBasemapChange(k)}
+                />{" "}
+                <span className="capitalize">{k}</span>
+              </label>
+            )
+          )}
+          {tempPlans.length > 0 && (
+            <>
+              <hr className="my-2 border-gray-200 dark:border-white/10" />
+              <div className="flex justify-between items-center">
+                <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                  Uploaded Layers ({visibleTempPlanIds.length})
+                </div>
                 <button
-                  onClick={() => onRemoveTempPlan(p.id)}
-                  className="ml-auto text-red-400 hover:text-red-600 font-bold text-lg leading-none shrink-0"
-                  title="Remove Layer"
+                  onClick={onClearTempPlans}
+                  className="text-xs text-red-500 dark:text-red-400 hover:underline"
                 >
-                  &times;
+                  Clear All
                 </button>
               </div>
+              <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1 mt-1">
+                {tempPlans.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+                  >
+                    <label className="flex items-center gap-2 cursor-pointer grow truncate">
+                      <input
+                        type="checkbox"
+                        checked={visibleTempPlanIds.includes(p.id)}
+                        onChange={(e) =>
+                          onToggleVisibleTempPlan(p.id, e.target.checked)
+                        }
+                      />{" "}
+                      <span
+                        className="inline-block w-3 h-3 rounded-sm shrink-0"
+                        style={{
+                          background: getColorForPlanType(p.planType as string),
+                        }}
+                      />
+                      <button
+                        className="hover:underline truncate text-left"
+                        onClick={() => zoomToPlan(p.id)}
+                        title={p.planNumber}
+                      >
+                        {p.planNumber}
+                      </button>
+                    </label>
+                    <button
+                      onClick={() => onRemoveTempPlan(p.id)}
+                      className="ml-auto text-red-400 hover:text-red-600 font-bold text-lg leading-none shrink-0"
+                      title="Remove Layer"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          <hr className="my-2 border-gray-200 dark:border-white/10" />
+          <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+            Database Plans ({visiblePlanIds.length})
+          </div>
+          <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1">
+            {dbPlans.map((p) => (
+              <label
+                key={p.id}
+                className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
+              >
+                <input
+                  type="checkbox"
+                  checked={visiblePlanIds.includes(p.id)}
+                  onChange={(e) => onToggleVisiblePlan(p.id, e.target.checked)}
+                />{" "}
+                <span
+                  className="inline-block w-3 h-3 rounded-sm"
+                  style={{
+                    background: getColorForPlanType(p.planType as string),
+                  }}
+                />
+                <button
+                  className="hover:underline truncate"
+                  onClick={() => zoomToPlan(p.id)}
+                  title="Zoom to plan"
+                >
+                  {p.planNumber}
+                </button>
+              </label>
             ))}
           </div>
         </>
-      )}
-      <hr className="my-2 border-gray-200 dark:border-white/10" />
-      <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-        Database Plans ({visiblePlanIds.length})
-      </div>
-      <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1">
-        {dbPlans.map((p) => (
-          <label
-            key={p.id}
-            className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
-          >
-            <input
-              type="checkbox"
-              checked={visiblePlanIds.includes(p.id)}
-              onChange={(e) => onToggleVisiblePlan(p.id, e.target.checked)}
-            />{" "}
-            <span
-              className="inline-block w-3 h-3 rounded-sm"
-              style={{ background: getColorForPlanType(p.planType as string) }}
-            />
-            <button
-              className="hover:underline truncate"
-              onClick={() => zoomToPlan(p.id)}
-              title="Zoom to plan"
-            >
-              {p.planNumber}
-            </button>
-          </label>
-        ))}
-      </div>
-      </>
       )}
     </div>
   );
@@ -547,7 +575,10 @@ const SummaryPanel = React.memo(function SummaryPanel({
                   className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
                   style={{ background: color }}
                 />
-                <span className="text-[11px] text-gray-600 dark:text-gray-400 truncate" title={type}>
+                <span
+                  className="text-[11px] text-gray-600 dark:text-gray-400 truncate"
+                  title={type}
+                >
                   {type}
                 </span>
               </div>
@@ -558,7 +589,10 @@ const SummaryPanel = React.memo(function SummaryPanel({
   );
 });
 
-const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = defaultGetPlanDetailUrl }) => {
+const AllPlansMap: React.FC<AllPlansMapProps> = ({
+  plans,
+  getPlanDetailUrl = defaultGetPlanDetailUrl,
+}) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<MaplibreMap | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -586,12 +620,14 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
 
   // --- UI State ---
   const [activeBasemap, setActiveBasemap] = useState<string>("roadmap");
-  const [displayMode, setDisplayMode] = useState<"shape" | "dots" | "dots-lines">("shape");
+  const [displayMode, setDisplayMode] = useState<
+    "shape" | "dots" | "dots-lines"
+  >("shape");
 
   // --- Memoized Derived Data ---
   const combinedPlans = useMemo(
     () => [...plans, ...tempPlans],
-    [plans, tempPlans],
+    [plans, tempPlans]
   );
 
   const dbPlanSignatures = useMemo(() => {
@@ -632,9 +668,9 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
       (plan.facilitator ?? "").toLowerCase().includes(query) ||
       (Array.isArray(plan.pillars) &&
         (plan.pillars as PillarData[]).some((p) =>
-          (p.pillarNumber ?? "").toLowerCase().includes(query),
+          (p.pillarNumber ?? "").toLowerCase().includes(query)
         )),
-    [],
+    []
   );
 
   const filteredPlans = useMemo(() => {
@@ -648,7 +684,13 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
       if (!query) return matchesStatus && matchesType;
       return matchesStatus && matchesType && matchesSearchQuery(plan, query);
     });
-  }, [combinedPlans, searchQuery, statusFilter, typeFilter, matchesSearchQuery]);
+  }, [
+    combinedPlans,
+    searchQuery,
+    statusFilter,
+    typeFilter,
+    matchesSearchQuery,
+  ]);
 
   // Top matches shown as a dropdown directly under the Search Plans input —
   // filteredPlans itself already drives the (easy-to-miss, separately
@@ -684,10 +726,14 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
   useEffect(() => {
     isVisibilityResetRef.current = true;
     setVisiblePlanIds(
-      visibilityFilteredPlans.filter((p) => p.status !== "UPLOADED").map((p) => p.id),
+      visibilityFilteredPlans
+        .filter((p) => p.status !== "UPLOADED")
+        .map((p) => p.id)
     );
     setVisibleTempPlanIds(
-      visibilityFilteredPlans.filter((p) => p.status === "UPLOADED").map((p) => p.id),
+      visibilityFilteredPlans
+        .filter((p) => p.status === "UPLOADED")
+        .map((p) => p.id)
     );
   }, [visibilityFilteredPlans]);
 
@@ -709,7 +755,9 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
   // `plan.geometry`'s unshifted bbox (which can be meaningfully offset for
   // any state with a configured shift, making the camera jump to empty
   // space with the plan nowhere in view).
-  const planBoundsRef = useRef<Map<string, [number, number, number, number]>>(new Map());
+  const planBoundsRef = useRef<Map<string, [number, number, number, number]>>(
+    new Map()
+  );
 
   const zoomToPlan = useCallback(
     (planId: string) => {
@@ -733,7 +781,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
         });
       }
     },
-    [combinedPlans],
+    [combinedPlans]
   );
 
   // Consumed by fetchAndRender: when set, that effect zooms to this specific
@@ -756,137 +804,149 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
   // comment at its use site in the fetchAndRender effect below.
   const renderGenerationRef = useRef(0);
 
-  const handleCsvUpload = useCallback(async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const files = event.target.files;
-    if (!files) return;
+  const handleCsvUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files) return;
 
-    const newTempPlans: TempPlan[] = [];
+      const newTempPlans: TempPlan[] = [];
 
-    for (const file of Array.from(files)) {
-      try {
-        const text = await file.text();
-        const lines = text.trim().split("\n");
-        // Shared with parseCSVContent (surfboardUtils.ts) — this used to be
-        // its own, less careful copy (just lowercase + split, no
-        // whitespace/punctuation stripping or BOM handling), which could
-        // fail to recognize header variants like "Pillar No." or a BOM'd
-        // first column that the other CSV upload flow already handled fine.
-        const headers = (lines.shift() ?? "").split(",").map(normalizeCsvHeader);
-        const { pillarNumberIndex: pillarIndex, eastingIndex, northingIndex } =
-          resolvePillarColumnIndices(headers);
-        const stateIndex = findCsvColumnIndex(headers, ["state"]);
+      for (const file of Array.from(files)) {
+        try {
+          const text = await file.text();
+          const lines = text.trim().split("\n");
+          // Shared with parseCSVContent (surfboardUtils.ts) — this used to be
+          // its own, less careful copy (just lowercase + split, no
+          // whitespace/punctuation stripping or BOM handling), which could
+          // fail to recognize header variants like "Pillar No." or a BOM'd
+          // first column that the other CSV upload flow already handled fine.
+          const headers = (lines.shift() ?? "")
+            .split(",")
+            .map(normalizeCsvHeader);
+          const {
+            pillarNumberIndex: pillarIndex,
+            eastingIndex,
+            northingIndex,
+          } = resolvePillarColumnIndices(headers);
+          const stateIndex = findCsvColumnIndex(headers, ["state"]);
 
-        if (pillarIndex === -1 || eastingIndex === -1 || northingIndex === -1) {
-          console.warn(`Skipping file ${file.name}: Missing required columns.`);
-          continue;
-        }
+          if (
+            pillarIndex === -1 ||
+            eastingIndex === -1 ||
+            northingIndex === -1
+          ) {
+            console.warn(
+              `Skipping file ${file.name}: Missing required columns.`
+            );
+            continue;
+          }
 
-        const pillars: PillarData[] = lines
-          .map((line, index) => ({
-            pillarNumber: line.split(",")[pillarIndex]?.trim(),
-            easting: parseFloat(line.split(",")[eastingIndex]),
-            northing: parseFloat(line.split(",")[northingIndex]),
-            pointIndex: index,
-          }))
-          .filter(
-            (p) => p.pillarNumber && !isNaN(p.easting) && !isNaN(p.northing),
-          );
+          const pillars: PillarData[] = lines
+            .map((line, index) => ({
+              pillarNumber: line.split(",")[pillarIndex]?.trim(),
+              easting: parseFloat(line.split(",")[eastingIndex]),
+              northing: parseFloat(line.split(",")[northingIndex]),
+              pointIndex: index,
+            }))
+            .filter(
+              (p) => p.pillarNumber && !isNaN(p.easting) && !isNaN(p.northing)
+            );
 
-        if (pillars.length < 3) continue;
+          if (pillars.length < 3) continue;
 
-        const state =
-          stateIndex !== -1
-            ? lines[0]?.split(",")[stateIndex]?.trim() || null
-            : null;
+          const state =
+            stateIndex !== -1
+              ? lines[0]?.split(",")[stateIndex]?.trim() || null
+              : null;
 
-        // Check for duplicates
-        const signature = generatePlanSignature(pillars);
-        const existingPlanId = dbPlanSignatures.get(signature);
-        if (existingPlanId) {
-          const existingPlan = plans.find((p) => p.id === existingPlanId);
-          setNotification({
-            message: `CSV for "${existingPlan?.planNumber}" already exists in the database. Zooming to plan.`,
-            type: "info",
+          // Check for duplicates
+          const signature = generatePlanSignature(pillars);
+          const existingPlanId = dbPlanSignatures.get(signature);
+          if (existingPlanId) {
+            const existingPlan = plans.find((p) => p.id === existingPlanId);
+            setNotification({
+              message: `CSV for "${existingPlan?.planNumber}" already exists in the database. Zooming to plan.`,
+              type: "info",
+            });
+            zoomToPlan(existingPlanId);
+            pendingZoomTargetRef.current = existingPlanId;
+            continue;
+          }
+
+          const existingTempPlanId = tempPlanSignatures.get(signature);
+          if (existingTempPlanId) {
+            const existingTempPlan = tempPlans.find(
+              (p) => p.id === existingTempPlanId
+            );
+            setNotification({
+              message: `This CSV content is already uploaded as "${existingTempPlan?.planNumber}". Zooming.`,
+              type: "info",
+            });
+            zoomToPlan(existingTempPlanId);
+            pendingZoomTargetRef.current = existingTempPlanId;
+            continue;
+          }
+
+          const coords = pillars.map((p) => {
+            const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
+              p.easting,
+              p.northing,
+            ]);
+            return [lon, lat];
           });
-          zoomToPlan(existingPlanId);
-          pendingZoomTargetRef.current = existingPlanId;
-          continue;
-        }
+          if (
+            coords.length > 0 &&
+            (coords[0][0] !== coords[coords.length - 1][0] ||
+              coords[0][1] !== coords[coords.length - 1][1])
+          ) {
+            coords.push(coords[0]);
+          }
 
-        const existingTempPlanId = tempPlanSignatures.get(signature);
-        if (existingTempPlanId) {
-          const existingTempPlan = tempPlans.find(
-            (p) => p.id === existingTempPlanId,
-          );
-          setNotification({
-            message: `This CSV content is already uploaded as "${existingTempPlan?.planNumber}". Zooming.`,
-            type: "info",
+          const polygon = turf.polygon([coords]);
+          const currentDate = new Date();
+          const newPlanId = `csv-${file.name}-${Date.now()}`;
+          pendingZoomTargetRef.current = newPlanId;
+          newTempPlans.push({
+            id: newPlanId,
+            planNumber: file.name.replace(/\.csv$/i, ""),
+            surveyTitle: "Uploaded from CSV",
+            facilitator: "Local File",
+            status: "UPLOADED",
+            planType: "CSV",
+            geometry: {
+              type: "Polygon",
+              coordinates: polygon.geometry.coordinates,
+            },
+            pillars,
+            referencePlanNumber: null,
+            deededArea: "0",
+            pillarType: "UNKNOWN",
+            pdfFilePaths: [],
+            cadFilePaths: [],
+            certificateFilePaths: [],
+            ward: null,
+            lcda: null,
+            lga: null,
+            state,
+            locality: null,
+            isLive: false,
+            dateOnSurveyPlan: currentDate,
+            dateLodged: null,
+            reasonForWithdrawalAndResubmission: null,
+            createdAt: currentDate,
+            updatedAt: currentDate,
           });
-          zoomToPlan(existingTempPlanId);
-          pendingZoomTargetRef.current = existingTempPlanId;
-          continue;
+        } catch (error) {
+          console.error(`Failed to process file ${file.name}:`, error);
         }
-
-        const coords = pillars.map((p) => {
-          const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
-            p.easting,
-            p.northing,
-          ]);
-          return [lon, lat];
-        });
-        if (
-          coords.length > 0 &&
-          (coords[0][0] !== coords[coords.length - 1][0] ||
-            coords[0][1] !== coords[coords.length - 1][1])
-        ) {
-          coords.push(coords[0]);
-        }
-
-        const polygon = turf.polygon([coords]);
-        const currentDate = new Date();
-        const newPlanId = `csv-${file.name}-${Date.now()}`;
-        pendingZoomTargetRef.current = newPlanId;
-        newTempPlans.push({
-          id: newPlanId,
-          planNumber: file.name.replace(/\.csv$/i, ""),
-          surveyTitle: "Uploaded from CSV",
-          facilitator: "Local File",
-          status: "UPLOADED",
-          planType: "CSV",
-          geometry: {
-            type: "Polygon",
-            coordinates: polygon.geometry.coordinates,
-          },
-          pillars,
-          referencePlanNumber: null,
-          deededArea: "0",
-          pillarType: "UNKNOWN",
-          pdfFilePaths: [],
-          cadFilePaths: [],
-          certificateFilePaths: [],
-          ward: null,
-          lcda: null,
-          lga: null,
-          state,
-          locality: null,
-          isLive: false,
-          dateOnSurveyPlan: currentDate,
-          dateLodged: null,
-          reasonForWithdrawalAndResubmission: null,
-          createdAt: currentDate,
-          updatedAt: currentDate,
-        });
-      } catch (error) {
-        console.error(`Failed to process file ${file.name}:`, error);
       }
-    }
-    setTempPlans((prev) => [...prev, ...newTempPlans]);
-    if (event.target) event.target.value = "";
-    // pendingZoomTargetRef (set above per-file) is consumed by fetchAndRender
-    // once it re-renders with the new plan and computes its real bounds.
-  }, [dbPlanSignatures, tempPlanSignatures, plans, tempPlans, zoomToPlan]);
+      setTempPlans((prev) => [...prev, ...newTempPlans]);
+      if (event.target) event.target.value = "";
+      // pendingZoomTargetRef (set above per-file) is consumed by fetchAndRender
+      // once it re-renders with the new plan and computes its real bounds.
+    },
+    [dbPlanSignatures, tempPlanSignatures, plans, tempPlans, zoomToPlan]
+  );
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
@@ -1037,13 +1097,15 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
       const renderPlanPopup = (
         e: maplibregl.MapMouseEvent,
         group: Record<string, any>[],
-        index: number,
+        index: number
       ) => {
         if (!map.current) return;
         const properties = group[index];
         // CSV-uploaded rows aren't real saved plans (no detail page to link to).
         const detailUrl =
-          properties.id && properties.status !== "UPLOADED" ? getPlanDetailUrl(properties.id) : null;
+          properties.id && properties.status !== "UPLOADED"
+            ? getPlanDetailUrl(properties.id)
+            : null;
         const planNumberHtml = detailUrl
           ? `<a href="${detailUrl}" target="_blank" rel="noopener noreferrer" class="hover:underline" style="color:${properties.color}">${properties.planNumber}</a>`
           : `<span style="color:${properties.color}">${properties.planNumber}</span>`;
@@ -1071,7 +1133,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
       const showPopup = (
         e: maplibregl.MapMouseEvent & {
           features?: maplibregl.MapGeoJSONFeature[];
-        },
+        }
       ) => {
         const features = e.features;
         if (!features?.length || !map.current) return;
@@ -1108,11 +1170,16 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
         const uniqueByPlan = new Map<string, Record<string, any>>();
         features.forEach((f) => {
           const id = f.properties?.id;
-          if (id && !uniqueByPlan.has(id)) uniqueByPlan.set(id, f.properties as Record<string, any>);
+          if (id && !uniqueByPlan.has(id))
+            uniqueByPlan.set(id, f.properties as Record<string, any>);
         });
         const group = Array.from(uniqueByPlan.values()).sort((a, b) => {
-          const da = a.dateOnSurveyPlan ? new Date(a.dateOnSurveyPlan).getTime() : 0;
-          const db = b.dateOnSurveyPlan ? new Date(b.dateOnSurveyPlan).getTime() : 0;
+          const da = a.dateOnSurveyPlan
+            ? new Date(a.dateOnSurveyPlan).getTime()
+            : 0;
+          const db = b.dateOnSurveyPlan
+            ? new Date(b.dateOnSurveyPlan).getTime()
+            : 0;
           return db - da;
         });
         if (group.length === 0) return;
@@ -1180,7 +1247,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
           const shiftedPillars = applyVisualizationShift(
             plan.pillars as PillarData[],
             stateName,
-            shifts,
+            shifts
           );
 
           const groups: Record<number, any[]> = {};
@@ -1195,7 +1262,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
                 planId: plan.id,
                 rawEasting: p.rawEasting ?? p.easting,
                 rawNorthing: p.rawNorthing ?? p.northing,
-              }),
+              })
             );
 
             const idx = p.polygonIndex ?? 0;
@@ -1208,7 +1275,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
             if (
               turf.booleanEqual(
                 turf.point(closedCoords[0]),
-                turf.point(closedCoords.at(-1)!),
+                turf.point(closedCoords.at(-1)!)
               ) === false
             ) {
               closedCoords.push(closedCoords[0]);
@@ -1253,7 +1320,10 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
         const id = (f.properties as any)?.id;
         if (!id) return;
         try {
-          newBoundsMap.set(id, turf.bbox(f) as [number, number, number, number]);
+          newBoundsMap.set(
+            id,
+            turf.bbox(f) as [number, number, number, number]
+          );
         } catch {
           // malformed geometry — leave unset, zoomToPlan falls back to raw plan.geometry
         }
@@ -1330,9 +1400,13 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
           allVisibleIds.length === availableIds.size &&
           allVisibleIds.every((id) => availableIds.has(id));
 
-        if (isFullSelection && polygonFeatures.length > 0 && allVisibleIds.length > 0) {
+        if (
+          isFullSelection &&
+          polygonFeatures.length > 0 &&
+          allVisibleIds.length > 0
+        ) {
           const visibleFeatures = polygonFeatures.filter((f) =>
-            allVisibleIds.includes(f.properties?.id),
+            allVisibleIds.includes(f.properties?.id)
           );
           if (visibleFeatures.length > 0) {
             const bounds = turf.bbox({
@@ -1351,7 +1425,13 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
     };
 
     fetchAndRender();
-  }, [visibilityFilteredPlans, isReady, visiblePlanIds, visibleTempPlanIds, searchMatchIds]);
+  }, [
+    visibilityFilteredPlans,
+    isReady,
+    visiblePlanIds,
+    visibleTempPlanIds,
+    searchMatchIds,
+  ]);
 
   useEffect(() => {
     if (!map.current || !isReady) return;
@@ -1361,7 +1441,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
         map.current.setLayoutProperty(
           layerId,
           "visibility",
-          activeBasemap === bm ? "visible" : "none",
+          activeBasemap === bm ? "visible" : "none"
         );
       }
     });
@@ -1372,14 +1452,29 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
   // visibility swap rather than a re-render of the underlying data.
   useEffect(() => {
     if (!map.current || !isReady) return;
-    if (!map.current.getLayer("plans-fill") || !map.current.getLayer("pillars-symbol") || !map.current.getLayer("plans-outline")) return;
+    if (
+      !map.current.getLayer("plans-fill") ||
+      !map.current.getLayer("pillars-symbol") ||
+      !map.current.getLayer("plans-outline")
+    )
+      return;
     // Default ("shape") mode shows the filled shape, its red outline, AND
     // the pillar points together — "points" is only hidden in the
     // "shape"-exclusive sense the display-mode toggle never actually offers
     // (there's no shape-only mode), so it's really "points always visible,
     // shape visible except in point-only mode."
-    map.current.setLayoutProperty("plans-fill", "visibility", displayMode === "shape" ? "visible" : "none");
-    map.current.setLayoutProperty("plans-outline", "visibility", displayMode === "shape" || displayMode === "dots-lines" ? "visible" : "none");
+    map.current.setLayoutProperty(
+      "plans-fill",
+      "visibility",
+      displayMode === "shape" ? "visible" : "none"
+    );
+    map.current.setLayoutProperty(
+      "plans-outline",
+      "visibility",
+      displayMode === "shape" || displayMode === "dots-lines"
+        ? "visible"
+        : "none"
+    );
     map.current.setLayoutProperty("pillars-symbol", "visibility", "visible");
   }, [displayMode, isReady]);
 
@@ -1393,8 +1488,8 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-            locQuery,
-          )}&countrycodes=ng`,
+            locQuery
+          )}&countrycodes=ng`
         );
         const data = await res.json();
         setLocResults(
@@ -1402,7 +1497,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
             name: item.display_name,
             lat: parseFloat(item.lat),
             lon: parseFloat(item.lon),
-          })),
+          }))
         );
       } catch (error) {
         console.error("Failed to fetch location:", error);
@@ -1428,19 +1523,23 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
   }, []);
 
   const toggleStatus = useCallback((s: string) => {
-    setStatusFilter((p) => (p.includes(s) ? p.filter((x) => x !== s) : [...p, s]));
+    setStatusFilter((p) =>
+      p.includes(s) ? p.filter((x) => x !== s) : [...p, s]
+    );
   }, []);
   const toggleType = useCallback((t: string) => {
-    setTypeFilter((p) => (p.includes(t) ? p.filter((x) => x !== t) : [...p, t]));
+    setTypeFilter((p) =>
+      p.includes(t) ? p.filter((x) => x !== t) : [...p, t]
+    );
   }, []);
   const toggleVisiblePlan = useCallback((id: string, checked: boolean) => {
     setVisiblePlanIds((prev) =>
-      checked ? [...prev, id] : prev.filter((x) => x !== id),
+      checked ? [...prev, id] : prev.filter((x) => x !== id)
     );
   }, []);
   const toggleVisibleTempPlan = useCallback((id: string, checked: boolean) => {
     setVisibleTempPlanIds((prev) =>
-      checked ? [...prev, id] : prev.filter((x) => x !== id),
+      checked ? [...prev, id] : prev.filter((x) => x !== id)
     );
   }, []);
   return (

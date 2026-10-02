@@ -29,7 +29,11 @@ interface SpeakersManagerProps {
   selectedEdition: string;
 }
 
-export function SpeakersManager({ initialSpeakers, editions, selectedEdition }: SpeakersManagerProps) {
+export function SpeakersManager({
+  initialSpeakers,
+  editions,
+  selectedEdition,
+}: SpeakersManagerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTier, setSelectedTier] = useState("ALL");
   const { update, isPending } = useSearchParamsUpdater();

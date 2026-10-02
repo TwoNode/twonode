@@ -7,7 +7,10 @@ export function timeGreeting(hour: number): string {
 }
 
 /** Up to two capital letters from a first and last name; "" when there is no name to draw from. */
-export function getInitials(firstName?: string | null, lastName?: string | null): string {
+export function getInitials(
+  firstName?: string | null,
+  lastName?: string | null
+): string {
   const first = firstName?.trim()[0] ?? "";
   const last = lastName?.trim()[0] ?? "";
   return (first + last).toUpperCase();

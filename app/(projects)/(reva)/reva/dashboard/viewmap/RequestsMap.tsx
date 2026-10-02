@@ -9,7 +9,7 @@ import {
   StandaloneSearchBox,
 } from "@react-google-maps/api";
 
-const libraries: ("places")[] = ["places"];
+const libraries: "places"[] = ["places"];
 
 const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
   const [selectedProperty, setSelectedProperty] = useState<null | {
@@ -215,8 +215,8 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
                       property.status === "Available"
                         ? "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
                         : property.status === "Processing"
-                        ? "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
-                        : "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                          ? "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
+                          : "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
                     scaledSize: new google.maps.Size(30, 30),
                   }}
                 />
@@ -244,8 +244,8 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
                       selectedProperty.status === "Available"
                         ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
                         : selectedProperty.status === "Processing"
-                        ? "bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300"
-                        : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
+                          ? "bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300"
+                          : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
                     }`}
                   >
                     {selectedProperty?.status}
@@ -293,8 +293,8 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
                     property.status === "Available"
                       ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
                       : property.status === "Processing"
-                      ? "bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300"
-                      : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
+                        ? "bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300"
+                        : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
                   }`}
                 >
                   {property.status}

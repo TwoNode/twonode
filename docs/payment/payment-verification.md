@@ -12,6 +12,7 @@ The Payment Verification feature allows administrators to manually verify paymen
 ## Access
 
 The Payment Verification page is accessible to admin users at:
+
 ```
 /reva-restricted/dashboard/payment-verification
 ```
@@ -19,26 +20,31 @@ The Payment Verification page is accessible to admin users at:
 ## Features
 
 ### 1. View All Requests
+
 - Displays both authenticated user requests and one-time user requests
 - Shows payment status, environment (test/live), and request details
 - Real-time filtering and search capabilities
 
 ### 2. Bulk Verification
+
 - Verify all unpaid requests at once
 - Automatic database updates based on Paystack verification results
 - Progress tracking and result summary
 
 ### 3. Individual Verification
+
 - Verify payment status for specific requests
 - Confirmation dialog before verification
 - Immediate feedback on verification results
 
 ### 4. Filtering and Search
+
 - Search by reference, address, email, or title
 - Filter by payment status (All, Paid, Unpaid, Processing)
 - Real-time filtering without page reload
 
 ### 5. Verification Results
+
 - Detailed results for each verification attempt
 - Color-coded success/failure indicators
 - Status change tracking (original → new status)
@@ -57,12 +63,14 @@ The Payment Verification page is accessible to admin users at:
 ### Environment Handling
 
 The system automatically detects the correct Paystack environment (test/live) based on the `isLive` field in the database:
+
 - `isLive: false` → Uses test Paystack keys
 - `isLive: true` → Uses live Paystack keys
 
 ### Database Updates
 
 For authenticated users:
+
 ```typescript
 await updatePropertyTransactionStatus(
   reference,
@@ -74,10 +82,11 @@ await updatePropertyTransactionStatus(
 ```
 
 For one-time users:
+
 ```typescript
 await updateOneTimeTransactionStatus(
   reference,
-  "Processing", 
+  "Processing",
   newPaymentStatus,
   statusMessage,
   errorMessage
@@ -134,6 +143,7 @@ await updateOneTimeTransactionStatus(
 ### Error Handling
 
 The system includes comprehensive error handling:
+
 - Network errors are caught and reported
 - Invalid responses are handled gracefully
 - Database update failures are logged
@@ -148,7 +158,11 @@ The feature integrates with existing Paystack utilities:
 ```typescript
 import { revaApi } from "@/reva/apiClient";
 
-await revaApi.admin.requests.verifyPayment(reference, isLive, "authenticated" /* or "oneTime" */);
+await revaApi.admin.requests.verifyPayment(
+  reference,
+  isLive,
+  "authenticated" /* or "oneTime" */
+);
 // → POST /api/v1/reva/admin/requests/:reference/verify-payment
 ```
 
@@ -163,4 +177,4 @@ Potential improvements for future versions:
 3. **Export Results**: Export verification results to CSV/Excel
 4. **Advanced Filtering**: Filter by date range, amount, etc.
 5. **Bulk Actions**: Bulk update payment status without verification
-6. **Audit Log**: Detailed audit trail of all verification activities 
+6. **Audit Log**: Detailed audit trail of all verification activities

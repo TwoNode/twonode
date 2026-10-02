@@ -11,7 +11,10 @@ const schema = z.object({ reference: z.string().min(1) });
 export const POST = withAuth<SurfboardRole>(
   async (req, ctx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { reference } = await validateBody(req, schema);
     const data = await verifySubscription(ctx.session.sub, reference);

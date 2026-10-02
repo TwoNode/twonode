@@ -46,7 +46,7 @@ interface ActivityItem {
 
 /** Buckets an audit-log action string into the same success/warning/error/info palette the old mock feed used. */
 function activityTone(
-  action: string,
+  action: string
 ): "success" | "warning" | "error" | "info" {
   if (/APPROVE|COMPLETE|VERIFY/i.test(action)) return "success";
   if (/QUERY|DISAPPROVE|REVOKE|DEACTIVATE/i.test(action)) return "warning";
@@ -87,7 +87,13 @@ export default function RestrictedDashboardHome() {
   // pending on *payment*, a certificate is pending on the *approval* it
   // needs before it can be issued. Each card says so, so the two never read
   // as duplicates of each other.
-  const stats: { title: string; value: number; icon: typeof FileCheck; tone: StatTone; breakdown?: string }[] = [
+  const stats: {
+    title: string;
+    value: number;
+    icon: typeof FileCheck;
+    tone: StatTone;
+    breakdown?: string;
+  }[] = [
     {
       title: "Total Plans",
       value: statCards?.totalPlansCount ?? 0,

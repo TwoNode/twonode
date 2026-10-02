@@ -77,7 +77,9 @@ export async function generateQRCode(ticketData: TicketData): Promise<string> {
  * to open the public certificate page, which does its own ticket lookup, so
  * there's no hash/timestamp payload to verify here.
  */
-export async function generateVerificationQRDataURL(url: string): Promise<string> {
+export async function generateVerificationQRDataURL(
+  url: string
+): Promise<string> {
   return QRCode.toDataURL(url, {
     errorCorrectionLevel: "M",
     type: "image/png",

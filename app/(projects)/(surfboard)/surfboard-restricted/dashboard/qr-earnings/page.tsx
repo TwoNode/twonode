@@ -72,7 +72,11 @@ export default function AdminQREarningsPage() {
     reload,
   } = useServerList<any, Record<string, never>>(
     async ({ page, pageSize, search }) =>
-      surfboardApi.admin.qr.pendingWithdrawals({ page, pageSize, search: search || undefined }),
+      surfboardApi.admin.qr.pendingWithdrawals({
+        page,
+        pageSize,
+        search: search || undefined,
+      }),
     { initialFilters: {} }
   );
 
@@ -114,7 +118,7 @@ export default function AdminQREarningsPage() {
     try {
       const res = await surfboardApi.admin.qr.processWithdrawal(
         requestId,
-        "APPROVE_PAYOUT",
+        "APPROVE_PAYOUT"
       );
       if (res.success) {
         toast.success(res.data.message || "Payout approved and sent!", {
@@ -142,7 +146,7 @@ export default function AdminQREarningsPage() {
       const res = await surfboardApi.admin.qr.processWithdrawal(
         selectedRejectId,
         "REJECT",
-        rejectReason,
+        rejectReason
       );
 
       if (res.success) {
@@ -217,7 +221,9 @@ export default function AdminQREarningsPage() {
             <div className="text-3xl font-black text-emerald-600 mt-2">
               ₦{(stats?.totalVerificationFees || 0).toLocaleString()}
             </div>
-            <p className="text-xs text-slate-500 dark:text-gray-400 mt-2">Credited to surveyors</p>
+            <p className="text-xs text-slate-500 dark:text-gray-400 mt-2">
+              Credited to surveyors
+            </p>
           </CardContent>
         </Card>
 
@@ -303,7 +309,9 @@ export default function AdminQREarningsPage() {
                     colSpan={6}
                     className="text-center py-10 text-slate-500 dark:text-gray-400"
                   >
-                    {search ? "No requests match your search." : "No pending withdrawal requests in the queue."}
+                    {search
+                      ? "No requests match your search."
+                      : "No pending withdrawal requests in the queue."}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -377,7 +385,13 @@ export default function AdminQREarningsPage() {
             <p className="text-sm text-slate-600 dark:text-gray-400">
               Page {page} of {totalPages} • {totalPending} requests
             </p>
-            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              pageSize={pageSize}
+              onPageSizeChange={setPageSize}
+            />
           </CardContent>
         )}
       </Card>

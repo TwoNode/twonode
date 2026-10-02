@@ -89,7 +89,10 @@ export default function FileUploader({
 
   // Convert acceptedFileTypes to the Accept format expected by react-dropzone
   const acceptProp = (() => {
-    if (typeof acceptedFileTypes === "object" && !Array.isArray(acceptedFileTypes)) {
+    if (
+      typeof acceptedFileTypes === "object" &&
+      !Array.isArray(acceptedFileTypes)
+    ) {
       return acceptedFileTypes as Record<string, string[]>;
     }
     const types = Array.isArray(acceptedFileTypes)
@@ -165,7 +168,11 @@ export default function FileUploader({
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => removeFile(file)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => removeFile(file)}
+              >
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>

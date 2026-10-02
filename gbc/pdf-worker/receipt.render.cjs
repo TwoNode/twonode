@@ -6,9 +6,18 @@
 
 const path = require("path");
 const React = require("react");
-const { renderToBuffer, StyleSheet, Font, Document, Page, Text, View } = require("@react-pdf/renderer");
+const {
+  renderToBuffer,
+  StyleSheet,
+  Font,
+  Document,
+  Page,
+  Text,
+  View,
+} = require("@react-pdf/renderer");
 
-const fontPath = (file) => path.join(__dirname, "..", "..", "public", "fonts", file);
+const fontPath = (file) =>
+  path.join(__dirname, "..", "..", "public", "fonts", file);
 
 // Hand-rolled instead of date-fns: date-fns ships every locale as its own
 // file (~5,300 files per copy traced into this worker's bundle), which was
@@ -39,9 +48,20 @@ const GREEN = "#15803D";
 
 const styles = StyleSheet.create({
   page: { backgroundColor: PAPER, fontFamily: "Bricolage", padding: 48 },
-  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 28,
+  },
   wordmark: { fontSize: 15, fontWeight: 800, color: INK, letterSpacing: 1 },
-  wordmarkSub: { fontSize: 8, fontWeight: 500, color: MUTED, marginTop: 2, letterSpacing: 0.5 },
+  wordmarkSub: {
+    fontSize: 8,
+    fontWeight: 500,
+    color: MUTED,
+    marginTop: 2,
+    letterSpacing: 0.5,
+  },
   statusPill: {
     borderWidth: 1,
     borderColor: GREEN,
@@ -64,7 +84,13 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E5DFD3",
   },
   label: { fontSize: 9.5, fontWeight: 500, color: MUTED },
-  value: { fontSize: 9.5, fontWeight: 600, color: INK, textAlign: "right", maxWidth: 280 },
+  value: {
+    fontSize: 9.5,
+    fontWeight: 600,
+    color: INK,
+    textAlign: "right",
+    maxWidth: 280,
+  },
   amountBlock: {
     marginTop: 24,
     backgroundColor: "#F3EEE3",
@@ -76,7 +102,13 @@ const styles = StyleSheet.create({
   },
   amountLabel: { fontSize: 10, fontWeight: 600, color: MUTED },
   amountValue: { fontSize: 20, fontWeight: 800, color: PURPLE },
-  footer: { marginTop: 32, fontSize: 8, color: MUTED, lineHeight: 1.6, textAlign: "center" },
+  footer: {
+    marginTop: 32,
+    fontSize: 8,
+    color: MUTED,
+    lineHeight: 1.6,
+    textAlign: "center",
+  },
 });
 
 function formatNaira(kobo) {
@@ -85,7 +117,9 @@ function formatNaira(kobo) {
 
 function buildReceiptElement({ ticket }) {
   const edition = ticket.editionRef || {};
-  const paymentDate = ticket.paymentDate ? new Date(ticket.paymentDate) : new Date();
+  const paymentDate = ticket.paymentDate
+    ? new Date(ticket.paymentDate)
+    : new Date();
 
   const rows = [
     ["Payer", ticket.name],
@@ -94,7 +128,10 @@ function buildReceiptElement({ ticket }) {
     ["Ticket Type", String(ticket.ticketType).replace(/_/g, " ")],
     ["Event", edition.name || "GBC"],
     ["Payment Reference", ticket.paymentRef || "—"],
-    ["Payment Method", ticket.paymentMethod ? ticket.paymentMethod.toUpperCase() : "—"],
+    [
+      "Payment Method",
+      ticket.paymentMethod ? ticket.paymentMethod.toUpperCase() : "—",
+    ],
     [
       "Date Paid",
       `${formatDate(paymentDate, { month: "long", day: "numeric", year: "numeric" })} · ${formatDate(paymentDate, { hour: "numeric", minute: "2-digit", hour12: true })}`,
@@ -113,13 +150,25 @@ function buildReceiptElement({ ticket }) {
         React.createElement(
           View,
           null,
-          React.createElement(Text, { style: styles.wordmark }, (edition.name || "GBC").toUpperCase()),
-          React.createElement(Text, { style: styles.wordmarkSub }, "GEOSPATIAL BUILDERS COURSE · TWONODE TECHNOLOGIES")
+          React.createElement(
+            Text,
+            { style: styles.wordmark },
+            (edition.name || "GBC").toUpperCase()
+          ),
+          React.createElement(
+            Text,
+            { style: styles.wordmarkSub },
+            "GEOSPATIAL BUILDERS COURSE · TWONODE TECHNOLOGIES"
+          )
         ),
         React.createElement(Text, { style: styles.statusPill }, "PAID")
       ),
       React.createElement(Text, { style: styles.title }, "Payment Receipt"),
-      React.createElement(Text, { style: styles.subtitle }, `Receipt for ${ticket.ticketNumber}`),
+      React.createElement(
+        Text,
+        { style: styles.subtitle },
+        `Receipt for ${ticket.ticketNumber}`
+      ),
       React.createElement(View, { style: styles.divider }),
       ...rows.map(([label, value]) =>
         React.createElement(
@@ -133,7 +182,11 @@ function buildReceiptElement({ ticket }) {
         View,
         { style: styles.amountBlock },
         React.createElement(Text, { style: styles.amountLabel }, "Amount Paid"),
-        React.createElement(Text, { style: styles.amountValue }, formatNaira(ticket.price))
+        React.createElement(
+          Text,
+          { style: styles.amountValue },
+          formatNaira(ticket.price)
+        )
       ),
       React.createElement(
         Text,
@@ -148,7 +201,9 @@ function readStdin() {
   return new Promise((resolve, reject) => {
     const chunks = [];
     process.stdin.on("data", (chunk) => chunks.push(chunk));
-    process.stdin.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    process.stdin.on("end", () =>
+      resolve(Buffer.concat(chunks).toString("utf8"))
+    );
     process.stdin.on("error", reject);
   });
 }

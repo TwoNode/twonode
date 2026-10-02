@@ -423,8 +423,8 @@ export default function UserPropertyRequests({
                               property?.updatedAt
                                 ? new Date(property.updatedAt)
                                 : property?.createdAt
-                                ? new Date(property.createdAt)
-                                : undefined
+                                  ? new Date(property.createdAt)
+                                  : undefined
                             )}
                           </p>
                         </div>
@@ -445,7 +445,9 @@ export default function UserPropertyRequests({
                         </Badge>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {Array.from({ length: Math.min(property.documentsCount, 4) }).map((_, index) => (
+                        {Array.from({
+                          length: Math.min(property.documentsCount, 4),
+                        }).map((_, index) => (
                           <SecureDownloadDialog
                             key={index}
                             label={`Document ${index + 1}`}

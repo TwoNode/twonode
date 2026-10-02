@@ -204,8 +204,8 @@ export async function OneTimeRequest({ data }: PageProps) {
                   request.status === "Completed"
                     ? "w-full bg-green-500"
                     : request.status === "In Progress"
-                    ? "w-2/3 bg-blue-500"
-                    : "w-1/3 bg-blue-300"
+                      ? "w-2/3 bg-blue-500"
+                      : "w-1/3 bg-blue-300"
                 }`}
               ></div>
 
@@ -435,7 +435,9 @@ export async function OneTimeRequest({ data }: PageProps) {
                         <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Email
                         </label>
-                        <p className="text-gray-900 dark:text-white">{request.email}</p>
+                        <p className="text-gray-900 dark:text-white">
+                          {request.email}
+                        </p>
                       </div>
                     </div>
                     {request.userPhoneNumber && (
@@ -456,7 +458,9 @@ export async function OneTimeRequest({ data }: PageProps) {
                         <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Requester Name
                         </label>
-                        <p className="text-gray-900 dark:text-white">{request.requester}</p>
+                        <p className="text-gray-900 dark:text-white">
+                          {request.requester}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -508,15 +512,17 @@ export async function OneTimeRequest({ data }: PageProps) {
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="flex flex-wrap gap-3">
-                      {Array.from({ length: request.documentsCount }).map((_, index) => (
-                        <SecureDownloadDialog
-                          key={index}
-                          label={`Download Document ${index + 1}`}
-                          reference={request.reference}
-                          email={request.email}
-                          target={`document:${index}`}
-                        />
-                      ))}
+                      {Array.from({ length: request.documentsCount }).map(
+                        (_, index) => (
+                          <SecureDownloadDialog
+                            key={index}
+                            label={`Download Document ${index + 1}`}
+                            reference={request.reference}
+                            email={request.email}
+                            target={`document:${index}`}
+                          />
+                        )
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -568,7 +574,9 @@ export async function OneTimeRequest({ data }: PageProps) {
                     <CardTitle>Status Information</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-900 dark:text-white">{request.statusMessage}</p>
+                    <p className="text-gray-900 dark:text-white">
+                      {request.statusMessage}
+                    </p>
                   </CardContent>
                 </Card>
               )}

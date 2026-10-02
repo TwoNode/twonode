@@ -89,7 +89,8 @@ function StatusBadge({ status }: { status?: string | null }) {
     status.toLowerCase() as keyof typeof statusConfig
   ] || {
     label: status,
-    class: "bg-gray-100 dark:bg-white/10 text-gray-800 border-gray-200 dark:border-white/10",
+    class:
+      "bg-gray-100 dark:bg-white/10 text-gray-800 border-gray-200 dark:border-white/10",
   };
 
   return (
@@ -160,7 +161,7 @@ function CoDAccessPanel({
   isCoDAvailable: boolean;
 }) {
   const certificateFilePaths: string[] = Array.isArray(
-    plan.certificateFilePaths,
+    plan.certificateFilePaths
   )
     ? plan.certificateFilePaths
     : [];
@@ -178,8 +179,8 @@ function CoDAccessPanel({
           <div className="flex flex-wrap items-center gap-3">
             <StatusBadge status={plan.status} />
             <span className="text-sm text-slate-600">
-              {plan.surveyTitle || `Survey Plan ${plan.planNumber}`} &middot;
-              #{plan.planNumber}
+              {plan.surveyTitle || `Survey Plan ${plan.planNumber}`} &middot; #
+              {plan.planNumber}
             </span>
           </div>
 
@@ -238,7 +239,7 @@ function PlanDetails({ planId }: { planId: string }) {
           acc[1] + (pillar.northing || 0),
         ];
       },
-      [0, 0],
+      [0, 0]
     );
 
     return [sum[0] / pillars.length, sum[1] / pillars.length];
@@ -252,7 +253,7 @@ function PlanDetails({ planId }: { planId: string }) {
   const [qrAccessInfo, setQrAccessInfo] = useState<any>(null);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [sessionSecondsLeft, setSessionSecondsLeft] = useState<number | null>(
-    null,
+    null
   );
   const [paywallDefaultService, setPaywallDefaultService] = useState<
     "LOCATION_AUTHENTICITY" | "CERTIFICATE_OF_DEPOSIT" | undefined
@@ -716,7 +717,7 @@ function PlanDetails({ planId }: { planId: string }) {
                                   const [lng, lat] = plan.centroid;
                                   window.open(
                                     `https://www.google.com/maps?q=${lat},${lng}`,
-                                    "_blank",
+                                    "_blank"
                                   );
                                 }}
                                 className="mt-1 inline-flex items-center text-xs text-blue-600 hover:text-blue-800 hover:underline self-start"

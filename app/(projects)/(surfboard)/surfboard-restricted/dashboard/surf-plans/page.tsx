@@ -111,8 +111,10 @@ export default function SurfPlansPage() {
 
   const activeTab = filters.tab;
   const statusFilter = filters.status;
-  const setActiveTab = (tab: PlanFilters["tab"]) => setFilters((f) => ({ ...f, tab }));
-  const setStatusFilter = (status: string) => setFilters((f) => ({ ...f, status }));
+  const setActiveTab = (tab: PlanFilters["tab"]) =>
+    setFilters((f) => ({ ...f, tab }));
+  const setStatusFilter = (status: string) =>
+    setFilters((f) => ({ ...f, status }));
 
   const loadStats = async () => {
     const res = await surfboardApi.admin.plans.stats();
@@ -146,7 +148,10 @@ export default function SurfPlansPage() {
     setIsSaving(true);
 
     try {
-      const res = await surfboardApi.plans.updateTitle(editingPlan.id, editTitle);
+      const res = await surfboardApi.plans.updateTitle(
+        editingPlan.id,
+        editTitle
+      );
       if (res.success) {
         toast.success("Survey title updated");
         setEditingPlan(null);
@@ -178,7 +183,13 @@ export default function SurfPlansPage() {
   // Actions using real server actions imported above
 
   const handleVerify = async (plan: SurveyPlan) => {
-    if (!(await confirm({ title: "Verify count?", description: "Verify this count?", confirmLabel: "Verify" })))
+    if (
+      !(await confirm({
+        title: "Verify count?",
+        description: "Verify this count?",
+        confirmLabel: "Verify",
+      }))
+    )
       return;
     setProcessingId(plan.id);
     const count = getPersonCount(plan.surveyTitle);
@@ -347,7 +358,9 @@ export default function SurfPlansPage() {
       <div className="mb-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Survey Plans</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+              Survey Plans
+            </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               Manage and review all survey plan submissions
             </p>
@@ -387,7 +400,9 @@ export default function SurfPlansPage() {
               <div className={`text-2xl font-bold ${stat.color} mb-1`}>
                 {stat.value}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {stat.label}
+              </div>
             </motion.div>
           ))}
         </div>
@@ -400,9 +415,10 @@ export default function SurfPlansPage() {
             onClick={() => setActiveTab("all")}
             className={`
               whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
-              ${activeTab === "all"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
+              ${
+                activeTab === "all"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
               }
             `}
           >
@@ -413,9 +429,10 @@ export default function SurfPlansPage() {
             onClick={() => setActiveTab("person-count")}
             className={`
               whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
-              ${activeTab === "person-count"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
+              ${
+                activeTab === "person-count"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
               }
             `}
           >
@@ -426,9 +443,10 @@ export default function SurfPlansPage() {
             onClick={() => setActiveTab("queries")}
             className={`
               whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
-              ${activeTab === "queries"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
+              ${
+                activeTab === "queries"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
               }
             `}
           >
@@ -492,328 +510,355 @@ export default function SurfPlansPage() {
       {loading && <PageLoader label="Loading survey plans…" />}
 
       {/* Plans Grid */}
-      {!loading && (viewMode === "grid" && activeTab !== "person-count" ? (
-        <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-4">
-          {filteredPlans.length === 0 ? (
-            <div className="py-12 text-center">
-              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">No plans found</p>
-              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                Try adjusting your search or filters
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredPlans.map((plan, index) => (
-                <motion.div
-                  key={plan.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: index * 0.03 }}
-                  className="flex flex-col gap-3 rounded-lg border border-gray-200 dark:border-white/10 p-4 hover:border-gray-300 dark:hover:border-white/20 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-2 min-w-0">
-                      <div className="p-2 bg-blue-50 dark:bg-blue-500/15 rounded-lg shrink-0">
-                        <FileText className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-semibold text-gray-900 dark:text-white truncate">
-                          {plan.planNumber}
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                          {plan.surveyTitle}
-                        </div>
-                      </div>
-                    </div>
-                    <span
-                      className={`inline-flex shrink-0 items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                        plan.status
-                      )}`}
-                    >
-                      {getStatusIcon(plan.status)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
-                    <span className="truncate">{plan.location}</span>
-                  </div>
-
-                  <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
-                    <span className="truncate">{plan.owner.name}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                    <Calendar className="w-3.5 h-3.5" />
-                    Updated {new Date(plan.updatedAt).toLocaleDateString()}
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2 mt-auto pt-2 border-t border-gray-100 dark:border-white/10">
-                    <Link
-                      href={`/surfboard-restricted/dashboard/surf-plans/update/${plan.id}`}
-                      className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
-                      title="Edit"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Link>
-                    <button
-                      className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
-                      title="More actions"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </div>
-      ) : (
-      /* Plans Table */
-      <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
-            <thead className="bg-gray-50 dark:bg-white/5">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Plan Details
-                </th>
-                {activeTab === "person-count" ? (
-                  <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Survey Title Analysis
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Count
-                    </th>
-                  </>
-                ) : (
-                  <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Location
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Owner
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Updated
-                    </th>
-                  </>
-                )}
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-surface divide-y divide-gray-200 dark:divide-white/10">
-              {filteredPlans.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={activeTab === "person-count" ? 4 : 6}
-                    className="px-6 py-12 text-center"
-                  >
-                    <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400">No plans found</p>
-                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                      Try adjusting your search or filters
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                filteredPlans.map((plan, index) => (
-                  <motion.tr
+      {!loading &&
+        (viewMode === "grid" && activeTab !== "person-count" ? (
+          <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-4">
+            {filteredPlans.length === 0 ? (
+              <div className="py-12 text-center">
+                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 dark:text-gray-400">
+                  No plans found
+                </p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                  Try adjusting your search or filters
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredPlans.map((plan, index) => (
+                  <motion.div
                     key={plan.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: index * 0.03 }}
-                    className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    className="flex flex-col gap-3 rounded-lg border border-gray-200 dark:border-white/10 p-4 hover:border-gray-300 dark:hover:border-white/20 transition-colors"
                   >
-                    <td className="px-6 py-4">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-blue-50 dark:bg-blue-500/15 rounded-lg">
-                          <FileText className="w-5 h-5 text-blue-600" />
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2 min-w-0">
+                        <div className="p-2 bg-blue-50 dark:bg-blue-500/15 rounded-lg shrink-0">
+                          <FileText className="w-4 h-4 text-blue-600" />
                         </div>
-                        <div>
-                          <div className="font-semibold text-gray-900 dark:text-white">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-gray-900 dark:text-white truncate">
                             {plan.planNumber}
                           </div>
-                          {activeTab !== "person-count" && (
-                            <div className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">
-                              {plan.surveyTitle}
-                            </div>
-                          )}
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-3">
-                            <span>{plan.status}</span>
-                            <span>•</span>
-                            <span>
-                              {new Date(plan.createdAt).toLocaleDateString()}
-                            </span>
+                          <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                            {plan.surveyTitle}
                           </div>
                         </div>
                       </div>
-                    </td>
+                      <span
+                        className={`inline-flex shrink-0 items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                          plan.status
+                        )}`}
+                      >
+                        {getStatusIcon(plan.status)}
+                      </span>
+                    </div>
 
+                    <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
+                      <span className="truncate">{plan.location}</span>
+                    </div>
+
+                    <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
+                      <span className="truncate">{plan.owner.name}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                      <Calendar className="w-3.5 h-3.5" />
+                      Updated {new Date(plan.updatedAt).toLocaleDateString()}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 mt-auto pt-2 border-t border-gray-100 dark:border-white/10">
+                      <Link
+                        href={`/surfboard-restricted/dashboard/surf-plans/update/${plan.id}`}
+                        className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Link>
+                      <button
+                        className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                        title="More actions"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Plans Table */
+          <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
+                <thead className="bg-gray-50 dark:bg-white/5">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Plan Details
+                    </th>
                     {activeTab === "person-count" ? (
                       <>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10 whitespace-pre-wrap max-w-md">
-                            {plan.surveyTitle}
-                          </div>
-                          {hasPotentialMismatch(plan.surveyTitle) && (
-                            <div className="flex items-center gap-1 text-amber-600 text-xs mt-1 font-medium">
-                              <AlertTriangle className="w-3 h-3" /> Mismatch
-                              detected
-                            </div>
-                          )}
-                          {plan.personCountVerified && (
-                            <div className="flex items-center gap-1 text-green-600 text-xs mt-1 font-medium">
-                              <CheckCircle2 className="w-3 h-3" /> Verified
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <div
-                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${plan.personCountVerified
-                              ? "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300"
-                              : "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300"
-                              }`}
-                          >
-                            {getPersonCount(plan.surveyTitle)}
-                          </div>
-                        </td>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Survey Title Analysis
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Count
+                        </th>
                       </>
                     ) : (
                       <>
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-2">
-                            <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
-                            <div>
-                              <div className="text-sm text-gray-900 dark:text-white">
-                                {plan.location}
-                              </div>
-                              {plan.facility && (
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
-                                  {plan.facility}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-2">
-                            <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
-                            <div>
-                              <div className="text-sm text-gray-900 dark:text-white">
-                                {plan.owner.name}
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {plan.owner.email}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                              plan.status
-                            )}`}
-                          >
-                            {getStatusIcon(plan.status)}
-                            {plan.status.replace("_", " ")}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-2">
-                            <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
-                            <div className="text-sm text-gray-900 dark:text-white">
-                              {new Date(plan.updatedAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </td>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Location
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Owner
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Updated
+                        </th>
                       </>
                     )}
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-surface divide-y divide-gray-200 dark:divide-white/10">
+                  {filteredPlans.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={activeTab === "person-count" ? 4 : 6}
+                        className="px-6 py-12 text-center"
+                      >
+                        <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500 dark:text-gray-400">
+                          No plans found
+                        </p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                          Try adjusting your search or filters
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredPlans.map((plan, index) => (
+                      <motion.tr
+                        key={plan.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.2, delay: index * 0.03 }}
+                        className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 bg-blue-50 dark:bg-blue-500/15 rounded-lg">
+                              <FileText className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <div className="font-semibold text-gray-900 dark:text-white">
+                                {plan.planNumber}
+                              </div>
+                              {activeTab !== "person-count" && (
+                                <div className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">
+                                  {plan.surveyTitle}
+                                </div>
+                              )}
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-3">
+                                <span>{plan.status}</span>
+                                <span>•</span>
+                                <span>
+                                  {new Date(
+                                    plan.createdAt
+                                  ).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
 
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        {activeTab === "person-count" && (
+                        {activeTab === "person-count" ? (
                           <>
-                            {!plan.personCountVerified && (
-                              <button
-                                onClick={() => handleVerify(plan)}
-                                disabled={!!processingId}
-                                className="px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-500/15 hover:bg-green-100 dark:hover:bg-green-500/25 border border-green-200 dark:border-green-500/30 rounded transition-colors"
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10 whitespace-pre-wrap max-w-md">
+                                {plan.surveyTitle}
+                              </div>
+                              {hasPotentialMismatch(plan.surveyTitle) && (
+                                <div className="flex items-center gap-1 text-amber-600 text-xs mt-1 font-medium">
+                                  <AlertTriangle className="w-3 h-3" /> Mismatch
+                                  detected
+                                </div>
+                              )}
+                              {plan.personCountVerified && (
+                                <div className="flex items-center gap-1 text-green-600 text-xs mt-1 font-medium">
+                                  <CheckCircle2 className="w-3 h-3" /> Verified
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <div
+                                className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                                  plan.personCountVerified
+                                    ? "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300"
+                                    : "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300"
+                                }`}
                               >
-                                Verify
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleQuery(plan)}
-                              disabled={
-                                !!processingId || plan.status === "QUERIED"
-                              }
-                              className="px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/15 hover:bg-red-100 dark:hover:bg-red-500/25 border border-red-200 dark:border-red-500/30 rounded transition-colors"
-                            >
-                              Query
-                            </button>
-                            <button
-                              onClick={() => handleEditClick(plan)}
-                              className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/15 rounded-lg transition-colors border border-blue-200 dark:border-blue-500/30"
-                              title="Edit Title"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
+                                {getPersonCount(plan.surveyTitle)}
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="px-6 py-4">
+                              <div className="flex items-start gap-2">
+                                <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
+                                <div>
+                                  <div className="text-sm text-gray-900 dark:text-white">
+                                    {plan.location}
+                                  </div>
+                                  {plan.facility && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                      {plan.facility}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-start gap-2">
+                                <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
+                                <div>
+                                  <div className="text-sm text-gray-900 dark:text-white">
+                                    {plan.owner.name}
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    {plan.owner.email}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                                  plan.status
+                                )}`}
+                              >
+                                {getStatusIcon(plan.status)}
+                                {plan.status.replace("_", " ")}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-start gap-2">
+                                <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
+                                <div className="text-sm text-gray-900 dark:text-white">
+                                  {new Date(
+                                    plan.updatedAt
+                                  ).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </td>
                           </>
                         )}
-                        <Link
-                          href={`/surfboard-restricted/dashboard/surf-plans/update/${plan.id}`}
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Link>
-                        <button
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
-                          title="More actions"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
 
-        {/* Pagination */}
-        {filteredPlans.length > 0 && (
-          <div className="bg-gray-50 dark:bg-white/5 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-200 dark:border-white/10">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Showing <span className="font-medium">{filteredPlans.length}</span> of{" "}
-              <span className="font-medium">{total}</span> plans
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            {activeTab === "person-count" && (
+                              <>
+                                {!plan.personCountVerified && (
+                                  <button
+                                    onClick={() => handleVerify(plan)}
+                                    disabled={!!processingId}
+                                    className="px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-500/15 hover:bg-green-100 dark:hover:bg-green-500/25 border border-green-200 dark:border-green-500/30 rounded transition-colors"
+                                  >
+                                    Verify
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleQuery(plan)}
+                                  disabled={
+                                    !!processingId || plan.status === "QUERIED"
+                                  }
+                                  className="px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/15 hover:bg-red-100 dark:hover:bg-red-500/25 border border-red-200 dark:border-red-500/30 rounded transition-colors"
+                                >
+                                  Query
+                                </button>
+                                <button
+                                  onClick={() => handleEditClick(plan)}
+                                  className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/15 rounded-lg transition-colors border border-blue-200 dark:border-blue-500/30"
+                                  title="Edit Title"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
+                            <Link
+                              href={`/surfboard-restricted/dashboard/surf-plans/update/${plan.id}`}
+                              className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                              title="Edit"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Link>
+                            <button
+                              className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                              title="More actions"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+
+            {/* Pagination */}
+            {filteredPlans.length > 0 && (
+              <div className="bg-gray-50 dark:bg-white/5 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-200 dark:border-white/10">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Showing{" "}
+                  <span className="font-medium">{filteredPlans.length}</span> of{" "}
+                  <span className="font-medium">{total}</span> plans
+                </div>
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  pageSize={pageSize}
+                  onPageSizeChange={setPageSize}
+                />
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      ))}
+        ))}
 
       {/* Grid-view pagination (table view carries its own footer above) */}
-      {!loading && viewMode === "grid" && activeTab !== "person-count" && filteredPlans.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Showing <span className="font-medium">{filteredPlans.length}</span> of{" "}
-            <span className="font-medium">{total}</span> plans
+      {!loading &&
+        viewMode === "grid" &&
+        activeTab !== "person-count" &&
+        filteredPlans.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Showing{" "}
+              <span className="font-medium">{filteredPlans.length}</span> of{" "}
+              <span className="font-medium">{total}</span> plans
+            </div>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              pageSize={pageSize}
+              onPageSizeChange={setPageSize}
+            />
           </div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
-        </div>
-      )}
+        )}
     </div>
   );
 }

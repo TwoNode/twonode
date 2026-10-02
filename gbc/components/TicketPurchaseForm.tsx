@@ -287,7 +287,9 @@ export function GBCTicketPurchaseForm({
 
         const primaryAttendee = primaryAttendees[0];
 
-        result = await gbcApi.tickets.purchasePair(validAttendees as AttendeeInput[]);
+        result = await gbcApi.tickets.purchasePair(
+          validAttendees as AttendeeInput[]
+        );
 
         if (!result.success || !result.data) {
           throw new Error(result.error || "Failed to create pair tickets");
@@ -319,7 +321,9 @@ export function GBCTicketPurchaseForm({
 
         const primaryAttendee = primaryAttendees[0];
 
-        result = await gbcApi.tickets.purchaseGroup(validAttendees as AttendeeInput[]);
+        result = await gbcApi.tickets.purchaseGroup(
+          validAttendees as AttendeeInput[]
+        );
 
         if (!result.success || !result.data) {
           throw new Error(result.error || "Failed to create group tickets");
@@ -396,7 +400,10 @@ export function GBCTicketPurchaseForm({
           toast.success("Payment successful! Verifying... " + paymentRef);
 
           try {
-            const verification = await gbcApi.tickets.verifyPayment(paymentRef, true);
+            const verification = await gbcApi.tickets.verifyPayment(
+              paymentRef,
+              true
+            );
             if (!verification.success) {
               throw new Error(
                 verification.error ||
@@ -568,8 +575,7 @@ export function GBCTicketPurchaseForm({
           <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
             <AlertCircle className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
             <p className="text-xs sm:text-sm text-green-800">
-              Single tickets are sold out. Pair tickets are now
-              available!
+              Single tickets are sold out. Pair tickets are now available!
             </p>
           </div>
         )}

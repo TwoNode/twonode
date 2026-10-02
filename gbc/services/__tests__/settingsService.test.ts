@@ -49,25 +49,39 @@ beforeEach(() => {
 describe("resolveSettingsEdition", () => {
   it("uses the supplied edition when it exists and isn't deleted", async () => {
     mockPrisma.gBCEdition.findFirst.mockResolvedValue(edition("1.0"));
-    await expect(resolveSettingsEdition("1.0")).resolves.toMatchObject({ key: "1.0" });
-    expect(mockPrisma.gBCEdition.findFirst).toHaveBeenCalledWith({ where: { key: "1.0", deletedAt: null } });
+    await expect(resolveSettingsEdition("1.0")).resolves.toMatchObject({
+      key: "1.0",
+    });
+    expect(mockPrisma.gBCEdition.findFirst).toHaveBeenCalledWith({
+      where: { key: "1.0", deletedAt: null },
+    });
   });
 
   it("404s for an unknown or deleted supplied edition", async () => {
     mockPrisma.gBCEdition.findFirst.mockResolvedValue(null);
-    await expect(resolveSettingsEdition("9.9")).rejects.toMatchObject({ status: 404 });
+    await expect(resolveSettingsEdition("9.9")).rejects.toMatchObject({
+      status: 404,
+    });
   });
 
   it("prefers the ACTIVE edition", async () => {
     mockPrisma.gBCEdition.findFirst.mockResolvedValueOnce(edition("3.0"));
-    await expect(resolveSettingsEdition()).resolves.toMatchObject({ key: "3.0" });
+    await expect(resolveSettingsEdition()).resolves.toMatchObject({
+      key: "3.0",
+    });
     expect(mockPrisma.gBCEdition.findFirst).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.gBCEdition.findFirst).toHaveBeenCalledWith({ where: { status: "ACTIVE", deletedAt: null } });
+    expect(mockPrisma.gBCEdition.findFirst).toHaveBeenCalledWith({
+      where: { status: "ACTIVE", deletedAt: null },
+    });
   });
 
   it("with no ACTIVE edition, falls back to the most recent PAST one (production has none active)", async () => {
-    mockPrisma.gBCEdition.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(edition("2.0", { status: "PAST" }));
-    await expect(resolveSettingsEdition()).resolves.toMatchObject({ key: "2.0" });
+    mockPrisma.gBCEdition.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(edition("2.0", { status: "PAST" }));
+    await expect(resolveSettingsEdition()).resolves.toMatchObject({
+      key: "2.0",
+    });
     expect(mockPrisma.gBCEdition.findFirst).toHaveBeenLastCalledWith({
       where: { status: "PAST", deletedAt: null },
       orderBy: { startDate: "desc" },
@@ -79,7 +93,9 @@ describe("resolveSettingsEdition", () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(edition("4.0", { status: "UPCOMING" }));
-    await expect(resolveSettingsEdition()).resolves.toMatchObject({ key: "4.0" });
+    await expect(resolveSettingsEdition()).resolves.toMatchObject({
+      key: "4.0",
+    });
     expect(mockPrisma.gBCEdition.findFirst).toHaveBeenLastCalledWith({
       where: { deletedAt: null },
       orderBy: { startDate: "asc" },
@@ -115,11 +131,15 @@ describe("getSettings / getEditionSettings", () => {
 
   it("looks up the row of the resolved edition only", async () => {
     await getSettings();
-    expect(mockPrisma.gBCSettings.findUnique).toHaveBeenCalledWith({ where: { edition: "2.0" } });
+    expect(mockPrisma.gBCSettings.findUnique).toHaveBeenCalledWith({
+      where: { edition: "2.0" },
+    });
   });
 
   it("merges a saved row over the defaults, filling in any missing fields", async () => {
-    mockPrisma.gBCSettings.findUnique.mockResolvedValue({ settings: { event: { name: "Custom name" } } });
+    mockPrisma.gBCSettings.findUnique.mockResolvedValue({
+      settings: { event: { name: "Custom name" } },
+    });
     const result = await getEditionSettings();
     expect(result.saved).toBe(true);
     expect(result.settings.event.name).toBe("Custom name");
@@ -129,38 +149,53 @@ describe("getSettings / getEditionSettings", () => {
 
   it("with no editions at all, returns the generic defaults tied to no edition", async () => {
     mockPrisma.gBCEdition.findFirst.mockResolvedValue(null);
-    await expect(getEditionSettings()).resolves.toEqual({ edition: null, settings: defaultSettings, saved: false });
+    await expect(getEditionSettings()).resolves.toEqual({
+      edition: null,
+      settings: defaultSettings,
+      saved: false,
+    });
   });
 });
 
 describe("updateSettings", () => {
   beforeEach(() => {
-    mockPrisma.gBCSettings.upsert.mockImplementation(async ({ create, update }: any) => ({
-      id: "row-1",
-      settings: (update ?? create).settings,
-    }));
+    mockPrisma.gBCSettings.upsert.mockImplementation(
+      async ({ create, update }: any) => ({
+        id: "row-1",
+        settings: (update ?? create).settings,
+      })
+    );
   });
 
   it("throws ValidationError for an unknown section", async () => {
-    await expect(updateSettings({ bogus: { x: 1 } } as any, "u1")).rejects.toMatchObject({ status: 400 });
+    await expect(
+      updateSettings({ bogus: { x: 1 } } as any, "u1")
+    ).rejects.toMatchObject({ status: 400 });
   });
 
   it("merges the patch into only the given section, leaving other fields and sections untouched", async () => {
     mockPrisma.gBCSettings.findUnique.mockResolvedValue({
       id: "row-1",
-      settings: { event: { name: "GBC 2.0", venue: "Lagos" }, tickets: { maxCapacity: 500 } },
+      settings: {
+        event: { name: "GBC 2.0", venue: "Lagos" },
+        tickets: { maxCapacity: 500 },
+      },
     });
 
     await updateSettings({ event: { name: "GBC 3.0" } }, "u1");
 
-    const written = mockPrisma.gBCSettings.upsert.mock.calls[0][0].update.settings;
+    const written =
+      mockPrisma.gBCSettings.upsert.mock.calls[0][0].update.settings;
     expect(written.event.name).toBe("GBC 3.0");
     expect(written.event.venue).toBe("Lagos");
     expect(written.tickets.maxCapacity).toBe(500);
   });
 
   it("writes only the target edition's row, keeping the old value as previousSettings", async () => {
-    mockPrisma.gBCSettings.findUnique.mockResolvedValue({ id: "row-1", settings: { event: { name: "Old" } } });
+    mockPrisma.gBCSettings.findUnique.mockResolvedValue({
+      id: "row-1",
+      settings: { event: { name: "Old" } },
+    });
 
     await updateSettings({ event: { name: "New" } }, "u1", "2.0");
 
@@ -180,12 +215,16 @@ describe("updateSettings", () => {
     expect(args.create.settings.event.name).toBe("GBC 3.0");
     // and there is no "previous" to keep yet
     expect(args.update.previousSettings).toBeDefined();
-    expect(args.update.previousSettings).not.toEqual(expect.objectContaining({ event: expect.anything() }));
+    expect(args.update.previousSettings).not.toEqual(
+      expect.objectContaining({ event: expect.anything() })
+    );
   });
 
   it("refuses to save when there is no edition to attach the settings to", async () => {
     mockPrisma.gBCEdition.findFirst.mockResolvedValue(null);
-    await expect(updateSettings({ event: { name: "X" } }, "u1")).rejects.toMatchObject({ status: 400 });
+    await expect(
+      updateSettings({ event: { name: "X" } }, "u1")
+    ).rejects.toMatchObject({ status: 400 });
     expect(mockPrisma.gBCSettings.upsert).not.toHaveBeenCalled();
   });
 
@@ -210,20 +249,33 @@ describe("getPreviousSettings", () => {
   });
 
   it("returns null when the row has never been changed", async () => {
-    mockPrisma.gBCSettings.findUnique.mockResolvedValue({ settings: {}, previousSettings: null });
+    mockPrisma.gBCSettings.findUnique.mockResolvedValue({
+      settings: {},
+      previousSettings: null,
+    });
     await expect(getPreviousSettings()).resolves.toBeNull();
   });
 
   it("returns the previous settings of that edition", async () => {
-    mockPrisma.gBCSettings.findUnique.mockResolvedValue({ previousSettings: { event: { name: "Before" } } });
-    await expect(getPreviousSettings("2.0")).resolves.toEqual({ event: { name: "Before" } });
-    expect(mockPrisma.gBCSettings.findUnique).toHaveBeenCalledWith({ where: { edition: "2.0" } });
+    mockPrisma.gBCSettings.findUnique.mockResolvedValue({
+      previousSettings: { event: { name: "Before" } },
+    });
+    await expect(getPreviousSettings("2.0")).resolves.toEqual({
+      event: { name: "Before" },
+    });
+    expect(mockPrisma.gBCSettings.findUnique).toHaveBeenCalledWith({
+      where: { edition: "2.0" },
+    });
   });
 });
 
 describe("rollback", () => {
   it("throws ValidationError when there's nothing to roll back to", async () => {
-    mockPrisma.gBCSettings.findUnique.mockResolvedValue({ id: "row-1", settings: {}, previousSettings: null });
+    mockPrisma.gBCSettings.findUnique.mockResolvedValue({
+      id: "row-1",
+      settings: {},
+      previousSettings: null,
+    });
     await expect(rollback("u1")).rejects.toMatchObject({ status: 400 });
     expect(mockPrisma.gBCSettings.update).not.toHaveBeenCalled();
   });
@@ -234,7 +286,10 @@ describe("rollback", () => {
       settings: { event: { name: "Current" } },
       previousSettings: { event: { name: "Previous" } },
     });
-    mockPrisma.gBCSettings.update.mockResolvedValue({ id: "row-1", settings: { event: { name: "Previous" } } });
+    mockPrisma.gBCSettings.update.mockResolvedValue({
+      id: "row-1",
+      settings: { event: { name: "Previous" } },
+    });
 
     const result = await rollback("u1", "2.0");
 
@@ -245,7 +300,10 @@ describe("rollback", () => {
     expect(result).toEqual({ event: { name: "Previous" } });
     expect(mockAudit.writeAudit).toHaveBeenCalledWith(
       "gbc",
-      expect.objectContaining({ action: "ROLLBACK_SETTINGS", changes: expect.objectContaining({ edition: "2.0" }) })
+      expect.objectContaining({
+        action: "ROLLBACK_SETTINGS",
+        changes: expect.objectContaining({ edition: "2.0" }),
+      })
     );
   });
 });
@@ -253,7 +311,9 @@ describe("rollback", () => {
 describe("resetToDefaults", () => {
   it("resets that edition to defaults carrying its own event details, and audits RESET_SETTINGS", async () => {
     mockPrisma.gBCEdition.findFirst.mockResolvedValue(edition("3.0"));
-    mockPrisma.gBCSettings.upsert.mockImplementation(async ({ update }: any) => ({ id: "row-1", settings: update.settings }));
+    mockPrisma.gBCSettings.upsert.mockImplementation(
+      async ({ update }: any) => ({ id: "row-1", settings: update.settings })
+    );
 
     await resetToDefaults("u1", "3.0");
 
@@ -261,6 +321,9 @@ describe("resetToDefaults", () => {
     expect(args.where).toEqual({ edition: "3.0" });
     expect(args.update.settings.event.name).toBe("GBC 3.0");
     expect(args.update.settings.tickets).toEqual(defaultSettings.tickets);
-    expect(mockAudit.writeAudit).toHaveBeenCalledWith("gbc", expect.objectContaining({ action: "RESET_SETTINGS" }));
+    expect(mockAudit.writeAudit).toHaveBeenCalledWith(
+      "gbc",
+      expect.objectContaining({ action: "RESET_SETTINGS" })
+    );
   });
 });

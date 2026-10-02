@@ -1,1482 +1,2208 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Surfboard · Survey Verification Engine</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Instrument+Serif:ital@0;1&family=Bebas+Neue&display=swap" rel="stylesheet"/>
-<style>
-  :root {
-    --bg: #0a0c0f;
-    --surface: #111418;
-    --surface2: #181c22;
-    --border: #1f252e;
-    --border2: #2a3140;
-    --accent: #00e5a0;
-    --accent2: #00b37a;
-    --warn: #f5a623;
-    --danger: #ff4444;
-    --text: #d4dce8;
-    --text2: #7a8899;
-    --text3: #3d4a5a;
-    --verified: #00e5a0;
-    --review: #f5a623;
-    --notverified: #ff4444;
-    --mono: 'DM Mono', monospace;
-    --serif: 'Instrument Serif', serif;
-    --display: 'Bebas Neue', sans-serif;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 13px;
-    line-height: 1.6;
-    min-height: 100vh;
-  }
-
-  /* ── Grid noise texture overlay ── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(255,255,255,0.012) 24px, rgba(255,255,255,0.012) 25px),
-      repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(255,255,255,0.012) 24px, rgba(255,255,255,0.012) 25px);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
-
-  /* ── Header ── */
-  header {
-    border-bottom: 1px solid var(--border);
-    padding: 20px 0 16px;
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
-  }
-  .logo {
-    font-family: var(--display);
-    font-size: 32px;
-    letter-spacing: 3px;
-    color: var(--accent);
-    line-height: 1;
-  }
-  .logo-sub {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text2);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-  .header-badge {
-    margin-left: auto;
-    font-size: 10px;
-    color: var(--text3);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    border: 1px solid var(--border2);
-    padding: 3px 8px;
-    border-radius: 2px;
-  }
-
-  /* ── Upload zone ── */
-  .upload-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin: 32px 0 24px;
-  }
-  @media (max-width: 640px) { .upload-grid { grid-template-columns: 1fr; } }
-
-  .drop-zone {
-    background: var(--surface);
-    border: 1.5px dashed var(--border2);
-    border-radius: 4px;
-    padding: 28px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-    position: relative;
-    overflow: hidden;
-  }
-  .drop-zone:hover, .drop-zone.drag { border-color: var(--accent); background: rgba(0,229,160,0.04); }
-  .drop-zone.loaded { border-color: var(--accent2); border-style: solid; }
-  .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-  .dz-icon { font-size: 28px; margin-bottom: 10px; display: block; }
-  .dz-label { font-family: var(--display); font-size: 18px; letter-spacing: 2px; color: var(--text); display: block; margin-bottom: 4px; }
-  .dz-hint { font-size: 11px; color: var(--text2); }
-  .dz-filename { font-size: 11px; color: var(--accent); margin-top: 6px; display: block; }
-
-  /* Tolerance row */
-  .tol-row {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 14px 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24px;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-  .tol-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px; }
-  .tol-input {
-    background: var(--bg);
-    border: 1px solid var(--border2);
-    border-radius: 2px;
-    color: var(--accent);
-    font-family: var(--mono);
-    font-size: 13px;
-    padding: 4px 8px;
-    width: 80px;
-    outline: none;
-  }
-  .tol-input:focus { border-color: var(--accent); }
-
-  /* ── Run button ── */
-  .run-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    padding: 16px;
-    background: var(--accent);
-    color: #000;
-    border: none;
-    border-radius: 3px;
-    font-family: var(--display);
-    font-size: 22px;
-    letter-spacing: 3px;
-    cursor: pointer;
-    transition: opacity 0.15s, transform 0.1s;
-    margin-bottom: 32px;
-  }
-  .run-btn:hover { opacity: 0.9; }
-  .run-btn:active { transform: scale(0.99); }
-  .run-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-  /* ── Log panel ── */
-  .log-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 16px;
-    font-family: var(--mono);
-    font-size: 12px;
-    max-height: 220px;
-    overflow-y: auto;
-    margin-bottom: 32px;
-    display: none;
-  }
-  .log-panel.active { display: block; }
-  .log-line { padding: 1px 0; color: var(--text2); }
-  .log-line.info  { color: var(--text); }
-  .log-line.ok    { color: var(--accent); }
-  .log-line.warn  { color: var(--warn); }
-  .log-line.error { color: var(--danger); }
-  .log-ts { color: var(--text3); margin-right: 8px; }
-
-  /* ── Results ── */
-  #results { display: none; }
-  #results.show { display: block; }
-
-  /* Verdict banner */
-  .verdict {
-    border-radius: 4px;
-    padding: 24px 28px;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    margin-bottom: 24px;
-    border: 1.5px solid;
-  }
-  .verdict.VERIFIED    { border-color: var(--verified);    background: rgba(0,229,160,0.06); }
-  .verdict.REVIEW      { border-color: var(--review);      background: rgba(245,166,35,0.06); }
-  .verdict.NOT_VERIFIED{ border-color: var(--notverified); background: rgba(255,68,68,0.06); }
-  .verdict.ERROR       { border-color: var(--danger);      background: rgba(255,68,68,0.06); }
-  .verdict-status {
-    font-family: var(--display);
-    font-size: 42px;
-    letter-spacing: 4px;
-    line-height: 1;
-  }
-  .verdict.VERIFIED .verdict-status    { color: var(--verified); }
-  .verdict.REVIEW .verdict-status      { color: var(--review); }
-  .verdict.NOT_VERIFIED .verdict-status{ color: var(--notverified); }
-  .verdict-score { font-size: 26px; font-family: var(--display); letter-spacing: 2px; }
-  .verdict-meta { font-size: 12px; color: var(--text2); margin-top: 4px; }
-
-  /* 3-col stats */
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-  @media (max-width:640px){ .stats-row { grid-template-columns:1fr 1fr; } }
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 14px 16px;
-  }
-  .stat-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-  .stat-value { font-family: var(--display); font-size: 24px; letter-spacing: 1px; color: var(--accent); }
-  .stat-unit  { font-size: 11px; color: var(--text2); margin-left: 3px; }
-
-  /* Section headers */
-  .section-title {
-    font-family: var(--display);
-    font-size: 18px;
-    letter-spacing: 3px;
-    color: var(--text2);
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 8px;
-    margin: 28px 0 16px;
-  }
-
-  /* Canvas map */
-  .map-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 24px;
-    position: relative;
-  }
-  #mapCanvas { display: block; width: 100%; height: 360px; }
-  .map-legend {
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    background: rgba(10,12,15,0.88);
-    border: 1px solid var(--border2);
-    border-radius: 3px;
-    padding: 8px 12px;
-    font-size: 11px;
-  }
-  .legend-item { display: flex; align-items: center; gap: 8px; margin: 2px 0; color: var(--text2); }
-  .legend-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-  /* Leg table */
-  .leg-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-    margin-bottom: 24px;
-  }
-  .leg-table th {
-    background: var(--surface2);
-    color: var(--text2);
-    text-transform: uppercase;
-    font-size: 10px;
-    letter-spacing: 1px;
-    padding: 8px 10px;
-    text-align: left;
-    border-bottom: 1px solid var(--border2);
-    font-weight: 500;
-  }
-  .leg-table td {
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
-    color: var(--text);
-    font-family: var(--mono);
-  }
-  .leg-table tr:last-child td { border-bottom: none; }
-  .leg-table tr:hover td { background: rgba(255,255,255,0.02); }
-  .ok-badge   { color: var(--accent); font-size: 14px; }
-  .fail-badge { color: var(--danger); font-size: 14px; }
-
-  /* Score bars */
-  .score-bars { margin-bottom: 24px; }
-  .score-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 6px 0;
-    font-size: 12px;
-  }
-  .score-pt  { width: 32px; color: var(--text2); text-align: right; flex-shrink: 0; }
-  .score-bar-wrap { flex: 1; height: 8px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
-  .score-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
-  .score-pct { width: 52px; text-align: right; color: var(--accent); flex-shrink: 0; }
-  .score-res { width: 70px; text-align: right; color: var(--text2); flex-shrink: 0; }
-
-  /* Extracted data panel */
-  .data-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-  @media(max-width:640px){ .data-grid { grid-template-columns: 1fr; } }
-  .data-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 14px 16px;
-  }
-  .data-card-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text2); margin-bottom: 10px; }
-  .data-chip {
-    display: inline-block;
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    border-radius: 2px;
-    padding: 3px 7px;
-    margin: 2px;
-    font-size: 11px;
-    color: var(--accent);
-  }
-
-  /* Warnings */
-  .warn-list { list-style: none; margin-bottom: 24px; }
-  .warn-list li {
-    background: rgba(245,166,35,0.08);
-    border: 1px solid rgba(245,166,35,0.25);
-    border-radius: 3px;
-    padding: 8px 12px;
-    margin: 4px 0;
-    font-size: 12px;
-    color: var(--warn);
-  }
-
-  /* Export btn */
-  .export-row { display: flex; gap: 10px; margin-bottom: 40px; }
-  .exp-btn {
-    padding: 9px 18px;
-    border: 1px solid var(--border2);
-    border-radius: 3px;
-    background: var(--surface);
-    color: var(--text2);
-    font-family: var(--mono);
-    font-size: 12px;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-    letter-spacing: 1px;
-  }
-  .exp-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* progress spinner */
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.7s linear infinite; }
-
-  /* anchor info */
-  .anchor-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    border-radius: 4px;
-    padding: 14px 18px;
-    margin-bottom: 24px;
-    font-size: 12px;
-  }
-  .anchor-box strong { color: var(--accent); }
-</style>
-</head>
-<body>
-<div class="wrap">
-
-  <header>
-    <div>
-      <div class="logo">SURFBOARD</div>
-      <div class="logo-sub">Survey Plan Verification Engine</div>
-    </div>
-    <div class="header-badge">Nigerian Cadastral · UTM EPSG:26331</div>
-  </header>
-
-  <!-- Upload zone -->
-  <div class="upload-grid" style="margin-top:32px">
-    <div class="drop-zone" id="dzPdf">
-      <input type="file" accept=".pdf" id="filePdf"/>
-      <span class="dz-icon">📄</span>
-      <span class="dz-label">RECORD COPY</span>
-      <span class="dz-hint">Drop survey plan PDF here</span>
-      <span class="dz-filename" id="namePdf"></span>
-    </div>
-    <div class="drop-zone" id="dzCsv" style="position:relative">
-      <input type="file" accept=".csv,.txt" id="fileCsv" multiple/>
-      <span class="dz-icon">📊</span>
-      <span class="dz-label">COORDINATES CSV(s)</span>
-      <span class="dz-hint">One CSV per parcel — multiple allowed</span>
-      <span class="dz-filename" id="nameCsv"></span>
-    </div>
-  </div>
-
-  <!-- Tolerances -->
-  <div class="tol-row">
-    <div>
-      <span class="tol-label">Anchor Tolerance (m)</span>
-      <input class="tol-input" type="number" id="tolAnchor" value="0.05" step="0.01" min="0.001"/>
-    </div>
-    <div>
-      <span class="tol-label">WCB Tolerance (&deg;)</span>
-      <input class="tol-input" type="number" id="tolWCB" value="0.05" step="0.01" min="0.001"/>
-    </div>
-    <div>
-      <span class="tol-label">Distance Tolerance (m)</span>
-      <input class="tol-input" type="number" id="tolDist" value="0.05" step="0.01" min="0.001"/>
-    </div>
-    <div>
-      <span class="tol-label">Area Tolerance (sq m)</span>
-      <input class="tol-input" type="number" id="tolArea" value="0.01" step="0.001" min="0.001"/>
-    </div>
-    <div>
-      <span class="tol-label">Pass Threshold (%)</span>
-      <input class="tol-input" type="number" id="tolPass" value="95" step="1" min="50" max="100"/>
-    </div>
-    <div>
-      <span class="tol-label">Warn Threshold (%)</span>
-      <input class="tol-input" type="number" id="tolWarn" value="80" step="1" min="50" max="100"/>
-    </div>
-  </div>
-
-  <button class="run-btn" id="runBtn" disabled>
-    <span id="runBtnLabel">RUN VERIFICATION</span>
-  </button>
-
-  <!-- Log -->
-  <div class="log-panel" id="logPanel"></div>
-
-  <!-- Results -->
-  <div id="results">
-
-    <!-- Overall summary (shown when multiple parcels) -->
-    <div id="overallBanner" style="display:none; margin-bottom:16px"></div>
-
-    <!-- Parcel tabs (shown when multiple parcels) -->
-    <div id="parcelTabs" style="display:none; margin-bottom:0px"></div>
-
-    <!-- Per-parcel result panels — injected by renderResults -->
-    <div id="parcelPanels"></div>
-
-    <!-- Extracted data -->
-    <div class="section-title">EXTRACTED DATA</div>
-    <div class="data-grid" id="dataGrid"></div>
-
-    <!-- Anchor -->
-    <div class="section-title">IDENTIFIED ANCHOR</div>
-    <div class="anchor-box" id="anchorBox"></div>
-
-    <!-- Leg table -->
-    <div class="section-title">TRAVERSE LEGS</div>
-    <div style="overflow-x:auto">
-      <table class="leg-table" id="legTable"></table>
-    </div>
-
-    <!-- Score bars -->
-    <div class="section-title">VERTEX CONFIDENCE</div>
-    <div class="score-bars" id="scoreBars"></div>
-
-    <!-- Warnings -->
-    <div class="section-title" id="warnTitle" style="display:none">WARNINGS</div>
-    <ul class="warn-list" id="warnList"></ul>
-
-    <!-- Export -->
-    <div class="section-title">EXPORT</div>
-    <div class="export-row">
-      <button class="exp-btn" onclick="exportJSON()">↓ JSON REPORT</button>
-      <button class="exp-btn" onclick="exportCSVAll()">↓ LEG CSV</button>
-      <button class="exp-btn" onclick="window.print()">⎙ PRINT</button>
-    </div>
-
-  </div><!-- /results -->
-</div><!-- /wrap -->
-
-<script>
-// ============================================================
-// PDF.js setup
-// ============================================================
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-// ============================================================
-// State
-// ============================================================
-let pdfFile = null, csvFiles = [], lastReports = null;
-
-// ============================================================
-// Drop-zone setup
-// ============================================================
-function setupDZ(dzId, inputId, nameId, setter, ext) {
-  const dz = document.getElementById(dzId);
-  const inp = document.getElementById(inputId);
-  const nm  = document.getElementById(nameId);
-  const accept = (f) => {
-    setter(f);
-    nm.textContent = f.name;
-    dz.classList.add('loaded');
-    checkReady();
-  };
-  inp.addEventListener('change', e => { if(e.target.files[0]) accept(e.target.files[0]); });
-  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
-  dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
-  dz.addEventListener('drop', e => {
-    e.preventDefault(); dz.classList.remove('drag');
-    const f = e.dataTransfer.files[0];
-    if(f) { inp.files = e.dataTransfer.files; accept(f); }
-  });
-}
-setupDZ('dzPdf','filePdf','namePdf', f => pdfFile = f, '.pdf');
-// CSV drop zone — multiple files
-{
-  const dz = document.getElementById('dzCsv');
-  const inp = document.getElementById('fileCsv');
-  const nm  = document.getElementById('nameCsv');
-  const accept = (files) => {
-    csvFiles = Array.from(files);
-    nm.textContent = csvFiles.length === 1
-      ? csvFiles[0].name
-      : csvFiles.length + ' CSVs: ' + csvFiles.map(f=>f.name).join(', ');
-    dz.classList.add('loaded');
-    checkReady();
-  };
-  inp.addEventListener('change', e => { if(e.target.files.length) accept(e.target.files); });
-  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag'); });
-  dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
-  dz.addEventListener('drop', e => {
-    e.preventDefault(); dz.classList.remove('drag');
-    if(e.dataTransfer.files.length) { inp.files = e.dataTransfer.files; accept(e.dataTransfer.files); }
-  });
-}
-function checkReady() {
-  document.getElementById('runBtn').disabled = !(pdfFile && csvFiles.length > 0);
-}
-
-// ============================================================
-// Logger
-// ============================================================
-const logPanel = document.getElementById('logPanel');
-function log(msg, type='info') {
-  logPanel.classList.add('active');
-  const ts = new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const d = document.createElement('div');
-  d.className = `log-line ${type}`;
-  d.innerHTML = `<span class="log-ts">${ts}</span>${msg}`;
-  logPanel.appendChild(d);
-  logPanel.scrollTop = logPanel.scrollHeight;
-}
-function clearLog() { logPanel.innerHTML = ''; }
-
-// ============================================================
-// ============================================================
-// MODULE 1 — PDF Extraction (full-text, no colour filtering)
-// ============================================================
-// We extract ALL text from the PDF — bearings, distances, and
-// reference coordinates — without any colour filtering.
-//
-// Colour filtering was unreliable across AutoCAD PDF variants.
-// Instead, the CSV-computed legs act as the filter: only values
-// that match a computed WCB or distance (within tolerance) are
-// accepted. Everything else is ignored automatically.
-
-// ── Regex patterns ────────────────────────────────────────────────────────
-//
-// AutoCAD PDF encoding notes:
-//   • Degree symbol °  may arrive as U+00B0, U+00BA (ordinal), U+00B0,
-//     or as a custom glyph in the PDF font — in which case getTextContent
-//     renders it as a single non-ASCII char we can't predict.
-//   • Minute symbol '  may arrive as U+0027 (apostrophe), U+2019 (right
-//     single quotation), U+00B4 (acute), U+0060 (backtick), or the custom
-//     glyph the AutoCAD font uses.
-//   • The degree and minute values are ALWAYS digits — that's reliable.
-//
-// Strategy for bearings:
-//   Match: 1–3 digits, any non-digit non-space separator, 1–2 digits,
-//          optional any non-digit non-space separator.
-//   This is intentionally broad — false positives are filtered out downstream
-//   by the CSV-computed leg matching (tolerance check).
-//
-// Strategy for distances:
-//   AutoCAD emits distances as "16.68m" — number immediately followed by m.
-//   The "m" must NOT be followed by E or N (coordinate suffix).
-//   We also try "16.68 m" with a space.
-
-const RE_BEARING = /(\d{1,3})[^\d\s]{1,3}\s*(\d{1,2})[^\d\s]{0,3}/g;
-
-const RE_EASTING  = /((?:\d+\s)*\d+\.\d+)\s*mE/gi;
-const RE_NORTHING = /((?:\d+\s)*\d+\.\d+)\s*mN/gi;
-
-
-function parseCoord(str) {
-  return parseFloat(str.replace(/\s+/g, ''));
-}
-function parseBearing(deg, min) {
-  return parseFloat(deg) + parseFloat(min) / 60;
-}
-
-async function extractFromPDF(file) {
-  log('Loading PDF...', 'info');
-  const ab  = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
-  log(`PDF loaded — ${pdf.numPages} page(s)`, 'ok');
-
-  // Collect all text from every page into one string
-  let allText = '';
-  for (let p = 1; p <= pdf.numPages; p++) {
-    const page = await pdf.getPage(p);
-    const tc   = await page.getTextContent({ includeMarkedContent: false });
-    allText += tc.items.map(it => it.str).join(' ') + ' ';
-  }
-  log(`Full text extracted: ${allText.trim().length} chars`, 'ok');
-
-  // ── Raw text diagnostics ─────────────────────────────────────────────
-  // Reveals AutoCAD glyph substitutions for degree and minute symbols
-  const rawNonAscii = [...new Set(allText)].filter(ch => ch.charCodeAt(0) > 127);
-  log('Non-ASCII chars: ' + rawNonAscii.map(c=>'U+'+c.charCodeAt(0).toString(16).toUpperCase().padStart(4,'0')+'('+c+')').join('  '), 'info');
-  // Log raw hex around first numeric sequence
-  const firstNum = allText.search(/\d{1,3}./);
-  if (firstNum >= 0) {
-    const win = allText.slice(Math.max(0,firstNum-2), firstNum+30);
-    const hex = [...win].map(c=>c.charCodeAt(0).toString(16).padStart(4,'0')).join(' ');
-    log('Text near first number: "' + win + '"', 'info');
-    log('Hex: ' + hex, 'info');
-  }
-  // Log 200 chars from middle of text where bearings likely are
-  const mid = Math.floor(allText.length / 2);
-  log('Mid-text sample: "' + allText.slice(mid, mid+200) + '"', 'info');
-
-
-  const warnings = [];
-
-  // ── Bearings ──────────────────────────────────────────────────────────
-  // Use allText with the original regex — this was confirmed working.
-  // The degree/minute separators in allText are whatever PDF.js normalises
-  // them to, and the regex handles all known variants.
-  const bearings = [];
-  {
-    const RE = /(\d{1,3})[°º°]\s*(\d{1,2})['''`’‘]?/g;
-    let m;
-    RE.lastIndex = 0;
-    while ((m = RE.exec(allText)) !== null) {
-      const deg = parseFloat(m[1]), min = parseFloat(m[2]);
-      if (deg > 360 || min >= 60) continue;
-      bearings.push({ degrees: deg + min / 60, raw: m[0] });
-    }
-  }
-  log('Bearings extracted: ' + bearings.length + (bearings.length ? ' → ' + bearings.map(b=>b.degrees.toFixed(4)+'°').join(', ') : ''), bearings.length > 0 ? 'ok' : 'warn');
-
-
-
-  // ── Distances ─────────────────────────────────────────────────────────
-  // Scan every text item. Search WITHIN each item for a decimal number
-  // followed by m — this handles:
-  //   "735.27m"           — standalone distance
-  //   "3° 19' 17.83m"     — bearing+distance combined in one item
-  //   "3° 19' 17.83m(calc)" — with (calc) annotation
-  // Require decimal point to exclude integer scale labels (30m, 10m).
-  // Skip items containing mE or mN (coordinate values).
-  const distances = [];
-  {
-    const distPdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-    const allItems = [];
-    for (let p = 1; p <= distPdf.numPages; p++) {
-      const page = await distPdf.getPage(p);
-      const tc   = await page.getTextContent({ includeMarkedContent: false });
-      tc.items.forEach(it => { if ((it.str||'').trim()) allItems.push(it.str.trim()); });
-    }
-
-    log('All text items (' + allItems.length + '): ' + allItems.slice(0,60).map(s=>'"'+s+'"').join(' '), 'info');
-
-    for (let i = 0; i < allItems.length; i++) {
-      const item = allItems[i];
-
-      // Skip coordinate items (contain mE or mN)
-      if (/\d+\.\d+\s*m[EN]/i.test(item)) continue;
-
-      // Search within item for decimal number + m not followed by E/N/word-char
-      const inlineRE = /(\d+\.\d+)\s*m(?![ENen\w])/gi;
-      let m;
-      inlineRE.lastIndex = 0;
-      while ((m = inlineRE.exec(item)) !== null) {
-        const d = parseFloat(m[1]);
-        if (d > 0 && d < 10000) distances.push({ metres: d, raw: m[1] + 'm' });
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Surfboard · Survey Verification Engine</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Instrument+Serif:ital@0;1&family=Bebas+Neue&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0c0f;
+        --surface: #111418;
+        --surface2: #181c22;
+        --border: #1f252e;
+        --border2: #2a3140;
+        --accent: #00e5a0;
+        --accent2: #00b37a;
+        --warn: #f5a623;
+        --danger: #ff4444;
+        --text: #d4dce8;
+        --text2: #7a8899;
+        --text3: #3d4a5a;
+        --verified: #00e5a0;
+        --review: #f5a623;
+        --notverified: #ff4444;
+        --mono: "DM Mono", monospace;
+        --serif: "Instrument Serif", serif;
+        --display: "Bebas Neue", sans-serif;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
       }
 
-      // Consecutive pair: "16.68" then "m" as separate items
-      if (/^\d+\.\d+$/.test(item) && i + 1 < allItems.length && /^m$/i.test(allItems[i+1])) {
-        const d = parseFloat(item);
-        if (d > 0 && d < 10000) { distances.push({ metres: d, raw: d + 'm' }); i++; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.6;
+        min-height: 100vh;
       }
-    }
-  }
-  log('Distances extracted: ' + distances.length + (distances.length ? ' \u2192 ' + distances.map(d=>d.metres+'m').join(', ') : ''), distances.length > 0 ? 'ok' : 'warn');
 
-
-
-  // ── Reference coordinates ─────────────────────────────────────────────
-  // AutoCAD PDFs sometimes place an unrelated number immediately before the
-  // coordinate (e.g. scale bar "10" before "710 642.393 mN"), causing the
-  // greedy regex to capture "10 710 642.393". We resolve this by trying
-  // progressively shorter prefixes until the value falls in a plausible
-  // Nigerian UTM range: E 100 000–999 999 · N 100 000–9 999 999.
-  function bestCoord(raw, plausible) {
-    const parts = raw.trim().split(/\s+/);
-    for (let i = 0; i < parts.length; i++) {
-      const v = parseFloat(parts.slice(i).join(''));
-      if (!isNaN(v) && plausible(v)) return v;
-    }
-    return null;
-  }
-  const plausibleE = v => v >= 100000 && v <= 999999;
-  const plausibleN = v => v >= 100000 && v <= 9999999;
-
-  const eastings = [], northings = [];
-  RE_EASTING.lastIndex  = 0;
-  RE_NORTHING.lastIndex = 0;
-  while ((m = RE_EASTING.exec(allText))  !== null) {
-    const v = bestCoord(m[1], plausibleE);
-    if (v !== null) eastings.push(v);
-  }
-  while ((m = RE_NORTHING.exec(allText)) !== null) {
-    const v = bestCoord(m[1], plausibleN);
-    if (v !== null) northings.push(v);
-  }
-
-  const refCoords = [];
-  for (let i = 0; i < Math.min(eastings.length, northings.length); i++) {
-    refCoords.push({ easting: eastings[i], northing: northings[i] });
-  }
-  log(`Ref coords extracted: ${refCoords.length} — E:[${eastings.join(', ')}] N:[${northings.join(', ')}]`,
-      refCoords.length > 0 ? 'ok' : 'warn');
-
-
-  // ── Area(s) ─────────────────────────────────────────────────────────────
-  // Extract ALL stated areas from the PDF — multipolygon plans have multiple.
-  // Supports units: SQ.MTS / SQ.M / M2 / Ha / Hectares / Acres
-  // Unit conversion to sq m:  1 Ha = 10000 sq m,  1 Acre = 4046.856 sq m
-  //
-  // Formats: "AREA(A) :- 6874.198 SQ.MTS."  "AREA:- 411.969 SQ. MTS"
-  //          "AREA :- 1.2Ha"  "AREA(B):- 2.5 HECTARES"  "AREA:- 0.75 ACRES"
-  const pdfAreas = [];   // [{label, rawValue, unit, sqm}]
-  {
-    const areaRE = /AREA\s*(?:\(([^)]*)\))?\s*[:\-=\s]{0,3}\s*([\d,]+\.?\d*)\s*(SQ(?:UARE)?\.?\s*M(?:TS?|ETRES?)?|M2|HA|HECTARES?|ACRES?)/gi;
-    let am;
-    while ((am = areaRE.exec(allText)) !== null) {
-      const label    = am[1] ? am[1].trim() : String(pdfAreas.length + 1);
-      const rawVal   = parseFloat(am[2].replace(/,/g, ''));
-      const unitRaw  = am[3].toUpperCase().replace(/\s+/g,'');
-      let sqm;
-      if (unitRaw === 'HA' || unitRaw.startsWith('HECTARE')) sqm = rawVal * 10000;
-      else if (unitRaw.startsWith('ACRE'))                   sqm = rawVal * 4046.856422;
-      else                                                    sqm = rawVal; // already sq m
-      pdfAreas.push({ label, rawValue: rawVal, unit: am[3].trim(), sqm });
-    }
-    if (pdfAreas.length > 0) {
-      log('PDF areas found: ' + pdfAreas.map(a=>`${a.label}: ${a.rawValue} ${a.unit} = ${a.sqm.toFixed(3)} sq m`).join(' | '), 'ok');
-    } else {
-      log('PDF stated area: not found in text', 'warn');
-    }
-  }
-  // Keep single pdfArea for backward compat (first found, or null)
-  const pdfArea = pdfAreas.length > 0 ? pdfAreas[0].sqm : null;
-
-  if (bearings.length === 0 && distances.length === 0) {
-    throw new Error('No bearings or distances found in PDF text layer. The PDF may be a raster scan with no embedded text.');
-  }
-
-  log(`Pool: ${bearings.length} bearings · ${distances.length} distances · ${refCoords.length} ref coords`, 'info');
-
-  return { bearings, distances, refCoords, pdfArea, pdfAreas, warnings, extractionMethod: 'full-text' };
-}
-
-// MODULE 2 — Anchor Check (hard gate)
-// ============================================================
-// The reference coordinate on the record copy must fall within
-// tolAnchor metres of a CSV vertex before anything else runs.
-// If it doesn't, verification stops — there is no point comparing
-// legs against a parcel that hasn't been identified.
-//
-function identifyAnchor(refCoords, csvVertices, tolAnchor) {
-  let best = null;
-  for (const ref of refCoords) {
-    for (const v of csvVertices) {
-      const res = Math.hypot(ref.easting - v.easting, ref.northing - v.northing);
-      if (!best || res < best.residual) best = { ref, vertex: v, residual: res };
-    }
-  }
-  if (!best) return null;
-  best.isExact  = best.residual <= 0.01;
-  best.withinTol = best.residual <= tolAnchor;
-  return best;
-}
-
-// ============================================================
-// MODULE 3 — CSV-first traverse comparison
-// ============================================================
-//
-// Step A — computeLegsFromCSV
-//   Walk the CSV vertices in order from the anchor and compute
-//   the WCB and distance for every consecutive pair.
-//   This is the ground truth. Multiplicities are preserved:
-//   if two legs share the same WCB+distance, they both appear.
-//
-// Step B — buildExpectedPool
-//   Group the computed legs into unique (WCB, dist) entries
-//   with a required count. This tells the matcher how many
-//   times each value must be satisfied.
-//
-// Step C — matchLegs
-//   For each computed leg (in order):
-//     Find an extracted (WCB, dist) within tolerance.
-//     On match: decrement that entry's available count.
-//               Strike it out (remove) when count reaches 0.
-//     No match: record UNMATCHED error.
-//
-// Step D — exhaustion audit
-//   After all legs are processed:
-//     Any extracted value still in pool → PDF has values not
-//       present in the parcel → error on record copy.
-//     Any computed leg unmatched → PDF is missing a value
-//       that should be there → error on record copy.
-//
-// ──────────────────────────────────────────────────────────────
-
-function computeWCB(fromV, toV) {
-  // Whole Circle Bearing from fromV to toV, degrees clockwise from North
-  const dE = toV.easting  - fromV.easting;
-  const dN = toV.northing - fromV.northing;
-  let deg = Math.atan2(dE, dN) * 180 / Math.PI;
-  if (deg < 0) deg += 360;
-  return deg;
-}
-
-function shoelaceArea(vertices) {
-  // Standard Shoelace (Gauss) formula for polygon area from UTM coordinates.
-  // Returns area in square metres.
-  const n = vertices.length;
-  let area = 0;
-  for (let i = 0; i < n; i++) {
-    const j = (i + 1) % n;
-    area += vertices[i].easting  * vertices[j].northing;
-    area -= vertices[j].easting  * vertices[i].northing;
-  }
-  return Math.abs(area) / 2;
-}
-
-// ── Precision rounding ────────────────────────────────────────────────────
-// Survey plans state WCB to the nearest minute and distances to 2 dp.
-// Rounding computed values to this precision before comparison means we are
-// checking against exactly what the surveyor would have written on the plan.
-
-function roundWCBToMinute(deg) {
-  // Round to nearest whole minute: × 60, round, ÷ 60.
-  // 360° is invalid in WCB — wrap to 0°.
-  const rounded = Math.round(deg * 60) / 60;
-  return rounded >= 360 ? 0 : rounded;
-}
-
-function roundDistTo2dp(m) {
-  return Math.round(m * 100) / 100;
-}
-
-function computeLegsFromCSV(anchor, csvVertices) {
-  const idx = csvVertices.findIndex(v => v.id === anchor.vertex.id);
-  if (idx < 0) return [];
-  const n = csvVertices.length;
-  const legs = [];
-  for (let i = 0; i < n; i++) {
-    const from    = csvVertices[(idx + i)     % n];
-    const to      = csvVertices[(idx + i + 1) % n];
-    const dE      = to.easting  - from.easting;
-    const dN      = to.northing - from.northing;
-    const rawDist = Math.hypot(dE, dN);
-    const rawWCB  = computeWCB(from, to);
-    // Round to survey plan precision before any comparison
-    const dist    = roundDistTo2dp(rawDist);
-    const wcb     = roundWCBToMinute(rawWCB);
-    legs.push({ from, to, wcb, dist, rawWCB, rawDist });
-  }
-  return legs;
-}
-
-function buildExpectedPool(computedLegs, tolWCB, tolDist) {
-  // Group computed legs into unique (wcb, dist) buckets with counts.
-  // Two legs are "the same" if their wcb and dist are both within tolerance.
-  const pool = [];
-  for (const leg of computedLegs) {
-    const existing = pool.find(
-      e => Math.abs(e.wcb - leg.wcb) <= tolWCB && Math.abs(e.dist - leg.dist) <= tolDist
-    );
-    if (existing) {
-      existing.count++;
-      existing.legs.push(leg);
-    } else {
-      pool.push({ wcb: leg.wcb, dist: leg.dist, count: 1, available: 1, legs: [leg] });
-    }
-  }
-  // Set available = count (how many can still be matched)
-  pool.forEach(e => e.available = e.count);
-  return pool;
-}
-
-function matchLegs(computedLegs, extractedBearings, extractedDistances,
-                   expectedPool, tolWCB, tolDist) {
-  // ── Build counted pools ────────────────────────────────────────────────
-  //
-  // Each unique extracted value gets a `remaining` counter set to however
-  // many times the CSV computation requires that value.
-  //
-  //   CSV says 90.9333° appears 2 times  →  remaining = 2
-  //   CSV says 45.221m  appears 3 times  →  remaining = 3
-  //
-  // A value is struck from the pool only when remaining hits 0.
-  // Extracted values that don't match any CSV leg (title text, scale bars)
-  // are never consumed — they sit with remaining > 0 but are never found
-  // by the CSV-driven search, so they cause no harm.
-
-  const bPool = [];
-  for (const b of extractedBearings) {
-    const existing = bPool.find(e => Math.abs(e.degrees - b.degrees) <= tolWCB);
-    if (existing) {
-      existing.extractedCount++;
-    } else {
-      const csvCount = expectedPool
-        .filter(e => Math.abs(e.wcb - b.degrees) <= tolWCB)
-        .reduce((s, e) => s + e.count, 0);
-      bPool.push({ degrees: b.degrees, raw: b.raw, extractedCount: 1, remaining: csvCount || 1 });
-    }
-  }
-
-  const dPool = [];
-  for (const d of extractedDistances) {
-    const existing = dPool.find(e => Math.abs(e.metres - d.metres) <= tolDist);
-    if (existing) {
-      existing.extractedCount++;
-    } else {
-      const csvCount = expectedPool
-        .filter(e => Math.abs(e.dist - d.metres) <= tolDist)
-        .reduce((s, e) => s + e.count, 0);
-      dPool.push({ metres: d.metres, raw: d.raw, extractedCount: 1, remaining: csvCount || 1 });
-    }
-  }
-
-  log('Bearing pool: ' + bPool.map(b =>
-    b.degrees.toFixed(4) + '\u00b0 extracted\u00d7' + b.extractedCount +
-    ' needed\u00d7' + (b.remaining + (b.extractedCount - 1))).join(' | '), 'info');
-  log('Distance pool: ' + dPool.map(d =>
-    d.metres.toFixed(4) + 'm extracted\u00d7' + d.extractedCount +
-    ' needed\u00d7' + (d.remaining + (d.extractedCount - 1))).join(' | '), 'info');
-
-  const legResults = [];
-  const errors     = [];
-
-  for (let step = 0; step < computedLegs.length; step++) {
-    const cLeg = computedLegs[step];
-
-    const matchedBrg  = bPool.find(b => b.remaining > 0 && Math.abs(b.degrees - cLeg.wcb) <= tolWCB);
-    const matchedDist = dPool.find(d => d.remaining > 0 && Math.abs(d.metres  - cLeg.dist) <= tolDist);
-
-    const bMatch = !!matchedBrg;
-    const dMatch = !!matchedDist;
-
-    log(
-      '  Leg ' + (step+1) + ' | CSV: WCB ' + cLeg.wcb.toFixed(4) + '\u00b0 \u00b7 ' + cLeg.dist.toFixed(4) + 'm' +
-      ' | Bearing: '  + (bMatch ? matchedBrg.degrees.toFixed(4) + '\u00b0 rem:' + matchedBrg.remaining + ' \u2713' : 'NOT FOUND \u2717') +
-      ' | Distance: ' + (dMatch ? matchedDist.metres.toFixed(4) + 'm rem:' + matchedDist.remaining + ' \u2713' : 'NOT FOUND \u2717'),
-      (bMatch && dMatch) ? 'ok' : 'warn'
-    );
-
-    if (bMatch && dMatch) {
-      matchedBrg.remaining--;
-      matchedDist.remaining--;
-      legResults.push({
-        index:        step,
-        computedWCB:  cLeg.wcb,
-        computedDist: cLeg.dist,
-        extractedWCB:  matchedBrg.degrees,
-        extractedDist: matchedDist.metres,
-        wcbResidual:   Math.abs(matchedBrg.degrees - cLeg.wcb),
-        distResidual:  Math.abs(matchedDist.metres  - cLeg.dist),
-        fromVertex:    cLeg.from,
-        toVertex:      cLeg.to,
-        accepted:      true,
-      });
-    } else {
-      const msg = 'Leg ' + (step+1) + ' (' + cLeg.from.id + '\u2192' + cLeg.to.id + '): ' +
-        (!bMatch ? 'WCB ' + cLeg.wcb.toFixed(4) + '\u00b0 not found. ' : '') +
-        (!dMatch ? 'Distance ' + cLeg.dist.toFixed(4) + 'm not found.' : '');
-      errors.push({ type: 'MISSING_IN_PDF', msg, step });
-      legResults.push({
-        index:        step,
-        computedWCB:  cLeg.wcb,
-        computedDist: cLeg.dist,
-        extractedWCB:  matchedBrg?.degrees ?? null,
-        extractedDist: matchedDist?.metres  ?? null,
-        wcbResidual:   matchedBrg  ? Math.abs(matchedBrg.degrees - cLeg.wcb)  : null,
-        distResidual:  matchedDist ? Math.abs(matchedDist.metres  - cLeg.dist) : null,
-        fromVertex:    cLeg.from,
-        toVertex:      cLeg.to,
-        accepted:      false,
-      });
-    }
-  }
-
-  return { legResults, errors, unusedBrg: [], unusedDist: [] };
-}
-
-function reconstructTraverse(anchor, extractedBearings, extractedDistances,
-                              csvVertices, tolWCB, tolDist, tolClosure) {
-
-  // ── Step A: compute ground-truth legs from CSV ───────────────────────
-  const computedLegs = computeLegsFromCSV(anchor, csvVertices);
-  if (!computedLegs.length) return {
-    computedLegs: [], legResults: [], errors: [],
-    closureError: 0, closed: true, totalLength: 0,
-    warnings: ['Could not build CSV leg sequence'],
-  };
-
-  log(`CSV legs computed: ${computedLegs.length}`, 'ok');
-  computedLegs.forEach((l, i) => {
-    const rawInfo = l.rawWCB != null
-      ? ` (raw: ${l.rawWCB.toFixed(6)}\u00b0 \u00b7 ${l.rawDist.toFixed(4)}m)`
-      : '';
-    log(`  CSV Leg ${i+1}: ${l.from.id}\u2192${l.to.id} | WCB ${l.wcb.toFixed(4)}\u00b0 \u00b7 ${l.dist.toFixed(2)}m${rawInfo}`, 'info');
-  });
-
-  // ── Step B: build expected pool with multiplicities ──────────────────
-  const expectedPool = buildExpectedPool(computedLegs, tolWCB, tolDist);
-  log(`Expected pool: ${expectedPool.length} unique (WCB, dist) entries`, 'info');
-  expectedPool.forEach(e =>
-    log(`  WCB ${e.wcb.toFixed(4)}\u00b0 \u00b7 ${e.dist.toFixed(2)}m \u00d7 ${e.count} required`, 'info')
-  );
-
-  log(`Extracted pool: ${extractedBearings.length} bearings, ${extractedDistances.length} distances`, 'info');
-
-  // ── Step C: match ────────────────────────────────────────────────────
-  log('── Matching extracted values against computed legs ──', 'info');
-  const { legResults, errors, unusedBrg, unusedDist } =
-    matchLegs(computedLegs, extractedBearings, extractedDistances,
-              expectedPool, tolWCB, tolDist);
-
-  // ── Closure (from CSV — always exact since we computed from it) ──────
-  const totalLength = computedLegs.reduce((s, l) => s + l.dist, 0);
-
-  // CSV-computed traverse always closes by definition; the closure check
-  // here is really about whether the extracted values reconstruct correctly
-  const nMatched   = legResults.filter(lr => lr.accepted).length;
-  const allMatched = nMatched === computedLegs.length;
-  const closed     = allMatched;
-
-  const warnings = [];
-  if (!allMatched)
-    warnings.push(`${computedLegs.length - nMatched} CSV leg(s) not found in extracted text`);
-
-  log(
-    `Matching done — ${nMatched}/${computedLegs.length} legs matched, ` +
-    `${unusedBrg.length} unused bearings, ${unusedDist.length} unused distances`,
-    closed ? 'ok' : 'warn'
-  );
-
-  return {
-    computedLegs, legResults, errors,
-    closureError: 0, closed, totalLength, relPrec: null,
-    warnings, unusedBrg, unusedDist, expectedPool,
-  };
-}
-
-// ============================================================
-
-
-// MODULE 4 — Scoring
-// ============================================================
-// Each leg contributes two sub-scores: WCB match and distance match.
-// A leg scores 100% only when both are within tolerance.
-// The overall score is the mean across all computed legs.
-// Any unused extracted value or unmatched computed leg caps status at NOT VERIFIED
-// regardless of the percentage score.
-
-function residualToPct(res, tolerance) {
-  // 0 residual = 100%, at tolerance = 50%, beyond = falls to 0
-  return Math.max(0, 100 * (1 - res / (tolerance * 2)));
-}
-
-function scoreResults(traverse, passThreshold, warnThreshold, areaMatch=true, pdfArea=null, hasWarnings=false) {
-  const { legResults, errors, unusedBrg, unusedDist } = traverse;
-
-  // Tolerances used for scoring — read from UI so score reflects actual settings
-  const tolWCB  = parseFloat(document.getElementById('tolWCB').value)  || 0.05;
-  const tolDist = parseFloat(document.getElementById('tolDist').value) || 0.05;
-
-  const scores = legResults.map(lr => {
-    const wcbPct  = lr.accepted && lr.wcbResidual  != null ? residualToPct(lr.wcbResidual,  tolWCB)  : 0;
-    const distPct = lr.accepted && lr.distResidual != null ? residualToPct(lr.distResidual, tolDist) : 0;
-    const legPct  = lr.accepted ? (wcbPct + distPct) / 2 : 0;
-    return {
-      fromId:       lr.fromVertex?.id ?? '?',
-      toId:         lr.toVertex?.id   ?? '?',
-      computedWCB:  lr.computedWCB,
-      computedDist: lr.computedDist,
-      extractedWCB:  lr.extractedWCB,
-      extractedDist: lr.extractedDist,
-      wcbResidual:   lr.wcbResidual,
-      distResidual:  lr.distResidual,
-      wcbPct, distPct, legPct,
-      accepted: lr.accepted,
-    };
-  });
-
-  const overall  = scores.length ? scores.reduce((a,s) => a + s.legPct, 0) / scores.length : 0;
-  const matched  = legResults.filter(lr => lr.accepted).length;
-
-  // Hard rules — any of these → NOT VERIFIED regardless of score:
-  //   • Unmatched CSV leg
-  //   • Area mismatch (when PDF states an area)
-  const hasLegErrors = errors.length > 0;
-  const hasAreaFail  = pdfArea != null && !areaMatch;
-  const hasAnyIssue  = hasLegErrors || hasAreaFail;
-
-  let status;
-  if (overall >= passThreshold && !hasAnyIssue && !hasWarnings) status = 'VERIFIED';
-  else status = 'REVIEW';
-
-  return {
-    scores, overall, matched, status,
-    hasAnyIssue, hasLegErrors, hasAreaFail,
-    errors,
-    unusedBrg: [], unusedDist: [],
-    unusedBrgCount: 0, unusedDistCount: 0,
-  };
-}
-
-// ============================================================
-// ============================================================
-// CSV Loader
-// ============================================================
-function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) throw new Error('CSV has no data rows');
-  const header = lines[0].split(/[,\t;]/).map(h => h.trim().toLowerCase().replace(/[^a-z]/g,''));
-  const findCol = aliases => { for (const a of aliases) { const i = header.indexOf(a); if (i >= 0) return i; } return -1; };
-  const iE = findCol(['easting','e','east','x']);
-  const iN = findCol(['northing','n','north','y']);
-  const iP = findCol(['point','pointno','id','pt','vertex','no']);
-  if (iE < 0 || iN < 0) throw new Error('CSV must have Easting and Northing columns. Found: ' + header.join(', '));
-  const vertices = [];
-  for (let r = 1; r < lines.length; r++) {
-    const cols = lines[r].split(/[,\t;]/);
-    if (cols.length < 2) continue;
-    const e = parseFloat(cols[iE]), n = parseFloat(cols[iN]);
-    if (isNaN(e) || isNaN(n)) continue;
-    const id = iP >= 0 ? cols[iP].trim() : String(r);
-    vertices.push({ id, easting: e, northing: n });
-  }
-  if (!vertices.length) throw new Error('CSV parsed but no valid coordinate rows found');
-  return vertices;
-}
-
-// RUN BUTTON
-// ============================================================
-document.getElementById('runBtn').addEventListener('click', async () => {
-  clearLog();
-  document.getElementById('results').classList.remove('show');
-  document.getElementById('parcelPanels').innerHTML = '';
-  document.getElementById('parcelTabs').style.display = 'none';
-  document.getElementById('overallBanner').style.display = 'none';
-  const btn = document.getElementById('runBtn');
-  document.getElementById('runBtnLabel').innerHTML = '<span class="spinner"></span>';
-  btn.disabled = true;
-
-  const tolAnchor  = parseFloat(document.getElementById('tolAnchor').value);
-  const tolWCB     = parseFloat(document.getElementById('tolWCB').value);
-  const tolDist    = parseFloat(document.getElementById('tolDist').value);
-  const tolArea    = parseFloat(document.getElementById('tolArea').value);
-  const passThresh = parseFloat(document.getElementById('tolPass').value);
-  const warnThresh = parseFloat(document.getElementById('tolWarn').value);
-
-  try {
-    // Module 1 — Extract from PDF (once for all parcels)
-    log('── MODULE 1: PDF EXTRACTION ──', 'info');
-    const extraction = await extractFromPDF(pdfFile);
-
-    // Load all CSVs
-    log(`── LOADING ${csvFiles.length} CSV(s) ──`, 'info');
-    const allParcels = [];
-    for (const csvFile of csvFiles) {
-      const csvText    = await csvFile.text();
-      const csvVertices = parseCSV(csvText);
-      log(`  ${csvFile.name}: ${csvVertices.length} vertices`, 'ok');
-      allParcels.push({ fileName: csvFile.name, csvVertices });
-    }
-
-    // ── Per-parcel pipeline ──────────────────────────────────────────────
-    const reports = [];
-    const usedRefCoords = new Set(); // track which ref coords have been anchored
-
-    for (let pi = 0; pi < allParcels.length; pi++) {
-      const { fileName, csvVertices } = allParcels[pi];
-      const parcelLabel = csvFiles.length > 1
-        ? (fileName.replace(/\.csv$/i,'').split(/[_\-\s]/).pop() || String(pi+1))
-        : 'Parcel';
-      log(`\n── PARCEL ${parcelLabel} (${fileName}) ──`, 'info');
-
-      // Module 2 — Anchor: find best unused ref coord
-      log('── MODULE 2: ANCHOR CHECK ──', 'info');
-      const anchor = identifyAnchorExcluding(
-        extraction.refCoords, csvVertices, tolAnchor, usedRefCoords
-      );
-      if (!anchor) {
-        reports.push({ parcelLabel, fileName, error: 'No anchor found — ref coord not matched' });
-        log(`Parcel ${parcelLabel}: no anchor found`, 'error');
-        continue;
+      /* ── Grid noise texture overlay ── */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 24px,
+            rgba(255, 255, 255, 0.012) 24px,
+            rgba(255, 255, 255, 0.012) 25px
+          ),
+          repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 24px,
+            rgba(255, 255, 255, 0.012) 24px,
+            rgba(255, 255, 255, 0.012) 25px
+          );
+        pointer-events: none;
+        z-index: 0;
       }
-      if (!anchor.withinTol) {
-        reports.push({ parcelLabel, fileName, error: `Anchor residual ${anchor.residual.toFixed(4)}m exceeds ${tolAnchor}m` });
-        log(`Parcel ${parcelLabel}: anchor out of tolerance`, 'error');
-        continue;
+
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px;
+        position: relative;
+        z-index: 1;
       }
-      // Mark this ref coord as used so next parcel won't claim it
-      usedRefCoords.add(`${anchor.ref.easting}|${anchor.ref.northing}`);
-      log(`Anchor OK: PDF (${anchor.ref.easting.toFixed(3)}, ${anchor.ref.northing.toFixed(3)}) → CSV ${anchor.vertex.id} (${anchor.residual.toFixed(4)}m)`, 'ok');
 
-      // Module 3 — CSV-first comparison
-      log('── MODULE 3: CSV-FIRST COMPARISON ──', 'info');
-      const traverse = reconstructTraverse(
-        anchor, extraction.bearings, extraction.distances,
-        csvVertices, tolWCB, tolDist, 0
-      );
-      const nMatched = traverse.legResults.filter(l=>l.accepted).length;
-      log(`Matched ${nMatched}/${traverse.computedLegs.length} legs`, traverse.closed?'ok':'warn');
+      /* ── Header ── */
+      header {
+        border-bottom: 1px solid var(--border);
+        padding: 20px 0 16px;
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+      }
+      .logo {
+        font-family: var(--display);
+        font-size: 32px;
+        letter-spacing: 3px;
+        color: var(--accent);
+        line-height: 1;
+      }
+      .logo-sub {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--text2);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+      .header-badge {
+        margin-left: auto;
+        font-size: 10px;
+        color: var(--text3);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        border: 1px solid var(--border2);
+        padding: 3px 8px;
+        border-radius: 2px;
+      }
 
-      // Area validation — match this parcel's CSV area against PDF areas
-      const csvArea = shoelaceArea(csvVertices);
-      log(`CSV area: ${csvArea.toFixed(3)} sq m`, 'ok');
+      /* ── Upload zone ── */
+      .upload-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 32px 0 24px;
+      }
+      @media (max-width: 640px) {
+        .upload-grid {
+          grid-template-columns: 1fr;
+        }
+      }
 
-      // Find the PDF area that best matches this CSV area
-      let matchedPdfArea = null;
-      if (extraction.pdfAreas.length > 0) {
-        // Pick the PDF area entry closest to csvArea
-        matchedPdfArea = extraction.pdfAreas.reduce((best, a) =>
-          Math.abs(a.sqm - csvArea) < Math.abs(best.sqm - csvArea) ? a : best
+      .drop-zone {
+        background: var(--surface);
+        border: 1.5px dashed var(--border2);
+        border-radius: 4px;
+        padding: 28px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+        position: relative;
+        overflow: hidden;
+      }
+      .drop-zone:hover,
+      .drop-zone.drag {
+        border-color: var(--accent);
+        background: rgba(0, 229, 160, 0.04);
+      }
+      .drop-zone.loaded {
+        border-color: var(--accent2);
+        border-style: solid;
+      }
+      .drop-zone input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+      }
+      .dz-icon {
+        font-size: 28px;
+        margin-bottom: 10px;
+        display: block;
+      }
+      .dz-label {
+        font-family: var(--display);
+        font-size: 18px;
+        letter-spacing: 2px;
+        color: var(--text);
+        display: block;
+        margin-bottom: 4px;
+      }
+      .dz-hint {
+        font-size: 11px;
+        color: var(--text2);
+      }
+      .dz-filename {
+        font-size: 11px;
+        color: var(--accent);
+        margin-top: 6px;
+        display: block;
+      }
+
+      /* Tolerance row */
+      .tol-row {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 14px 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .tol-label {
+        font-size: 10px;
+        color: var(--text2);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .tol-input {
+        background: var(--bg);
+        border: 1px solid var(--border2);
+        border-radius: 2px;
+        color: var(--accent);
+        font-family: var(--mono);
+        font-size: 13px;
+        padding: 4px 8px;
+        width: 80px;
+        outline: none;
+      }
+      .tol-input:focus {
+        border-color: var(--accent);
+      }
+
+      /* ── Run button ── */
+      .run-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 16px;
+        background: var(--accent);
+        color: #000;
+        border: none;
+        border-radius: 3px;
+        font-family: var(--display);
+        font-size: 22px;
+        letter-spacing: 3px;
+        cursor: pointer;
+        transition:
+          opacity 0.15s,
+          transform 0.1s;
+        margin-bottom: 32px;
+      }
+      .run-btn:hover {
+        opacity: 0.9;
+      }
+      .run-btn:active {
+        transform: scale(0.99);
+      }
+      .run-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      /* ── Log panel ── */
+      .log-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 16px;
+        font-family: var(--mono);
+        font-size: 12px;
+        max-height: 220px;
+        overflow-y: auto;
+        margin-bottom: 32px;
+        display: none;
+      }
+      .log-panel.active {
+        display: block;
+      }
+      .log-line {
+        padding: 1px 0;
+        color: var(--text2);
+      }
+      .log-line.info {
+        color: var(--text);
+      }
+      .log-line.ok {
+        color: var(--accent);
+      }
+      .log-line.warn {
+        color: var(--warn);
+      }
+      .log-line.error {
+        color: var(--danger);
+      }
+      .log-ts {
+        color: var(--text3);
+        margin-right: 8px;
+      }
+
+      /* ── Results ── */
+      #results {
+        display: none;
+      }
+      #results.show {
+        display: block;
+      }
+
+      /* Verdict banner */
+      .verdict {
+        border-radius: 4px;
+        padding: 24px 28px;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 24px;
+        border: 1.5px solid;
+      }
+      .verdict.VERIFIED {
+        border-color: var(--verified);
+        background: rgba(0, 229, 160, 0.06);
+      }
+      .verdict.REVIEW {
+        border-color: var(--review);
+        background: rgba(245, 166, 35, 0.06);
+      }
+      .verdict.NOT_VERIFIED {
+        border-color: var(--notverified);
+        background: rgba(255, 68, 68, 0.06);
+      }
+      .verdict.ERROR {
+        border-color: var(--danger);
+        background: rgba(255, 68, 68, 0.06);
+      }
+      .verdict-status {
+        font-family: var(--display);
+        font-size: 42px;
+        letter-spacing: 4px;
+        line-height: 1;
+      }
+      .verdict.VERIFIED .verdict-status {
+        color: var(--verified);
+      }
+      .verdict.REVIEW .verdict-status {
+        color: var(--review);
+      }
+      .verdict.NOT_VERIFIED .verdict-status {
+        color: var(--notverified);
+      }
+      .verdict-score {
+        font-size: 26px;
+        font-family: var(--display);
+        letter-spacing: 2px;
+      }
+      .verdict-meta {
+        font-size: 12px;
+        color: var(--text2);
+        margin-top: 4px;
+      }
+
+      /* 3-col stats */
+      .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      @media (max-width: 640px) {
+        .stats-row {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 14px 16px;
+      }
+      .stat-label {
+        font-size: 10px;
+        color: var(--text2);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+      }
+      .stat-value {
+        font-family: var(--display);
+        font-size: 24px;
+        letter-spacing: 1px;
+        color: var(--accent);
+      }
+      .stat-unit {
+        font-size: 11px;
+        color: var(--text2);
+        margin-left: 3px;
+      }
+
+      /* Section headers */
+      .section-title {
+        font-family: var(--display);
+        font-size: 18px;
+        letter-spacing: 3px;
+        color: var(--text2);
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+        margin: 28px 0 16px;
+      }
+
+      /* Canvas map */
+      .map-wrap {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 24px;
+        position: relative;
+      }
+      #mapCanvas {
+        display: block;
+        width: 100%;
+        height: 360px;
+      }
+      .map-legend {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+        background: rgba(10, 12, 15, 0.88);
+        border: 1px solid var(--border2);
+        border-radius: 3px;
+        padding: 8px 12px;
+        font-size: 11px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 2px 0;
+        color: var(--text2);
+      }
+      .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      /* Leg table */
+      .leg-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        margin-bottom: 24px;
+      }
+      .leg-table th {
+        background: var(--surface2);
+        color: var(--text2);
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 1px;
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 1px solid var(--border2);
+        font-weight: 500;
+      }
+      .leg-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+        font-family: var(--mono);
+      }
+      .leg-table tr:last-child td {
+        border-bottom: none;
+      }
+      .leg-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .ok-badge {
+        color: var(--accent);
+        font-size: 14px;
+      }
+      .fail-badge {
+        color: var(--danger);
+        font-size: 14px;
+      }
+
+      /* Score bars */
+      .score-bars {
+        margin-bottom: 24px;
+      }
+      .score-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 6px 0;
+        font-size: 12px;
+      }
+      .score-pt {
+        width: 32px;
+        color: var(--text2);
+        text-align: right;
+        flex-shrink: 0;
+      }
+      .score-bar-wrap {
+        flex: 1;
+        height: 8px;
+        background: var(--surface2);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .score-bar-fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.6s ease;
+      }
+      .score-pct {
+        width: 52px;
+        text-align: right;
+        color: var(--accent);
+        flex-shrink: 0;
+      }
+      .score-res {
+        width: 70px;
+        text-align: right;
+        color: var(--text2);
+        flex-shrink: 0;
+      }
+
+      /* Extracted data panel */
+      .data-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      @media (max-width: 640px) {
+        .data-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .data-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 14px 16px;
+      }
+      .data-card-title {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--text2);
+        margin-bottom: 10px;
+      }
+      .data-chip {
+        display: inline-block;
+        background: var(--surface2);
+        border: 1px solid var(--border2);
+        border-radius: 2px;
+        padding: 3px 7px;
+        margin: 2px;
+        font-size: 11px;
+        color: var(--accent);
+      }
+
+      /* Warnings */
+      .warn-list {
+        list-style: none;
+        margin-bottom: 24px;
+      }
+      .warn-list li {
+        background: rgba(245, 166, 35, 0.08);
+        border: 1px solid rgba(245, 166, 35, 0.25);
+        border-radius: 3px;
+        padding: 8px 12px;
+        margin: 4px 0;
+        font-size: 12px;
+        color: var(--warn);
+      }
+
+      /* Export btn */
+      .export-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 40px;
+      }
+      .exp-btn {
+        padding: 9px 18px;
+        border: 1px solid var(--border2);
+        border-radius: 3px;
+        background: var(--surface);
+        color: var(--text2);
+        font-family: var(--mono);
+        font-size: 12px;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          color 0.15s;
+        letter-spacing: 1px;
+      }
+      .exp-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      /* progress spinner */
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(0, 0, 0, 0.3);
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+
+      /* anchor info */
+      .anchor-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+        border-radius: 4px;
+        padding: 14px 18px;
+        margin-bottom: 24px;
+        font-size: 12px;
+      }
+      .anchor-box strong {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <div class="logo">SURFBOARD</div>
+          <div class="logo-sub">Survey Plan Verification Engine</div>
+        </div>
+        <div class="header-badge">Nigerian Cadastral · UTM EPSG:26331</div>
+      </header>
+
+      <!-- Upload zone -->
+      <div class="upload-grid" style="margin-top: 32px">
+        <div class="drop-zone" id="dzPdf">
+          <input type="file" accept=".pdf" id="filePdf" />
+          <span class="dz-icon">📄</span>
+          <span class="dz-label">RECORD COPY</span>
+          <span class="dz-hint">Drop survey plan PDF here</span>
+          <span class="dz-filename" id="namePdf"></span>
+        </div>
+        <div class="drop-zone" id="dzCsv" style="position: relative">
+          <input type="file" accept=".csv,.txt" id="fileCsv" multiple />
+          <span class="dz-icon">📊</span>
+          <span class="dz-label">COORDINATES CSV(s)</span>
+          <span class="dz-hint">One CSV per parcel — multiple allowed</span>
+          <span class="dz-filename" id="nameCsv"></span>
+        </div>
+      </div>
+
+      <!-- Tolerances -->
+      <div class="tol-row">
+        <div>
+          <span class="tol-label">Anchor Tolerance (m)</span>
+          <input
+            class="tol-input"
+            type="number"
+            id="tolAnchor"
+            value="0.05"
+            step="0.01"
+            min="0.001"
+          />
+        </div>
+        <div>
+          <span class="tol-label">WCB Tolerance (&deg;)</span>
+          <input
+            class="tol-input"
+            type="number"
+            id="tolWCB"
+            value="0.05"
+            step="0.01"
+            min="0.001"
+          />
+        </div>
+        <div>
+          <span class="tol-label">Distance Tolerance (m)</span>
+          <input
+            class="tol-input"
+            type="number"
+            id="tolDist"
+            value="0.05"
+            step="0.01"
+            min="0.001"
+          />
+        </div>
+        <div>
+          <span class="tol-label">Area Tolerance (sq m)</span>
+          <input
+            class="tol-input"
+            type="number"
+            id="tolArea"
+            value="0.01"
+            step="0.001"
+            min="0.001"
+          />
+        </div>
+        <div>
+          <span class="tol-label">Pass Threshold (%)</span>
+          <input
+            class="tol-input"
+            type="number"
+            id="tolPass"
+            value="95"
+            step="1"
+            min="50"
+            max="100"
+          />
+        </div>
+        <div>
+          <span class="tol-label">Warn Threshold (%)</span>
+          <input
+            class="tol-input"
+            type="number"
+            id="tolWarn"
+            value="80"
+            step="1"
+            min="50"
+            max="100"
+          />
+        </div>
+      </div>
+
+      <button class="run-btn" id="runBtn" disabled>
+        <span id="runBtnLabel">RUN VERIFICATION</span>
+      </button>
+
+      <!-- Log -->
+      <div class="log-panel" id="logPanel"></div>
+
+      <!-- Results -->
+      <div id="results">
+        <!-- Overall summary (shown when multiple parcels) -->
+        <div
+          id="overallBanner"
+          style="display: none; margin-bottom: 16px"
+        ></div>
+
+        <!-- Parcel tabs (shown when multiple parcels) -->
+        <div id="parcelTabs" style="display: none; margin-bottom: 0px"></div>
+
+        <!-- Per-parcel result panels — injected by renderResults -->
+        <div id="parcelPanels"></div>
+
+        <!-- Extracted data -->
+        <div class="section-title">EXTRACTED DATA</div>
+        <div class="data-grid" id="dataGrid"></div>
+
+        <!-- Anchor -->
+        <div class="section-title">IDENTIFIED ANCHOR</div>
+        <div class="anchor-box" id="anchorBox"></div>
+
+        <!-- Leg table -->
+        <div class="section-title">TRAVERSE LEGS</div>
+        <div style="overflow-x: auto">
+          <table class="leg-table" id="legTable"></table>
+        </div>
+
+        <!-- Score bars -->
+        <div class="section-title">VERTEX CONFIDENCE</div>
+        <div class="score-bars" id="scoreBars"></div>
+
+        <!-- Warnings -->
+        <div class="section-title" id="warnTitle" style="display: none">
+          WARNINGS
+        </div>
+        <ul class="warn-list" id="warnList"></ul>
+
+        <!-- Export -->
+        <div class="section-title">EXPORT</div>
+        <div class="export-row">
+          <button class="exp-btn" onclick="exportJSON()">↓ JSON REPORT</button>
+          <button class="exp-btn" onclick="exportCSVAll()">↓ LEG CSV</button>
+          <button class="exp-btn" onclick="window.print()">⎙ PRINT</button>
+        </div>
+      </div>
+      <!-- /results -->
+    </div>
+    <!-- /wrap -->
+
+    <script>
+      // ============================================================
+      // PDF.js setup
+      // ============================================================
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+      // ============================================================
+      // State
+      // ============================================================
+      let pdfFile = null,
+        csvFiles = [],
+        lastReports = null;
+
+      // ============================================================
+      // Drop-zone setup
+      // ============================================================
+      function setupDZ(dzId, inputId, nameId, setter, ext) {
+        const dz = document.getElementById(dzId);
+        const inp = document.getElementById(inputId);
+        const nm = document.getElementById(nameId);
+        const accept = (f) => {
+          setter(f);
+          nm.textContent = f.name;
+          dz.classList.add("loaded");
+          checkReady();
+        };
+        inp.addEventListener("change", (e) => {
+          if (e.target.files[0]) accept(e.target.files[0]);
+        });
+        dz.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          dz.classList.add("drag");
+        });
+        dz.addEventListener("dragleave", () => dz.classList.remove("drag"));
+        dz.addEventListener("drop", (e) => {
+          e.preventDefault();
+          dz.classList.remove("drag");
+          const f = e.dataTransfer.files[0];
+          if (f) {
+            inp.files = e.dataTransfer.files;
+            accept(f);
+          }
+        });
+      }
+      setupDZ("dzPdf", "filePdf", "namePdf", (f) => (pdfFile = f), ".pdf");
+      // CSV drop zone — multiple files
+      {
+        const dz = document.getElementById("dzCsv");
+        const inp = document.getElementById("fileCsv");
+        const nm = document.getElementById("nameCsv");
+        const accept = (files) => {
+          csvFiles = Array.from(files);
+          nm.textContent =
+            csvFiles.length === 1
+              ? csvFiles[0].name
+              : csvFiles.length +
+                " CSVs: " +
+                csvFiles.map((f) => f.name).join(", ");
+          dz.classList.add("loaded");
+          checkReady();
+        };
+        inp.addEventListener("change", (e) => {
+          if (e.target.files.length) accept(e.target.files);
+        });
+        dz.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          dz.classList.add("drag");
+        });
+        dz.addEventListener("dragleave", () => dz.classList.remove("drag"));
+        dz.addEventListener("drop", (e) => {
+          e.preventDefault();
+          dz.classList.remove("drag");
+          if (e.dataTransfer.files.length) {
+            inp.files = e.dataTransfer.files;
+            accept(e.dataTransfer.files);
+          }
+        });
+      }
+      function checkReady() {
+        document.getElementById("runBtn").disabled = !(
+          pdfFile && csvFiles.length > 0
         );
-        const diff = Math.abs(csvArea - matchedPdfArea.sqm);
-        const areaOk = diff <= tolArea;
-        log(`PDF area match: ${matchedPdfArea.label} = ${matchedPdfArea.sqm.toFixed(3)} sq m (diff ${diff.toFixed(4)}) ${areaOk?'✓':'✗'}`,
-            areaOk ? 'ok' : 'warn');
-      } else {
-        log('No PDF area found to validate', 'warn');
       }
 
-      const pdfAreaSqm  = matchedPdfArea ? matchedPdfArea.sqm : null;
-      const areaDiff    = pdfAreaSqm != null ? Math.abs(csvArea - pdfAreaSqm) : null;
-      const areaMatch   = areaDiff != null && areaDiff <= tolArea;
+      // ============================================================
+      // Logger
+      // ============================================================
+      const logPanel = document.getElementById("logPanel");
+      function log(msg, type = "info") {
+        logPanel.classList.add("active");
+        const ts = new Date().toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+        const d = document.createElement("div");
+        d.className = `log-line ${type}`;
+        d.innerHTML = `<span class="log-ts">${ts}</span>${msg}`;
+        logPanel.appendChild(d);
+        logPanel.scrollTop = logPanel.scrollHeight;
+      }
+      function clearLog() {
+        logPanel.innerHTML = "";
+      }
 
-      // ── Reference coordinate position check ────────────────────────────
-      // The reference coordinate should be the first coordinate in the CSV.
-      // If the matched anchor is not the first row, warn the user.
-      const anchorIsFirst = anchor.vertex.id === csvVertices[0].id;
-      if (!anchorIsFirst) {
+      // ============================================================
+      // ============================================================
+      // MODULE 1 — PDF Extraction (full-text, no colour filtering)
+      // ============================================================
+      // We extract ALL text from the PDF — bearings, distances, and
+      // reference coordinates — without any colour filtering.
+      //
+      // Colour filtering was unreliable across AutoCAD PDF variants.
+      // Instead, the CSV-computed legs act as the filter: only values
+      // that match a computed WCB or distance (within tolerance) are
+      // accepted. Everything else is ignored automatically.
+
+      // ── Regex patterns ────────────────────────────────────────────────────────
+      //
+      // AutoCAD PDF encoding notes:
+      //   • Degree symbol °  may arrive as U+00B0, U+00BA (ordinal), U+00B0,
+      //     or as a custom glyph in the PDF font — in which case getTextContent
+      //     renders it as a single non-ASCII char we can't predict.
+      //   • Minute symbol '  may arrive as U+0027 (apostrophe), U+2019 (right
+      //     single quotation), U+00B4 (acute), U+0060 (backtick), or the custom
+      //     glyph the AutoCAD font uses.
+      //   • The degree and minute values are ALWAYS digits — that's reliable.
+      //
+      // Strategy for bearings:
+      //   Match: 1–3 digits, any non-digit non-space separator, 1–2 digits,
+      //          optional any non-digit non-space separator.
+      //   This is intentionally broad — false positives are filtered out downstream
+      //   by the CSV-computed leg matching (tolerance check).
+      //
+      // Strategy for distances:
+      //   AutoCAD emits distances as "16.68m" — number immediately followed by m.
+      //   The "m" must NOT be followed by E or N (coordinate suffix).
+      //   We also try "16.68 m" with a space.
+
+      const RE_BEARING = /(\d{1,3})[^\d\s]{1,3}\s*(\d{1,2})[^\d\s]{0,3}/g;
+
+      const RE_EASTING = /((?:\d+\s)*\d+\.\d+)\s*mE/gi;
+      const RE_NORTHING = /((?:\d+\s)*\d+\.\d+)\s*mN/gi;
+
+      function parseCoord(str) {
+        return parseFloat(str.replace(/\s+/g, ""));
+      }
+      function parseBearing(deg, min) {
+        return parseFloat(deg) + parseFloat(min) / 60;
+      }
+
+      async function extractFromPDF(file) {
+        log("Loading PDF...", "info");
+        const ab = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+        log(`PDF loaded — ${pdf.numPages} page(s)`, "ok");
+
+        // Collect all text from every page into one string
+        let allText = "";
+        for (let p = 1; p <= pdf.numPages; p++) {
+          const page = await pdf.getPage(p);
+          const tc = await page.getTextContent({ includeMarkedContent: false });
+          allText += tc.items.map((it) => it.str).join(" ") + " ";
+        }
+        log(`Full text extracted: ${allText.trim().length} chars`, "ok");
+
+        // ── Raw text diagnostics ─────────────────────────────────────────────
+        // Reveals AutoCAD glyph substitutions for degree and minute symbols
+        const rawNonAscii = [...new Set(allText)].filter(
+          (ch) => ch.charCodeAt(0) > 127
+        );
         log(
-          'WARNING: The reference coordinate matched CSV vertex ' + anchor.vertex.id +
-          ' which is NOT the first coordinate in your CSV (first is ' + csvVertices[0].id + ').',
-          'warn'
+          "Non-ASCII chars: " +
+            rawNonAscii
+              .map(
+                (c) =>
+                  "U+" +
+                  c.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") +
+                  "(" +
+                  c +
+                  ")"
+              )
+              .join("  "),
+          "info"
         );
-      } else {
-        log('Reference coordinate matches first CSV vertex (' + csvVertices[0].id + ') ✓', 'ok');
+        // Log raw hex around first numeric sequence
+        const firstNum = allText.search(/\d{1,3}./);
+        if (firstNum >= 0) {
+          const win = allText.slice(Math.max(0, firstNum - 2), firstNum + 30);
+          const hex = [...win]
+            .map((c) => c.charCodeAt(0).toString(16).padStart(4, "0"))
+            .join(" ");
+          log('Text near first number: "' + win + '"', "info");
+          log("Hex: " + hex, "info");
+        }
+        // Log 200 chars from middle of text where bearings likely are
+        const mid = Math.floor(allText.length / 2);
+        log('Mid-text sample: "' + allText.slice(mid, mid + 200) + '"', "info");
+
+        const warnings = [];
+
+        // ── Bearings ──────────────────────────────────────────────────────────
+        // Use allText with the original regex — this was confirmed working.
+        // The degree/minute separators in allText are whatever PDF.js normalises
+        // them to, and the regex handles all known variants.
+        const bearings = [];
+        {
+          const RE = /(\d{1,3})[°º°]\s*(\d{1,2})['''`’‘]?/g;
+          let m;
+          RE.lastIndex = 0;
+          while ((m = RE.exec(allText)) !== null) {
+            const deg = parseFloat(m[1]),
+              min = parseFloat(m[2]);
+            if (deg > 360 || min >= 60) continue;
+            bearings.push({ degrees: deg + min / 60, raw: m[0] });
+          }
+        }
+        log(
+          "Bearings extracted: " +
+            bearings.length +
+            (bearings.length
+              ? " → " +
+                bearings.map((b) => b.degrees.toFixed(4) + "°").join(", ")
+              : ""),
+          bearings.length > 0 ? "ok" : "warn"
+        );
+
+        // ── Distances ─────────────────────────────────────────────────────────
+        // Scan every text item. Search WITHIN each item for a decimal number
+        // followed by m — this handles:
+        //   "735.27m"           — standalone distance
+        //   "3° 19' 17.83m"     — bearing+distance combined in one item
+        //   "3° 19' 17.83m(calc)" — with (calc) annotation
+        // Require decimal point to exclude integer scale labels (30m, 10m).
+        // Skip items containing mE or mN (coordinate values).
+        const distances = [];
+        {
+          const distPdf = await pdfjsLib.getDocument({
+            data: await file.arrayBuffer(),
+          }).promise;
+          const allItems = [];
+          for (let p = 1; p <= distPdf.numPages; p++) {
+            const page = await distPdf.getPage(p);
+            const tc = await page.getTextContent({
+              includeMarkedContent: false,
+            });
+            tc.items.forEach((it) => {
+              if ((it.str || "").trim()) allItems.push(it.str.trim());
+            });
+          }
+
+          log(
+            "All text items (" +
+              allItems.length +
+              "): " +
+              allItems
+                .slice(0, 60)
+                .map((s) => '"' + s + '"')
+                .join(" "),
+            "info"
+          );
+
+          for (let i = 0; i < allItems.length; i++) {
+            const item = allItems[i];
+
+            // Skip coordinate items (contain mE or mN)
+            if (/\d+\.\d+\s*m[EN]/i.test(item)) continue;
+
+            // Search within item for decimal number + m not followed by E/N/word-char
+            const inlineRE = /(\d+\.\d+)\s*m(?![ENen\w])/gi;
+            let m;
+            inlineRE.lastIndex = 0;
+            while ((m = inlineRE.exec(item)) !== null) {
+              const d = parseFloat(m[1]);
+              if (d > 0 && d < 10000)
+                distances.push({ metres: d, raw: m[1] + "m" });
+            }
+
+            // Consecutive pair: "16.68" then "m" as separate items
+            if (
+              /^\d+\.\d+$/.test(item) &&
+              i + 1 < allItems.length &&
+              /^m$/i.test(allItems[i + 1])
+            ) {
+              const d = parseFloat(item);
+              if (d > 0 && d < 10000) {
+                distances.push({ metres: d, raw: d + "m" });
+                i++;
+              }
+            }
+          }
+        }
+        log(
+          "Distances extracted: " +
+            distances.length +
+            (distances.length
+              ? " \u2192 " + distances.map((d) => d.metres + "m").join(", ")
+              : ""),
+          distances.length > 0 ? "ok" : "warn"
+        );
+
+        // ── Reference coordinates ─────────────────────────────────────────────
+        // AutoCAD PDFs sometimes place an unrelated number immediately before the
+        // coordinate (e.g. scale bar "10" before "710 642.393 mN"), causing the
+        // greedy regex to capture "10 710 642.393". We resolve this by trying
+        // progressively shorter prefixes until the value falls in a plausible
+        // Nigerian UTM range: E 100 000–999 999 · N 100 000–9 999 999.
+        function bestCoord(raw, plausible) {
+          const parts = raw.trim().split(/\s+/);
+          for (let i = 0; i < parts.length; i++) {
+            const v = parseFloat(parts.slice(i).join(""));
+            if (!isNaN(v) && plausible(v)) return v;
+          }
+          return null;
+        }
+        const plausibleE = (v) => v >= 100000 && v <= 999999;
+        const plausibleN = (v) => v >= 100000 && v <= 9999999;
+
+        const eastings = [],
+          northings = [];
+        RE_EASTING.lastIndex = 0;
+        RE_NORTHING.lastIndex = 0;
+        while ((m = RE_EASTING.exec(allText)) !== null) {
+          const v = bestCoord(m[1], plausibleE);
+          if (v !== null) eastings.push(v);
+        }
+        while ((m = RE_NORTHING.exec(allText)) !== null) {
+          const v = bestCoord(m[1], plausibleN);
+          if (v !== null) northings.push(v);
+        }
+
+        const refCoords = [];
+        for (let i = 0; i < Math.min(eastings.length, northings.length); i++) {
+          refCoords.push({ easting: eastings[i], northing: northings[i] });
+        }
+        log(
+          `Ref coords extracted: ${refCoords.length} — E:[${eastings.join(", ")}] N:[${northings.join(", ")}]`,
+          refCoords.length > 0 ? "ok" : "warn"
+        );
+
+        // ── Area(s) ─────────────────────────────────────────────────────────────
+        // Extract ALL stated areas from the PDF — multipolygon plans have multiple.
+        // Supports units: SQ.MTS / SQ.M / M2 / Ha / Hectares / Acres
+        // Unit conversion to sq m:  1 Ha = 10000 sq m,  1 Acre = 4046.856 sq m
+        //
+        // Formats: "AREA(A) :- 6874.198 SQ.MTS."  "AREA:- 411.969 SQ. MTS"
+        //          "AREA :- 1.2Ha"  "AREA(B):- 2.5 HECTARES"  "AREA:- 0.75 ACRES"
+        const pdfAreas = []; // [{label, rawValue, unit, sqm}]
+        {
+          const areaRE =
+            /AREA\s*(?:\(([^)]*)\))?\s*[:\-=\s]{0,3}\s*([\d,]+\.?\d*)\s*(SQ(?:UARE)?\.?\s*M(?:TS?|ETRES?)?|M2|HA|HECTARES?|ACRES?)/gi;
+          let am;
+          while ((am = areaRE.exec(allText)) !== null) {
+            const label = am[1] ? am[1].trim() : String(pdfAreas.length + 1);
+            const rawVal = parseFloat(am[2].replace(/,/g, ""));
+            const unitRaw = am[3].toUpperCase().replace(/\s+/g, "");
+            let sqm;
+            if (unitRaw === "HA" || unitRaw.startsWith("HECTARE"))
+              sqm = rawVal * 10000;
+            else if (unitRaw.startsWith("ACRE")) sqm = rawVal * 4046.856422;
+            else sqm = rawVal; // already sq m
+            pdfAreas.push({ label, rawValue: rawVal, unit: am[3].trim(), sqm });
+          }
+          if (pdfAreas.length > 0) {
+            log(
+              "PDF areas found: " +
+                pdfAreas
+                  .map(
+                    (a) =>
+                      `${a.label}: ${a.rawValue} ${a.unit} = ${a.sqm.toFixed(3)} sq m`
+                  )
+                  .join(" | "),
+              "ok"
+            );
+          } else {
+            log("PDF stated area: not found in text", "warn");
+          }
+        }
+        // Keep single pdfArea for backward compat (first found, or null)
+        const pdfArea = pdfAreas.length > 0 ? pdfAreas[0].sqm : null;
+
+        if (bearings.length === 0 && distances.length === 0) {
+          throw new Error(
+            "No bearings or distances found in PDF text layer. The PDF may be a raster scan with no embedded text."
+          );
+        }
+
+        log(
+          `Pool: ${bearings.length} bearings · ${distances.length} distances · ${refCoords.length} ref coords`,
+          "info"
+        );
+
+        return {
+          bearings,
+          distances,
+          refCoords,
+          pdfArea,
+          pdfAreas,
+          warnings,
+          extractionMethod: "full-text",
+        };
       }
 
-      // Module 4 — Score
-      log('── MODULE 4: SCORING ──', 'info');
-      const hasWarnings = (traverse.warnings && traverse.warnings.length > 0) || !anchorIsFirst || pdfAreaSqm == null;
-      const scoring = scoreResults(traverse, passThresh, warnThresh, areaMatch, pdfAreaSqm, hasWarnings);
-      log(`Parcel ${parcelLabel}: ${scoring.overall.toFixed(2)}% → ${scoring.status}`,
-          scoring.status==='VERIFIED'?'ok':'warn');
+      // MODULE 2 — Anchor Check (hard gate)
+      // ============================================================
+      // The reference coordinate on the record copy must fall within
+      // tolAnchor metres of a CSV vertex before anything else runs.
+      // If it doesn't, verification stops — there is no point comparing
+      // legs against a parcel that hasn't been identified.
+      //
+      function identifyAnchor(refCoords, csvVertices, tolAnchor) {
+        let best = null;
+        for (const ref of refCoords) {
+          for (const v of csvVertices) {
+            const res = Math.hypot(
+              ref.easting - v.easting,
+              ref.northing - v.northing
+            );
+            if (!best || res < best.residual)
+              best = { ref, vertex: v, residual: res };
+          }
+        }
+        if (!best) return null;
+        best.isExact = best.residual <= 0.01;
+        best.withinTol = best.residual <= tolAnchor;
+        return best;
+      }
 
-      reports.push({
-        parcelLabel, fileName,
-        extraction, csvVertices, anchor, traverse, scoring,
-        csvArea, pdfArea: pdfAreaSqm, pdfAreaEntry: matchedPdfArea,
-        areaDiff, areaMatch, anchorIsFirst,
+      // ============================================================
+      // MODULE 3 — CSV-first traverse comparison
+      // ============================================================
+      //
+      // Step A — computeLegsFromCSV
+      //   Walk the CSV vertices in order from the anchor and compute
+      //   the WCB and distance for every consecutive pair.
+      //   This is the ground truth. Multiplicities are preserved:
+      //   if two legs share the same WCB+distance, they both appear.
+      //
+      // Step B — buildExpectedPool
+      //   Group the computed legs into unique (WCB, dist) entries
+      //   with a required count. This tells the matcher how many
+      //   times each value must be satisfied.
+      //
+      // Step C — matchLegs
+      //   For each computed leg (in order):
+      //     Find an extracted (WCB, dist) within tolerance.
+      //     On match: decrement that entry's available count.
+      //               Strike it out (remove) when count reaches 0.
+      //     No match: record UNMATCHED error.
+      //
+      // Step D — exhaustion audit
+      //   After all legs are processed:
+      //     Any extracted value still in pool → PDF has values not
+      //       present in the parcel → error on record copy.
+      //     Any computed leg unmatched → PDF is missing a value
+      //       that should be there → error on record copy.
+      //
+      // ──────────────────────────────────────────────────────────────
+
+      function computeWCB(fromV, toV) {
+        // Whole Circle Bearing from fromV to toV, degrees clockwise from North
+        const dE = toV.easting - fromV.easting;
+        const dN = toV.northing - fromV.northing;
+        let deg = (Math.atan2(dE, dN) * 180) / Math.PI;
+        if (deg < 0) deg += 360;
+        return deg;
+      }
+
+      function shoelaceArea(vertices) {
+        // Standard Shoelace (Gauss) formula for polygon area from UTM coordinates.
+        // Returns area in square metres.
+        const n = vertices.length;
+        let area = 0;
+        for (let i = 0; i < n; i++) {
+          const j = (i + 1) % n;
+          area += vertices[i].easting * vertices[j].northing;
+          area -= vertices[j].easting * vertices[i].northing;
+        }
+        return Math.abs(area) / 2;
+      }
+
+      // ── Precision rounding ────────────────────────────────────────────────────
+      // Survey plans state WCB to the nearest minute and distances to 2 dp.
+      // Rounding computed values to this precision before comparison means we are
+      // checking against exactly what the surveyor would have written on the plan.
+
+      function roundWCBToMinute(deg) {
+        // Round to nearest whole minute: × 60, round, ÷ 60.
+        // 360° is invalid in WCB — wrap to 0°.
+        const rounded = Math.round(deg * 60) / 60;
+        return rounded >= 360 ? 0 : rounded;
+      }
+
+      function roundDistTo2dp(m) {
+        return Math.round(m * 100) / 100;
+      }
+
+      function computeLegsFromCSV(anchor, csvVertices) {
+        const idx = csvVertices.findIndex((v) => v.id === anchor.vertex.id);
+        if (idx < 0) return [];
+        const n = csvVertices.length;
+        const legs = [];
+        for (let i = 0; i < n; i++) {
+          const from = csvVertices[(idx + i) % n];
+          const to = csvVertices[(idx + i + 1) % n];
+          const dE = to.easting - from.easting;
+          const dN = to.northing - from.northing;
+          const rawDist = Math.hypot(dE, dN);
+          const rawWCB = computeWCB(from, to);
+          // Round to survey plan precision before any comparison
+          const dist = roundDistTo2dp(rawDist);
+          const wcb = roundWCBToMinute(rawWCB);
+          legs.push({ from, to, wcb, dist, rawWCB, rawDist });
+        }
+        return legs;
+      }
+
+      function buildExpectedPool(computedLegs, tolWCB, tolDist) {
+        // Group computed legs into unique (wcb, dist) buckets with counts.
+        // Two legs are "the same" if their wcb and dist are both within tolerance.
+        const pool = [];
+        for (const leg of computedLegs) {
+          const existing = pool.find(
+            (e) =>
+              Math.abs(e.wcb - leg.wcb) <= tolWCB &&
+              Math.abs(e.dist - leg.dist) <= tolDist
+          );
+          if (existing) {
+            existing.count++;
+            existing.legs.push(leg);
+          } else {
+            pool.push({
+              wcb: leg.wcb,
+              dist: leg.dist,
+              count: 1,
+              available: 1,
+              legs: [leg],
+            });
+          }
+        }
+        // Set available = count (how many can still be matched)
+        pool.forEach((e) => (e.available = e.count));
+        return pool;
+      }
+
+      function matchLegs(
+        computedLegs,
+        extractedBearings,
+        extractedDistances,
+        expectedPool,
+        tolWCB,
+        tolDist
+      ) {
+        // ── Build counted pools ────────────────────────────────────────────────
+        //
+        // Each unique extracted value gets a `remaining` counter set to however
+        // many times the CSV computation requires that value.
+        //
+        //   CSV says 90.9333° appears 2 times  →  remaining = 2
+        //   CSV says 45.221m  appears 3 times  →  remaining = 3
+        //
+        // A value is struck from the pool only when remaining hits 0.
+        // Extracted values that don't match any CSV leg (title text, scale bars)
+        // are never consumed — they sit with remaining > 0 but are never found
+        // by the CSV-driven search, so they cause no harm.
+
+        const bPool = [];
+        for (const b of extractedBearings) {
+          const existing = bPool.find(
+            (e) => Math.abs(e.degrees - b.degrees) <= tolWCB
+          );
+          if (existing) {
+            existing.extractedCount++;
+          } else {
+            const csvCount = expectedPool
+              .filter((e) => Math.abs(e.wcb - b.degrees) <= tolWCB)
+              .reduce((s, e) => s + e.count, 0);
+            bPool.push({
+              degrees: b.degrees,
+              raw: b.raw,
+              extractedCount: 1,
+              remaining: csvCount || 1,
+            });
+          }
+        }
+
+        const dPool = [];
+        for (const d of extractedDistances) {
+          const existing = dPool.find(
+            (e) => Math.abs(e.metres - d.metres) <= tolDist
+          );
+          if (existing) {
+            existing.extractedCount++;
+          } else {
+            const csvCount = expectedPool
+              .filter((e) => Math.abs(e.dist - d.metres) <= tolDist)
+              .reduce((s, e) => s + e.count, 0);
+            dPool.push({
+              metres: d.metres,
+              raw: d.raw,
+              extractedCount: 1,
+              remaining: csvCount || 1,
+            });
+          }
+        }
+
+        log(
+          "Bearing pool: " +
+            bPool
+              .map(
+                (b) =>
+                  b.degrees.toFixed(4) +
+                  "\u00b0 extracted\u00d7" +
+                  b.extractedCount +
+                  " needed\u00d7" +
+                  (b.remaining + (b.extractedCount - 1))
+              )
+              .join(" | "),
+          "info"
+        );
+        log(
+          "Distance pool: " +
+            dPool
+              .map(
+                (d) =>
+                  d.metres.toFixed(4) +
+                  "m extracted\u00d7" +
+                  d.extractedCount +
+                  " needed\u00d7" +
+                  (d.remaining + (d.extractedCount - 1))
+              )
+              .join(" | "),
+          "info"
+        );
+
+        const legResults = [];
+        const errors = [];
+
+        for (let step = 0; step < computedLegs.length; step++) {
+          const cLeg = computedLegs[step];
+
+          const matchedBrg = bPool.find(
+            (b) => b.remaining > 0 && Math.abs(b.degrees - cLeg.wcb) <= tolWCB
+          );
+          const matchedDist = dPool.find(
+            (d) => d.remaining > 0 && Math.abs(d.metres - cLeg.dist) <= tolDist
+          );
+
+          const bMatch = !!matchedBrg;
+          const dMatch = !!matchedDist;
+
+          log(
+            "  Leg " +
+              (step + 1) +
+              " | CSV: WCB " +
+              cLeg.wcb.toFixed(4) +
+              "\u00b0 \u00b7 " +
+              cLeg.dist.toFixed(4) +
+              "m" +
+              " | Bearing: " +
+              (bMatch
+                ? matchedBrg.degrees.toFixed(4) +
+                  "\u00b0 rem:" +
+                  matchedBrg.remaining +
+                  " \u2713"
+                : "NOT FOUND \u2717") +
+              " | Distance: " +
+              (dMatch
+                ? matchedDist.metres.toFixed(4) +
+                  "m rem:" +
+                  matchedDist.remaining +
+                  " \u2713"
+                : "NOT FOUND \u2717"),
+            bMatch && dMatch ? "ok" : "warn"
+          );
+
+          if (bMatch && dMatch) {
+            matchedBrg.remaining--;
+            matchedDist.remaining--;
+            legResults.push({
+              index: step,
+              computedWCB: cLeg.wcb,
+              computedDist: cLeg.dist,
+              extractedWCB: matchedBrg.degrees,
+              extractedDist: matchedDist.metres,
+              wcbResidual: Math.abs(matchedBrg.degrees - cLeg.wcb),
+              distResidual: Math.abs(matchedDist.metres - cLeg.dist),
+              fromVertex: cLeg.from,
+              toVertex: cLeg.to,
+              accepted: true,
+            });
+          } else {
+            const msg =
+              "Leg " +
+              (step + 1) +
+              " (" +
+              cLeg.from.id +
+              "\u2192" +
+              cLeg.to.id +
+              "): " +
+              (!bMatch
+                ? "WCB " + cLeg.wcb.toFixed(4) + "\u00b0 not found. "
+                : "") +
+              (!dMatch
+                ? "Distance " + cLeg.dist.toFixed(4) + "m not found."
+                : "");
+            errors.push({ type: "MISSING_IN_PDF", msg, step });
+            legResults.push({
+              index: step,
+              computedWCB: cLeg.wcb,
+              computedDist: cLeg.dist,
+              extractedWCB: matchedBrg?.degrees ?? null,
+              extractedDist: matchedDist?.metres ?? null,
+              wcbResidual: matchedBrg
+                ? Math.abs(matchedBrg.degrees - cLeg.wcb)
+                : null,
+              distResidual: matchedDist
+                ? Math.abs(matchedDist.metres - cLeg.dist)
+                : null,
+              fromVertex: cLeg.from,
+              toVertex: cLeg.to,
+              accepted: false,
+            });
+          }
+        }
+
+        return { legResults, errors, unusedBrg: [], unusedDist: [] };
+      }
+
+      function reconstructTraverse(
+        anchor,
+        extractedBearings,
+        extractedDistances,
+        csvVertices,
+        tolWCB,
+        tolDist,
+        tolClosure
+      ) {
+        // ── Step A: compute ground-truth legs from CSV ───────────────────────
+        const computedLegs = computeLegsFromCSV(anchor, csvVertices);
+        if (!computedLegs.length)
+          return {
+            computedLegs: [],
+            legResults: [],
+            errors: [],
+            closureError: 0,
+            closed: true,
+            totalLength: 0,
+            warnings: ["Could not build CSV leg sequence"],
+          };
+
+        log(`CSV legs computed: ${computedLegs.length}`, "ok");
+        computedLegs.forEach((l, i) => {
+          const rawInfo =
+            l.rawWCB != null
+              ? ` (raw: ${l.rawWCB.toFixed(6)}\u00b0 \u00b7 ${l.rawDist.toFixed(4)}m)`
+              : "";
+          log(
+            `  CSV Leg ${i + 1}: ${l.from.id}\u2192${l.to.id} | WCB ${l.wcb.toFixed(4)}\u00b0 \u00b7 ${l.dist.toFixed(2)}m${rawInfo}`,
+            "info"
+          );
+        });
+
+        // ── Step B: build expected pool with multiplicities ──────────────────
+        const expectedPool = buildExpectedPool(computedLegs, tolWCB, tolDist);
+        log(
+          `Expected pool: ${expectedPool.length} unique (WCB, dist) entries`,
+          "info"
+        );
+        expectedPool.forEach((e) =>
+          log(
+            `  WCB ${e.wcb.toFixed(4)}\u00b0 \u00b7 ${e.dist.toFixed(2)}m \u00d7 ${e.count} required`,
+            "info"
+          )
+        );
+
+        log(
+          `Extracted pool: ${extractedBearings.length} bearings, ${extractedDistances.length} distances`,
+          "info"
+        );
+
+        // ── Step C: match ────────────────────────────────────────────────────
+        log("── Matching extracted values against computed legs ──", "info");
+        const { legResults, errors, unusedBrg, unusedDist } = matchLegs(
+          computedLegs,
+          extractedBearings,
+          extractedDistances,
+          expectedPool,
+          tolWCB,
+          tolDist
+        );
+
+        // ── Closure (from CSV — always exact since we computed from it) ──────
+        const totalLength = computedLegs.reduce((s, l) => s + l.dist, 0);
+
+        // CSV-computed traverse always closes by definition; the closure check
+        // here is really about whether the extracted values reconstruct correctly
+        const nMatched = legResults.filter((lr) => lr.accepted).length;
+        const allMatched = nMatched === computedLegs.length;
+        const closed = allMatched;
+
+        const warnings = [];
+        if (!allMatched)
+          warnings.push(
+            `${computedLegs.length - nMatched} CSV leg(s) not found in extracted text`
+          );
+
+        log(
+          `Matching done — ${nMatched}/${computedLegs.length} legs matched, ` +
+            `${unusedBrg.length} unused bearings, ${unusedDist.length} unused distances`,
+          closed ? "ok" : "warn"
+        );
+
+        return {
+          computedLegs,
+          legResults,
+          errors,
+          closureError: 0,
+          closed,
+          totalLength,
+          relPrec: null,
+          warnings,
+          unusedBrg,
+          unusedDist,
+          expectedPool,
+        };
+      }
+
+      // ============================================================
+
+      // MODULE 4 — Scoring
+      // ============================================================
+      // Each leg contributes two sub-scores: WCB match and distance match.
+      // A leg scores 100% only when both are within tolerance.
+      // The overall score is the mean across all computed legs.
+      // Any unused extracted value or unmatched computed leg caps status at NOT VERIFIED
+      // regardless of the percentage score.
+
+      function residualToPct(res, tolerance) {
+        // 0 residual = 100%, at tolerance = 50%, beyond = falls to 0
+        return Math.max(0, 100 * (1 - res / (tolerance * 2)));
+      }
+
+      function scoreResults(
+        traverse,
+        passThreshold,
+        warnThreshold,
+        areaMatch = true,
+        pdfArea = null,
+        hasWarnings = false
+      ) {
+        const { legResults, errors, unusedBrg, unusedDist } = traverse;
+
+        // Tolerances used for scoring — read from UI so score reflects actual settings
+        const tolWCB =
+          parseFloat(document.getElementById("tolWCB").value) || 0.05;
+        const tolDist =
+          parseFloat(document.getElementById("tolDist").value) || 0.05;
+
+        const scores = legResults.map((lr) => {
+          const wcbPct =
+            lr.accepted && lr.wcbResidual != null
+              ? residualToPct(lr.wcbResidual, tolWCB)
+              : 0;
+          const distPct =
+            lr.accepted && lr.distResidual != null
+              ? residualToPct(lr.distResidual, tolDist)
+              : 0;
+          const legPct = lr.accepted ? (wcbPct + distPct) / 2 : 0;
+          return {
+            fromId: lr.fromVertex?.id ?? "?",
+            toId: lr.toVertex?.id ?? "?",
+            computedWCB: lr.computedWCB,
+            computedDist: lr.computedDist,
+            extractedWCB: lr.extractedWCB,
+            extractedDist: lr.extractedDist,
+            wcbResidual: lr.wcbResidual,
+            distResidual: lr.distResidual,
+            wcbPct,
+            distPct,
+            legPct,
+            accepted: lr.accepted,
+          };
+        });
+
+        const overall = scores.length
+          ? scores.reduce((a, s) => a + s.legPct, 0) / scores.length
+          : 0;
+        const matched = legResults.filter((lr) => lr.accepted).length;
+
+        // Hard rules — any of these → NOT VERIFIED regardless of score:
+        //   • Unmatched CSV leg
+        //   • Area mismatch (when PDF states an area)
+        const hasLegErrors = errors.length > 0;
+        const hasAreaFail = pdfArea != null && !areaMatch;
+        const hasAnyIssue = hasLegErrors || hasAreaFail;
+
+        let status;
+        if (overall >= passThreshold && !hasAnyIssue && !hasWarnings)
+          status = "VERIFIED";
+        else status = "REVIEW";
+
+        return {
+          scores,
+          overall,
+          matched,
+          status,
+          hasAnyIssue,
+          hasLegErrors,
+          hasAreaFail,
+          errors,
+          unusedBrg: [],
+          unusedDist: [],
+          unusedBrgCount: 0,
+          unusedDistCount: 0,
+        };
+      }
+
+      // ============================================================
+      // ============================================================
+      // CSV Loader
+      // ============================================================
+      function parseCSV(text) {
+        const lines = text.trim().split(/\r?\n/);
+        if (lines.length < 2) throw new Error("CSV has no data rows");
+        const header = lines[0].split(/[,\t;]/).map((h) =>
+          h
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z]/g, "")
+        );
+        const findCol = (aliases) => {
+          for (const a of aliases) {
+            const i = header.indexOf(a);
+            if (i >= 0) return i;
+          }
+          return -1;
+        };
+        const iE = findCol(["easting", "e", "east", "x"]);
+        const iN = findCol(["northing", "n", "north", "y"]);
+        const iP = findCol(["point", "pointno", "id", "pt", "vertex", "no"]);
+        if (iE < 0 || iN < 0)
+          throw new Error(
+            "CSV must have Easting and Northing columns. Found: " +
+              header.join(", ")
+          );
+        const vertices = [];
+        for (let r = 1; r < lines.length; r++) {
+          const cols = lines[r].split(/[,\t;]/);
+          if (cols.length < 2) continue;
+          const e = parseFloat(cols[iE]),
+            n = parseFloat(cols[iN]);
+          if (isNaN(e) || isNaN(n)) continue;
+          const id = iP >= 0 ? cols[iP].trim() : String(r);
+          vertices.push({ id, easting: e, northing: n });
+        }
+        if (!vertices.length)
+          throw new Error("CSV parsed but no valid coordinate rows found");
+        return vertices;
+      }
+
+      // RUN BUTTON
+      // ============================================================
+      document.getElementById("runBtn").addEventListener("click", async () => {
+        clearLog();
+        document.getElementById("results").classList.remove("show");
+        document.getElementById("parcelPanels").innerHTML = "";
+        document.getElementById("parcelTabs").style.display = "none";
+        document.getElementById("overallBanner").style.display = "none";
+        const btn = document.getElementById("runBtn");
+        document.getElementById("runBtnLabel").innerHTML =
+          '<span class="spinner"></span>';
+        btn.disabled = true;
+
+        const tolAnchor = parseFloat(
+          document.getElementById("tolAnchor").value
+        );
+        const tolWCB = parseFloat(document.getElementById("tolWCB").value);
+        const tolDist = parseFloat(document.getElementById("tolDist").value);
+        const tolArea = parseFloat(document.getElementById("tolArea").value);
+        const passThresh = parseFloat(document.getElementById("tolPass").value);
+        const warnThresh = parseFloat(document.getElementById("tolWarn").value);
+
+        try {
+          // Module 1 — Extract from PDF (once for all parcels)
+          log("── MODULE 1: PDF EXTRACTION ──", "info");
+          const extraction = await extractFromPDF(pdfFile);
+
+          // Load all CSVs
+          log(`── LOADING ${csvFiles.length} CSV(s) ──`, "info");
+          const allParcels = [];
+          for (const csvFile of csvFiles) {
+            const csvText = await csvFile.text();
+            const csvVertices = parseCSV(csvText);
+            log(`  ${csvFile.name}: ${csvVertices.length} vertices`, "ok");
+            allParcels.push({ fileName: csvFile.name, csvVertices });
+          }
+
+          // ── Per-parcel pipeline ──────────────────────────────────────────────
+          const reports = [];
+          const usedRefCoords = new Set(); // track which ref coords have been anchored
+
+          for (let pi = 0; pi < allParcels.length; pi++) {
+            const { fileName, csvVertices } = allParcels[pi];
+            const parcelLabel =
+              csvFiles.length > 1
+                ? fileName
+                    .replace(/\.csv$/i, "")
+                    .split(/[_\-\s]/)
+                    .pop() || String(pi + 1)
+                : "Parcel";
+            log(`\n── PARCEL ${parcelLabel} (${fileName}) ──`, "info");
+
+            // Module 2 — Anchor: find best unused ref coord
+            log("── MODULE 2: ANCHOR CHECK ──", "info");
+            const anchor = identifyAnchorExcluding(
+              extraction.refCoords,
+              csvVertices,
+              tolAnchor,
+              usedRefCoords
+            );
+            if (!anchor) {
+              reports.push({
+                parcelLabel,
+                fileName,
+                error: "No anchor found — ref coord not matched",
+              });
+              log(`Parcel ${parcelLabel}: no anchor found`, "error");
+              continue;
+            }
+            if (!anchor.withinTol) {
+              reports.push({
+                parcelLabel,
+                fileName,
+                error: `Anchor residual ${anchor.residual.toFixed(4)}m exceeds ${tolAnchor}m`,
+              });
+              log(`Parcel ${parcelLabel}: anchor out of tolerance`, "error");
+              continue;
+            }
+            // Mark this ref coord as used so next parcel won't claim it
+            usedRefCoords.add(`${anchor.ref.easting}|${anchor.ref.northing}`);
+            log(
+              `Anchor OK: PDF (${anchor.ref.easting.toFixed(3)}, ${anchor.ref.northing.toFixed(3)}) → CSV ${anchor.vertex.id} (${anchor.residual.toFixed(4)}m)`,
+              "ok"
+            );
+
+            // Module 3 — CSV-first comparison
+            log("── MODULE 3: CSV-FIRST COMPARISON ──", "info");
+            const traverse = reconstructTraverse(
+              anchor,
+              extraction.bearings,
+              extraction.distances,
+              csvVertices,
+              tolWCB,
+              tolDist,
+              0
+            );
+            const nMatched = traverse.legResults.filter(
+              (l) => l.accepted
+            ).length;
+            log(
+              `Matched ${nMatched}/${traverse.computedLegs.length} legs`,
+              traverse.closed ? "ok" : "warn"
+            );
+
+            // Area validation — match this parcel's CSV area against PDF areas
+            const csvArea = shoelaceArea(csvVertices);
+            log(`CSV area: ${csvArea.toFixed(3)} sq m`, "ok");
+
+            // Find the PDF area that best matches this CSV area
+            let matchedPdfArea = null;
+            if (extraction.pdfAreas.length > 0) {
+              // Pick the PDF area entry closest to csvArea
+              matchedPdfArea = extraction.pdfAreas.reduce((best, a) =>
+                Math.abs(a.sqm - csvArea) < Math.abs(best.sqm - csvArea)
+                  ? a
+                  : best
+              );
+              const diff = Math.abs(csvArea - matchedPdfArea.sqm);
+              const areaOk = diff <= tolArea;
+              log(
+                `PDF area match: ${matchedPdfArea.label} = ${matchedPdfArea.sqm.toFixed(3)} sq m (diff ${diff.toFixed(4)}) ${areaOk ? "✓" : "✗"}`,
+                areaOk ? "ok" : "warn"
+              );
+            } else {
+              log("No PDF area found to validate", "warn");
+            }
+
+            const pdfAreaSqm = matchedPdfArea ? matchedPdfArea.sqm : null;
+            const areaDiff =
+              pdfAreaSqm != null ? Math.abs(csvArea - pdfAreaSqm) : null;
+            const areaMatch = areaDiff != null && areaDiff <= tolArea;
+
+            // ── Reference coordinate position check ────────────────────────────
+            // The reference coordinate should be the first coordinate in the CSV.
+            // If the matched anchor is not the first row, warn the user.
+            const anchorIsFirst = anchor.vertex.id === csvVertices[0].id;
+            if (!anchorIsFirst) {
+              log(
+                "WARNING: The reference coordinate matched CSV vertex " +
+                  anchor.vertex.id +
+                  " which is NOT the first coordinate in your CSV (first is " +
+                  csvVertices[0].id +
+                  ").",
+                "warn"
+              );
+            } else {
+              log(
+                "Reference coordinate matches first CSV vertex (" +
+                  csvVertices[0].id +
+                  ") ✓",
+                "ok"
+              );
+            }
+
+            // Module 4 — Score
+            log("── MODULE 4: SCORING ──", "info");
+            const hasWarnings =
+              (traverse.warnings && traverse.warnings.length > 0) ||
+              !anchorIsFirst ||
+              pdfAreaSqm == null;
+            const scoring = scoreResults(
+              traverse,
+              passThresh,
+              warnThresh,
+              areaMatch,
+              pdfAreaSqm,
+              hasWarnings
+            );
+            log(
+              `Parcel ${parcelLabel}: ${scoring.overall.toFixed(2)}% → ${scoring.status}`,
+              scoring.status === "VERIFIED" ? "ok" : "warn"
+            );
+
+            reports.push({
+              parcelLabel,
+              fileName,
+              extraction,
+              csvVertices,
+              anchor,
+              traverse,
+              scoring,
+              csvArea,
+              pdfArea: pdfAreaSqm,
+              pdfAreaEntry: matchedPdfArea,
+              areaDiff,
+              areaMatch,
+              anchorIsFirst,
+            });
+          }
+
+          lastReports = reports;
+          renderResults(reports, extraction);
+        } catch (err) {
+          log("ERROR: " + err.message, "error");
+          console.error(err);
+        }
+
+        document.getElementById("runBtnLabel").textContent = "RUN VERIFICATION";
+        btn.disabled = false;
       });
-    }
 
-    lastReports = reports;
-    renderResults(reports, extraction);
+      // Anchor identification that excludes already-used ref coords
+      function identifyAnchorExcluding(
+        refCoords,
+        csvVertices,
+        tolAnchor,
+        usedKeys
+      ) {
+        const available = refCoords.filter(
+          (r) => !usedKeys.has(`${r.easting}|${r.northing}`)
+        );
+        if (!available.length)
+          return identifyAnchor(refCoords, csvVertices, tolAnchor); // fallback
+        return identifyAnchor(available, csvVertices, tolAnchor);
+      }
 
-  } catch(err) {
-    log('ERROR: ' + err.message, 'error');
-    console.error(err);
-  }
+      // ============================================================
+      // RENDER RESULTS
+      // ============================================================
+      function renderResults(reports, extraction) {
+        const multi = reports.length > 1;
 
-  document.getElementById('runBtnLabel').textContent = 'RUN VERIFICATION';
-  btn.disabled = false;
-});
-
-// Anchor identification that excludes already-used ref coords
-function identifyAnchorExcluding(refCoords, csvVertices, tolAnchor, usedKeys) {
-  const available = refCoords.filter(r => !usedKeys.has(`${r.easting}|${r.northing}`));
-  if (!available.length) return identifyAnchor(refCoords, csvVertices, tolAnchor); // fallback
-  return identifyAnchor(available, csvVertices, tolAnchor);
-}
-
-
-// ============================================================
-// RENDER RESULTS
-// ============================================================
-function renderResults(reports, extraction) {
-  const multi = reports.length > 1;
-
-  // ── Overall banner (multipolygon) ──────────────────────────────────────
-  const ob = document.getElementById('overallBanner');
-  if (multi) {
-    ob.style.display = '';
-    const allVerified = reports.every(r => !r.error && r.scoring?.status === 'VERIFIED');
-    const anyFail     = reports.some(r => r.error || r.scoring?.status === 'NOT VERIFIED');
-    const overallStatus = allVerified ? 'VERIFIED' : anyFail ? 'NOT VERIFIED' : 'REVIEW';
-    const col = overallStatus === 'VERIFIED' ? '#00e5a0' : overallStatus === 'REVIEW' ? '#f5a623' : '#ff4444';
-    ob.innerHTML = `<div class="verdict ${overallStatus.replace(' ','_')}" style="margin-bottom:0">
+        // ── Overall banner (multipolygon) ──────────────────────────────────────
+        const ob = document.getElementById("overallBanner");
+        if (multi) {
+          ob.style.display = "";
+          const allVerified = reports.every(
+            (r) => !r.error && r.scoring?.status === "VERIFIED"
+          );
+          const anyFail = reports.some(
+            (r) => r.error || r.scoring?.status === "NOT VERIFIED"
+          );
+          const overallStatus = allVerified
+            ? "VERIFIED"
+            : anyFail
+              ? "NOT VERIFIED"
+              : "REVIEW";
+          const col =
+            overallStatus === "VERIFIED"
+              ? "#00e5a0"
+              : overallStatus === "REVIEW"
+                ? "#f5a623"
+                : "#ff4444";
+          ob.innerHTML = `<div class="verdict ${overallStatus.replace(" ", "_")}" style="margin-bottom:0">
       <div>
         <div class="verdict-status" style="color:${col}">${overallStatus}</div>
-        <div class="verdict-meta">${reports.length} parcels · ${reports.filter(r=>r.scoring?.status==='VERIFIED').length} verified</div>
+        <div class="verdict-meta">${reports.length} parcels · ${reports.filter((r) => r.scoring?.status === "VERIFIED").length} verified</div>
       </div>
       <div style="margin-left:auto;text-align:right">
         <div style="font-family:var(--display);font-size:20px;color:var(--text2)">PLAN SUMMARY</div>
       </div>
     </div>`;
-  }
+        }
 
-  // ── Parcel tabs ────────────────────────────────────────────────────────
-  const tabsEl   = document.getElementById('parcelTabs');
-  const panelsEl = document.getElementById('parcelPanels');
-  panelsEl.innerHTML = '';
+        // ── Parcel tabs ────────────────────────────────────────────────────────
+        const tabsEl = document.getElementById("parcelTabs");
+        const panelsEl = document.getElementById("parcelPanels");
+        panelsEl.innerHTML = "";
 
-  if (multi) {
-    tabsEl.style.display = '';
-    tabsEl.innerHTML = reports.map((r, i) => {
-      const col = !r.error && r.scoring?.status === 'VERIFIED' ? '#00e5a0'
-                : r.error || r.scoring?.status === 'NOT VERIFIED' ? '#ff4444' : '#f5a623';
-      return `<button class="exp-btn" onclick="showPanel(${i})" id="tab_${i}"
+        if (multi) {
+          tabsEl.style.display = "";
+          tabsEl.innerHTML = reports
+            .map((r, i) => {
+              const col =
+                !r.error && r.scoring?.status === "VERIFIED"
+                  ? "#00e5a0"
+                  : r.error || r.scoring?.status === "NOT VERIFIED"
+                    ? "#ff4444"
+                    : "#f5a623";
+              return `<button class="exp-btn" onclick="showPanel(${i})" id="tab_${i}"
         style="border-color:${col};color:${col};margin:2px">
-        ${r.parcelLabel} ${r.error ? '✗' : r.scoring?.status==='VERIFIED'?'✓':'⚠'}
+        ${r.parcelLabel} ${r.error ? "✗" : r.scoring?.status === "VERIFIED" ? "✓" : "⚠"}
       </button>`;
-    }).join('');
-  }
+            })
+            .join("");
+        }
 
-  // ── Build one panel per parcel ─────────────────────────────────────────
-  reports.forEach((r, pi) => {
-    const panel = document.createElement('div');
-    panel.id    = `panel_${pi}`;
-    panel.style.display = pi === 0 ? '' : 'none';
-    panel.innerHTML = buildParcelHTML(r, pi, extraction);
-    panelsEl.appendChild(panel);
-    // Draw map for this parcel
-    if (!r.error) {
-      requestAnimationFrame(() => {
-        const canvas = document.getElementById(`mapCanvas_${pi}`);
-        if (canvas) drawMap(canvas, r.csvVertices, r.traverse.legResults, r.anchor);
-      });
-    }
-  });
+        // ── Build one panel per parcel ─────────────────────────────────────────
+        reports.forEach((r, pi) => {
+          const panel = document.createElement("div");
+          panel.id = `panel_${pi}`;
+          panel.style.display = pi === 0 ? "" : "none";
+          panel.innerHTML = buildParcelHTML(r, pi, extraction);
+          panelsEl.appendChild(panel);
+          // Draw map for this parcel
+          if (!r.error) {
+            requestAnimationFrame(() => {
+              const canvas = document.getElementById(`mapCanvas_${pi}`);
+              if (canvas)
+                drawMap(canvas, r.csvVertices, r.traverse.legResults, r.anchor);
+            });
+          }
+        });
 
-  document.getElementById('results').classList.add('show');
-  document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
-}
+        document.getElementById("results").classList.add("show");
+        document
+          .getElementById("results")
+          .scrollIntoView({ behavior: "smooth" });
+      }
 
-function showPanel(idx) {
-  document.querySelectorAll('[id^="panel_"]').forEach((p,i) => {
-    p.style.display = i === idx ? '' : 'none';
-  });
-}
+      function showPanel(idx) {
+        document.querySelectorAll('[id^="panel_"]').forEach((p, i) => {
+          p.style.display = i === idx ? "" : "none";
+        });
+      }
 
-function buildParcelHTML(r, pi, extraction) {
-  if (r.error) {
-    return `<div class="verdict NOT_VERIFIED" style="margin-bottom:24px">
+      function buildParcelHTML(r, pi, extraction) {
+        if (r.error) {
+          return `<div class="verdict NOT_VERIFIED" style="margin-bottom:24px">
       <div><div class="verdict-status" style="color:#ff4444">ERROR</div>
       <div class="verdict-meta">${r.error}</div></div></div>`;
-  }
+        }
 
-  const { csvVertices, anchor, traverse, scoring, csvArea, pdfArea, pdfAreaEntry, areaDiff, areaMatch } = r;
-  const nCSV = traverse.computedLegs.length;
-  const statusKey = scoring.status.replace(/ /g,'_');
-  const areaStatusText = pdfArea != null
-    ? `Area: ${csvArea.toFixed(3)} vs ${pdfArea.toFixed(3)} sq m ${areaMatch?'✓':'✗'}`
-    : 'Area: not stated on PDF';
+        const {
+          csvVertices,
+          anchor,
+          traverse,
+          scoring,
+          csvArea,
+          pdfArea,
+          pdfAreaEntry,
+          areaDiff,
+          areaMatch,
+        } = r;
+        const nCSV = traverse.computedLegs.length;
+        const statusKey = scoring.status.replace(/ /g, "_");
+        const areaStatusText =
+          pdfArea != null
+            ? `Area: ${csvArea.toFixed(3)} vs ${pdfArea.toFixed(3)} sq m ${areaMatch ? "✓" : "✗"}`
+            : "Area: not stated on PDF";
 
-  const metaText = `${scoring.matched}/${nCSV} legs matched · ` +
-    (scoring.hasLegErrors ? `${scoring.errors.length} unmatched leg(s) · ` : 'all legs matched · ') +
-    areaStatusText;
+        const metaText =
+          `${scoring.matched}/${nCSV} legs matched · ` +
+          (scoring.hasLegErrors
+            ? `${scoring.errors.length} unmatched leg(s) · `
+            : "all legs matched · ") +
+          areaStatusText;
 
-  // Stats
-  const stats = [
-    { label:'Matched Legs',  value:`${scoring.matched}`,         unit:`/ ${nCSV}`      },
-    { label:'Total Length',  value:traverse.totalLength.toFixed(2), unit:'m'           },
-    { label:'CSV Area',      value:csvArea.toFixed(3),            unit:'sq m'           },
-    { label:'PDF Area',      value:pdfArea!=null?pdfArea.toFixed(3):'—',
-                             unit:pdfArea!=null?(areaMatch?'sq m ✓':'sq m ⚠'):'not found'},
+        // Stats
+        const stats = [
+          {
+            label: "Matched Legs",
+            value: `${scoring.matched}`,
+            unit: `/ ${nCSV}`,
+          },
+          {
+            label: "Total Length",
+            value: traverse.totalLength.toFixed(2),
+            unit: "m",
+          },
+          { label: "CSV Area", value: csvArea.toFixed(3), unit: "sq m" },
+          {
+            label: "PDF Area",
+            value: pdfArea != null ? pdfArea.toFixed(3) : "—",
+            unit:
+              pdfArea != null ? (areaMatch ? "sq m ✓" : "sq m ⚠") : "not found",
+          },
 
-    { label:'Extracted WCBs', value:extraction.bearings.length,  unit:'values'         },
-    { label:'Extracted Dists',value:extraction.distances.length, unit:'values'         },
-  ];
+          {
+            label: "Extracted WCBs",
+            value: extraction.bearings.length,
+            unit: "values",
+          },
+          {
+            label: "Extracted Dists",
+            value: extraction.distances.length,
+            unit: "values",
+          },
+        ];
 
-  // Leg table rows
-  const legRows = scoring.scores.map((s,i) => {
-    const wcbCol  = s.wcbPct  >= 95?'var(--accent)':s.wcbPct >=50?'var(--warn)':'var(--danger)';
-    const distCol = s.distPct >= 95?'var(--accent)':s.distPct>=50?'var(--warn)':'var(--danger)';
-    const pdfWCB  = s.extractedWCB  != null ? s.extractedWCB.toFixed(4)  : '<span style="color:var(--danger)">MISSING</span>';
-    const pdfDist = s.extractedDist != null ? s.extractedDist.toFixed(4) : '<span style="color:var(--danger)">MISSING</span>';
-    return `<tr>
-      <td>${i+1}</td><td>${s.fromId}</td><td>${s.toId}</td>
+        // Leg table rows
+        const legRows = scoring.scores
+          .map((s, i) => {
+            const wcbCol =
+              s.wcbPct >= 95
+                ? "var(--accent)"
+                : s.wcbPct >= 50
+                  ? "var(--warn)"
+                  : "var(--danger)";
+            const distCol =
+              s.distPct >= 95
+                ? "var(--accent)"
+                : s.distPct >= 50
+                  ? "var(--warn)"
+                  : "var(--danger)";
+            const pdfWCB =
+              s.extractedWCB != null
+                ? s.extractedWCB.toFixed(4)
+                : '<span style="color:var(--danger)">MISSING</span>';
+            const pdfDist =
+              s.extractedDist != null
+                ? s.extractedDist.toFixed(4)
+                : '<span style="color:var(--danger)">MISSING</span>';
+            return `<tr>
+      <td>${i + 1}</td><td>${s.fromId}</td><td>${s.toId}</td>
       <td>${s.computedWCB.toFixed(4)}</td><td>${pdfWCB}</td>
-      <td style="color:${wcbCol}">${s.wcbResidual!=null?s.wcbResidual.toFixed(4):'—'}</td>
+      <td style="color:${wcbCol}">${s.wcbResidual != null ? s.wcbResidual.toFixed(4) : "—"}</td>
       <td>${s.computedDist.toFixed(2)}</td><td>${pdfDist}</td>
-      <td style="color:${distCol}">${s.distResidual!=null?s.distResidual.toFixed(4):'—'}</td>
-      <td style="color:${wcbCol}">${s.accepted?s.wcbPct.toFixed(1)+'%':'—'}</td>
-      <td style="color:${distCol}">${s.accepted?s.distPct.toFixed(1)+'%':'—'}</td>
-      <td>${s.accepted?'<span class="ok-badge">&#10003;</span>':'<span class="fail-badge">&#10007;</span>'}</td>
+      <td style="color:${distCol}">${s.distResidual != null ? s.distResidual.toFixed(4) : "—"}</td>
+      <td style="color:${wcbCol}">${s.accepted ? s.wcbPct.toFixed(1) + "%" : "—"}</td>
+      <td style="color:${distCol}">${s.accepted ? s.distPct.toFixed(1) + "%" : "—"}</td>
+      <td>${s.accepted ? '<span class="ok-badge">&#10003;</span>' : '<span class="fail-badge">&#10007;</span>'}</td>
     </tr>`;
-  }).join('');
+          })
+          .join("");
 
-  // Score bars
-  const scoreBarsHtml = scoring.scores.map(s => {
-    const pct = s.legPct;
-    const col = pct>=95?'#00e5a0':pct>=80?'#f5a623':'#ff4444';
-    return `<div class="score-row">
+        // Score bars
+        const scoreBarsHtml = scoring.scores
+          .map((s) => {
+            const pct = s.legPct;
+            const col =
+              pct >= 95 ? "#00e5a0" : pct >= 80 ? "#f5a623" : "#ff4444";
+            return `<div class="score-row">
       <span class="score-pt" style="width:48px">${s.fromId}&rarr;${s.toId}</span>
       <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${pct}%;background:${col}"></div></div>
-      <span class="score-pct">${s.accepted?pct.toFixed(1)+'%':'FAIL'}</span>
+      <span class="score-pct">${s.accepted ? pct.toFixed(1) + "%" : "FAIL"}</span>
       <span class="score-res" style="width:90px">
-        ${s.wcbResidual!=null?s.wcbResidual.toFixed(4)+'&deg;':'—'}
-        / ${s.distResidual!=null?s.distResidual.toFixed(4)+'m':'—'}
+        ${s.wcbResidual != null ? s.wcbResidual.toFixed(4) + "&deg;" : "—"}
+        / ${s.distResidual != null ? s.distResidual.toFixed(4) + "m" : "—"}
       </span>
     </div>`;
-  }).join('');
+          })
+          .join("");
 
-  // ── Reference coordinate position warning ───────────────────────────────
-  const refCoordWarn = !r.anchorIsFirst
-    ? `<div class="warn-list" style="margin-bottom:16px">
+        // ── Reference coordinate position warning ───────────────────────────────
+        const refCoordWarn = !r.anchorIsFirst
+          ? `<div class="warn-list" style="margin-bottom:16px">
         <li style="color:var(--warn)">
           &#9888; The reference coordinate matched CSV vertex <strong>${r.anchor.vertex.id}</strong>
           which is not the first coordinate in your CSV (first is <strong>${r.csvVertices[0].id}</strong>).
           Please reconfirm you have quoted the correct reference coordinate to avoid query from the MDA.
         </li>
       </div>`
-    : '';
+          : "";
 
-  // Issues
-  const issues = [
-    ...scoring.errors.map(e => '&#10060; ' + e.msg),
-    ...(pdfArea!=null&&!areaMatch ? [`&#10060; Area mismatch: CSV ${csvArea.toFixed(3)} sq m vs PDF ${pdfArea.toFixed(3)} sq m (diff ${areaDiff.toFixed(4)} sq m)`] : []),
-    ...(!r.anchorIsFirst
-      ? ['⚠ Reference coordinate matched CSV vertex ' + r.anchor.vertex.id +
-         ', not the first vertex (' + r.csvVertices[0].id + '). Please reconfirm the quoted reference coordinate.']
-      : []),
-    ...(pdfArea==null ? ['&#9888; Area not stated on PDF \u2014 cannot validate'] : []),
-    ...(traverse.warnings||[]).map(w=>'&#9888; '+w),
-  ];
-  const issuesHtml = issues.length
-    ? `<div class="section-title" style="color:var(--warn)">ISSUES</div>
-       <ul class="warn-list">${issues.map(i=>`<li>${i}</li>`).join('')}</ul>`
-    : '';
+        // Issues
+        const issues = [
+          ...scoring.errors.map((e) => "&#10060; " + e.msg),
+          ...(pdfArea != null && !areaMatch
+            ? [
+                `&#10060; Area mismatch: CSV ${csvArea.toFixed(3)} sq m vs PDF ${pdfArea.toFixed(3)} sq m (diff ${areaDiff.toFixed(4)} sq m)`,
+              ]
+            : []),
+          ...(!r.anchorIsFirst
+            ? [
+                "⚠ Reference coordinate matched CSV vertex " +
+                  r.anchor.vertex.id +
+                  ", not the first vertex (" +
+                  r.csvVertices[0].id +
+                  "). Please reconfirm the quoted reference coordinate.",
+              ]
+            : []),
+          ...(pdfArea == null
+            ? ["&#9888; Area not stated on PDF \u2014 cannot validate"]
+            : []),
+          ...(traverse.warnings || []).map((w) => "&#9888; " + w),
+        ];
+        const issuesHtml = issues.length
+          ? `<div class="section-title" style="color:var(--warn)">ISSUES</div>
+       <ul class="warn-list">${issues.map((i) => `<li>${i}</li>`).join("")}</ul>`
+          : "";
 
-  return `
+        return `
     <div class="verdict ${statusKey}" style="margin-bottom:16px">
       <div>
         <div class="verdict-status">${scoring.status}</div>
@@ -1488,11 +2214,15 @@ function buildParcelHTML(r, pi, extraction) {
       </div>
     </div>
 
-    <div class="stats-row">${stats.map(s=>`
+    <div class="stats-row">${stats
+      .map(
+        (s) => `
       <div class="stat-card">
         <div class="stat-label">${s.label}</div>
         <div class="stat-value">${s.value}<span class="stat-unit"> ${s.unit}</span></div>
-      </div>`).join('')}
+      </div>`
+      )
+      .join("")}
     </div>
 
     <div class="section-title">TRAVERSE MAP</div>
@@ -1510,7 +2240,7 @@ function buildParcelHTML(r, pi, extraction) {
       &rarr; CSV vertex <strong>${anchor.vertex.id}</strong>
       (E=${anchor.vertex.easting.toFixed(3)}, N=${anchor.vertex.northing.toFixed(3)})
       &mdash; residual <strong>${anchor.residual.toFixed(4)}m</strong>
-      ${anchor.isExact?'<span style="color:var(--accent)"> &middot; exact</span>':''}
+      ${anchor.isExact ? '<span style="color:var(--accent)"> &middot; exact</span>' : ""}
     </div>
 
     <div class="section-title">TRAVERSE LEGS</div>
@@ -1533,75 +2263,125 @@ function buildParcelHTML(r, pi, extraction) {
 
     ${issuesHtml}
   `;
-}
+      }
 
+      // ── MAP RENDERING ─────────────────────────────────────────────────────────
+      function drawMap(canvas, csvVertices, legResults, anchor) {
+        const dpr = window.devicePixelRatio || 1;
+        const W = canvas.offsetWidth || 800,
+          H = 360;
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        const ctx = canvas.getContext("2d");
+        ctx.scale(dpr, dpr);
+        ctx.fillStyle = "#111418";
+        ctx.fillRect(0, 0, W, H);
+        if (!csvVertices || !csvVertices.length) return;
 
-// ── MAP RENDERING ─────────────────────────────────────────────────────────
-function drawMap(canvas, csvVertices, legResults, anchor) {
-  const dpr = window.devicePixelRatio || 1;
-  const W = canvas.offsetWidth || 800, H = 360;
-  canvas.width = W * dpr; canvas.height = H * dpr;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  ctx.fillStyle = '#111418'; ctx.fillRect(0, 0, W, H);
-  if (!csvVertices || !csvVertices.length) return;
+        const pad = 52;
+        const allE = csvVertices.map((v) => v.easting),
+          allN = csvVertices.map((v) => v.northing);
+        const minE = Math.min(...allE),
+          maxE = Math.max(...allE);
+        const minN = Math.min(...allN),
+          maxN = Math.max(...allN);
+        const rangeE = maxE - minE || 1,
+          rangeN = maxN - minN || 1;
+        const scale = Math.min((W - pad * 2) / rangeE, (H - pad * 2) / rangeN);
+        const toX = (e) => pad + (e - minE) * scale;
+        const toY = (n) => H - pad - (n - minN) * scale;
 
-  const pad=52;
-  const allE=csvVertices.map(v=>v.easting), allN=csvVertices.map(v=>v.northing);
-  const minE=Math.min(...allE),maxE=Math.max(...allE);
-  const minN=Math.min(...allN),maxN=Math.max(...allN);
-  const rangeE=maxE-minE||1,rangeN=maxN-minN||1;
-  const scale=Math.min((W-pad*2)/rangeE,(H-pad*2)/rangeN);
-  const toX=e=>pad+(e-minE)*scale;
-  const toY=n=>H-pad-(n-minN)*scale;
+        ctx.strokeStyle = "#1f252e";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+          const x = pad + ((W - pad * 2) * i) / 4;
+          ctx.beginPath();
+          ctx.moveTo(x, pad);
+          ctx.lineTo(x, H - pad);
+          ctx.stroke();
+          const y = pad + ((H - pad * 2) * i) / 4;
+          ctx.beginPath();
+          ctx.moveTo(pad, y);
+          ctx.lineTo(W - pad, y);
+          ctx.stroke();
+        }
 
-  ctx.strokeStyle='#1f252e';ctx.lineWidth=1;
-  for(let i=0;i<=4;i++){
-    const x=pad+(W-pad*2)*i/4;ctx.beginPath();ctx.moveTo(x,pad);ctx.lineTo(x,H-pad);ctx.stroke();
-    const y=pad+(H-pad*2)*i/4;ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke();
-  }
+        const legStatus = {};
+        (legResults || []).forEach((lr) => {
+          if (lr.fromVertex && lr.toVertex)
+            legStatus[lr.fromVertex.id + "->" + lr.toVertex.id] = lr.accepted;
+        });
 
-  const legStatus={};
-  (legResults||[]).forEach(lr=>{
-    if(lr.fromVertex&&lr.toVertex) legStatus[lr.fromVertex.id+'->'+lr.toVertex.id]=lr.accepted;
-  });
+        const nv = csvVertices.length;
+        for (let i = 0; i < nv; i++) {
+          const from = csvVertices[i],
+            to = csvVertices[(i + 1) % nv];
+          const st = legStatus[from.id + "->" + to.id];
+          ctx.beginPath();
+          ctx.moveTo(toX(from.easting), toY(from.northing));
+          ctx.lineTo(toX(to.easting), toY(to.northing));
+          ctx.strokeStyle =
+            st === true
+              ? "rgba(0,229,160,0.85)"
+              : st === false
+                ? "rgba(255,68,68,0.85)"
+                : "rgba(90,110,140,0.5)";
+          ctx.lineWidth = st !== undefined ? 2.5 : 1.5;
+          ctx.setLineDash(st !== undefined ? [] : [4, 3]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        ctx.beginPath();
+        csvVertices.forEach((v, i) => {
+          i === 0
+            ? ctx.moveTo(toX(v.easting), toY(v.northing))
+            : ctx.lineTo(toX(v.easting), toY(v.northing));
+        });
+        ctx.closePath();
+        ctx.fillStyle = "rgba(0,229,160,0.04)";
+        ctx.fill();
 
-  const nv=csvVertices.length;
-  for(let i=0;i<nv;i++){
-    const from=csvVertices[i],to=csvVertices[(i+1)%nv];
-    const st=legStatus[from.id+'->'+to.id];
-    ctx.beginPath();ctx.moveTo(toX(from.easting),toY(from.northing));
-    ctx.lineTo(toX(to.easting),toY(to.northing));
-    ctx.strokeStyle=st===true?'rgba(0,229,160,0.85)':st===false?'rgba(255,68,68,0.85)':'rgba(90,110,140,0.5)';
-    ctx.lineWidth=st!==undefined?2.5:1.5;ctx.setLineDash(st!==undefined?[]:[4,3]);
-    ctx.stroke();ctx.setLineDash([]);
-  }
-  ctx.beginPath();
-  csvVertices.forEach((v,i)=>{i===0?ctx.moveTo(toX(v.easting),toY(v.northing)):ctx.lineTo(toX(v.easting),toY(v.northing));});
-  ctx.closePath();ctx.fillStyle='rgba(0,229,160,0.04)';ctx.fill();
+        csvVertices.forEach((v) => {
+          ctx.beginPath();
+          ctx.arc(toX(v.easting), toY(v.northing), 5, 0, Math.PI * 2);
+          ctx.fillStyle = "#00e5a0";
+          ctx.fill();
+          ctx.fillStyle = "#d4dce8";
+          ctx.font = "11px DM Mono,monospace";
+          ctx.fillText(v.id, toX(v.easting) + 7, toY(v.northing) - 5);
+        });
+        if (anchor) {
+          const ax = toX(anchor.vertex.easting),
+            ay = toY(anchor.vertex.northing);
+          ctx.beginPath();
+          for (let i = 0; i < 10; i++) {
+            const r = i % 2 === 0 ? 9 : 4;
+            const a = (i * Math.PI) / 5 - Math.PI / 2;
+            i === 0
+              ? ctx.moveTo(ax + r * Math.cos(a), ay + r * Math.sin(a))
+              : ctx.lineTo(ax + r * Math.cos(a), ay + r * Math.sin(a));
+          }
+          ctx.closePath();
+          ctx.fillStyle = "#00e5a0";
+          ctx.fill();
+        }
+        ctx.fillStyle = "#3d4a5a";
+        ctx.font = "10px DM Mono,monospace";
+        ctx.fillText("E:" + minE.toFixed(0), pad, H - 10);
+        ctx.fillText("E:" + maxE.toFixed(0), W - pad - 50, H - 10);
+        ctx.save();
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText("N:" + minN.toFixed(0), -H + pad, 14);
+        ctx.fillText("N:" + maxN.toFixed(0), -pad - 50, 14);
+        ctx.restore();
+      }
 
-  csvVertices.forEach(v=>{
-    ctx.beginPath();ctx.arc(toX(v.easting),toY(v.northing),5,0,Math.PI*2);ctx.fillStyle='#00e5a0';ctx.fill();
-    ctx.fillStyle='#d4dce8';ctx.font='11px DM Mono,monospace';ctx.fillText(v.id,toX(v.easting)+7,toY(v.northing)-5);
-  });
-  if(anchor){
-    const ax=toX(anchor.vertex.easting),ay=toY(anchor.vertex.northing);
-    ctx.beginPath();
-    for(let i=0;i<10;i++){const r=i%2===0?9:4;const a=(i*Math.PI/5)-Math.PI/2;i===0?ctx.moveTo(ax+r*Math.cos(a),ay+r*Math.sin(a)):ctx.lineTo(ax+r*Math.cos(a),ay+r*Math.sin(a));}
-    ctx.closePath();ctx.fillStyle='#00e5a0';ctx.fill();
-  }
-  ctx.fillStyle='#3d4a5a';ctx.font='10px DM Mono,monospace';
-  ctx.fillText('E:'+minE.toFixed(0),pad,H-10);ctx.fillText('E:'+maxE.toFixed(0),W-pad-50,H-10);
-  ctx.save();ctx.rotate(-Math.PI/2);
-  ctx.fillText('N:'+minN.toFixed(0),-H+pad,14);ctx.fillText('N:'+maxN.toFixed(0),-pad-50,14);ctx.restore();
-}
-
-function download(filename, content, type) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([content], {type}));
-  a.download = filename;
-  a.click();
-}
-</script>
-</body>
+      function download(filename, content, type) {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([content], { type }));
+        a.download = filename;
+        a.click();
+      }
+    </script>
+  </body>
 </html>

@@ -166,7 +166,9 @@ const RevaLandingPage: FC = () => {
             >
               <h3 className="text-2xl font-semibold">Step {index + 1}</h3>
               <p className="mt-2 text-lg">{step.title}</p>
-              <p className="text-gray-500 dark:text-gray-400 mt-2">{step.desc}</p>
+              <p className="text-gray-500 dark:text-gray-400 mt-2">
+                {step.desc}
+              </p>
             </motion.div>
           ))}
         </div>

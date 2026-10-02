@@ -42,7 +42,9 @@ const FileCard: React.FC<FileCardProps> = ({
       case "cert":
         return <FileCheck2 className="h-5 w-5 text-green-500 mr-2" />;
       default:
-        return <File className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-2" />;
+        return (
+          <File className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-2" />
+        );
     }
   };
 
@@ -133,7 +135,9 @@ export default function OptimizedSinglePlanDetails({
   if (!planData) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-gray-500 dark:text-gray-400">No plan data available</p>
+        <p className="text-gray-500 dark:text-gray-400">
+          No plan data available
+        </p>
       </div>
     );
   }
@@ -236,7 +240,10 @@ export default function OptimizedSinglePlanDetails({
                 : "border"
             }`}
           >
-            <MaplibreMap processedPillars={planData?.pillars} state={planData?.state} />
+            <MaplibreMap
+              processedPillars={planData?.pillars}
+              state={planData?.state}
+            />
           </div>
         </div>
       )}
@@ -283,18 +290,25 @@ export default function OptimizedSinglePlanDetails({
                       </p>
                     </div>
                   )}
-                  {planData.withdrawalAndResubmissionStatus && planData.withdrawalAndResubmissionStatus !== "No_Action" && (
-                    <div className="mt-2">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Withdrawal Status
-                      </p>
-                      <span className={`inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        planData.withdrawalAndResubmissionStatus === 'Withdrawn' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {planData.withdrawalAndResubmissionStatus}
-                      </span>
-                    </div>
-                  )}
+                  {planData.withdrawalAndResubmissionStatus &&
+                    planData.withdrawalAndResubmissionStatus !==
+                      "No_Action" && (
+                      <div className="mt-2">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Withdrawal Status
+                        </p>
+                        <span
+                          className={`inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            planData.withdrawalAndResubmissionStatus ===
+                            "Withdrawn"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {planData.withdrawalAndResubmissionStatus}
+                        </span>
+                      </div>
+                    )}
                   {planData.reasonForWithdrawalAndResubmission && (
                     <div className="mt-2">
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -314,18 +328,29 @@ export default function OptimizedSinglePlanDetails({
                     Survey Title
                   </p>
                   {/* @ts-ignore */}
-                  {planData.parcels && Array.isArray(planData.parcels) && planData.parcels.length > 1 ? (
+                  {planData.parcels &&
+                  Array.isArray(planData.parcels) &&
+                  planData.parcels.length > 1 ? (
                     <div className="mt-2 space-y-2">
                       {/* @ts-ignore */}
                       {planData.parcels.map((parcel: any, idx: number) => (
-                        <div key={idx} className="bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10">
-                          <span className="font-medium text-gray-600 dark:text-gray-400">Polygon {idx + 1}: </span>
-                          <span className="text-gray-700 dark:text-gray-300">{parcel.surveyTitle || planData.surveyTitle}</span>
+                        <div
+                          key={idx}
+                          className="bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10"
+                        >
+                          <span className="font-medium text-gray-600 dark:text-gray-400">
+                            Polygon {idx + 1}:{" "}
+                          </span>
+                          <span className="text-gray-700 dark:text-gray-300">
+                            {parcel.surveyTitle || planData.surveyTitle}
+                          </span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="mt-1 text-gray-700 dark:text-gray-300">{planData.surveyTitle}</p>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">
+                      {planData.surveyTitle}
+                    </p>
                   )}
                 </div>
 
@@ -334,13 +359,17 @@ export default function OptimizedSinglePlanDetails({
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Plan Type
                     </p>
-                    <p className="mt-1 text-gray-700 dark:text-gray-300">{planData.planType}</p>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">
+                      {planData.planType}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Pillar Type
                     </p>
-                    <p className="mt-1 text-gray-700 dark:text-gray-300">{planData.pillarType}</p>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">
+                      {planData.pillarType}
+                    </p>
                   </div>
                 </div>
 
@@ -411,25 +440,39 @@ export default function OptimizedSinglePlanDetails({
               <div className="space-y-4">
                 {planData.ward && (
                   <div>
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Ward</p>
-                    <p className="mt-1 text-gray-700 dark:text-gray-300">{planData.ward}</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Ward
+                    </p>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">
+                      {planData.ward}
+                    </p>
                   </div>
                 )}
                 {planData.lcda && (
                   <div>
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">LCDA</p>
-                    <p className="mt-1 text-gray-700 dark:text-gray-300">{planData.lcda}</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      LCDA
+                    </p>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">
+                      {planData.lcda}
+                    </p>
                   </div>
                 )}
                 {planData.lga && (
                   <div>
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">LGA</p>
-                    <p className="mt-1 text-gray-700 dark:text-gray-300">{planData.lga}</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      LGA
+                    </p>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">
+                      {planData.lga}
+                    </p>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-white/10">
                   <div>
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Area</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Area
+                    </p>
                     <p className="mt-1 text-gray-700 dark:text-gray-300">
                       {planData.areaSqM
                         ? planData.areaSqM < 10000
@@ -535,7 +578,9 @@ export default function OptimizedSinglePlanDetails({
                     </svg>
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Created</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Created
+                    </p>
                     <p className="text-sm text-gray-700 dark:text-gray-300">
                       {new Date(planData.createdAt).toLocaleString(undefined, {
                         year: "numeric",

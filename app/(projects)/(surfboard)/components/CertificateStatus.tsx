@@ -157,8 +157,12 @@ export function CertificateOfDepositStatus({
         {/* Batch Info */}
         <div className="flex items-center justify-between p-4 bg-white dark:bg-surface rounded-lg border border-blue-200">
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Batch Code</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{batchCode}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Batch Code
+            </p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              {batchCode}
+            </p>
           </div>
           {batchPaymentStatus && (
             <Badge
@@ -174,7 +178,9 @@ export function CertificateOfDepositStatus({
         {/* Progress Bar */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-gray-700 dark:text-gray-300">Approval Progress</span>
+            <span className="font-medium text-gray-700 dark:text-gray-300">
+              Approval Progress
+            </span>
             <span className="text-gray-600 dark:text-gray-400">
               {approvedCount} of {totalStages} stages completed
             </span>

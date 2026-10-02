@@ -9,7 +9,10 @@ type RouteCtx = { params: Promise<{ key: string }> };
 export const PATCH = withAuth<GBCRole>(
   async (req, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { key } = await routeCtx.params;
     const data = await activateEdition(key, ctx.session.sub);

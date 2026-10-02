@@ -13,7 +13,10 @@ export default function SurfRestrictedLandingPage() {
           access advanced analytics, administrative tools, and manage sensitive
           survey plans with enhanced security and privacy.
         </p>
-        <Link href="/surfboard-restricted/dashboard" className="inline-block px-8 py-3 bg-blue-700 text-white rounded-lg shadow-lg hover:bg-blue-800 transition font-semibold text-lg">
+        <Link
+          href="/surfboard-restricted/dashboard"
+          className="inline-block px-8 py-3 bg-blue-700 text-white rounded-lg shadow-lg hover:bg-blue-800 transition font-semibold text-lg"
+        >
           Go to Restricted Dashboard
         </Link>
       </section>

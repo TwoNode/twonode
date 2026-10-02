@@ -1,7 +1,13 @@
 import prisma from "@/lib/prisma";
 import { NotFoundError } from "@/lib/api/errors";
-import { logAuditAction, createChangeLog } from "@/app/(projects)/(surfboard)/utils/auditLogger";
-import { COD_FEES, type ZoneFeeRow } from "@/app/(projects)/(surfboard)/utils/CoDFees";
+import {
+  logAuditAction,
+  createChangeLog,
+} from "@/app/(projects)/(surfboard)/utils/auditLogger";
+import {
+  COD_FEES,
+  type ZoneFeeRow,
+} from "@/app/(projects)/(surfboard)/utils/CoDFees";
 import { DEFAULT_COORDINATE_SHIFTS } from "@/lib/constants";
 import { sendMail } from "@/utils/email";
 import { writeAudit } from "@/lib/audit";
@@ -37,7 +43,10 @@ export interface SurfboardSettingsData {
   codAcceptanceText: string;
   codPolicyContent: string;
   queryResponseFeePercent: number;
-  coordinateShifts?: Record<string, { eastingShift: number; northingShift: number }>;
+  coordinateShifts?: Record<
+    string,
+    { eastingShift: number; northingShift: number }
+  >;
   recordCopyTolerances?: RecordCopyVerificationTolerances;
   emailVerification?: EmailVerificationSettings;
 }
@@ -51,7 +60,14 @@ const DEFAULT_SETTINGS: SurfboardSettingsData = {
     "Official CoD Submission Policy.\n\nBy clicking 'Submit', you agree to the terms and conditions outlined by the MDA.",
   queryResponseFeePercent: 10,
   coordinateShifts: DEFAULT_COORDINATE_SHIFTS,
-  recordCopyTolerances: { tolAnchor: 0.05, tolWCB: 0.05, tolDist: 0.05, tolArea: 0.01, tolPass: 95, tolWarn: 80 },
+  recordCopyTolerances: {
+    tolAnchor: 0.05,
+    tolWCB: 0.05,
+    tolDist: 0.05,
+    tolArea: 0.01,
+    tolPass: 95,
+    tolWarn: 80,
+  },
   emailVerification: {
     enabled: false,
     method: "OTP",
@@ -60,7 +76,10 @@ const DEFAULT_SETTINGS: SurfboardSettingsData = {
   },
 };
 
-function mergeSettings(dbSettings: any, defaults: SurfboardSettingsData): SurfboardSettingsData {
+function mergeSettings(
+  dbSettings: any,
+  defaults: SurfboardSettingsData
+): SurfboardSettingsData {
   if (!dbSettings || typeof dbSettings !== "object") return { ...defaults };
 
   const result: any = { ...dbSettings };
@@ -82,7 +101,9 @@ function mergeSettings(dbSettings: any, defaults: SurfboardSettingsData): Surfbo
 }
 
 async function getLatestMergedSettings(): Promise<SurfboardSettingsData> {
-  const settings = await prisma.surfboardSettings.findFirst({ orderBy: { updatedAt: "desc" } });
+  const settings = await prisma.surfboardSettings.findFirst({
+    orderBy: { updatedAt: "desc" },
+  });
   if (!settings || !settings.settings) return DEFAULT_SETTINGS;
   return mergeSettings(settings.settings, DEFAULT_SETTINGS);
 }
@@ -91,12 +112,20 @@ export async function getSurfboardSettings(): Promise<SurfboardSettingsData> {
   return getLatestMergedSettings();
 }
 
-export async function getCurrentSettings(userId: string): Promise<SurfboardSettingsData> {
-  const settings = await prisma.surfboardSettings.findFirst({ orderBy: { updatedAt: "desc" } });
+export async function getCurrentSettings(
+  userId: string
+): Promise<SurfboardSettingsData> {
+  const settings = await prisma.surfboardSettings.findFirst({
+    orderBy: { updatedAt: "desc" },
+  });
 
   if (!settings || !settings.settings) {
     await prisma.surfboardSettings.create({
-      data: { settings: DEFAULT_SETTINGS as any, previousSettings: {}, updatedById: userId },
+      data: {
+        settings: DEFAULT_SETTINGS as any,
+        previousSettings: {},
+        updatedById: userId,
+      },
     });
     return DEFAULT_SETTINGS;
   }
@@ -125,13 +154,20 @@ export async function getCodSubmissionSettings() {
   };
 }
 
-export async function getCoordinateShifts(): Promise<Record<string, { eastingShift: number; northingShift: number }>> {
+export async function getCoordinateShifts(): Promise<
+  Record<string, { eastingShift: number; northingShift: number }>
+> {
   const s = await getLatestMergedSettings();
   return s.coordinateShifts || {};
 }
 
-export async function updateSettings(userId: string, newSettings: SurfboardSettingsData) {
-  const currentSettings = await prisma.surfboardSettings.findFirst({ orderBy: { updatedAt: "desc" } });
+export async function updateSettings(
+  userId: string,
+  newSettings: SurfboardSettingsData
+) {
+  const currentSettings = await prisma.surfboardSettings.findFirst({
+    orderBy: { updatedAt: "desc" },
+  });
   const currentMerged = currentSettings?.settings
     ? mergeSettings(currentSettings.settings, DEFAULT_SETTINGS)
     : DEFAULT_SETTINGS;
@@ -152,13 +188,18 @@ export async function updateSettings(userId: string, newSettings: SurfboardSetti
         enforcedSince:
           !wasEnabled && nowEnabled
             ? new Date().toISOString()
-            : currentMerged.emailVerification?.enforcedSince || DEFAULT_SETTINGS.emailVerification!.enforcedSince,
+            : currentMerged.emailVerification?.enforcedSince ||
+              DEFAULT_SETTINGS.emailVerification!.enforcedSince,
       },
     };
   }
 
   const newSettingsRecord = await prisma.surfboardSettings.create({
-    data: { settings: newSettings as any, previousSettings: currentSettings?.settings || {}, updatedById: userId },
+    data: {
+      settings: newSettings as any,
+      previousSettings: currentSettings?.settings || {},
+      updatedById: userId,
+    },
   });
 
   await logAuditAction({
@@ -169,7 +210,10 @@ export async function updateSettings(userId: string, newSettings: SurfboardSetti
     changes: createChangeLog({
       zoneFees: `${newSettings.zoneFees.length} fee ranges`,
       systemChargePercent: newSettings.systemChargePercent,
-      coordinateShifts: newSettings.coordinateShifts ? Object.keys(newSettings.coordinateShifts).length + " states configured" : "None",
+      coordinateShifts: newSettings.coordinateShifts
+        ? Object.keys(newSettings.coordinateShifts).length +
+          " states configured"
+        : "None",
     }),
   });
 
@@ -180,7 +224,9 @@ export async function getSettingsHistory() {
   const history = await prisma.surfboardSettings.findMany({
     orderBy: { updatedAt: "desc" },
     take: 10,
-    include: { updatedBy: { select: { firstName: true, lastName: true, email: true } } },
+    include: {
+      updatedBy: { select: { firstName: true, lastName: true, email: true } },
+    },
   });
 
   return history.map((h) => ({
@@ -192,12 +238,21 @@ export async function getSettingsHistory() {
   }));
 }
 
-export async function revertToPreviousSettings(userId: string, settingsId: string) {
-  const targetSettings = await prisma.surfboardSettings.findUnique({ where: { id: settingsId } });
+export async function revertToPreviousSettings(
+  userId: string,
+  settingsId: string
+) {
+  const targetSettings = await prisma.surfboardSettings.findUnique({
+    where: { id: settingsId },
+  });
   if (!targetSettings) throw new NotFoundError("Settings");
 
   const revertedSettings = await prisma.surfboardSettings.create({
-    data: { settings: targetSettings.previousSettings ?? {}, previousSettings: targetSettings.settings ?? {}, updatedById: userId },
+    data: {
+      settings: targetSettings.previousSettings ?? {},
+      previousSettings: targetSettings.settings ?? {},
+      updatedById: userId,
+    },
   });
 
   await logAuditAction({
@@ -205,17 +260,26 @@ export async function revertToPreviousSettings(userId: string, settingsId: strin
     action: "REVERT_SETTINGS",
     entity: "SurfboardSettings",
     entityId: revertedSettings.id,
-    changes: createChangeLog({ revertedFrom: settingsId, revertedTo: (targetSettings.previousSettings as any) || {} }),
+    changes: createChangeLog({
+      revertedFrom: settingsId,
+      revertedTo: (targetSettings.previousSettings as any) || {},
+    }),
   });
 
   return { success: true };
 }
 
 export async function resetToDefaultSettings(userId: string) {
-  const currentSettings = await prisma.surfboardSettings.findFirst({ orderBy: { updatedAt: "desc" } });
+  const currentSettings = await prisma.surfboardSettings.findFirst({
+    orderBy: { updatedAt: "desc" },
+  });
 
   const newSettingsRecord = await prisma.surfboardSettings.create({
-    data: { settings: DEFAULT_SETTINGS as any, previousSettings: currentSettings?.settings || {}, updatedById: userId },
+    data: {
+      settings: DEFAULT_SETTINGS as any,
+      previousSettings: currentSettings?.settings || {},
+      updatedById: userId,
+    },
   });
 
   await logAuditAction({
@@ -229,8 +293,15 @@ export async function resetToDefaultSettings(userId: string) {
   return { success: true };
 }
 
-export async function toggleUserKycValidation(userId: string, status: boolean, actorId?: string) {
-  await prisma.surfboardUser.update({ where: { id: userId }, data: { isKycValidated: status } });
+export async function toggleUserKycValidation(
+  userId: string,
+  status: boolean,
+  actorId?: string
+) {
+  await prisma.surfboardUser.update({
+    where: { id: userId },
+    data: { isKycValidated: status },
+  });
   await writeAudit(Platform.SURFBOARD, {
     userId: actorId,
     action: status ? "VALIDATE_KYC" : "REVOKE_KYC",
@@ -241,10 +312,18 @@ export async function toggleUserKycValidation(userId: string, status: boolean, a
   return { success: true };
 }
 
-export async function sendAccountUpdateInquiry(userId: string, details: string) {
+export async function sendAccountUpdateInquiry(
+  userId: string,
+  details: string
+) {
   const dbUser = await prisma.surfboardUser.findUnique({
     where: { id: userId },
-    select: { firstName: true, lastName: true, email: true, surconRegNumber: true },
+    select: {
+      firstName: true,
+      lastName: true,
+      email: true,
+      surconRegNumber: true,
+    },
   });
   if (!dbUser) throw new NotFoundError("User");
 

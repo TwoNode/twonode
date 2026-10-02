@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import type { ReactNode } from "react";
 import { PlatformNetworkGraphic } from "./PlatformNetworkGraphic";
 
@@ -38,7 +38,9 @@ export function AuthSplitLayout({
         {notice && <div className="w-full max-w-md mb-4">{notice}</div>}
         {children}
         {footerNote && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 text-center">{footerNote}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 text-center">
+            {footerNote}
+          </p>
         )}
       </div>
 
@@ -56,7 +58,10 @@ export function AuthSplitLayout({
 
       <div
         className="relative hidden lg:flex flex-1 overflow-hidden"
-        style={{ background: background ?? `linear-gradient(135deg, ${accentDark}, ${accent})` }}
+        style={{
+          background:
+            background ?? `linear-gradient(135deg, ${accentDark}, ${accent})`,
+        }}
       >
         {/* Dot grid texture */}
         <div
@@ -86,7 +91,8 @@ export function AuthSplitLayout({
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "radial-gradient(ellipse 60% 50% at 50% 40%, rgba(255,255,255,0.10) 0%, transparent 70%)",
+            background:
+              "radial-gradient(ellipse 60% 50% at 50% 40%, rgba(255,255,255,0.10) 0%, transparent 70%)",
           }}
         />
 
@@ -94,7 +100,10 @@ export function AuthSplitLayout({
             overlap on short viewports (laptops, high-zoom settings). */}
         <div className="relative z-10 flex h-full w-full flex-col">
           <div className="flex-1 min-h-0 flex items-center justify-center p-6 pb-2 xl:p-16 xl:pb-4">
-            <PlatformNetworkGraphic variant={networkVariant} className="max-w-[240px] lg:max-w-[260px] xl:max-w-[300px]" />
+            <PlatformNetworkGraphic
+              variant={networkVariant}
+              className="max-w-[240px] lg:max-w-[260px] xl:max-w-[300px]"
+            />
           </div>
 
           <div className="w-full p-6 pt-0 xl:p-16 xl:pt-0 shrink-0">

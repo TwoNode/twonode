@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { surfboardApi } from "@/surfboard/apiClient";
-import {type User } from "./SinglePlan"
+import { type User } from "./SinglePlan";
 
 interface SharePlanModalProps {
   isOpen: boolean;
@@ -61,23 +61,27 @@ export function SharePlanModal({
     try {
       const result = await surfboardApi.users.search(query);
       if (!result.success) {
-        throw new Error(result.error || 'Failed to search users');
+        throw new Error(result.error || "Failed to search users");
       }
-      
+
       // Transform the search results to match the User interface
       const users = result.data || [];
-      
+
       // Filter out already shared users
       const filteredResults = users.filter(
-        (user: User) => !sharedUsers.some(sharedUser => sharedUser.id === user.id)
+        (user: User) =>
+          !sharedUsers.some((sharedUser) => sharedUser.id === user.id)
       );
-      
+
       setSearchResults(filteredResults);
     } catch (error) {
       console.error("Error searching users:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to search for users. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to search for users. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -92,14 +96,14 @@ export function SharePlanModal({
       const result = await surfboardApi.plans.share(planId, user.id);
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to share plan');
+        throw new Error(result.error || "Failed to share plan");
       }
 
       // Update local state
       const updatedSharedUsers = [...sharedUsers, user];
       setSharedUsers(updatedSharedUsers);
       onShareUpdate(updatedSharedUsers);
-      setSearchResults(searchResults.filter(u => u.id !== user.id));
+      setSearchResults(searchResults.filter((u) => u.id !== user.id));
 
       toast({
         title: "Success",
@@ -109,7 +113,10 @@ export function SharePlanModal({
       console.error("Error sharing plan:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to share plan. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to share plan. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -158,7 +165,10 @@ export function SharePlanModal({
       console.error("Error inviting by email:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to invite by email. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to invite by email. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -174,11 +184,13 @@ export function SharePlanModal({
       const result = await surfboardApi.plans.unshare(planId, userId);
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to remove user access');
+        throw new Error(result.error || "Failed to remove user access");
       }
 
       // Update local state
-      const updatedSharedUsers = sharedUsers.filter(user => user.id !== userId);
+      const updatedSharedUsers = sharedUsers.filter(
+        (user) => user.id !== userId
+      );
       setSharedUsers(updatedSharedUsers);
       onShareUpdate(updatedSharedUsers);
 
@@ -190,7 +202,10 @@ export function SharePlanModal({
       console.error("Error removing user access:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to remove user access. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to remove user access. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -250,7 +265,8 @@ export function SharePlanModal({
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback>
-                              {user.firstName?.[0]}{user.lastName?.[0]}
+                              {user.firstName?.[0]}
+                              {user.lastName?.[0]}
                             </AvatarFallback>
                           </Avatar>
                           <div>
@@ -259,7 +275,8 @@ export function SharePlanModal({
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {user.email}
-                              {user.surconRegNumber && ` • ${user.surconRegNumber}`}
+                              {user.surconRegNumber &&
+                                ` • ${user.surconRegNumber}`}
                             </p>
                           </div>
                         </div>
@@ -290,8 +307,12 @@ export function SharePlanModal({
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-sm font-medium">{searchQuery.trim()}</p>
-                      <p className="text-xs text-muted-foreground">No account yet — invite by email</p>
+                      <p className="text-sm font-medium">
+                        {searchQuery.trim()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        No account yet — invite by email
+                      </p>
                     </div>
                   </div>
                   <Button
@@ -326,7 +347,8 @@ export function SharePlanModal({
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback>
-                            {user.firstName?.[0]}{user.lastName?.[0]}
+                            {user.firstName?.[0]}
+                            {user.lastName?.[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div>
@@ -335,7 +357,8 @@ export function SharePlanModal({
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {user.email}
-                            {user.surconRegNumber && ` • ${user.surconRegNumber}`}
+                            {user.surconRegNumber &&
+                              ` • ${user.surconRegNumber}`}
                           </p>
                         </div>
                       </div>
@@ -361,13 +384,22 @@ export function SharePlanModal({
         </div>
       </div>
 
-      <AlertDialog open={pendingRemoval !== null} onOpenChange={(open) => !open && setPendingRemoval(null)}>
+      <AlertDialog
+        open={pendingRemoval !== null}
+        onOpenChange={(open) => !open && setPendingRemoval(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Withdraw access?</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingRemoval && (
-                <>This will remove {pendingRemoval.firstName} {pendingRemoval.lastName}'s access to this plan. They'll no longer be able to view it, and any private attachments or comments they've added will remain but won't be visible to them anymore.</>
+                <>
+                  This will remove {pendingRemoval.firstName}{" "}
+                  {pendingRemoval.lastName}'s access to this plan. They'll no
+                  longer be able to view it, and any private attachments or
+                  comments they've added will remain but won't be visible to
+                  them anymore.
+                </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>

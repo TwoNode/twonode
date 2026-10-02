@@ -3,19 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FiRefreshCw } from "react-icons/fi";
-import {
-  Plus,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Package,
-} from "lucide-react";
+import { Plus, Clock, CheckCircle, AlertCircle, Package } from "lucide-react";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { AnalyticsDashboard } from "./analytics/AnalyticsDashboard";
 import { SURFBOARD_COLORS } from "@/surfboard/colors";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { DashboardBadge } from "@/components/dashboard/DashboardBadge";
-import { DateRangeFilter, type DateRangeValue } from "@/components/dashboard/DateRangeFilter";
+import {
+  DateRangeFilter,
+  type DateRangeValue,
+} from "@/components/dashboard/DateRangeFilter";
 import { SubmittedBatchesModal } from "../../components/SubmittedBatchesModal";
 import {
   surfboardPlanStatusLabel,
@@ -84,16 +81,22 @@ export default function DashboardHome() {
       setError(null);
 
       const dateFilters = { dateFrom: dateRange.from, dateTo: dateRange.to };
-      const [plansResult, sharedResult, sharedWithMeResult, earningsThisMonthResult] =
-        await Promise.all([
-          surfboardApi.plans.list({ noPagination: true, filters: dateFilters }),
-          surfboardApi.plans.shared(undefined, undefined, dateFilters),
-          surfboardApi.plans.sharedWithMe(undefined, undefined, dateFilters),
-          surfboardApi.qr.earningsThisMonth(),
-        ]);
+      const [
+        plansResult,
+        sharedResult,
+        sharedWithMeResult,
+        earningsThisMonthResult,
+      ] = await Promise.all([
+        surfboardApi.plans.list({ noPagination: true, filters: dateFilters }),
+        surfboardApi.plans.shared(undefined, undefined, dateFilters),
+        surfboardApi.plans.sharedWithMe(undefined, undefined, dateFilters),
+        surfboardApi.qr.earningsThisMonth(),
+      ]);
 
       setPlanHealth({
-        qrEarningsThisMonth: earningsThisMonthResult.success ? earningsThisMonthResult.data.amount : 0,
+        qrEarningsThisMonth: earningsThisMonthResult.success
+          ? earningsThisMonthResult.data.amount
+          : 0,
       });
 
       if (
@@ -174,7 +177,10 @@ export default function DashboardHome() {
   };
 
   const getStatusBadge = (status: string) => (
-    <DashboardBadge tone={surfboardPlanStatusTone(status)} icon={STATUS_ICON[status]}>
+    <DashboardBadge
+      tone={surfboardPlanStatusTone(status)}
+      icon={STATUS_ICON[status]}
+    >
       {surfboardPlanStatusLabel(status)}
     </DashboardBadge>
   );
@@ -182,7 +188,9 @@ export default function DashboardHome() {
   return (
     <div className="space-y-6">
       <DashboardHero
-        greeting={firstName ? `${timeOfDayGreeting()}, ${firstName}` : "Welcome back."}
+        greeting={
+          firstName ? `${timeOfDayGreeting()}, ${firstName}` : "Welcome back."
+        }
         title="Dashboard"
         description="Here's what's happening with your survey plans, real-time updates as you store, secure and submit record copies of your plans."
         pills={[
@@ -191,8 +199,20 @@ export default function DashboardHome() {
           `${stats.pending} Pending`,
         ]}
         gradient={`linear-gradient(120deg, #0A0F16 0%, ${SURFBOARD_COLORS.primary.dark} 55%, ${SURFBOARD_COLORS.primary.main} 100%)`}
-        secondaryCta={{ label: "My Batches", onClick: () => setShowBatchesModal(true), icon: Package }}
-        cta={hasSubscriptionAccess ? { label: "New Plan", href: "/surfboard/dashboard/newplan", icon: Plus } : undefined}
+        secondaryCta={{
+          label: "My Batches",
+          onClick: () => setShowBatchesModal(true),
+          icon: Package,
+        }}
+        cta={
+          hasSubscriptionAccess
+            ? {
+                label: "New Plan",
+                href: "/surfboard/dashboard/newplan",
+                icon: Plus,
+              }
+            : undefined
+        }
       />
 
       <SubmittedBatchesModal
@@ -300,7 +320,10 @@ export default function DashboardHome() {
 
         {activeTab === "recent" && (
           <div className="bg-white shadow-sm overflow-hidden rounded-2xl border border-gray-200 dark:bg-white/3 dark:shadow-none dark:border-white/10">
-            <ul role="list" className="divide-y divide-gray-200 dark:divide-white/10">
+            <ul
+              role="list"
+              className="divide-y divide-gray-200 dark:divide-white/10"
+            >
               {recentPlans.length > 0 ? (
                 recentPlans.map((plan) => (
                   <li key={plan.id}>
@@ -344,7 +367,9 @@ export default function DashboardHome() {
                 ))
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 dark:text-gray-400">No recent plans found</p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No recent plans found
+                  </p>
                 </div>
               )}
             </ul>
@@ -353,7 +378,10 @@ export default function DashboardHome() {
 
         {activeTab === "shared" && (
           <div className="bg-white shadow-sm overflow-hidden rounded-2xl border border-gray-200 dark:bg-white/3 dark:shadow-none dark:border-white/10">
-            <ul role="list" className="divide-y divide-gray-200 dark:divide-white/10">
+            <ul
+              role="list"
+              className="divide-y divide-gray-200 dark:divide-white/10"
+            >
               {sharedPlans.length > 0 ? (
                 sharedPlans.map((plan) => (
                   <li key={plan.id}>
@@ -408,7 +436,9 @@ export default function DashboardHome() {
                 ))
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 dark:text-gray-400">No shared plans found</p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No shared plans found
+                  </p>
                 </div>
               )}
             </ul>

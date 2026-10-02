@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface BarChartProps {
   data: Array<{
@@ -34,8 +34,14 @@ export function BarChart({
       <div className="bg-white rounded-lg shadow p-6 dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">{title}</h3>
-            {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>}
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+              {title}
+            </h3>
+            {subtitle && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {subtitle}
+              </p>
+            )}
           </div>
           {actions}
         </div>
@@ -57,8 +63,14 @@ export function BarChart({
     <div className="bg-white rounded-lg shadow p-6 dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">{title}</h3>
-          {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>}
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            {title}
+          </h3>
+          {subtitle && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {subtitle}
+            </p>
+          )}
         </div>
         {actions}
       </div>
@@ -69,8 +81,12 @@ export function BarChart({
           const color = item.color || getColorForIndex(index);
 
           // Multi-variable histogram support
-          if (showMultiVariable && item.subValues && item.subValues.length > 0) {
-            const subMax = Math.max(...item.subValues.map(s => s.value), 0);
+          if (
+            showMultiVariable &&
+            item.subValues &&
+            item.subValues.length > 0
+          ) {
+            const subMax = Math.max(...item.subValues.map((s) => s.value), 0);
             return (
               <div key={item.label} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
@@ -83,7 +99,8 @@ export function BarChart({
                 </div>
                 <div className="h-8 bg-gray-100 rounded-lg overflow-hidden dark:bg-white/10 flex">
                   {item.subValues.map((sub, subIndex) => {
-                    const subWidth = subMax > 0 ? (sub.value / subMax) * 100 : 0;
+                    const subWidth =
+                      subMax > 0 ? (sub.value / subMax) * 100 : 0;
                     const subColor = sub.color || getColorForIndex(subIndex);
                     return (
                       <div
@@ -92,7 +109,7 @@ export function BarChart({
                         style={{
                           width: `${subWidth}%`,
                           backgroundColor: subColor,
-                          transition: 'width 0.5s ease-in-out',
+                          transition: "width 0.5s ease-in-out",
                         }}
                         title={`${sub.label}: ${formatValue(sub.value)}`}
                       >
@@ -109,7 +126,10 @@ export function BarChart({
                   {item.subValues.map((sub, subIndex) => {
                     const subColor = sub.color || getColorForIndex(subIndex);
                     return (
-                      <div key={sub.label} className="flex items-center gap-1 text-xs">
+                      <div
+                        key={sub.label}
+                        className="flex items-center gap-1 text-xs"
+                      >
                         <div
                           className="w-2 h-2 rounded-full"
                           style={{ backgroundColor: subColor }}
@@ -142,7 +162,7 @@ export function BarChart({
                   style={{
                     width: `${width}%`,
                     backgroundColor: color,
-                    transition: 'width 0.5s ease-in-out',
+                    transition: "width 0.5s ease-in-out",
                   }}
                 />
               </div>
@@ -157,14 +177,14 @@ export function BarChart({
 // Generate a color based on index
 function getColorForIndex(index: number): string {
   const colors = [
-    '#3b82f6', // blue-500
-    '#10b981', // emerald-500
-    '#f59e0b', // amber-500
-    '#8b5cf6', // violet-500
-    '#ec4899', // pink-500
-    '#14b8a6', // teal-500
-    '#f97316', // orange-500
-    '#6366f1', // indigo-500
+    "#3b82f6", // blue-500
+    "#10b981", // emerald-500
+    "#f59e0b", // amber-500
+    "#8b5cf6", // violet-500
+    "#ec4899", // pink-500
+    "#14b8a6", // teal-500
+    "#f97316", // orange-500
+    "#6366f1", // indigo-500
   ];
 
   return colors[index % colors.length];

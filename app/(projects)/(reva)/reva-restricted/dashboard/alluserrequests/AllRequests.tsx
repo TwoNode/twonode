@@ -4,9 +4,11 @@ import AllRequestsClient from "./AllRequestsClient";
 
 export async function AllRequests() {
   try {
-    const { properties, oneTimeRequests } = await getAllRequestsWithUserByAdmin({
-      includeOneTimeRequests: true,
-    });
+    const { properties, oneTimeRequests } = await getAllRequestsWithUserByAdmin(
+      {
+        includeOneTimeRequests: true,
+      }
+    );
 
     return (
       <AllRequestsClient

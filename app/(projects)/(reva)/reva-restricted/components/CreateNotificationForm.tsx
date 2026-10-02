@@ -20,13 +20,7 @@ import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 import { toast } from "sonner";
 
 type NotificationType =
-  | "INFO"
-  | "SUCCESS"
-  | "WARNING"
-  | "ERROR"
-  | "SYSTEM"
-  | "PAYMENT"
-  | "PROPERTY";
+  "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "SYSTEM" | "PAYMENT" | "PROPERTY";
 
 type NotificationAudience =
   | "SPECIFIC_USERS"

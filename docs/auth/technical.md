@@ -2,7 +2,7 @@
 
 This document deep-dives into the technical implementation of authentication and authorization in Twonodes.
 
-> **Two parallel auth systems are live at once.** A native, hand-rolled email+password/JWT system (built during the 2026-08 architecture rebuild, modeled on sibling project proplity's patterns) is the primary path today. Kinde OAuth (Google, etc.) is **not retired** — it still runs as a full, independent auth system for its own login buttons, and a successful Kinde login *also* mints a native session alongside its own legacy cookie, so downstream code only has to check one thing. See §9 for exactly why both still exist and what depends on each.
+> **Two parallel auth systems are live at once.** A native, hand-rolled email+password/JWT system (built during the 2026-08 architecture rebuild, modeled on sibling project proplity's patterns) is the primary path today. Kinde OAuth (Google, etc.) is **not retired** — it still runs as a full, independent auth system for its own login buttons, and a successful Kinde login _also_ mints a native session alongside its own legacy cookie, so downstream code only has to check one thing. See §9 for exactly why both still exist and what depends on each.
 
 ---
 
@@ -12,14 +12,14 @@ Built in `docs/development-history/phases/phase-1-foundations.md` (Steps 4-6), a
 
 ### 1.1 Routes — `app/api/v1/auth/*`
 
-| Route | Method | Auth | Purpose |
-|---|---|---|---|
-| `/api/v1/auth/register` | POST | public | Creates a `{Reva,Surfboard,GBC}User` row. Role is **never** accepted from the client — always the lowest-privilege value, since this is a public route. |
-| `/api/v1/auth/login` | POST | public, CSRF-checked | `bcrypt.compare` against `passwordHash`; issues a session on success (see 1.3). |
-| `/api/v1/auth/refresh` | POST | refresh cookie | Rotates the refresh token; see 1.4 for the reuse-detection behavior. |
-| `/api/v1/auth/logout` | POST | session | Revokes the current refresh token, clears cookies. |
-| `/api/v1/auth/me` | GET | session | Returns the caller's identity/role for the given platform. |
-| `/api/v1/auth/change-password` | POST | session | Shared across all three products — REVA's settings page, for example, calls this directly rather than having its own password-change function. |
+| Route                          | Method | Auth                 | Purpose                                                                                                                                                 |
+| ------------------------------ | ------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/v1/auth/register`        | POST   | public               | Creates a `{Reva,Surfboard,GBC}User` row. Role is **never** accepted from the client — always the lowest-privilege value, since this is a public route. |
+| `/api/v1/auth/login`           | POST   | public, CSRF-checked | `bcrypt.compare` against `passwordHash`; issues a session on success (see 1.3).                                                                         |
+| `/api/v1/auth/refresh`         | POST   | refresh cookie       | Rotates the refresh token; see 1.4 for the reuse-detection behavior.                                                                                    |
+| `/api/v1/auth/logout`          | POST   | session              | Revokes the current refresh token, clears cookies.                                                                                                      |
+| `/api/v1/auth/me`              | GET    | session              | Returns the caller's identity/role for the given platform.                                                                                              |
+| `/api/v1/auth/change-password` | POST   | session              | Shared across all three products — REVA's settings page, for example, calls this directly rather than having its own password-change function.          |
 
 A native-login attempt against an account that has never set a password (Kinde-only account) fails with the same generic "Invalid email or password" a wrong password would — not a different, account-enumerating message.
 
@@ -40,7 +40,7 @@ A native-login attempt against an account that has never set a password (Kinde-o
 
 Every refresh call **rotates** the token: the old one is marked used, a new one is issued in the same `familyId`. If an already-used (or otherwise invalid) refresh token is presented again, the entire `familyId` is revoked — this is the standard defense against a stolen refresh token being replayed after the legitimate user has already rotated past it.
 
-A real bug here was found and fixed during the post-Phase-5 audit: rotation wasn't preserving the *original* session length — every rotation reset the new token to a fresh 30-day expiry regardless of the original `rememberMe` choice, silently turning a 1-day "don't remember me" session into a rolling 30-day one the moment it refreshed. Fixed to inherit the current token's `expiresAt` and set the cookie's `maxAge` to the actual remaining lifetime.
+A real bug here was found and fixed during the post-Phase-5 audit: rotation wasn't preserving the _original_ session length — every rotation reset the new token to a fresh 30-day expiry regardless of the original `rememberMe` choice, silently turning a 1-day "don't remember me" session into a rolling 30-day one the moment it refreshed. Fixed to inherit the current token's `expiresAt` and set the cookie's `maxAge` to the actual remaining lifetime.
 
 ### 1.5 CSRF & rate limiting
 
@@ -49,7 +49,7 @@ A real bug here was found and fixed during the post-Phase-5 audit: rotation wasn
 
 ### 1.6 Registration/login schema
 
-`passwordHash`/`authProviders` (`AuthProvider[]`, values `NATIVE` | `KINDE`) live directly on `RevaUser`/`SurfboardUser`/`GBCUser` — there's no separate identity table. An account's `authProviders` array is additive, so the same account *could* eventually link both a password and a Kinde identity (the mechanism supports it; nothing in the product currently drives a user through that linking flow).
+`passwordHash`/`authProviders` (`AuthProvider[]`, values `NATIVE` | `KINDE`) live directly on `RevaUser`/`SurfboardUser`/`GBCUser` — there's no separate identity table. An account's `authProviders` array is additive, so the same account _could_ eventually link both a password and a Kinde identity (the mechanism supports it; nothing in the product currently drives a user through that linking flow).
 
 ---
 
@@ -91,16 +91,17 @@ sequenceDiagram
 
 ### 2.2 The 7 callback routes
 
-`app/api/auth/success/{reva,reva-restricted,surfboard,surf-restricted,surf-mda,gbc-restricted,scram}/route.ts` — all 7 live, all 7 now dual-write (§9.1). Two of these paths (`surf-restricted`, `surf-mda`) are **deliberately not renamed** to match the `surfboard-restricted`/`surfboard-mda` route rename that shipped elsewhere: they're redirect URIs registered in Kinde's own dashboard config, external to this codebase — renaming them would break login until someone updates that config by hand. Only their *internal* destination-redirect strings were updated.
+`app/api/auth/success/{reva,reva-restricted,surfboard,surf-restricted,surf-mda,gbc-restricted,scram}/route.ts` — all 7 live, all 7 now dual-write (§9.1). Two of these paths (`surf-restricted`, `surf-mda`) are **deliberately not renamed** to match the `surfboard-restricted`/`surfboard-mda` route rename that shipped elsewhere: they're redirect URIs registered in Kinde's own dashboard config, external to this codebase — renaming them would break login until someone updates that config by hand. Only their _internal_ destination-redirect strings were updated.
 
 ### 2.3 Registration strategy under Kinde
 
 - **Self-service (auto-registration)**: on first successful Kinde login for REVA/Surfboard/GBC's public callbacks, a platform-user record is created automatically with the default `USER` role if none exists.
-- **Delegated (admin-registration)**: `surf-mda`/`reva-restricted`/`gbc-restricted` callbacks look for an *existing* record with an appropriate privileged role; if none is found, the login is rejected to an error page rather than auto-creating an account.
+- **Delegated (admin-registration)**: `surf-mda`/`reva-restricted`/`gbc-restricted` callbacks look for an _existing_ record with an appropriate privileged role; if none is found, the login is rejected to an error page rather than auto-creating an account.
 
 ### 2.4 Post-logout redirection (`/api/auth/logout_redirect`)
 
 Reads the user's platform/role from the (about-to-be-cleared) session to send them to the right login page:
+
 - REVA: `/reva-restricted/login` (admin/superadmin) or `/reva/login` (user).
 - Surfboard: `/surfboard-restricted/login` (admin/superadmin), `/surfboard-mda/login` (MDA roles), or `/surfboard/login` (user).
 - GBC: `/gbc-restricted/login` (admin) or `/gbc/login` (user).
@@ -146,6 +147,7 @@ export interface EncryptedUserData {
 ## 4. Platform Isolation & Privilege
 
 Being authenticated (by either system) grants nothing on its own. A user must also:
+
 1. **Be registered** — a row in the relevant platform table (`SurfboardUser`, `RevaUser`, `GBCUser`).
 2. **Have the required role** for the specific route.
 
@@ -172,14 +174,17 @@ Both auth systems support staying logged into REVA, Surfboard, and GBC at once i
 ## 7. Environment Variables
 
 ### Kinde
+
 - `KINDE_CLIENT_ID`, `KINDE_CLIENT_SECRET`, `KINDE_ISSUER_URL`, `KINDE_SITE_URL`
 - `KINDE_POST_LOGIN_REDIRECT_URL` (typically `/api/auth/success`), `KINDE_POST_LOGOUT_REDIRECT_URL` (must point to `/api/auth/logout_redirect`)
 
 ### Native auth
+
 - `JWT_SECRET` — signs the native access tokens. **Required in production** (the app throws at startup if unset there).
 - `COOKIE_ENCRYPTION_KEY` — **critical**, 32-byte hex string (64 chars), AES-256-GCM key for the legacy `USER_SESSION` cookie. Rotating it invalidates every active legacy/Kinde-bridged session.
 
 ### Base URLs
+
 - `BASE_URL` — internal, server-side redirects.
 - `NEXT_PUBLIC_BASE_URL` — public, client-side use.
 
@@ -195,11 +200,12 @@ Both auth systems support staying logged into REVA, Surfboard, and GBC at once i
 
 ### 9.1 The dual-write bridge
 
-Rather than cut every Kinde consumer over to the native system in one risky pass, Phase 1 made the 7 Kinde callback routes **additionally** call `issueSession()` (§1.3) alongside their existing `setEncryptedUserCookie()` call. A failure minting the native session is caught and logged, never allowed to break the working Kinde login. This means: log in via Google today, and you get *both* a legacy `USER_SESSION` cookie and a native JWT session — `GET /api/v1/auth/me` works regardless of which door you came in through.
+Rather than cut every Kinde consumer over to the native system in one risky pass, Phase 1 made the 7 Kinde callback routes **additionally** call `issueSession()` (§1.3) alongside their existing `setEncryptedUserCookie()` call. A failure minting the native session is caught and logged, never allowed to break the working Kinde login. This means: log in via Google today, and you get _both_ a legacy `USER_SESSION` cookie and a native JWT session — `GET /api/v1/auth/me` works regardless of which door you came in through.
 
 ### 9.2 What still only trusts the legacy cookie
 
 Confirmed by a dedicated post-Phase-5 audit (`docs/development-history/phases/phase-1-foundations.md`, "Post-Phase-5 auth audit" section) — **Kinde is not a harmless leftover**, it's still the real security boundary for:
+
 - `proxy.ts` and its ~20 downstream route-matching consumers.
 - `utils/encryptedCookies.ts` itself, plus the per-product `revaAuth.ts`/`surfAuth.ts`/`gbc/utils/auth.ts` helpers.
 - `KindeAuthProvider.tsx` (the client-side provider wrapping the app).
@@ -209,7 +215,7 @@ Full retirement of the legacy cookie and `proxy.ts`'s cookie-based gating is a d
 
 ### 9.3 A known gap: `DashboardShell`'s sidebar nav only sees Kinde-sourced roles
 
-**Found live, 2026-09-04, while verifying an unrelated dark-mode/UI change — not yet fixed.** `components/admin-panel/DashboardShell.tsx` (used by Surfboard-restricted admin and Surfboard-MDA) resolves its sidebar's nav items via `getNavItemsForRole(role, group)`, where `role` comes from the *server-side* `getEncryptedUserData()` — the legacy, Kinde-only cookie described in §3. Native email/password login (`/api/v1/auth/login`) issues a session via `issueSession()`/`lib/auth/session.ts` and **never sets that cookie**.
+**Found live, 2026-09-04, while verifying an unrelated dark-mode/UI change — not yet fixed.** `components/admin-panel/DashboardShell.tsx` (used by Surfboard-restricted admin and Surfboard-MDA) resolves its sidebar's nav items via `getNavItemsForRole(role, group)`, where `role` comes from the _server-side_ `getEncryptedUserData()` — the legacy, Kinde-only cookie described in §3. Native email/password login (`/api/v1/auth/login`) issues a session via `issueSession()`/`lib/auth/session.ts` and **never sets that cookie**.
 
 Net effect: any admin or MDA staff member who logs in with email+password instead of "Continue with Google" gets an **empty sidebar** — no nav items at all — regardless of their actual role. Reproduced identically for a promoted Surfboard `ADMIN` and a promoted `MDA_SUPERADMIN`, so it isn't MDA-specific; it's the `DashboardShell`/legacy-cookie dependency itself. The rest of the shell (header, content area, the page itself) renders fine — only the registry-driven nav list is affected, because it's the one piece reading `userData?.role` from the cookie rather than the native session.
 

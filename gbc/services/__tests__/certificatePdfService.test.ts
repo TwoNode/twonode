@@ -41,7 +41,7 @@ function mockChildProcess(
   stdin: { write: (v: string) => void; end: () => void } = {
     write: vi.fn(),
     end: vi.fn(),
-  },
+  }
 ) {
   return { stdin };
 }
@@ -54,7 +54,7 @@ beforeEach(() => {
 describe("getCertificateVerificationUrl", () => {
   it("builds the public certificate page URL for a ticket number", () => {
     expect(getCertificateVerificationUrl("GBC2_ABC123")).toMatch(
-      /\/gbc\/certificate\/GBC2_ABC123$/,
+      /\/gbc\/certificate\/GBC2_ABC123$/
     );
   });
 });
@@ -102,13 +102,13 @@ describe("generateCertificatePdfBuffer", () => {
       callback(
         new Error("exit 1"),
         Buffer.from(""),
-        Buffer.from("font not found"),
+        Buffer.from("font not found")
       );
       return mockChildProcess();
     });
 
     await expect(generateCertificatePdfBuffer(ticket as any)).rejects.toThrow(
-      /font not found/,
+      /font not found/
     );
   });
 });

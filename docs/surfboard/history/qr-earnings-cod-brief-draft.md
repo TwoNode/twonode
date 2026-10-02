@@ -1,4 +1,5 @@
 # Surfboard QR Code Earnings & Certificate of Deposit (CoD)
+
 ## Executive Product Brief & Implementation Plan (Non-Technical Stakeholders)
 
 ---
@@ -25,10 +26,12 @@ flowchart LR
 ```
 
 ### A. Flexible Free Tier Threshold
+
 - **Client Consideration**: Surveyors noted that clients who just paid substantial fees for survey work should not be charged immediately on their first scan.
 - **Solution**: Admins can set a configurable number of **Free Scans** (e.g., first 5 uses are completely free). Payment is only required from the 6th scan onward.
 
 ### B. Dual QR Code Services
+
 1. **Service 1 — Know Actual Location & Authenticity**:
    - Allows clients, agents, and buyers to verify that the survey plan matches the property's physical location.
    - Provides interactive maps, exact coordinates, and turn-by-turn driving directions to the property.
@@ -38,15 +41,17 @@ flowchart LR
    - If the certificate is still being processed by government officials, displays a real-time status update.
 
 ### C. Temporary 1-Hour Access Protection
+
 - To prevent single buyers from purchasing access once and circulating static links indefinitely, paid access remains active for **exactly 1 hour**.
 - Within the 1-hour window, users can freely refresh or revisit the link.
-- After 1 hour, access expires with a friendly prompt: *"Your access has expired. Please purchase access again to continue."*
+- After 1 hour, access expires with a friendly prompt: _"Your access has expired. Please purchase access again to continue."_
 
 ---
 
 ## 3. Stakeholder Experience & Workflows
 
 ### 👨‍💼 For Surveyors (The Earnings Portal)
+
 - **New QR Earnings Page**:
   - Real-time display of **Available Balance**, **Total Earned**, **Pending Withdrawals**, and **Total Withdrawn**.
   - Itemized transaction ledger showing which survey plan generated income and which service was purchased.
@@ -57,6 +62,7 @@ flowchart LR
   - In-app badge and email alert whenever a survey plan generates earnings or a withdrawal is processed.
 
 ### 🛡️ For Platform Admins & Operations
+
 - **QR Earnings Revenue Dashboard**:
   - Comprehensive breakdown of total platform revenue split between Verification Fees and Service Fees.
   - Leaderboard ranking top-earning surveyors and highest-performing survey plans.
@@ -70,13 +76,13 @@ flowchart LR
 
 ## 4. Implementation Roadmap & Timeline
 
-| Phase | Milestone | Key Deliverables | Stakeholder Impact |
-| :--- | :--- | :--- | :--- |
-| **Phase 1** | **Database & Pricing Engine** | Configurable fee settings, scan tracking, user wallet data models. | Internal readiness for feature launch. |
-| **Phase 2** | **Public Paywall & Timed Access** | Dual-service selection modal on QR scan page, 1-hour session timer, payment gateway. | Smooth purchasing experience for end-clients. |
-| **Phase 3** | **Surveyor Earnings & Bank KYC** | Surveyor "QR Earnings" page, bank account entry, withdrawal request flow. | Surveyors begin tracking and claiming passive revenue. |
-| **Phase 4** | **Admin Dashboard & Analytics** | Revenue analytics, surveyor leaderboard, payout processing queue. | Full administrative control and financial transparency. |
-| **Phase 5** | **Testing & Official Launch** | End-to-end verification, notification delivery, user acceptance testing. | Official rollout under "TwoNode at 2" campaign. |
+| Phase       | Milestone                         | Key Deliverables                                                                     | Stakeholder Impact                                      |
+| :---------- | :-------------------------------- | :----------------------------------------------------------------------------------- | :------------------------------------------------------ |
+| **Phase 1** | **Database & Pricing Engine**     | Configurable fee settings, scan tracking, user wallet data models.                   | Internal readiness for feature launch.                  |
+| **Phase 2** | **Public Paywall & Timed Access** | Dual-service selection modal on QR scan page, 1-hour session timer, payment gateway. | Smooth purchasing experience for end-clients.           |
+| **Phase 3** | **Surveyor Earnings & Bank KYC**  | Surveyor "QR Earnings" page, bank account entry, withdrawal request flow.            | Surveyors begin tracking and claiming passive revenue.  |
+| **Phase 4** | **Admin Dashboard & Analytics**   | Revenue analytics, surveyor leaderboard, payout processing queue.                    | Full administrative control and financial transparency. |
+| **Phase 5** | **Testing & Official Launch**     | End-to-end verification, notification delivery, user acceptance testing.             | Official rollout under "TwoNode at 2" campaign.         |
 
 ---
 

@@ -13,6 +13,7 @@ This document is the "full per-route Zod-schema-level detail" the implementation
 Full function-by-function catalog (params, Prisma models touched, existing auth checks, external calls) was produced by reading `codActions.ts` and `surfboardActions.ts` in their entirety. Rather than duplicate ~80 functions' worth of detail twice, this document works from that catalog directly in the service breakdown below. Two things from that pass matter before any code moves:
 
 **`codActions.ts` and `surfboardActions.ts` are not the only `"use server"` files in Surfboard.** 19 files carry the directive:
+
 ```
 settingsActions.ts   ossgActions.ts        paystackActions.ts      authActions.ts
 notificationActions.ts  auditLogActions.ts  verificationActions.ts  paystackSubscriptions.ts
@@ -20,9 +21,11 @@ qrAdminActions.ts    profile.ts            aiExtractionActions.ts  adminActions.
 mdaRemarkActions.ts  subscriptionActions.ts migrate/actions.ts      awsActions.ts
 surfboardActions.ts  codActions.ts         subscriptionAnalyticsActions.ts
 ```
+
 This phase migrates `codActions.ts` and `surfboardActions.ts` only (they're the two the plan scoped, and by far the two largest). The other 17 stay as server actions for now — each is its own smaller, separately-scoped migration if/when it's needed, not silently pulled into this phase's blast radius.
 
 **Real duplication/dead-code risk found — grep-confirmed resolved (2026-08-26), not silently picked**: `surfboardActions.ts` had three overlapping generations of plan creation (`_createSurfPlan`, `_createPlan`, `createSurfPlan`) and two of plan update (`_updatePlan`, `updateSurfPlan`), plus a duplicate share/unshare pair. Repo-wide grep for each name found:
+
 - `_createSurfPlan`, `_createPlan`, `_updatePlan`, `_getAllSurfPlans`, `_deletePlanAttachment`, `importDbDataFromCsv` — **zero call sites anywhere outside their own definition.** Confirmed dead. None of these get migrated or get a route.
 - `addSurfUserToSharedSurfPlan`, `removeSurfUserFromSharedSurfPlan` — **zero call sites.** Dead, same treatment. `sharePlanWithUser`/`unsharePlanWithUser` are the live pair (called from `SharePlanModal.tsx`) and are what this spec migrates.
 - `createSurfPlan`, `updateSurfPlan` — confirmed current-production (matches the live UI's notification-sending and withdrawal-status-flip logic). These migrate.
@@ -34,17 +37,21 @@ This phase migrates `codActions.ts` and `surfboardActions.ts` only (they're the 
 ### From `codActions.ts` → 4 services (`surfboard/services/`)
 
 **`planLockService.ts`** — the FIFO-gated optimistic locking subsystem, both plan-level and batch-level (they're the same lock mechanism, just scoped to one plan vs. every plan in a batch):
+
 - `acquirePlanLock`, `releasePlanLock`, `getAndLockOldestAvailablePlan`, `releaseAllLocksForUser`, `getPlanLockStatus`, `canWorkOnPlan`
 - `getAndLockBatchForAccounts`, `getAndLockBatchForIntake`, `getAndLockBatchForRecordsII`, `releaseBatchLockForAccounts`, `releaseBatchLockForIntake`, `releaseBatchLockForRecordsII`
 
 **`codFeeService.ts`** — pure calculation + the two PostGIS zone lookups:
+
 - `getChartingInterpretation`, `getZoneFromGeometry` (both `$queryRaw` against `LASG_charting_interpretation`/`Scale_of_fees` — same PostGIS-unavailable-locally workaround from Phase 1's schema split applies whenever this needs local verification)
 - `calculatePlanFeeByZone` (+ private `calculateFeeFromRow`, `shouldChargeDoubleFee`)
 
 **`remitaVerificationService.ts`** — batch submission through to payment confirmation:
+
 - `submitRedCopyBatch`, `verifyBatchPayment` (legacy single-reference path — grep-confirmed still live, called from `surfboard/dashboard/payment/callback/page.tsx`; migrates alongside the newer two-link flow, not replaced by it), `verifyBatchPaymentWithLinks`, `verifyLASGReceiptLink`, `verifyQueryPaymentLinks` (currently private — stays internal, called by `batchApprovalService.ts`'s resubmission flow), `retryBatchPayment`, `uploadLASGReceipt`, `getBatchesByStatus`, `getUserBatches`, `getBatchPDFData`, `getCurrentPayerProfile`
 
 **`batchApprovalService.ts`** — the approval chain, queue/history reads, and query/resubmission handling (kept together: they're one workflow, reads and writes on the same state machine):
+
 - Chain: `updateAccountsApproval`, `updateChartingStatus`, `updateSurconStatus`, `updateRecordsIStatus`, `updateIntakeStatus`, `updateIntakeBatchStatus`, `updateRecordsIIStatus`, `markPlanArchived`
 - Queues/history: `getAccountsBatches`, `getChartingPlans`, `getSurconPlans`, `getRecordsIPlans`, `getRecordsIIPlans`, `getIntakeBatches`, `getRecordsIIBatches`, `getAccountsHistory`, `getChartingHistory`, `getSurconHistory`, `getRecordsIHistory`, `getRecordsIIHistory`, `getIntakeHistoryBatches`, `getRecordsIIHistoryBatches`, `getPendingArchiveBatches`, `getArchiveHistoryBatches`, `getPendingCountByRole`
 - Query/resubmission: `getQueriedPlansForUser`, `resubmitQueriedPlan`, `checkAndDispatchQueries` (internal)
@@ -54,6 +61,7 @@ This phase migrates `codActions.ts` and `surfboardActions.ts` only (they're the 
 ### From `surfboardActions.ts` → 2 services
 
 **`planService.ts`** — plan CRUD, QR/public access, sharing, attachments, geo lookups:
+
 - QR/URL: `generatePlanQRCode`, `getPlanPublicUrl`, `getBaseUrl`
 - Create/update (production paths only — see dead-code note above): `createSurfPlan`, `updateSurfPlan`
 - Reads: `getAllSurfPlans`, `getPaginatedSurfPlans`, `getAllSharedSurfPlans`, `getSharedWithMeSurfPlans`, `getSurfPlanById`, `getSurfPlanByIdWithSurveyor`, `getPublicSurfPlanByIdWithSurveyor`, `getGatedPublicSurfPlan`, `getDeletedSurfPlans`, `checkPlanNumberExists`, `getAllFacilitatorsAndPlanNumbers`, `getAllFacilitators`, `searchReferencePlanNumbers`
@@ -103,7 +111,14 @@ const mdaDecisionSchema = z.object({
 const resubmitSchema = z.object({
   pillars: z.array(pillarSchema).optional(),
   recordCopyUrl: z.string().url().optional(),
-  location: z.object({ ward: z.string().optional(), lcda: z.string().optional(), lga: z.string().optional(), state: z.string().optional() }).optional(),
+  location: z
+    .object({
+      ward: z.string().optional(),
+      lcda: z.string().optional(),
+      lga: z.string().optional(),
+      state: z.string().optional(),
+    })
+    .optional(),
   lasgReceiptUrl: z.string().url().optional(),
   remitaReceiptUrl: z.string().url().optional(),
 });
@@ -132,67 +147,67 @@ const createPlanSchema = z.object({
 
 ### Full route table
 
-| Route | Method | Service fn | Roles | Notes |
-|---|---|---|---|---|
-| `/plans` | GET | `getPaginatedSurfPlans` | USER | filters/sort via query params |
-| `/plans` | POST | `createSurfPlan` | USER | |
-| `/plans/:id` | GET | `getSurfPlanById` | USER | owner or shared-with |
-| `/plans/:id` | PATCH | `updateSurfPlan` | USER | owner |
-| `/plans/:id` | DELETE | `deleteSurfPlan` | USER | soft delete, owner |
-| `/plans/:id/restore` | POST | `restoreSurfPlan` | USER | |
-| `/plans/:id/permanent` | DELETE | `permanentlyDeleteSurfPlan` | USER, ADMIN, SUPERADMIN | |
-| `/plans/:id/status` | PATCH | `updateSurfPlanStatus` | USER, ADMIN, SUPERADMIN | owner or admin |
-| `/plans/:id/surveyor` | GET | `getSurfPlanByIdWithSurveyor` | USER | owner only |
-| `/plans/:id/public` | GET | `getGatedPublicSurfPlan` | *public* | QR-gated redaction |
-| `/plans/:id/public/full` | GET | `getPublicSurfPlanByIdWithSurveyor` | *public* | increments scan count |
-| `/plans/:id/qr` | GET | `generatePlanQRCode` | USER | owner |
-| `/plans/:id/red-copy` | POST | `submitRedCopy` | USER | multipart, owner |
-| `/plans/:id/record-copy` | PATCH | `updatePlanRecordCopy` | USER | owner |
-| `/plans/:id/person-count` | PATCH | `verifyPersonCount` | not USER (MDA/admin) | |
-| `/plans/:id/query` | POST | `queryPlan` | not USER (MDA/admin) | |
-| `/plans/:id/resubmit` | POST | `resubmitQueriedPlan` | USER | owner, plan must be QUERIED |
-| `/plans/:id/attachments` | DELETE | `deletePlanAttachment` | USER | owner, body: `{fileUrl, fileType}` |
-| `/plans/:id/share` | POST | `sharePlanWithUser` | USER | owner |
-| `/plans/:id/share` | DELETE | `unsharePlanWithUser` | USER | owner |
-| `/plans/shared` | GET | `getAllSharedSurfPlans` | USER | |
-| `/plans/shared-with-me` | GET | `getSharedWithMeSurfPlans` | USER | |
-| `/plans/deleted` | GET | `getDeletedSurfPlans` | USER | trash view |
-| `/plans/check-number` | GET | `checkPlanNumberExists` | USER | `?planNumber=&excludeId=` |
-| `/plans/facilitators` | GET | `getAllFacilitators` / `getAllFacilitatorsAndPlanNumbers` | USER | `?withPlanNumbers=` selects which |
-| `/plans/reference-numbers` | GET | `searchReferencePlanNumbers` | USER | `?planType=` |
-| `/plans/queried` | GET | `getQueriedPlansForUser` | USER | |
-| `/plans/geo/boundaries` | POST | `getAdminBoundaries` | USER | body: `{geometry}` |
-| `/plans/:id/physical-copy` | POST | `submitPhysicalCopies` (bulk, `{planIds[]}`) | USER | |
-| `/users/search` | GET | `searchUsers` | USER | `?query=` |
-| `/users/lookup` | GET | `searchSurfUserByEmailOrSurconRegNumber` | USER | `?email=&surconRegNumber=` |
-| `/cod/fee-preview` | POST | `calculatePlanFeeByZone` | USER | body: `{zone, areaSqM, surveyTitle, ethnicity?}` — client-side fee preview before batch submit |
-| `/cod/zone` | POST | `getZoneFromGeometry` | USER | body: `{geometry}` |
-| `/cod/batches` | POST | `submitRedCopyBatch` | USER | |
-| `/cod/batches` | GET | `getUserBatches` / `getBatchesByStatus` | USER (own) / ADMIN, SUPERADMIN (all, `?status=`) | same route, scope decided by role inside the handler |
-| `/cod/batches/:id` | GET | `getBatchPDFData` | USER | owner |
-| `/cod/batches/:id/payment/verify` | POST | `verifyBatchPayment` | USER | owner, legacy single-ref path — confirmed still live, migrates |
-| `/cod/batches/:id/payment/verify-links` | POST | `verifyBatchPaymentWithLinks` | USER | owner or SUPERADMIN |
-| `/cod/batches/:id/payment/verify-lasg` | POST | `verifyLASGReceiptLink` | USER | owner or SUPERADMIN |
-| `/cod/batches/:id/payment/retry` | POST | `retryBatchPayment` | USER | owner |
-| `/cod/batches/:id/lasg-receipt` | POST | `uploadLASGReceipt` | ADMIN, SUPERADMIN | body: `{receiptUrl, receiptS3Key}` |
-| `/cod/payer-profile` | GET | `getCurrentPayerProfile` | USER | |
-| `/cod/locks/:planId` | POST | `acquirePlanLock` | ACCOUNTS, CHARTING, SURCON, RECORDS_I, INTAKE, RECORDS_II, ARCHIVE, MDA_SUPERADMIN, SUPERADMIN | body: `{role}` |
-| `/cod/locks/:planId` | DELETE | `releasePlanLock` | same as above | |
-| `/cod/locks/:planId` | GET | `getPlanLockStatus` | same as above | `?role=` |
-| `/cod/locks/next` | POST | `getAndLockOldestAvailablePlan` | same as above | body: `{role}` — FIFO claim |
-| `/cod/locks/release-all` | POST | `releaseAllLocksForUser` | same as above | body: `{role}` |
-| `/cod/locks/batch/next` | POST | `getAndLockBatchForAccounts`/`ForIntake`/`ForRecordsII` | ACCOUNTS / INTAKE / RECORDS_II resp. | one route, role in body selects which |
-| `/cod/locks/batch/release` | POST | `releaseBatchLockForAccounts`/`ForIntake`/`ForRecordsII` | same | |
-| `/mda/accounts/batches` | GET | `getAccountsBatches` / `getAccountsHistory` | ACCOUNTS, SUPERADMIN, MDA_SUPERADMIN | `?view=queue\|history` |
-| `/mda/accounts/batches/:id/decision` | POST | `updateAccountsApproval` | ACCOUNTS, SUPERADMIN | body: `{approved, comment?}` |
-| `/mda/:role/plans` | GET | `get{Charting,Surcon,RecordsI,RecordsII}Plans` / `...History` | that role, SUPERADMIN, MDA_SUPERADMIN | `:role ∈ {charting,surcon,records-i,records-ii}`, `?view=` |
-| `/mda/:role/plans/:id/decision` | POST | `update{Charting,Surcon,RecordsI,Intake,RecordsII}Status` | that role, SUPERADMIN | shared schema, see above |
-| `/mda/intake/batches` | GET | `getIntakeBatches` / `getIntakeHistoryBatches` | INTAKE, SUPERADMIN, MDA_SUPERADMIN | `?view=` |
-| `/mda/intake/batches/:id/decision` | POST | `updateIntakeBatchStatus` | INTAKE, SUPERADMIN | batch-level variant of the intake decision |
-| `/mda/archive/batches` | GET | `getPendingArchiveBatches` / `getArchiveHistoryBatches` | ARCHIVE, SUPERADMIN, MDA_SUPERADMIN | `?view=` |
-| `/mda/archive/plans/:id` | POST | `markPlanArchived` | ARCHIVE, SUPERADMIN, MDA_SUPERADMIN | body: `{notes?}` |
-| `/mda/pending-counts` | GET | `getPendingCountByRole` | ADMIN, SUPERADMIN, ACCOUNTS, CHARTING, SURCON, RECORDS_I, INTAKE, RECORDS_II, ARCHIVE, MDA_SUPERADMIN | sidebar badges |
-| `/analytics` | GET | `analyticsService` (new, see below) | role-scoped, see below | |
+| Route                                   | Method | Service fn                                                    | Roles                                                                                                 | Notes                                                                                          |
+| --------------------------------------- | ------ | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `/plans`                                | GET    | `getPaginatedSurfPlans`                                       | USER                                                                                                  | filters/sort via query params                                                                  |
+| `/plans`                                | POST   | `createSurfPlan`                                              | USER                                                                                                  |                                                                                                |
+| `/plans/:id`                            | GET    | `getSurfPlanById`                                             | USER                                                                                                  | owner or shared-with                                                                           |
+| `/plans/:id`                            | PATCH  | `updateSurfPlan`                                              | USER                                                                                                  | owner                                                                                          |
+| `/plans/:id`                            | DELETE | `deleteSurfPlan`                                              | USER                                                                                                  | soft delete, owner                                                                             |
+| `/plans/:id/restore`                    | POST   | `restoreSurfPlan`                                             | USER                                                                                                  |                                                                                                |
+| `/plans/:id/permanent`                  | DELETE | `permanentlyDeleteSurfPlan`                                   | USER, ADMIN, SUPERADMIN                                                                               |                                                                                                |
+| `/plans/:id/status`                     | PATCH  | `updateSurfPlanStatus`                                        | USER, ADMIN, SUPERADMIN                                                                               | owner or admin                                                                                 |
+| `/plans/:id/surveyor`                   | GET    | `getSurfPlanByIdWithSurveyor`                                 | USER                                                                                                  | owner only                                                                                     |
+| `/plans/:id/public`                     | GET    | `getGatedPublicSurfPlan`                                      | _public_                                                                                              | QR-gated redaction                                                                             |
+| `/plans/:id/public/full`                | GET    | `getPublicSurfPlanByIdWithSurveyor`                           | _public_                                                                                              | increments scan count                                                                          |
+| `/plans/:id/qr`                         | GET    | `generatePlanQRCode`                                          | USER                                                                                                  | owner                                                                                          |
+| `/plans/:id/red-copy`                   | POST   | `submitRedCopy`                                               | USER                                                                                                  | multipart, owner                                                                               |
+| `/plans/:id/record-copy`                | PATCH  | `updatePlanRecordCopy`                                        | USER                                                                                                  | owner                                                                                          |
+| `/plans/:id/person-count`               | PATCH  | `verifyPersonCount`                                           | not USER (MDA/admin)                                                                                  |                                                                                                |
+| `/plans/:id/query`                      | POST   | `queryPlan`                                                   | not USER (MDA/admin)                                                                                  |                                                                                                |
+| `/plans/:id/resubmit`                   | POST   | `resubmitQueriedPlan`                                         | USER                                                                                                  | owner, plan must be QUERIED                                                                    |
+| `/plans/:id/attachments`                | DELETE | `deletePlanAttachment`                                        | USER                                                                                                  | owner, body: `{fileUrl, fileType}`                                                             |
+| `/plans/:id/share`                      | POST   | `sharePlanWithUser`                                           | USER                                                                                                  | owner                                                                                          |
+| `/plans/:id/share`                      | DELETE | `unsharePlanWithUser`                                         | USER                                                                                                  | owner                                                                                          |
+| `/plans/shared`                         | GET    | `getAllSharedSurfPlans`                                       | USER                                                                                                  |                                                                                                |
+| `/plans/shared-with-me`                 | GET    | `getSharedWithMeSurfPlans`                                    | USER                                                                                                  |                                                                                                |
+| `/plans/deleted`                        | GET    | `getDeletedSurfPlans`                                         | USER                                                                                                  | trash view                                                                                     |
+| `/plans/check-number`                   | GET    | `checkPlanNumberExists`                                       | USER                                                                                                  | `?planNumber=&excludeId=`                                                                      |
+| `/plans/facilitators`                   | GET    | `getAllFacilitators` / `getAllFacilitatorsAndPlanNumbers`     | USER                                                                                                  | `?withPlanNumbers=` selects which                                                              |
+| `/plans/reference-numbers`              | GET    | `searchReferencePlanNumbers`                                  | USER                                                                                                  | `?planType=`                                                                                   |
+| `/plans/queried`                        | GET    | `getQueriedPlansForUser`                                      | USER                                                                                                  |                                                                                                |
+| `/plans/geo/boundaries`                 | POST   | `getAdminBoundaries`                                          | USER                                                                                                  | body: `{geometry}`                                                                             |
+| `/plans/:id/physical-copy`              | POST   | `submitPhysicalCopies` (bulk, `{planIds[]}`)                  | USER                                                                                                  |                                                                                                |
+| `/users/search`                         | GET    | `searchUsers`                                                 | USER                                                                                                  | `?query=`                                                                                      |
+| `/users/lookup`                         | GET    | `searchSurfUserByEmailOrSurconRegNumber`                      | USER                                                                                                  | `?email=&surconRegNumber=`                                                                     |
+| `/cod/fee-preview`                      | POST   | `calculatePlanFeeByZone`                                      | USER                                                                                                  | body: `{zone, areaSqM, surveyTitle, ethnicity?}` — client-side fee preview before batch submit |
+| `/cod/zone`                             | POST   | `getZoneFromGeometry`                                         | USER                                                                                                  | body: `{geometry}`                                                                             |
+| `/cod/batches`                          | POST   | `submitRedCopyBatch`                                          | USER                                                                                                  |                                                                                                |
+| `/cod/batches`                          | GET    | `getUserBatches` / `getBatchesByStatus`                       | USER (own) / ADMIN, SUPERADMIN (all, `?status=`)                                                      | same route, scope decided by role inside the handler                                           |
+| `/cod/batches/:id`                      | GET    | `getBatchPDFData`                                             | USER                                                                                                  | owner                                                                                          |
+| `/cod/batches/:id/payment/verify`       | POST   | `verifyBatchPayment`                                          | USER                                                                                                  | owner, legacy single-ref path — confirmed still live, migrates                                 |
+| `/cod/batches/:id/payment/verify-links` | POST   | `verifyBatchPaymentWithLinks`                                 | USER                                                                                                  | owner or SUPERADMIN                                                                            |
+| `/cod/batches/:id/payment/verify-lasg`  | POST   | `verifyLASGReceiptLink`                                       | USER                                                                                                  | owner or SUPERADMIN                                                                            |
+| `/cod/batches/:id/payment/retry`        | POST   | `retryBatchPayment`                                           | USER                                                                                                  | owner                                                                                          |
+| `/cod/batches/:id/lasg-receipt`         | POST   | `uploadLASGReceipt`                                           | ADMIN, SUPERADMIN                                                                                     | body: `{receiptUrl, receiptS3Key}`                                                             |
+| `/cod/payer-profile`                    | GET    | `getCurrentPayerProfile`                                      | USER                                                                                                  |                                                                                                |
+| `/cod/locks/:planId`                    | POST   | `acquirePlanLock`                                             | ACCOUNTS, CHARTING, SURCON, RECORDS_I, INTAKE, RECORDS_II, ARCHIVE, MDA_SUPERADMIN, SUPERADMIN        | body: `{role}`                                                                                 |
+| `/cod/locks/:planId`                    | DELETE | `releasePlanLock`                                             | same as above                                                                                         |                                                                                                |
+| `/cod/locks/:planId`                    | GET    | `getPlanLockStatus`                                           | same as above                                                                                         | `?role=`                                                                                       |
+| `/cod/locks/next`                       | POST   | `getAndLockOldestAvailablePlan`                               | same as above                                                                                         | body: `{role}` — FIFO claim                                                                    |
+| `/cod/locks/release-all`                | POST   | `releaseAllLocksForUser`                                      | same as above                                                                                         | body: `{role}`                                                                                 |
+| `/cod/locks/batch/next`                 | POST   | `getAndLockBatchForAccounts`/`ForIntake`/`ForRecordsII`       | ACCOUNTS / INTAKE / RECORDS_II resp.                                                                  | one route, role in body selects which                                                          |
+| `/cod/locks/batch/release`              | POST   | `releaseBatchLockForAccounts`/`ForIntake`/`ForRecordsII`      | same                                                                                                  |                                                                                                |
+| `/mda/accounts/batches`                 | GET    | `getAccountsBatches` / `getAccountsHistory`                   | ACCOUNTS, SUPERADMIN, MDA_SUPERADMIN                                                                  | `?view=queue\|history`                                                                         |
+| `/mda/accounts/batches/:id/decision`    | POST   | `updateAccountsApproval`                                      | ACCOUNTS, SUPERADMIN                                                                                  | body: `{approved, comment?}`                                                                   |
+| `/mda/:role/plans`                      | GET    | `get{Charting,Surcon,RecordsI,RecordsII}Plans` / `...History` | that role, SUPERADMIN, MDA_SUPERADMIN                                                                 | `:role ∈ {charting,surcon,records-i,records-ii}`, `?view=`                                     |
+| `/mda/:role/plans/:id/decision`         | POST   | `update{Charting,Surcon,RecordsI,Intake,RecordsII}Status`     | that role, SUPERADMIN                                                                                 | shared schema, see above                                                                       |
+| `/mda/intake/batches`                   | GET    | `getIntakeBatches` / `getIntakeHistoryBatches`                | INTAKE, SUPERADMIN, MDA_SUPERADMIN                                                                    | `?view=`                                                                                       |
+| `/mda/intake/batches/:id/decision`      | POST   | `updateIntakeBatchStatus`                                     | INTAKE, SUPERADMIN                                                                                    | batch-level variant of the intake decision                                                     |
+| `/mda/archive/batches`                  | GET    | `getPendingArchiveBatches` / `getArchiveHistoryBatches`       | ARCHIVE, SUPERADMIN, MDA_SUPERADMIN                                                                   | `?view=`                                                                                       |
+| `/mda/archive/plans/:id`                | POST   | `markPlanArchived`                                            | ARCHIVE, SUPERADMIN, MDA_SUPERADMIN                                                                   | body: `{notes?}`                                                                               |
+| `/mda/pending-counts`                   | GET    | `getPendingCountByRole`                                       | ADMIN, SUPERADMIN, ACCOUNTS, CHARTING, SURCON, RECORDS_I, INTAKE, RECORDS_II, ARCHIVE, MDA_SUPERADMIN | sidebar badges                                                                                 |
+| `/analytics`                            | GET    | `analyticsService` (new, see below)                           | role-scoped, see below                                                                                |                                                                                                |
 
 ## `analyticsService.ts` — role/platform-scoped dashboards
 
@@ -211,9 +226,10 @@ const createPlanSchema = z.object({
 
 `surfboard/access/routes.ts`'s `SurfboardRouteGroup` grows from `"admin" | "user"` to `"admin" | "user" | "mda"`. Two real gaps close here, not just registry bookkeeping:
 
-**MDA nav-filtering gap (confirmed real, not generic)**: `surfboardMDAPanelLayout.tsx` is client-side, hand-rolled conditional rendering — not wired to any registry — and today shows a Charting officer, say, exactly the Charting link (the layout *does* correctly conditionally render per-role already, this part works). What's actually missing is that `proxy.ts` doesn't consult a registry for MDA routes at all (same gap Phase 1's Step 8 already fixed for the plain admin panel) — the registry gives `canAccessRoute`/`getNavItemsForRole` a single source of truth `proxy.ts` can be migrated to read, instead of the layout's own conditional JSX being the only enforcement of what's shown (server-side enforcement still happens in each server action today, independently — the registry unifies nav *and* access checking behind one array, matching Phase 1's pattern exactly).
+**MDA nav-filtering gap (confirmed real, not generic)**: `surfboardMDAPanelLayout.tsx` is client-side, hand-rolled conditional rendering — not wired to any registry — and today shows a Charting officer, say, exactly the Charting link (the layout _does_ correctly conditionally render per-role already, this part works). What's actually missing is that `proxy.ts` doesn't consult a registry for MDA routes at all (same gap Phase 1's Step 8 already fixed for the plain admin panel) — the registry gives `canAccessRoute`/`getNavItemsForRole` a single source of truth `proxy.ts` can be migrated to read, instead of the layout's own conditional JSX being the only enforcement of what's shown (server-side enforcement still happens in each server action today, independently — the registry unifies nav _and_ access checking behind one array, matching Phase 1's pattern exactly).
 
 New entries, `group: "mda"`, base `/surf-mda/dashboard`:
+
 ```
 ""                → all 8 MDA roles + MDA_SUPERADMIN + SUPERADMIN   (Home)
 /accounts         → ACCOUNTS, MDA_SUPERADMIN, SUPERADMIN
@@ -234,10 +250,12 @@ New entries, `group: "mda"`, base `/surf-mda/dashboard`:
 ## Naming standardization (proposal §4.8)
 
 `surf-restricted` → `surfboard-restricted`, `surf-mda` → `surfboard-mda`. Mechanics:
+
 1. `next.config.mjs`: `redirects()` entries for both old prefixes → new (308, permanent).
 2. Kinde application config: update redirect URIs for the `surf-restricted`/`surf-mda` platform entries (external, done in Kinde's dashboard, not code — flag as a manual step, not something a commit does).
 3. `proxy.ts`: update route-matching to the new prefixes (paired with the registry migration above, not a separate pass).
 4. Hardcoded notification links — every one found by grepping `notificationActions.ts` and `qrEarningsService.ts` needs its literal path prefix updated:
+
 ```
 notificationActions.ts:494,523,819,848,909   /surfboard/dashboard/plan?planId=...        (unaffected — /surfboard prefix, not /surf-)
 notificationActions.ts:552,582,653,787       /surf-restricted/dashboard/cod              → /surfboard-restricted/dashboard/cod
@@ -245,6 +263,7 @@ notificationActions.ts:623                   /surf-mda/dashboard                
 notificationActions.ts:688,723,755,879       /surfboard/dashboard/plans...                (unaffected)
 qrEarningsService.ts:436                     /surf-restricted/dashboard/qr-earnings      → /surfboard-restricted/dashboard/qr-earnings
 ```
+
 Only 5 of the 15 found link sites actually need changing — the rest already use the unabbreviated `/surfboard/...` prefix and aren't part of this rename. Old links already sent in existing, unread notifications keep working regardless, since the 308 redirects cover them.
 
 ## Folder move
@@ -258,6 +277,7 @@ All six are closed. Four by a repo-wide grep (call-site facts): dead-code confir
 ## Sequencing
 
 Mirrors Phase 1's own order — plumbing before consumers, always live-verified, not just `tsc`/`build`:
+
 1. ~~Answer the open questions above~~ — done, see above.
 2. `planLockService.ts` + `codFeeService.ts` (foundational — the approval chain depends on locking; fee calc has zero dependents to migrate first).
 3. `remitaVerificationService.ts` (depends on fee calc for batch submission).
@@ -288,7 +308,7 @@ Steps 1-9 above executed in the order laid out, each committed and pushed separa
 
    A follow-up refactor (`b42a69f`) deduplicated a role→field-name mapping this service had hand-copied from `planLockService.ts`'s `ROLE_FIELD_PREFIX`, and a stage-role array duplicated from its `MDA_ROLES` — both now derive from the one source instead of a second hand-written copy, caught during a deliberate reuse/redundancy check.
 
-6. **Route/nav registry + `proxy.ts` migration** (`1376b4d`) — `surfboard/access/routes.ts` extended from 13 admin-only entries to the full product (4 previously-missing admin routes, 14 user-panel routes, a new `"mda"` group). `proxy.ts`'s three Surfboard branches now all call `canAccessRoute()` instead of separate hand-rolled matching — **this is what actually closes the confirmed MDA nav-filtering gap** from the earlier audit. Two real behavior differences caught and fixed *before* wiring, not after: `canAccessSurfUserPanel` allows ADMIN/SUPERADMIN into the surveyor panel too (not just USER), and the source lets plain SUPERADMIN into every MDA stage unconditionally (not just MDA_SUPERADMIN). `surfboardMDAPanelLayout.tsx` retired in favor of `DashboardShell`. New `surfboard/access/__tests__/routes.test.ts` (14 cases).
+6. **Route/nav registry + `proxy.ts` migration** (`1376b4d`) — `surfboard/access/routes.ts` extended from 13 admin-only entries to the full product (4 previously-missing admin routes, 14 user-panel routes, a new `"mda"` group). `proxy.ts`'s three Surfboard branches now all call `canAccessRoute()` instead of separate hand-rolled matching — **this is what actually closes the confirmed MDA nav-filtering gap** from the earlier audit. Two real behavior differences caught and fixed _before_ wiring, not after: `canAccessSurfUserPanel` allows ADMIN/SUPERADMIN into the surveyor panel too (not just USER), and the source lets plain SUPERADMIN into every MDA stage unconditionally (not just MDA_SUPERADMIN). `surfboardMDAPanelLayout.tsx` retired in favor of `DashboardShell`. New `surfboard/access/__tests__/routes.test.ts` (14 cases).
 
 7. **Naming standardization** (`332222d`) — `surf-restricted`/`surf-mda` → `surfboard-restricted`/`surfboard-mda`, 34 files renamed, `next.config.mjs` gained permanent redirects for the old prefixes. Deliberately **not** renamed: the two Kinde OAuth callback routes (`/api/auth/success/surf-restricted`, `/surf-mda`) — those are redirect URIs registered in Kinde's own dashboard; renaming them would break login until a manual config update happens there, so only their internal destination-redirect strings were updated, not the callback URLs themselves.
 
@@ -298,7 +318,7 @@ Steps 1-9 above executed in the order laid out, each committed and pushed separa
 
 ### Judgment calls made during implementation
 
-- **`surfboardUserPanelLayout.tsx` was *not* swapped to `DashboardShell`** during the folder move, unlike the admin and MDA layouts. Those two were already thin wrappers; this one carries real business logic `DashboardShell` doesn't replicate — a subscription-required badge, live unread-notification-count polling (30s interval), and a cross-import from `revaAdminPanelLayout` for a CSS class. Retiring it would be a functional redesign requiring that logic to be ported first, not a mechanical move — flagged to you as a deliberate, separate follow-up rather than done incidentally here.
+- **`surfboardUserPanelLayout.tsx` was _not_ swapped to `DashboardShell`** during the folder move, unlike the admin and MDA layouts. Those two were already thin wrappers; this one carries real business logic `DashboardShell` doesn't replicate — a subscription-required badge, live unread-notification-count polling (30s interval), and a cross-import from `revaAdminPanelLayout` for a CSS class. Retiring it would be a functional redesign requiring that logic to be ported first, not a mechanical move — flagged to you as a deliberate, separate follow-up rather than done incidentally here.
 - **Shared decision endpoints for the 4 parallel MDA stages** (`/mda/[role]/plans/[planId]/decision` for Charting/SURCON/Records I/Intake) collapse what the source implemented as 4 near-identical functions into one parametrized route — Records II was kept as its own separate route since its approval triggers materially different side effects (OSSG transmission, `LODGED` status) that warrant a distinct, more carefully reviewed handler rather than folding it into the shared one.
 - **`getMdaStageStats`'s Intake timing is a documented approximation**: its true "time in stage" starts once all 4 parallel stages clear, which needs a `GREATEST()` over 4 nullable columns — approximated instead as time-since-`redCopySubmittedAt` (same start point as the parallel stages themselves), meaning Intake's reported average reads slightly high. Documented in the code comment rather than silently accepted.
 
@@ -307,12 +327,13 @@ Steps 1-9 above executed in the order laid out, each committed and pushed separa
 - `tsc --noEmit` clean and a full production build (`npm run build`) clean after every commit in the sequence above, not just at the end.
 - `73/73 vitest` passing (58 from services + 15 new: `surfboard/access/__tests__/routes.test.ts`).
 - Each service was live-verified against real seeded data in local Postgres as it was built (documented per-commit in `progress.md`): full lock lifecycle with wrong-role 403, batch payment retry/upload, the full CoD approval chain with a real audit trail, plan CRUD composing correctly with Phase 1's QR-paywall gating (geometry visible for 5 free scans, then redacted), analytics numbers hand-checked against seed data (catching a real Postgres `AVG()`-returns-string bug, fixed with `::float8`), and the naming rename's redirects (old URLs 308 → new, Kinde callbacks unaffected).
-- **This report's own final integration pass** (2026-08-27, fresh seed — 1 surveyor, 1 SUPERADMIN, 1 ACCOUNTS user, 1 plan): confirmed `planService.ts`'s plan list, `analyticsService.ts`'s stats, `codFeeService.ts`'s Zod validation, `cod/batches`' ADMIN-scoped list, and a cross-role 403 (ACCOUNTS against a SUPERADMIN-only route) all work correctly *together*, post-registry-extension, post-naming-rename, post-folder-move — confirming the individually-verified pieces integrate cleanly, not just in isolation. All three renamed page routes (`surfboard/dashboard`, `surfboard-restricted/dashboard`, `surfboard-mda/dashboard/accounts`) resolve through `proxy.ts` correctly (307 redirect for unauthenticated, matching expected behavior).
+- **This report's own final integration pass** (2026-08-27, fresh seed — 1 surveyor, 1 SUPERADMIN, 1 ACCOUNTS user, 1 plan): confirmed `planService.ts`'s plan list, `analyticsService.ts`'s stats, `codFeeService.ts`'s Zod validation, `cod/batches`' ADMIN-scoped list, and a cross-role 403 (ACCOUNTS against a SUPERADMIN-only route) all work correctly _together_, post-registry-extension, post-naming-rename, post-folder-move — confirming the individually-verified pieces integrate cleanly, not just in isolation. All three renamed page routes (`surfboard/dashboard`, `surfboard-restricted/dashboard`, `surfboard-mda/dashboard/accounts`) resolve through `proxy.ts` correctly (307 redirect for unauthenticated, matching expected behavior).
 - **Not independently re-verified this pass**: real Kinde-authenticated page rendering per MDA role (requires an actual Kinde login, external to automate) — the registry logic `proxy.ts` and `DashboardShell` both depend on is covered by the 14 unit tests plus Step 8's earlier headless-browser render precedent for the admin panel; not repeated here since nothing about that rendering path changed in this phase beyond reading a bigger registry.
 
 ### Next up
 
 Phase 2 is complete. Two items outside this phase's own scope, carried forward:
+
 - **Your optional action**: update the `surf-restricted`/`surf-mda` platforms' redirect URIs in Kinde's dashboard if you want the OAuth callback routes renamed to match too — not required for anything to work.
 - **Your decision needed**: whether/when to port `surfboardUserPanelLayout.tsx`'s subscription-badge and notification-count logic into `DashboardShell` so all three Surfboard layouts share one component, or leave it as its own maintained layout.
 

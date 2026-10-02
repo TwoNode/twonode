@@ -19,21 +19,25 @@ import { Plus } from "lucide-react";
 
 const HUB = { x: 50, y: 44 };
 // Half-widths in viewBox % units (used to shorten line endpoints)
-const HUB_R = 7.5;   // half of 15%
-const NODE_R = 6;    // half of 12%
-const GBC_R  = 6;    // half of 12%
+const HUB_R = 7.5; // half of 15%
+const NODE_R = 6; // half of 12%
+const GBC_R = 6; // half of 12%
 
 const NODES = [
-  { x: 76, y: 22,   kind: "surfboard" as const, r: NODE_R },
-  { x: 84, y: 58.5, kind: "reva"      as const, r: NODE_R },
-  { x: 36.5, y: 80.5, kind: "gbc"    as const, r: GBC_R  },
-  { x: 16,  y: 39,  kind: "open"     as const, r: NODE_R },
+  { x: 76, y: 22, kind: "surfboard" as const, r: NODE_R },
+  { x: 84, y: 58.5, kind: "reva" as const, r: NODE_R },
+  { x: 36.5, y: 80.5, kind: "gbc" as const, r: GBC_R },
+  { x: 16, y: 39, kind: "open" as const, r: NODE_R },
 ];
 
 /** Shorten a line segment so endpoints sit on node badge edges, not centers. */
 function clippedLine(
-  x1: number, y1: number, r1: number,
-  x2: number, y2: number, r2: number,
+  x1: number,
+  y1: number,
+  r1: number,
+  x2: number,
+  y2: number,
+  r2: number
 ) {
   const dx = x2 - x1;
   const dy = y2 - y1;
@@ -50,7 +54,7 @@ function clippedLine(
 }
 
 // MDA variant ----------------------------------------------------------------
-const MDA_MDA      = { x: 41, y: 20, r: NODE_R };
+const MDA_MDA = { x: 41, y: 20, r: NODE_R };
 const MDA_SURFBOARD = { x: 59, y: 56, r: NODE_R };
 
 export function PlatformNetworkGraphic({
@@ -62,36 +66,75 @@ export function PlatformNetworkGraphic({
 }) {
   if (variant === "mda") {
     const line = clippedLine(
-      MDA_MDA.x, MDA_MDA.y, MDA_MDA.r,
-      MDA_SURFBOARD.x, MDA_SURFBOARD.y, MDA_SURFBOARD.r,
+      MDA_MDA.x,
+      MDA_MDA.y,
+      MDA_MDA.r,
+      MDA_SURFBOARD.x,
+      MDA_SURFBOARD.y,
+      MDA_SURFBOARD.r
     );
     return (
-      <div className={`relative w-full aspect-square max-w-full mx-auto ${className}`}>
-        <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
+      <div
+        className={`relative w-full aspect-square max-w-full mx-auto ${className}`}
+      >
+        <svg
+          viewBox="0 0 100 100"
+          className="absolute inset-0 h-full w-full"
+          aria-hidden="true"
+        >
           <defs>
-            <linearGradient id="mda-line-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.9" />
+            <linearGradient
+              id="mda-line-grad"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
               <stop offset="100%" stopColor="#ffffff" stopOpacity="0.5" />
             </linearGradient>
           </defs>
           <line
-            x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2}
-            stroke="url(#mda-line-grad)" strokeWidth="0.8" strokeLinecap="round"
+            x1={line.x1}
+            y1={line.y1}
+            x2={line.x2}
+            y2={line.y2}
+            stroke="url(#mda-line-grad)"
+            strokeWidth="0.8"
+            strokeLinecap="round"
           />
         </svg>
 
         <div
           className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-1 shadow-lg"
-          style={{ left: `${MDA_MDA.x}%`, top: `${MDA_MDA.y}%`, width: "12%", aspectRatio: "1" }}
+          style={{
+            left: `${MDA_MDA.x}%`,
+            top: `${MDA_MDA.y}%`,
+            width: "12%",
+            aspectRatio: "1",
+          }}
         >
-          <img src="/OSSG_Logo.png" alt="MDA" className="h-full w-full object-contain" />
+          <img
+            src="/OSSG_Logo.png"
+            alt="MDA"
+            className="h-full w-full object-contain"
+          />
         </div>
 
         <div
           className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-1 shadow-lg"
-          style={{ left: `${MDA_SURFBOARD.x}%`, top: `${MDA_SURFBOARD.y}%`, width: "12%", aspectRatio: "1" }}
+          style={{
+            left: `${MDA_SURFBOARD.x}%`,
+            top: `${MDA_SURFBOARD.y}%`,
+            width: "12%",
+            aspectRatio: "1",
+          }}
         >
-          <img src="/surfboard/surf_logo.svg" alt="Surfboard" className="h-full w-full object-contain" />
+          <img
+            src="/surfboard/surf_logo.svg"
+            alt="Surfboard"
+            className="h-full w-full object-contain"
+          />
         </div>
       </div>
     );
@@ -103,20 +146,38 @@ export function PlatformNetworkGraphic({
 
   // Outer ring: connect nodes clockwise so the ring follows the spatial layout
   // Surfboard(0) → REVA(1) → GBC(2) → Open(3) → Surfboard(0)
-  const ringPairs: [number, number][] = [[0, 1], [1, 2], [2, 3], [3, 0]];
+  const ringPairs: [number, number][] = [
+    [0, 1],
+    [1, 2],
+    [2, 3],
+    [3, 0],
+  ];
 
   return (
-    <div className={`relative w-full aspect-square max-w-full mx-auto ${className}`}>
-      <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
+    <div
+      className={`relative w-full aspect-square max-w-full mx-auto ${className}`}
+    >
+      <svg
+        viewBox="0 0 100 100"
+        className="absolute inset-0 h-full w-full"
+        aria-hidden="true"
+      >
         <defs>
           {/* Gradient for hub→node spokes */}
-          <linearGradient id="spoke-grad" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="userSpaceOnUse">
-            <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.9" />
+          <linearGradient
+            id="spoke-grad"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="0%"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
             <stop offset="100%" stopColor="#ffffff" stopOpacity="0.55" />
           </linearGradient>
           {/* Subtle ring gradient */}
           <linearGradient id="ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.35" />
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.35" />
             <stop offset="100%" stopColor="#ffffff" stopOpacity="0.15" />
           </linearGradient>
         </defs>
@@ -130,8 +191,13 @@ export function PlatformNetworkGraphic({
             return (
               <line
                 key={`ring-${a}-${b}`}
-                x1={seg.x1} y1={seg.y1} x2={seg.x2} y2={seg.y2}
-                stroke="#ffffff" strokeOpacity="0.25" strokeWidth="0.45"
+                x1={seg.x1}
+                y1={seg.y1}
+                x2={seg.x2}
+                y2={seg.y2}
+                stroke="#ffffff"
+                strokeOpacity="0.25"
+                strokeWidth="0.45"
                 strokeDasharray="1.5 1.8"
               />
             );
@@ -145,8 +211,13 @@ export function PlatformNetworkGraphic({
             return (
               <line
                 key={`spoke-${n.kind}`}
-                x1={seg.x1} y1={seg.y1} x2={seg.x2} y2={seg.y2}
-                stroke="#ffffff" strokeOpacity="0.75" strokeWidth="0.65"
+                x1={seg.x1}
+                y1={seg.y1}
+                x2={seg.x2}
+                y2={seg.y2}
+                stroke="#ffffff"
+                strokeOpacity="0.75"
+                strokeWidth="0.65"
               />
             );
           })}
@@ -159,8 +230,11 @@ export function PlatformNetworkGraphic({
           return (
             <circle
               key={`pulse-${n.kind}`}
-              cx={midX} cy={midY} r="0.8"
-              fill="#ffffff" fillOpacity="0.6"
+              cx={midX}
+              cy={midY}
+              r="0.8"
+              fill="#ffffff"
+              fillOpacity="0.6"
             />
           );
         })}
@@ -169,9 +243,18 @@ export function PlatformNetworkGraphic({
       {/* Hub — TwoNode */}
       <div
         className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-1 shadow-xl z-10"
-        style={{ left: `${HUB.x}%`, top: `${HUB.y}%`, width: "15%", aspectRatio: "1" }}
+        style={{
+          left: `${HUB.x}%`,
+          top: `${HUB.y}%`,
+          width: "15%",
+          aspectRatio: "1",
+        }}
       >
-        <img src="/logo.png" alt="TwoNode Technologies" className="h-full w-full object-contain" />
+        <img
+          src="/logo.png"
+          alt="TwoNode Technologies"
+          className="h-full w-full object-contain"
+        />
       </div>
 
       {/* Satellite nodes */}
@@ -180,7 +263,12 @@ export function PlatformNetworkGraphic({
           <div
             key={n.kind}
             className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-dashed border-white/40 z-10"
-            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "12%", aspectRatio: "1" }}
+            style={{
+              left: `${n.x}%`,
+              top: `${n.y}%`,
+              width: "12%",
+              aspectRatio: "1",
+            }}
             title="More platforms coming soon"
           >
             <Plus className="h-1/3 w-1/3 text-white/40" />
@@ -189,21 +277,43 @@ export function PlatformNetworkGraphic({
           <div
             key={n.kind}
             className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-1 shadow-lg z-10"
-            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "12%", aspectRatio: "1" }}
+            style={{
+              left: `${n.x}%`,
+              top: `${n.y}%`,
+              width: "12%",
+              aspectRatio: "1",
+            }}
           >
-            <img src="/gbc2/gbc2DarkLogo.png" alt="GBC" className="h-full w-full object-contain" />
+            <img
+              src="/gbc2/gbc2DarkLogo.png"
+              alt="GBC"
+              className="h-full w-full object-contain"
+            />
           </div>
         ) : (
           <div
             key={n.kind}
             className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-1 shadow-lg z-10"
-            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "12%", aspectRatio: "1" }}
+            style={{
+              left: `${n.x}%`,
+              top: `${n.y}%`,
+              width: "12%",
+              aspectRatio: "1",
+            }}
           >
             {n.kind === "surfboard" && (
-              <img src="/surfboard/surf_logo.svg" alt="Surfboard" className="h-full w-full object-contain" />
+              <img
+                src="/surfboard/surf_logo.svg"
+                alt="Surfboard"
+                className="h-full w-full object-contain"
+              />
             )}
             {n.kind === "reva" && (
-              <img src="/reva/revaLogo.png" alt="REVA" className="h-full w-full object-contain" />
+              <img
+                src="/reva/revaLogo.png"
+                alt="REVA"
+                className="h-full w-full object-contain"
+              />
             )}
           </div>
         )

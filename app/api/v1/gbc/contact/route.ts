@@ -13,6 +13,9 @@ export async function POST(req: NextRequest) {
       data: { inquiry, message: "Thank you! We'll get back to you soon." },
     });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

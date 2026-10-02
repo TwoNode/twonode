@@ -27,7 +27,9 @@ export function useNativeAuthRefresh(platform: Platform) {
 
     const performSilentRefresh = async () => {
       try {
-        await fetch(`/api/v1/auth/refresh?platform=${platform}`, { method: "POST" });
+        await fetch(`/api/v1/auth/refresh?platform=${platform}`, {
+          method: "POST",
+        });
       } catch {
         // Network hiccup — let the next interval retry.
       }

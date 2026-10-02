@@ -50,18 +50,27 @@ export function useRevaUserAccess() {
       try {
         console.log("🔍 Checking admin access & fetching user data...");
         const result = await revaApi.session.get();
-        if (!result.success) throw new Error(result.error || "Failed to fetch user data");
+        if (!result.success)
+          throw new Error(result.error || "Failed to fetch user data");
 
         const fullUserData = result.data;
         if (!isMounted) return;
-        
+
         // Multi-platform awareness: Get specifically the Reva portal session
         // Fallback to legacy fields if necessary
-        const revaSession = fullUserData.platforms?.[Platform.REVA] || 
-                          (fullUserData.platform === Platform.REVA ? { role: fullUserData.role, subscription: fullUserData.subscription } : null);
+        const revaSession =
+          fullUserData.platforms?.[Platform.REVA] ||
+          (fullUserData.platform === Platform.REVA
+            ? {
+                role: fullUserData.role,
+                subscription: fullUserData.subscription,
+              }
+            : null);
 
         if (!revaSession || !revaSession.role) {
-          console.log("🛡️ Reva Portal access check failed: No active Reva session found in current login.");
+          console.log(
+            "🛡️ Reva Portal access check failed: No active Reva session found in current login."
+          );
           if (isMounted) {
             setIsUser(false);
             router.push("/reva/login");
@@ -71,9 +80,9 @@ export function useRevaUserAccess() {
 
         // Set the active session role/data for this platform
         setUserData({
-            ...fullUserData,
-            platform: Platform.REVA,
-            role: revaSession.role
+          ...fullUserData,
+          platform: Platform.REVA,
+          role: revaSession.role,
         });
 
         // reva/access/routes.ts is the single source of truth for who can

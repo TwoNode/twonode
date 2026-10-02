@@ -15,20 +15,33 @@ import { Platform, SurfboardRole } from "@/utils/platform";
 export const POST = withAuth<SurfboardRole>(
   async (req) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const formData = await req.formData();
     const file = formData.get("file") as File;
-    const fileType = formData.get("fileType") as "pdf" | "cad" | "certificate" | "redcopy";
+    const fileType = formData.get("fileType") as
+      "pdf" | "cad" | "certificate" | "redcopy";
     const userId = formData.get("userId") as string;
     const planNumber = (formData.get("planNumber") as string) || undefined;
     const filename = (formData.get("filename") as string) || undefined;
 
     if (!file || !fileType || !userId) {
-      return NextResponse.json({ success: false, error: "file, fileType, and userId are required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "file, fileType, and userId are required" },
+        { status: 400 }
+      );
     }
 
-    const data = await uploadSurfboardFileToS3(file, fileType, userId, planNumber, filename);
+    const data = await uploadSurfboardFileToS3(
+      file,
+      fileType,
+      userId,
+      planNumber,
+      filename
+    );
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD }

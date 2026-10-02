@@ -7,7 +7,8 @@ import { ValidationError } from "@/lib/api/errors";
  * (admin — this is the server-side half of the QR scanner, not public).
  */
 
-const QR_SECRET = process.env.QR_CODE_SECRET || "@default@-_33##_s3cr3t-ch@nge-th!s";
+const QR_SECRET =
+  process.env.QR_CODE_SECRET || "@default@-_33##_s3cr3t-ch@nge-th!s";
 
 interface QRTicketData {
   ticketNumber: string;
@@ -44,7 +45,10 @@ export function verifyQRCodeHash(
   const expectedHash = hmac.digest("hex");
 
   if (expectedHash !== data.hash) {
-    return { valid: false, error: "QR code verification failed - possible forgery" };
+    return {
+      valid: false,
+      error: "QR code verification failed - possible forgery",
+    };
   }
 
   if (maxAgeHours !== undefined && data.timestamp) {

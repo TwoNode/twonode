@@ -8,17 +8,17 @@
 
 ## Per-topic
 
-| Folder | Covers |
-| :--- | :--- |
-| [`auth/`](./auth/) | Login, sessions, and roles across all three products — the native email+password system and the still-live parallel Kinde OAuth path. |
-| [`payment/`](./payment/) | Paystack subscriptions, Certificate of Deposit payments, Remita verification. |
-| [`surfboard/`](./surfboard/) | Survey plan lodging + the MDA government approval workflow: user flow, technical flow, QR Earnings. |
-| [`reva/`](./reva/) | Property due-diligence requests: user flow, user stories, notifications. |
-| [`gbc/`](./gbc/) | Event ticketing — auth notes; see `development-history/phases/phase-4-gbc.md` for the fuller picture. |
-| [`mobile/`](./mobile/) | Feasibility findings for taking a product mobile — starting with the Surfboard Mobile App brief. |
-| [`pages/`](./pages/index.md) | Every page route, one file per platform (`gbc.md`/`reva.md`/`surfboard.md`) plus `main-site.md` for the shared corporate site. |
-| [`components/`](./components/index.md) | Every component, one file per platform plus `shared.md`. |
-| [`functions/`](./functions/index.md) | Every service/util/hook/lib file, one file per platform plus `shared.md`. |
+| Folder                                 | Covers                                                                                                                                |
+| :------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| [`auth/`](./auth/)                     | Login, sessions, and roles across all three products — the native email+password system and the still-live parallel Kinde OAuth path. |
+| [`payment/`](./payment/)               | Paystack subscriptions, Certificate of Deposit payments, Remita verification.                                                         |
+| [`surfboard/`](./surfboard/)           | Survey plan lodging + the MDA government approval workflow: user flow, technical flow, QR Earnings.                                   |
+| [`reva/`](./reva/)                     | Property due-diligence requests: user flow, user stories, notifications.                                                              |
+| [`gbc/`](./gbc/)                       | Event ticketing — auth notes; see `development-history/phases/phase-4-gbc.md` for the fuller picture.                                 |
+| [`mobile/`](./mobile/)                 | Feasibility findings for taking a product mobile — starting with the Surfboard Mobile App brief.                                      |
+| [`pages/`](./pages/index.md)           | Every page route, one file per platform (`gbc.md`/`reva.md`/`surfboard.md`) plus `main-site.md` for the shared corporate site.        |
+| [`components/`](./components/index.md) | Every component, one file per platform plus `shared.md`.                                                                              |
+| [`functions/`](./functions/index.md)   | Every service/util/hook/lib file, one file per platform plus `shared.md`.                                                             |
 
 ## Reading a document that predates the rebuild
 

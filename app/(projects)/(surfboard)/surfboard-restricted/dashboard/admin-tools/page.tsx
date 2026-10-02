@@ -163,7 +163,7 @@ export default function AdminToolsPage() {
                         <button
                           onClick={() =>
                             router.push(
-                              `/surfboard-restricted/dashboard/user-management?role=${role.name}`,
+                              `/surfboard-restricted/dashboard/user-management?role=${role.name}`
                             )
                           }
                           className="w-full px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
@@ -191,7 +191,7 @@ export default function AdminToolsPage() {
                       <button
                         onClick={() =>
                           router.push(
-                            "/surfboard-restricted/dashboard/audit-logs",
+                            "/surfboard-restricted/dashboard/audit-logs"
                           )
                         }
                         className="px-3 py-1.5 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"

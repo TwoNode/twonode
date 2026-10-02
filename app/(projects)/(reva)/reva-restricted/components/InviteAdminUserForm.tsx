@@ -86,7 +86,8 @@ export default function InviteAdminUserForm() {
           Invite Admin User
         </CardTitle>
         <CardDescription>
-          Email a new admin or superadmin a link to set their password. Their account is created when they accept.
+          Email a new admin or superadmin a link to set their password. Their
+          account is created when they accept.
         </CardDescription>
       </CardHeader>
       <CardContent>

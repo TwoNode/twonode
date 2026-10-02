@@ -90,11 +90,13 @@ export default function HomePage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [statsResult, settingsResult, editionsResult] = await Promise.all([
-          gbcApi.tickets.availability(),
-          gbcApi.settings.get(),
-          gbcApi.editions.list(),
-        ]);
+        const [statsResult, settingsResult, editionsResult] = await Promise.all(
+          [
+            gbcApi.tickets.availability(),
+            gbcApi.settings.get(),
+            gbcApi.editions.list(),
+          ]
+        );
 
         if (statsResult.success) {
           setStats(statsResult.data);
@@ -106,7 +108,9 @@ export default function HomePage() {
           setPastEditions(
             editionsResult.data
               .filter((e) => e.status === "PAST")
-              .sort((a, b) => b.key.localeCompare(a.key, undefined, { numeric: true }))
+              .sort((a, b) =>
+                b.key.localeCompare(a.key, undefined, { numeric: true })
+              )
           );
         }
       } catch (error) {
@@ -238,7 +242,10 @@ export default function HomePage() {
                 </>
               ) : (
                 <>
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2" style={{ color: GBC_COLORS.primary.main }}>
+                  <div
+                    className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2"
+                    style={{ color: GBC_COLORS.primary.main }}
+                  >
                     {stats?.completedTickets ?? 0}
                   </div>
                   <div className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
@@ -255,7 +262,10 @@ export default function HomePage() {
                 </>
               ) : (
                 <>
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2" style={{ color: GBC_COLORS.primary.main }}>
+                  <div
+                    className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2"
+                    style={{ color: GBC_COLORS.primary.main }}
+                  >
                     {stats?.maxTickets ?? 0}
                   </div>
                   <div className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
@@ -272,7 +282,10 @@ export default function HomePage() {
                 </>
               ) : (
                 <>
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2" style={{ color: GBC_COLORS.primary.main }}>
+                  <div
+                    className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2"
+                    style={{ color: GBC_COLORS.primary.main }}
+                  >
                     50+
                   </div>
                   <div className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
@@ -289,7 +302,10 @@ export default function HomePage() {
                 </>
               ) : (
                 <>
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2" style={{ color: GBC_COLORS.primary.main }}>
+                  <div
+                    className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2"
+                    style={{ color: GBC_COLORS.primary.main }}
+                  >
                     100+
                   </div>
                   <div className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
@@ -320,10 +336,15 @@ export default function HomePage() {
 
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
             <div className="text-center p-8 rounded-lg hover:shadow-xl transition-shadow bg-linear-to-br from-purple-50 to-white dark:from-surface dark:to-surface">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: GBC_COLORS.primary.main }}>
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                style={{ background: GBC_COLORS.primary.main }}
+              >
                 <Users className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">Connect</h3>
+              <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">
+                Connect
+              </h3>
               <p className="text-gray-600 dark:text-gray-400">
                 Network with innovators, decision makers, and investors from
                 across industries
@@ -331,10 +352,15 @@ export default function HomePage() {
             </div>
 
             <div className="text-center p-8 rounded-lg hover:shadow-xl transition-shadow bg-linear-to-br from-pink-50 to-white dark:from-surface dark:to-surface">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: GBC_COLORS.secondary.main }}>
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                style={{ background: GBC_COLORS.secondary.main }}
+              >
                 <TrendingUp className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">Showcase</h3>
+              <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">
+                Showcase
+              </h3>
               <p className="text-gray-600 dark:text-gray-400">
                 Discover groundbreaking projects and practical applications of
                 geospatial tech
@@ -342,10 +368,15 @@ export default function HomePage() {
             </div>
 
             <div className="text-center p-8 rounded-lg hover:shadow-xl transition-shadow bg-linear-to-br from-white to-purple-50 dark:from-surface dark:to-surface">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: GBC_COLORS.primary.main }}>
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                style={{ background: GBC_COLORS.primary.main }}
+              >
                 <Zap className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">Transform</h3>
+              <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">
+                Transform
+              </h3>
               <p className="text-gray-600 dark:text-gray-400">
                 Drive transformation in land administration, energy, and
                 sustainable growth
@@ -368,7 +399,8 @@ export default function HomePage() {
                   Past Editions
                 </div>
                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-                  {pastEditions.length} edition{pastEditions.length > 1 ? "s" : ""} run so far
+                  {pastEditions.length} edition
+                  {pastEditions.length > 1 ? "s" : ""} run so far
                 </h2>
               </div>
               <Link
@@ -404,8 +436,12 @@ export default function HomePage() {
                     </span>
                   </div>
                   <div className="p-5">
-                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">GBC {edition.key}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{edition.theme}</p>
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                      GBC {edition.key}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                      {edition.theme}
+                    </p>
                     <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mt-3">
                       <MapPin className="h-3.5 w-3.5" />
                       {edition.venue}
@@ -452,7 +488,10 @@ export default function HomePage() {
                 key={index}
                 className="p-4 sm:p-6 bg-white/10 rounded-lg backdrop-blur-sm hover:bg-white/20 transition-all cursor-pointer"
               >
-                <Building2 className="h-6 w-6 sm:h-8 sm:w-8 mb-2 sm:mb-3" style={{ color: GBC_COLORS.primary.light }} />
+                <Building2
+                  className="h-6 w-6 sm:h-8 sm:w-8 mb-2 sm:mb-3"
+                  style={{ color: GBC_COLORS.primary.light }}
+                />
                 <h3 className="font-semibold text-sm sm:text-base">
                   {industry}
                 </h3>
@@ -519,7 +558,10 @@ export default function HomePage() {
       <HomeGallery gallery={settings?.gallery} />
 
       {/* CTA Section */}
-      <section className="py-16 sm:py-20 md:py-24 text-white" style={{ background: GBC_GRADIENTS.primary }}>
+      <section
+        className="py-16 sm:py-20 md:py-24 text-white"
+        style={{ background: GBC_GRADIENTS.primary }}
+      >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
             Ready to Join GBC 2.0?
@@ -553,20 +595,23 @@ export default function HomePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12 text-left">
                 {/* Early Bird Card */}
                 <div
-                  className={`bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col relative ${stats.soldEarlyBirdTickets >=
-                      (settings?.tickets.maxEarlyBirdCapacity ?? 500)
+                  className={`bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col relative ${
+                    stats.soldEarlyBirdTickets >=
+                    (settings?.tickets.maxEarlyBirdCapacity ?? 500)
                       ? "opacity-60"
                       : ""
-                    }`}
+                  }`}
                 >
                   {stats.soldEarlyBirdTickets >=
                     (settings?.tickets.maxEarlyBirdCapacity ?? 500) && (
-                      <div className="absolute top-0 right-0 bg-red-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
-                        SOLD OUT
-                      </div>
-                    )}
+                    <div className="absolute top-0 right-0 bg-red-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
+                      SOLD OUT
+                    </div>
+                  )}
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white">Single Ticket (One Attendee)</h3>
+                    <h3 className="text-xl font-bold text-white">
+                      Single Ticket (One Attendee)
+                    </h3>
                     <div className="text-3xl font-bold text-yellow-300 mt-2">
                       ₦{(earlyBirdPrice / 1000).toFixed(0)}K
                     </div>
@@ -587,7 +632,7 @@ export default function HomePage() {
                     ))}
                   </ul>
                   {stats.soldEarlyBirdTickets <
-                    (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
+                  (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
                     <Link
                       href="/gbc/tickets?tier=early_bird"
                       className="w-full"
@@ -607,14 +652,14 @@ export default function HomePage() {
                 </div>
 
                 {/* Regular Card */}
-                <div
-                  className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden flex flex-col"
-                >
+                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden flex flex-col">
                   <div className="absolute top-0 right-0 bg-green-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
                     ALWAYS AVAILABLE
                   </div>
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white">Pair Ticket (Two attendees)</h3>
+                    <h3 className="text-xl font-bold text-white">
+                      Pair Ticket (Two attendees)
+                    </h3>
                     <div className="text-3xl font-bold text-white mt-2">
                       ₦{(regularPrice / 1000).toFixed(0)}K
                     </div>
@@ -634,7 +679,10 @@ export default function HomePage() {
                     ))}
                   </ul>
                   <Link href="/gbc/tickets?tier=regular" className="w-full">
-                    <Button className="w-full bg-white hover:bg-gray-100 font-bold" style={{ color: GBC_COLORS.primary.main }}>
+                    <Button
+                      className="w-full bg-white hover:bg-gray-100 font-bold"
+                      style={{ color: GBC_COLORS.primary.main }}
+                    >
                       Select Ticket for 2
                     </Button>
                   </Link>
@@ -646,7 +694,9 @@ export default function HomePage() {
                     ALWAYS AVAILABLE
                   </div>
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white">Group Ticket (Five Attendees)</h3>
+                    <h3 className="text-xl font-bold text-white">
+                      Group Ticket (Five Attendees)
+                    </h3>
                     <div className="text-3xl font-bold text-amber-300 mt-2">
                       ₦{(companyPrice / 1000).toFixed(0)}K
                     </div>
@@ -676,11 +726,15 @@ export default function HomePage() {
                     ALWAYS AVAILABLE
                   </div>
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white">Student Ticket</h3>
+                    <h3 className="text-xl font-bold text-white">
+                      Student Ticket
+                    </h3>
                     <div className="text-3xl font-bold text-green-300 mt-2">
                       ₦{(studentPrice / 1000).toFixed(0)}K
                     </div>
-                    <p className="text-sm text-gray-300 mt-1">Valid ID required</p>
+                    <p className="text-sm text-gray-300 mt-1">
+                      Valid ID required
+                    </p>
                   </div>
                   <ul className="space-y-2 mb-6 grow">
                     {studentInfoList.map((item: string, i: number) => (
@@ -769,7 +823,9 @@ export default function HomePage() {
               <h4 className="font-bold mb-4">Contact</h4>
               <ul className="space-y-2 text-gray-400">
                 <li>{settings?.contact?.phone || "+234-916-0002-740"}</li>
-                <li>{settings?.contact?.email || "info@twonodetechnologies.com"}</li>
+                <li>
+                  {settings?.contact?.email || "info@twonodetechnologies.com"}
+                </li>
                 <li>
                   <Link href="/gbc/contact" className="hover:text-white">
                     Contact Form

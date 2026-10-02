@@ -9,7 +9,10 @@ type RouteCtx = { params: Promise<{ id: string }> };
 export const POST = withAuth<SurfboardRole>(
   async (req, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { id } = await routeCtx.params;
     const data = await dismissNotification(ctx.session.sub, id);

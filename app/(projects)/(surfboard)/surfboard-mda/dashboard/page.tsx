@@ -93,7 +93,8 @@ const roleConfigs: Record<MDARole, RoleConfig> = {
   },
   INTAKE: {
     title: "Intake Admin",
-    description: "Review and approve physical document bundles (batches) sequentially",
+    description:
+      "Review and approve physical document bundles (batches) sequentially",
     icon: FileCheck,
     href: "/surfboard-mda/dashboard/intake",
     color: "from-orange-500 to-amber-500",
@@ -114,8 +115,7 @@ const roleConfigs: Record<MDARole, RoleConfig> = {
   },
   ARCHIVE: {
     title: "Archive Admin",
-    description:
-      "Acknowledge and archive physically submitted plans",
+    description: "Acknowledge and archive physically submitted plans",
     icon: Archive,
     href: "/surfboard-mda/dashboard/archive",
     color: "from-slate-500 to-gray-500",
@@ -266,7 +266,9 @@ export default function MDADashboardHome() {
       <div className="min-h-full flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading dashboard...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Loading dashboard...
+          </p>
         </div>
       </div>
     );
@@ -282,9 +284,9 @@ export default function MDADashboardHome() {
   const quickActions = isSuperAdmin
     ? allQuickActions
     : [
-      allQuickActions.find((a) => a.role === currentRole)!,
-      ...allQuickActions.filter((a) => a.role !== currentRole),
-    ];
+        allQuickActions.find((a) => a.role === currentRole)!,
+        ...allQuickActions.filter((a) => a.role !== currentRole),
+      ];
 
   // Build stats based on role
   const getStats = () => {
@@ -440,10 +442,11 @@ export default function MDADashboardHome() {
 
       {/* Stats Grid */}
       <div
-        className={`grid gap-6 mb-8 ${isSuperAdmin
-          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
-          : "grid-cols-1"
-          }`}
+        className={`grid gap-6 mb-8 ${
+          isSuperAdmin
+            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
+            : "grid-cols-1"
+        }`}
       >
         {stats.map((stat, index) => {
           const Icon = stat.icon;
@@ -457,10 +460,11 @@ export default function MDADashboardHome() {
             >
               <Link href={stat.href}>
                 <div
-                  className={`relative overflow-hidden rounded-2xl bg-white dark:bg-white/3 p-6 shadow-md dark:shadow-none hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-white/10 cursor-pointer ${(stat as any).isPrimary
-                    ? "ring-2 ring-offset-2 dark:ring-offset-[#0B1A26] ring-purple-500"
-                    : ""
-                    }`}
+                  className={`relative overflow-hidden rounded-2xl bg-white dark:bg-white/3 p-6 shadow-md dark:shadow-none hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-white/10 cursor-pointer ${
+                    (stat as any).isPrimary
+                      ? "ring-2 ring-offset-2 dark:ring-offset-[#0B1A26] ring-purple-500"
+                      : ""
+                  }`}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className={`p-3 rounded-xl ${stat.bgColor}`}>
@@ -470,8 +474,9 @@ export default function MDADashboardHome() {
                   </div>
                   <div>
                     <div
-                      className={`font-bold text-gray-900 dark:text-white mb-1 ${(stat as any).isPrimary ? "text-5xl" : "text-3xl"
-                        }`}
+                      className={`font-bold text-gray-900 dark:text-white mb-1 ${
+                        (stat as any).isPrimary ? "text-5xl" : "text-3xl"
+                      }`}
                     >
                       {stat.value.toLocaleString()}
                     </div>
@@ -504,11 +509,11 @@ export default function MDADashboardHome() {
               const Icon = action.icon;
               const pendingCount =
                 pendingCounts[
-                action.role === "RECORDS_I"
-                  ? "recordsI"
-                  : action.role === "RECORDS_II"
-                    ? "recordsII"
-                    : (action.role.toLowerCase() as keyof typeof pendingCounts)
+                  action.role === "RECORDS_I"
+                    ? "recordsI"
+                    : action.role === "RECORDS_II"
+                      ? "recordsII"
+                      : (action.role.toLowerCase() as keyof typeof pendingCounts)
                 ];
 
               return (

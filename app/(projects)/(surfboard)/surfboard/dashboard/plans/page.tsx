@@ -79,7 +79,10 @@ export default function PlansPage() {
         </TabsContent>
 
         <TabsContent value="queried" className="mt-0">
-          <QueriedPlans initialPlans={queriedPlans} onPlansChange={fetchQueriedData} />
+          <QueriedPlans
+            initialPlans={queriedPlans}
+            onPlansChange={fetchQueriedData}
+          />
         </TabsContent>
       </Tabs>
     </div>

@@ -17,7 +17,10 @@ interface Props {
   pdfData: any; // We use 'any' here or import the type specifically if needed, to avoid evaluating the module on server
 }
 
-export default function DownloadSubmissionLetterBtn({ batchCode, pdfData }: Props) {
+export default function DownloadSubmissionLetterBtn({
+  batchCode,
+  pdfData,
+}: Props) {
   return (
     <PDFDownloadLink
       document={<RedCopySubmissionPDF data={pdfData} />}

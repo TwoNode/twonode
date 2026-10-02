@@ -37,10 +37,10 @@ Everything about how the app is built and why lives in [`docs/`](docs/README.md)
 
 Branch names don't map to environments the way you'd expect:
 
-| Branch | Environment |
-| :--- | :--- |
-| `dev` | Integration — feature PRs land here first |
+| Branch | Environment                                           |
+| :----- | :---------------------------------------------------- |
+| `dev`  | Integration — feature PRs land here first             |
 | `main` | **Staging** — still being tested, not customer-facing |
-| `prod` | **Live production** — currently serving real traffic |
+| `prod` | **Live production** — currently serving real traffic  |
 
 See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the full picture, including what to check before merging into `prod`. Hosting is on [Vercel](https://vercel.com/new).

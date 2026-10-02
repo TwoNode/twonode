@@ -33,16 +33,22 @@ export default async function AdminGalleryPage({
     { defaultPageSize: 20 }
   );
   const search = firstParam(raw.search)?.trim() || undefined;
-  const edition = firstParam(raw.edition) || (await getEditionCookieValue()) || "all";
-  const type = GALLERY_TYPE_FILTERS.find((t) => t === firstParam(raw.type)) ?? ("all" as GalleryTypeFilter);
-  const sort = GALLERY_SORTS.find((s) => s === firstParam(raw.sort)) ?? ("order" as GallerySort);
+  const edition =
+    firstParam(raw.edition) || (await getEditionCookieValue()) || "all";
+  const type =
+    GALLERY_TYPE_FILTERS.find((t) => t === firstParam(raw.type)) ??
+    ("all" as GalleryTypeFilter);
+  const sort =
+    GALLERY_SORTS.find((s) => s === firstParam(raw.sort)) ??
+    ("order" as GallerySort);
 
   const [result, editions] = await Promise.all([
     getGalleryItemsPaginated({
       page,
       pageSize,
       search,
-      mediaType: type === "photos" ? "IMAGE" : type === "videos" ? "VIDEO" : undefined,
+      mediaType:
+        type === "photos" ? "IMAGE" : type === "videos" ? "VIDEO" : undefined,
       edition: edition === "all" ? undefined : edition,
       sort,
     }),
@@ -69,14 +75,20 @@ export default async function AdminGalleryPage({
           <div>
             <h2 className="text-xl font-bold">Media Library</h2>
             <p className="text-sm text-gray-500">
-              {result.pagination.total} {result.pagination.total === 1 ? "item" : "items"}{" "}
+              {result.pagination.total}{" "}
+              {result.pagination.total === 1 ? "item" : "items"}{" "}
               {isFiltered
                 ? `${result.pagination.total === 1 ? "matches" : "match"} your filters`
                 : "in gallery"}
             </p>
           </div>
 
-          <GalleryFilters editions={editions} edition={edition} type={type} sort={sort} />
+          <GalleryFilters
+            editions={editions}
+            edition={edition}
+            type={type}
+            sort={sort}
+          />
         </div>
 
         {items.length > 0 ? (
@@ -85,7 +97,8 @@ export default async function AdminGalleryPage({
             {result.pagination.totalPages > 1 && (
               <div className="mt-8 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
                 <p className="text-sm text-gray-600">
-                  Page {result.pagination.page} of {result.pagination.totalPages}
+                  Page {result.pagination.page} of{" "}
+                  {result.pagination.totalPages}
                 </p>
                 <SearchParamsPagination
                   page={result.pagination.page}

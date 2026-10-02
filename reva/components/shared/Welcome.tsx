@@ -36,22 +36,44 @@ interface WelcomeProps {
 
 const DEFAULTS = {
   admin: {
-    description: "Review incoming requests, verify payments and keep reports moving.",
+    description:
+      "Review incoming requests, verify payments and keep reports moving.",
     actions: [
-      { label: "Review requests", href: "/reva-restricted/dashboard/review", icon: ClipboardCheck },
-      { label: "Verify payments", href: "/reva-restricted/dashboard/payment-verification", icon: CreditCard },
+      {
+        label: "Review requests",
+        href: "/reva-restricted/dashboard/review",
+        icon: ClipboardCheck,
+      },
+      {
+        label: "Verify payments",
+        href: "/reva-restricted/dashboard/payment-verification",
+        icon: CreditCard,
+      },
     ] satisfies WelcomeAction[],
   },
   user: {
     description: "Request a property report, or pick up where you left off.",
     actions: [
-      { label: "New request", href: "/reva/dashboard/newrequest", icon: FilePlus },
-      { label: "All requests", href: "/reva/dashboard/allrequests", icon: ListChecks },
+      {
+        label: "New request",
+        href: "/reva/dashboard/newrequest",
+        icon: FilePlus,
+      },
+      {
+        label: "All requests",
+        href: "/reva/dashboard/allrequests",
+        icon: ListChecks,
+      },
     ] satisfies WelcomeAction[],
   },
 };
 
-type Person = { firstName: string; lastName: string; picture: string | null; role: string | null };
+type Person = {
+  firstName: string;
+  lastName: string;
+  picture: string | null;
+  role: string | null;
+};
 
 const focusRing =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#0b1620]";
@@ -77,13 +99,19 @@ export function Welcome({
 }: WelcomeProps) {
   const [person, setPerson] = useState<Person | null>(null);
   const [ready, setReady] = useState(false);
-  const [clock, setClock] = useState<{ greeting: string; date: string } | null>(null);
+  const [clock, setClock] = useState<{ greeting: string; date: string } | null>(
+    null
+  );
 
   useEffect(() => {
     const now = new Date();
     setClock({
       greeting: timeGreeting(now.getHours()),
-      date: now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }),
+      date: now.toLocaleDateString(undefined, {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      }),
     });
   }, []);
 
@@ -115,21 +143,32 @@ export function Welcome({
   const description = customDescription ?? defaults.description;
   const tips = customInstructions ?? [];
   const initials = getInitials(person?.firstName, person?.lastName);
-  const role = roleLabel(person?.role) ?? (dashboardType === "admin" ? "Admin" : null);
+  const role =
+    roleLabel(person?.role) ?? (dashboardType === "admin" ? "Admin" : null);
 
   const heading =
     customGreeting ??
-    (clock ? (person?.firstName ? `${clock.greeting}, ${person.firstName}` : clock.greeting) : "");
-  const headingReady = ready && (customGreeting !== undefined || clock !== null);
+    (clock
+      ? person?.firstName
+        ? `${clock.greeting}, ${person.firstName}`
+        : clock.greeting
+      : "");
+  const headingReady =
+    ready && (customGreeting !== undefined || clock !== null);
 
   return (
-    <section aria-labelledby="welcome-heading" className="w-full max-w-[95%] mx-auto px-4 sm:px-6">
+    <section
+      aria-labelledby="welcome-heading"
+      className="w-full max-w-[95%] mx-auto px-4 sm:px-6"
+    >
       <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/3 dark:shadow-none">
         {/* Soft brand glow — decorative, sits behind the content. */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -right-20 -top-28 h-72 w-72 rounded-full blur-3xl"
-          style={{ background: `radial-gradient(closest-side, ${REVA_COLORS.primary.light}33, transparent)` }}
+          style={{
+            background: `radial-gradient(closest-side, ${REVA_COLORS.primary.light}33, transparent)`,
+          }}
         />
 
         <div className="relative flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
@@ -137,12 +176,19 @@ export function Welcome({
             <div
               data-testid="welcome-avatar"
               className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full text-base font-semibold shadow-sm ring-2 ring-white dark:ring-white/10 sm:h-16 sm:w-16 sm:text-xl"
-              style={{ background: REVA_GRADIENTS.header, color: REVA_COLORS.text.light }}
+              style={{
+                background: REVA_GRADIENTS.header,
+                color: REVA_COLORS.text.light,
+              }}
               aria-hidden="true"
             >
               {person?.picture ? (
                 // eslint-disable-next-line @next/next/no-img-element -- avatar URLs come from arbitrary hosts
-                <img src={person.picture} alt="" className="h-full w-full object-cover" />
+                <img
+                  src={person.picture}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
               ) : initials ? (
                 initials
               ) : (
@@ -180,7 +226,9 @@ export function Welcome({
                 </>
               )}
 
-              <p className="mt-1.5 max-w-xl text-sm text-gray-600 dark:text-gray-400 sm:text-base">{description}</p>
+              <p className="mt-1.5 max-w-xl text-sm text-gray-600 dark:text-gray-400 sm:text-base">
+                {description}
+              </p>
             </div>
           </div>
 
@@ -197,12 +245,17 @@ export function Welcome({
                       ? `group inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold text-white shadow-md transition hover:shadow-lg ${focusRing}`
                       : `group inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 dark:border-white/15 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10 ${focusRing}`
                   }
-                  style={primary ? { background: REVA_GRADIENTS.primary } : undefined}
+                  style={
+                    primary ? { background: REVA_GRADIENTS.primary } : undefined
+                  }
                 >
                   <Icon className="h-4 w-4" aria-hidden />
                   {action.label}
                   {primary && (
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                    <ArrowRight
+                      className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                      aria-hidden
+                    />
                   )}
                 </Link>
               );
@@ -215,7 +268,10 @@ export function Welcome({
             <ul className="flex flex-col gap-1">
               {tips.map((tip) => (
                 <li key={tip} className="flex items-start gap-2">
-                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" aria-hidden />
+                  <Info
+                    className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400"
+                    aria-hidden
+                  />
                   <span>{tip}</span>
                 </li>
               ))}

@@ -12,7 +12,11 @@ import {
   createNotification,
 } from "@/reva/services/notificationService";
 import { Platform, RevaRole } from "@/utils/platform";
-import type { Role, NotificationAudience, NotificationType } from "@/prisma/generated";
+import type {
+  Role,
+  NotificationAudience,
+  NotificationType,
+} from "@/prisma/generated";
 
 /**
  * One route, role from the session picks which query runs — not a
@@ -28,15 +32,24 @@ export const GET = withAuth<RevaRole>(
   async (req, ctx) => {
     const params = req.nextUrl.searchParams;
 
-    if (params.has("page") && (ctx.session.role === RevaRole.ADMIN || ctx.session.role === RevaRole.SUPERADMIN)) {
+    if (
+      params.has("page") &&
+      (ctx.session.role === RevaRole.ADMIN ||
+        ctx.session.role === RevaRole.SUPERADMIN)
+    ) {
       const pagination = parsePagination(params);
-      const data = await getAdminNotificationsPaginated(ctx.session.role as unknown as "ADMIN" | "SUPERADMIN", ctx.session.sub, {
-        ...pagination,
-        search: params.get("search") || undefined,
-        type: (params.get("type") as NotificationType) || undefined,
-        status: (params.get("status") as "UNREAD" | "READ" | "ALL") || undefined,
-        includeDismissed: params.get("includeDismissed") === "true",
-      });
+      const data = await getAdminNotificationsPaginated(
+        ctx.session.role as unknown as "ADMIN" | "SUPERADMIN",
+        ctx.session.sub,
+        {
+          ...pagination,
+          search: params.get("search") || undefined,
+          type: (params.get("type") as NotificationType) || undefined,
+          status:
+            (params.get("status") as "UNREAD" | "READ" | "ALL") || undefined,
+          includeDismissed: params.get("includeDismissed") === "true",
+        }
+      );
       return NextResponse.json({ success: true, data });
     }
 
@@ -44,8 +57,11 @@ export const GET = withAuth<RevaRole>(
       ctx.session.role === RevaRole.SUPERADMIN
         ? await getSuperAdminNotifications()
         : ctx.session.role === RevaRole.ADMIN
-        ? await getAdminNotifications()
-        : await getUserNotifications(ctx.session.sub, ctx.session.role as unknown as Role);
+          ? await getAdminNotifications()
+          : await getUserNotifications(
+              ctx.session.sub,
+              ctx.session.role as unknown as Role
+            );
 
     // getAdminNotifications/getSuperAdminNotifications don't take a userId
     // (unlike getUserNotifications), so they return bare readBy/dismissedBy
@@ -59,15 +75,34 @@ export const GET = withAuth<RevaRole>(
     }));
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.REVA, roles: [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN] }
+  {
+    platform: Platform.REVA,
+    roles: [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN],
+  }
 );
 
 const createSchema = z.object({
-  type: z.enum(["INFO", "SUCCESS", "WARNING", "ERROR", "SYSTEM", "PAYMENT", "PROPERTY"]),
+  type: z.enum([
+    "INFO",
+    "SUCCESS",
+    "WARNING",
+    "ERROR",
+    "SYSTEM",
+    "PAYMENT",
+    "PROPERTY",
+  ]),
   title: z.string().min(1),
   message: z.string().min(1),
   userIds: z.array(z.string()).optional(),
-  audience: z.enum(["SPECIFIC_USERS", "GENERAL_USERS", "GENERAL_ADMINS", "SUPERADMIN", "ALL_USERS"]).optional(),
+  audience: z
+    .enum([
+      "SPECIFIC_USERS",
+      "GENERAL_USERS",
+      "GENERAL_ADMINS",
+      "SUPERADMIN",
+      "ALL_USERS",
+    ])
+    .optional(),
   link: z.string().optional(),
   metadata: z.any().optional(),
 });
@@ -75,7 +110,10 @@ const createSchema = z.object({
 export const POST = withAuth<RevaRole>(
   async (req) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const body = await validateBody(req, createSchema);
     const data = await createNotification({

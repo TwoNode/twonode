@@ -12,7 +12,10 @@ const bodySchema = z.object({ isActive: z.boolean() });
 export const PATCH = withAuth<GBCRole>(
   async (req, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { id } = await routeCtx.params;
     const { isActive } = await validateBody(req, bodySchema);

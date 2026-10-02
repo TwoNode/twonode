@@ -65,7 +65,8 @@ export default async function OneTimeRequestPage({ searchParams }: PageProps) {
           <CardContent>
             <Alert>
               <AlertDescription>
-                Unable to find your request. Please verify your reference and email, or contact support if you believe this is an error.
+                Unable to find your request. Please verify your reference and
+                email, or contact support if you believe this is an error.
               </AlertDescription>
             </Alert>
           </CardContent>

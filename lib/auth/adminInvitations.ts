@@ -2,8 +2,19 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { Platform } from "@/utils/platform";
-import { ApiError, ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
-import { createInvitedUser, emailInUse, findUserById, type NativeAuthUser } from "@/lib/auth/userLookup";
+import {
+  ApiError,
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from "@/lib/api/errors";
+import {
+  createInvitedUser,
+  emailInUse,
+  findUserById,
+  type NativeAuthUser,
+} from "@/lib/auth/userLookup";
 import { writeAudit } from "@/lib/audit";
 import { sendAdminInvitationEmail } from "@/utils/email";
 import { roleLabel } from "@/lib/api/adminInvitationTypes";
@@ -18,7 +29,8 @@ import { roleLabel } from "@/lib/api/adminInvitationTypes";
 
 export const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-const INVALID_LINK = "This invitation link is invalid or has expired. Ask the person who invited you to send a new one.";
+const INVALID_LINK =
+  "This invitation link is invalid or has expired. Ask the person who invited you to send a new one.";
 
 /** An ApiError rather than a ValidationError: the latter always reports "Invalid request" and hides its message in `details`, and this one is meant to be read by the invitee. */
 const invalidLink = () => new ApiError(400, "INVALID_INVITATION", INVALID_LINK);
@@ -27,7 +39,17 @@ const invalidLink = () => new ApiError(400, "INVALID_INVITATION", INVALID_LINK);
 const INVITABLE_ROLES: Partial<Record<Platform, readonly string[]>> = {
   [Platform.GBC]: ["ADMIN", "SUPERADMIN"],
   [Platform.REVA]: ["ADMIN", "SUPERADMIN"],
-  [Platform.SURFBOARD]: ["ADMIN", "SUPERADMIN", "RECORDS_I", "INTAKE", "RECORDS_II", "ACCOUNTS", "CHARTING", "SURCON", "ARCHIVE"],
+  [Platform.SURFBOARD]: [
+    "ADMIN",
+    "SUPERADMIN",
+    "RECORDS_I",
+    "INTAKE",
+    "RECORDS_II",
+    "ACCOUNTS",
+    "CHARTING",
+    "SURCON",
+    "ARCHIVE",
+  ],
 };
 
 const ACCEPT_PATH: Partial<Record<Platform, string>> = {
@@ -39,7 +61,9 @@ const ACCEPT_PATH: Partial<Record<Platform, string>> = {
 export function loginPathFor(platform: Platform, role: string): string {
   if (platform === Platform.GBC) return "/gbc-restricted/login";
   if (platform === Platform.REVA) return "/reva-restricted/login";
-  return role === "ADMIN" || role === "SUPERADMIN" ? "/surfboard-restricted/login" : "/surfboard-mda/login";
+  return role === "ADMIN" || role === "SUPERADMIN"
+    ? "/surfboard-restricted/login"
+    : "/surfboard-mda/login";
 }
 
 export type InvitationStatus = "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
@@ -69,7 +93,9 @@ export interface InvitationSummary {
   createdAt: Date;
 }
 
-type InvitationRow = NonNullable<Awaited<ReturnType<typeof prisma.adminInvitation.findUnique>>>;
+type InvitationRow = NonNullable<
+  Awaited<ReturnType<typeof prisma.adminInvitation.findUnique>>
+>;
 
 function toSummary(row: InvitationRow): InvitationSummary {
   return {
@@ -89,36 +115,52 @@ function toSummary(row: InvitationRow): InvitationSummary {
   };
 }
 
-const hashToken = (raw: string) => crypto.createHash("sha256").update(raw).digest("hex");
+const hashToken = (raw: string) =>
+  crypto.createHash("sha256").update(raw).digest("hex");
 const newToken = () => {
   const raw = crypto.randomBytes(32).toString("hex");
   return { raw, hash: hashToken(raw) };
 };
 
 function assertNotDevAccount(email: string) {
-  if (process.env.DEV_EMAIL && email === process.env.DEV_EMAIL.toLowerCase()) throw new ForbiddenError();
+  if (process.env.DEV_EMAIL && email === process.env.DEV_EMAIL.toLowerCase())
+    throw new ForbiddenError();
 }
 
 function assertInvitable(platform: Platform, role: string) {
   const roles = INVITABLE_ROLES[platform];
-  if (!roles) throw new ValidationError({ platform: "Invitations aren't supported for this platform" });
-  if (!roles.includes(role)) throw new ValidationError({ role: "That role can't be granted by invitation" });
+  if (!roles)
+    throw new ValidationError({
+      platform: "Invitations aren't supported for this platform",
+    });
+  if (!roles.includes(role))
+    throw new ValidationError({
+      role: "That role can't be granted by invitation",
+    });
 }
 
 /** Returns whether the email actually went out; a delivery failure never loses the invitation, it can be resent. */
 async function deliver(
   platform: Platform,
-  invitation: { email: string; firstName: string; role: string; expiresAt: Date },
+  invitation: {
+    email: string;
+    firstName: string;
+    role: string;
+    expiresAt: Date;
+  },
   rawToken: string,
   inviterName: string
 ): Promise<boolean> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com";
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com";
   const acceptUrl = `${siteUrl}${ACCEPT_PATH[platform]}?token=${rawToken}`;
 
   // Local/dev convenience only — the raw token is never persisted, so this is
   // the one place it is ever visible after generation.
   if (process.env.NODE_ENV !== "production") {
-    console.log(`[dev] admin invitation link for ${invitation.email}: ${acceptUrl}`);
+    console.log(
+      `[dev] admin invitation link for ${invitation.email}: ${acceptUrl}`
+    );
   }
 
   const result = await sendAdminInvitationEmail({
@@ -136,13 +178,21 @@ async function deliver(
 async function getInviter(platform: Platform, actorId: string) {
   const inviter = await findUserById(platform, actorId);
   if (!inviter) throw new ForbiddenError();
-  const name = [inviter.firstName, inviter.lastName].filter(Boolean).join(" ") || inviter.email;
+  const name =
+    [inviter.firstName, inviter.lastName].filter(Boolean).join(" ") ||
+    inviter.email;
   return { id: inviter.id, name, email: inviter.email };
 }
 
 export async function createInvitation(
   platform: Platform,
-  input: { email: string; firstName: string; lastName: string; phone?: string | null; role: string },
+  input: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone?: string | null;
+    role: string;
+  },
   actorId: string
 ): Promise<{ invitation: InvitationSummary; emailSent: boolean }> {
   assertInvitable(platform, input.role);
@@ -150,7 +200,9 @@ export async function createInvitation(
   assertNotDevAccount(email);
 
   if (await emailInUse(platform, email)) {
-    throw new ConflictError("A user with this email already exists. To give them admin access, promote their existing account instead.");
+    throw new ConflictError(
+      "A user with this email already exists. To give them admin access, promote their existing account instead."
+    );
   }
 
   const inviter = await getInviter(platform, actorId);
@@ -165,7 +217,10 @@ export async function createInvitation(
       select: { id: true },
     });
     if (open.length) {
-      await tx.adminInvitation.updateMany({ where: { id: { in: open.map((o) => o.id) } }, data: { revokedAt: new Date() } });
+      await tx.adminInvitation.updateMany({
+        where: { id: { in: open.map((o) => o.id) } },
+        data: { revokedAt: new Date() },
+      });
     }
     const created = await tx.adminInvitation.create({
       data: {
@@ -190,7 +245,13 @@ export async function createInvitation(
     action: "INVITE_ADMIN",
     entity: "AdminInvitation",
     entityId: row.id,
-    changes: { email, role: input.role, firstName: row.firstName, lastName: row.lastName, supersededInvitationIds: superseded },
+    changes: {
+      email,
+      role: input.role,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      supersededInvitationIds: superseded,
+    },
   });
 
   const emailSent = await deliver(platform, row, token.raw, inviter.name);
@@ -198,7 +259,9 @@ export async function createInvitation(
 }
 
 async function getOwnedInvitation(platform: Platform, id: string) {
-  const row = await prisma.adminInvitation.findFirst({ where: { id, platform } });
+  const row = await prisma.adminInvitation.findFirst({
+    where: { id, platform },
+  });
   if (!row) throw new NotFoundError("Invitation");
   return row;
 }
@@ -209,8 +272,12 @@ export async function resendInvitation(
   actorId: string
 ): Promise<{ invitation: InvitationSummary; emailSent: boolean }> {
   const existing = await getOwnedInvitation(platform, id);
-  if (existing.acceptedAt) throw new ConflictError("This invitation has already been accepted.");
-  if (existing.revokedAt) throw new ConflictError("This invitation was revoked. Send a new invitation instead.");
+  if (existing.acceptedAt)
+    throw new ConflictError("This invitation has already been accepted.");
+  if (existing.revokedAt)
+    throw new ConflictError(
+      "This invitation was revoked. Send a new invitation instead."
+    );
   if (await emailInUse(platform, existing.email)) {
     throw new ConflictError("A user with this email already exists.");
   }
@@ -219,7 +286,11 @@ export async function resendInvitation(
   const token = newToken();
   const row = await prisma.adminInvitation.update({
     where: { id },
-    data: { tokenHash: token.hash, expiresAt: new Date(Date.now() + INVITATION_TTL_MS), lastSentAt: new Date() },
+    data: {
+      tokenHash: token.hash,
+      expiresAt: new Date(Date.now() + INVITATION_TTL_MS),
+      lastSentAt: new Date(),
+    },
   });
 
   await writeAudit(platform, {
@@ -234,13 +305,23 @@ export async function resendInvitation(
   return { invitation: toSummary(row), emailSent };
 }
 
-export async function revokeInvitation(platform: Platform, id: string, actorId: string): Promise<InvitationSummary> {
+export async function revokeInvitation(
+  platform: Platform,
+  id: string,
+  actorId: string
+): Promise<InvitationSummary> {
   const existing = await getOwnedInvitation(platform, id);
-  if (existing.acceptedAt) throw new ConflictError("This invitation has already been accepted, so it can't be revoked.");
+  if (existing.acceptedAt)
+    throw new ConflictError(
+      "This invitation has already been accepted, so it can't be revoked."
+    );
   if (existing.revokedAt) return toSummary(existing);
 
   const inviter = await getInviter(platform, actorId);
-  const row = await prisma.adminInvitation.update({ where: { id }, data: { revokedAt: new Date() } });
+  const row = await prisma.adminInvitation.update({
+    where: { id },
+    data: { revokedAt: new Date() },
+  });
 
   await writeAudit(platform, {
     userId: inviter.id,
@@ -253,7 +334,9 @@ export async function revokeInvitation(platform: Platform, id: string, actorId: 
   return toSummary(row);
 }
 
-export async function listInvitations(platform: Platform): Promise<InvitationSummary[]> {
+export async function listInvitations(
+  platform: Platform
+): Promise<InvitationSummary[]> {
   const rows = await prisma.adminInvitation.findMany({
     where: { platform },
     orderBy: { createdAt: "desc" },
@@ -263,17 +346,26 @@ export async function listInvitations(platform: Platform): Promise<InvitationSum
 }
 
 async function findUsableInvitation(platform: Platform, rawToken: string) {
-  const row = await prisma.adminInvitation.findUnique({ where: { tokenHash: hashToken(rawToken) } });
+  const row = await prisma.adminInvitation.findUnique({
+    where: { tokenHash: hashToken(rawToken) },
+  });
   // One message for every failure (unknown, wrong product, used, revoked,
   // expired) so the link can't be probed for which state it is in.
-  if (!row || row.platform !== platform || invitationStatus(row) !== "PENDING") {
+  if (
+    !row ||
+    row.platform !== platform ||
+    invitationStatus(row) !== "PENDING"
+  ) {
     throw invalidLink();
   }
   return row;
 }
 
 /** What the accept page shows before the invitee sets a password. */
-export async function getInvitationByToken(platform: Platform, rawToken: string) {
+export async function getInvitationByToken(
+  platform: Platform,
+  rawToken: string
+) {
   const row = await findUsableInvitation(platform, rawToken);
   return {
     email: row.email,
@@ -297,7 +389,9 @@ export async function acceptInvitation(input: {
   const invitation = await findUsableInvitation(platform, input.token);
 
   if (await emailInUse(platform, invitation.email)) {
-    throw new ConflictError("An account with this email already exists. Try signing in instead.");
+    throw new ConflictError(
+      "An account with this email already exists. Try signing in instead."
+    );
   }
 
   const passwordHash = await bcrypt.hash(input.password, 12);
@@ -306,7 +400,12 @@ export async function acceptInvitation(input: {
   const user = await prisma.$transaction(async (tx) => {
     // Claim first: a second request racing on the same link matches no row.
     const claimed = await tx.adminInvitation.updateMany({
-      where: { id: invitation.id, acceptedAt: null, revokedAt: null, expiresAt: { gt: now } },
+      where: {
+        id: invitation.id,
+        acceptedAt: null,
+        revokedAt: null,
+        expiresAt: { gt: now },
+      },
       data: { acceptedAt: now },
     });
     if (claimed.count !== 1) throw invalidLink();
@@ -323,7 +422,10 @@ export async function acceptInvitation(input: {
       },
       tx
     );
-    await tx.adminInvitation.update({ where: { id: invitation.id }, data: { acceptedUserId: created.id } });
+    await tx.adminInvitation.update({
+      where: { id: invitation.id },
+      data: { acceptedUserId: created.id },
+    });
     return created;
   });
 
@@ -333,7 +435,12 @@ export async function acceptInvitation(input: {
     action: "ACCEPT_ADMIN_INVITE",
     entity: "AdminInvitation",
     entityId: invitation.id,
-    changes: { email: invitation.email, role: invitation.role, invitedById: invitation.invitedById, invitedByEmail: invitation.invitedByEmail },
+    changes: {
+      email: invitation.email,
+      role: invitation.role,
+      invitedById: invitation.invitedById,
+      invitedByEmail: invitation.invitedByEmail,
+    },
   });
 
   return { user, loginPath: loginPathFor(platform, invitation.role) };

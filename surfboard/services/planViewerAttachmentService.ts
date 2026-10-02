@@ -1,5 +1,9 @@
 import prisma from "@/lib/prisma";
-import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
+import {
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from "@/lib/api/errors";
 import { getPresignedUploadUrl } from "@/surfboard/services/awsService";
 
 /**
@@ -11,8 +15,14 @@ import { getPresignedUploadUrl } from "@/surfboard/services/awsService";
  * attachment to another.
  */
 
-async function assertIsRecipient(planId: string, viewerId: string): Promise<void> {
-  const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId }, select: { sharedTo: true } });
+async function assertIsRecipient(
+  planId: string,
+  viewerId: string
+): Promise<void> {
+  const plan = await prisma.surfboardPlan.findUnique({
+    where: { id: planId },
+    select: { sharedTo: true },
+  });
   if (!plan) throw new NotFoundError("Plan");
   if (!(plan.sharedTo || []).includes(viewerId)) throw new ForbiddenError();
 }
@@ -39,7 +49,13 @@ export async function getViewerAttachmentUploadUrl(
 ) {
   await assertIsRecipient(planId, viewerId);
   if (!fileName) throw new ValidationError({ file: "A file name is required" });
-  return getPresignedUploadUrl("viewer-attachment", viewerId, fileName, contentType, planId);
+  return getPresignedUploadUrl(
+    "viewer-attachment",
+    viewerId,
+    fileName,
+    contentType,
+    planId
+  );
 }
 
 /** Step 2: called after the browser's direct S3 PUT succeeds, to record the attachment. */
@@ -63,8 +79,16 @@ export async function finalizeViewerAttachment(
   });
 }
 
-export async function deleteViewerAttachment(viewerId: string, attachmentId: string) {
-  const attachment = await prisma.surfboardPlanViewerAttachment.findUnique({ where: { id: attachmentId } });
-  if (!attachment || attachment.viewerId !== viewerId) throw new NotFoundError("Attachment");
-  await prisma.surfboardPlanViewerAttachment.delete({ where: { id: attachmentId } });
+export async function deleteViewerAttachment(
+  viewerId: string,
+  attachmentId: string
+) {
+  const attachment = await prisma.surfboardPlanViewerAttachment.findUnique({
+    where: { id: attachmentId },
+  });
+  if (!attachment || attachment.viewerId !== viewerId)
+    throw new NotFoundError("Attachment");
+  await prisma.surfboardPlanViewerAttachment.delete({
+    where: { id: attachmentId },
+  });
 }

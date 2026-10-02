@@ -8,7 +8,11 @@ export const GET = withAuth<GBCRole>(
     const status = req.nextUrl.searchParams.get("status") ?? undefined;
     const search = req.nextUrl.searchParams.get("search") ?? undefined;
     const limitParam = req.nextUrl.searchParams.get("limit");
-    const data = await getTickets({ status, search, limit: limitParam ? Number(limitParam) : undefined });
+    const data = await getTickets({
+      status,
+      search,
+      limit: limitParam ? Number(limitParam) : undefined,
+    });
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.GBC, roles: [GBCRole.ADMIN, GBCRole.SUPERADMIN] }

@@ -13,6 +13,7 @@ This document analyzes the uploaded PDF samples to understand the report structu
 The user also provided 4 images showing different pages/sections of REVA reports:
 
 ### Image 1: Cover Page
+
 - Shows "CRESCENT SURVEYS LIMITED" logo
 - Title: "Due Diligence Report"
 - Property location: "FMVG+RM8 Lekki, Ibeju-Lekki, Lagos"
@@ -22,6 +23,7 @@ The user also provided 4 images showing different pages/sections of REVA reports
 - Company contact information in blue footer
 
 ### Image 2: Title Investigation Page
+
 - Section: "Title Investigation (Lands Bureau)"
 - Red warning box stating "The property currently has NO existing title registration"
 - Highlights section showing transaction flow
@@ -30,6 +32,7 @@ The user also provided 4 images showing different pages/sections of REVA reports
 - Question about right to sell
 
 ### Image 3: Parcel Investigation Page
+
 - Section: "Parcel Investigation (Office of the State Surveyor General)"
 - Parcel Location Check with coordinate system details
 - Table showing projection parameters (Minna_UTM_Zone_31N)
@@ -38,6 +41,7 @@ The user also provided 4 images showing different pages/sections of REVA reports
 - Charting Report section
 
 ### Image 4: Additional Parcel Investigation
+
 - Continuation of parcel investigation
 - Shows excision/government acquisition status
 - Satellite imagery with property boundaries
@@ -48,12 +52,14 @@ The user also provided 4 images showing different pages/sections of REVA reports
 ## Key Design Elements Identified
 
 ### Color Scheme
+
 - **Primary Blue**: #0A2D75 (headers, titles)
 - **Accent Green**: #04b104 (borders, positive indicators)
 - **Red**: For warnings and important notices
 - **Grey**: #e7e3e3 (background boxes)
 
 ### Typography
+
 - **Headings**: Bold, blue color
 - **Body Text**: Black, justified
 - **Italics**: Used for explanatory text
@@ -92,6 +98,7 @@ The user also provided 4 images showing different pages/sections of REVA reports
 ## Report Sections Structure
 
 ### 1. Front Page
+
 - Company logo
 - Report title
 - Property address and location
@@ -102,6 +109,7 @@ The user also provided 4 images showing different pages/sections of REVA reports
 - Company contact information
 
 ### 2. Title Investigation (Lands Bureau)
+
 - Title status (registered/not registered)
 - Title date and holder name
 - Title number (Number X Page X in Volume X)
@@ -112,6 +120,7 @@ The user also provided 4 images showing different pages/sections of REVA reports
 - Native land and customs information
 
 ### 3. Parcel Investigation (Surveyor General)
+
 - Parcel location check with coordinate system
 - Reference system table (Minna_UTM_Zone_31N)
 - Parcel position match percentage
@@ -124,6 +133,7 @@ The user also provided 4 images showing different pages/sections of REVA reports
 - Survey plan numbers and dates
 
 ### 4. Parcel Investigation (Physical Planning)
+
 - Land use zoning
 - Zoning map/image
 - Building plan approval status
@@ -134,17 +144,20 @@ The user also provided 4 images showing different pages/sections of REVA reports
 Based on the samples, reports can have different scenarios:
 
 ### Scenario 1: No Title Registration
+
 - Shows red warning box
 - States "NO existing title registration"
 - May still have parcel and planning data
 
 ### Scenario 2: Full Title Registration
+
 - Shows title details
 - Transaction flow diagram
 - Multiple registered deeds
 - Right to sell information
 
 ### Scenario 3: Partial Data
+
 - Some sections may be missing
 - Report adapts to show only available data
 - Maintains professional appearance

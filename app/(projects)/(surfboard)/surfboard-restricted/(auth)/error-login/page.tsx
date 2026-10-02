@@ -4,7 +4,9 @@ import Link from "next/link";
 export default function SurfRestrictedErrorLoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-blue-50 dark:bg-background px-4 py-12">
-      <h1 className="text-5xl font-extrabold text-red-600 dark:text-red-400 mb-4">Login Error</h1>
+      <h1 className="text-5xl font-extrabold text-red-600 dark:text-red-400 mb-4">
+        Login Error
+      </h1>
       <p className="text-lg text-blue-700 dark:text-blue-300 mb-6">
         Something went wrong during login. Please try again.
       </p>

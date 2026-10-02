@@ -228,7 +228,10 @@ export default async function TicketsPage() {
 
                 <div
                   className="mt-6 sm:mt-8 p-4 sm:p-6 rounded-r-lg border-l-4"
-                  style={{ background: GBC_COLORS.surface.main, borderColor: GBC_COLORS.primary.main }}
+                  style={{
+                    background: GBC_COLORS.surface.main,
+                    borderColor: GBC_COLORS.primary.main,
+                  }}
                 >
                   <h3
                     className="font-bold mb-2 sm:mb-3 text-base sm:text-lg"

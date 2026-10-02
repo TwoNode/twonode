@@ -109,7 +109,10 @@ export function NotificationSettings({ settings, edition }: Props) {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const result = await gbcApi.settings.update({ notifications: notificationSettings }, edition);
+      const result = await gbcApi.settings.update(
+        { notifications: notificationSettings },
+        edition
+      );
 
       if (result.success) {
         toast.success("Notification settings updated successfully");

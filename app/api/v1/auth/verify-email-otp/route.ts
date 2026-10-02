@@ -3,7 +3,11 @@ import { z } from "zod";
 import { Platform } from "@/utils/platform";
 import { validateCSRF } from "@/lib/auth/csrf";
 import { validateBody } from "@/lib/api/validate";
-import { checkRateLimit, recordAttempt, getClientIp } from "@/lib/auth/rateLimit";
+import {
+  checkRateLimit,
+  recordAttempt,
+  getClientIp,
+} from "@/lib/auth/rateLimit";
 import { UnauthenticatedError, handleApiError } from "@/lib/api/errors";
 import { getServerSession, issueSession } from "@/lib/auth/session";
 import { findUserById } from "@/lib/auth/userLookup";
@@ -18,7 +22,10 @@ const verifyOtpSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
 
     const clientIp = getClientIp(req);
@@ -29,7 +36,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { platform, code, userId: explicitUserId } = await validateBody(req, verifyOtpSchema);
+    const {
+      platform,
+      code,
+      userId: explicitUserId,
+    } = await validateBody(req, verifyOtpSchema);
 
     // Resolve user ID from active native session first, fallback to explicit userId if provided
     const session = await getServerSession(platform);
@@ -53,6 +64,9 @@ export async function POST(req: NextRequest) {
       data: { message: "Email verified successfully." },
     });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

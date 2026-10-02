@@ -29,7 +29,12 @@ interface SponsorsManagerProps {
   selectedEdition: string;
 }
 
-export function SponsorsManager({ initialSponsors, editions, tiers, selectedEdition }: SponsorsManagerProps) {
+export function SponsorsManager({
+  initialSponsors,
+  editions,
+  tiers,
+  selectedEdition,
+}: SponsorsManagerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTier, setSelectedTier] = useState("ALL");
   const { update, isPending } = useSearchParamsUpdater();

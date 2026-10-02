@@ -71,7 +71,10 @@ export default function UserRoleManagementForm({
     setIsLoading(true);
     try {
       if (data.action === "make-admin" && data.role) {
-        const result = await revaApi.admin.users.promote(data.userId, data.role);
+        const result = await revaApi.admin.users.promote(
+          data.userId,
+          data.role
+        );
         if (result.success) {
           toast.success("User upgraded to admin successfully!");
           form.reset();

@@ -21,7 +21,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Settings, Trash2, Loader2, RefreshCw, BarChart3 } from "lucide-react";
 import { surfboardApi } from "@/surfboard/apiClient";
 
@@ -47,7 +52,9 @@ export default function SubscriptionAdminFAB() {
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
-  const [analytics, setAnalytics] = useState<SubscriptionAnalytics | null>(null);
+  const [analytics, setAnalytics] = useState<SubscriptionAnalytics | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchAnalytics = async () => {
@@ -83,7 +90,9 @@ export default function SubscriptionAdminFAB() {
       }
     } catch (error: any) {
       console.error("Error clearing subscription:", error);
-      toast.error(error?.message || "An error occurred while clearing subscription");
+      toast.error(
+        error?.message || "An error occurred while clearing subscription"
+      );
     } finally {
       setIsClearing(false);
       setShowClearDialog(false);
@@ -147,7 +156,7 @@ export default function SubscriptionAdminFAB() {
           <DialogHeader>
             <DialogTitle>Subscription Analytics</DialogTitle>
           </DialogHeader>
-          
+
           {isLoading ? (
             <div className="flex justify-center items-center h-40">
               <Loader2 className="h-8 w-8 animate-spin" />
@@ -157,12 +166,20 @@ export default function SubscriptionAdminFAB() {
               {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                  <h3 className="text-sm font-medium text-blue-800">Active Subscriptions</h3>
-                  <p className="text-2xl font-bold text-blue-600">{analytics.activeCount}</p>
+                  <h3 className="text-sm font-medium text-blue-800">
+                    Active Subscriptions
+                  </h3>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {analytics.activeCount}
+                  </p>
                 </div>
                 <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
-                  <h3 className="text-sm font-medium text-amber-800">Canceled Subscriptions</h3>
-                  <p className="text-2xl font-bold text-amber-600">{analytics.canceledCount}</p>
+                  <h3 className="text-sm font-medium text-amber-800">
+                    Canceled Subscriptions
+                  </h3>
+                  <p className="text-2xl font-bold text-amber-600">
+                    {analytics.canceledCount}
+                  </p>
                 </div>
               </div>
 
@@ -174,16 +191,26 @@ export default function SubscriptionAdminFAB() {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead>
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">User ID</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Missing Data</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                            User ID
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                            Status
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                            Missing Data
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {analytics.invalidSubscriptions.map((sub) => (
                           <tr key={sub.id}>
-                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{sub.userId}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{sub.status}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                              {sub.userId}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                              {sub.status}
+                            </td>
                             <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
                               {!sub.subCode && "subCode "}
                               {!sub.emailToken && "emailToken"}
@@ -194,29 +221,40 @@ export default function SubscriptionAdminFAB() {
                     </table>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No invalid subscriptions found.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No invalid subscriptions found.
+                  </p>
                 )}
               </div>
 
               {/* Recent Webhook Events */}
               <div className="border rounded-lg p-4">
-                <h3 className="font-medium mb-3">Recent Webhook Events (Last 24h)</h3>
+                <h3 className="font-medium mb-3">
+                  Recent Webhook Events (Last 24h)
+                </h3>
                 {analytics.recentWebhookEvents.length > 0 ? (
                   <div className="space-y-2">
                     {analytics.recentWebhookEvents.map((event, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 dark:bg-white/5 rounded">
+                      <div
+                        key={index}
+                        className="flex justify-between items-center p-2 bg-gray-50 dark:bg-white/5 rounded"
+                      >
                         <div>
                           <span className="font-medium">{event.event}</span>
                           <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400">
                             {event.status}
                           </span>
                         </div>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">{event.count} events</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          {event.count} events
+                        </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No webhook events in the last 24 hours.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No webhook events in the last 24 hours.
+                  </p>
                 )}
               </div>
             </div>

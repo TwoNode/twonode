@@ -2,7 +2,8 @@ import { createHmac } from "crypto";
 import { describe, expect, it } from "vitest";
 import { verifyQRCodeHash } from "@/gbc/services/qrCheckinService";
 
-const SECRET = process.env.QR_CODE_SECRET || "@default@-_33##_s3cr3t-ch@nge-th!s";
+const SECRET =
+  process.env.QR_CODE_SECRET || "@default@-_33##_s3cr3t-ch@nge-th!s";
 
 function validQR(overrides: Partial<Record<string, any>> = {}) {
   const ticketNumber = overrides.ticketNumber ?? "GBC2_ABCDEF";

@@ -9,7 +9,10 @@ type RouteCtx = { params: Promise<{ planId: string; attachmentId: string }> };
 export const DELETE = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { attachmentId } = await routeCtx.params;
     await deleteViewerAttachment(ctx.session.sub, attachmentId);

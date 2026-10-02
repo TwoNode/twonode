@@ -4,10 +4,10 @@
 
 The current workflow fetches the Remita PDF by RRR and extracts EBS fields to construct the LASG receipt URL. **The proposed new workflow** eliminates the S3 dependency and instead asks the user to provide **two receipt links** directly (just like the survey plan AI fill-form):
 
-| Input | Source | Purpose |
-|---|---|---|
-| **Link 1** — LASG Receipt | `https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=...` | Extract `transId`, `transCode`; verify amount against CoD fees |
-| **Link 2** — Remita Receipt | `https://login.remita.net/remita/rrr/view-rrr/details.json?x-id=...` | Extract RRR; validate uniqueness in DB |
+| Input                       | Source                                                                           | Purpose                                                        |
+| --------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **Link 1** — LASG Receipt   | `https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=...` | Extract `transId`, `transCode`; verify amount against CoD fees |
+| **Link 2** — Remita Receipt | `https://login.remita.net/remita/rrr/view-rrr/details.json?x-id=...`             | Extract RRR; validate uniqueness in DB                         |
 
 ### Cross-Validation Anchor
 
@@ -26,11 +26,11 @@ The numeric portion `169767640-8154445-175` is the common key.
 
 The prompt must detect if the user accidentally swaps the two links:
 
-| Signal | LASG Receipt (Link 1) | Remita Receipt (Link 2) |
-|---|---|---|
-| **URL domain** | `printreceipt.ebs-rcm.com` | `login.remita.net` |
-| **Content markers** | "REVENUE RECEIPT", "Lagos State Government", "EBS" | "RRR", "Remita Retrieval Reference" |
-| **Identifying fields** | `transId/transCode`, `payerId` | RRR (12 digits), payment details |
+| Signal                 | LASG Receipt (Link 1)                              | Remita Receipt (Link 2)             |
+| ---------------------- | -------------------------------------------------- | ----------------------------------- |
+| **URL domain**         | `printreceipt.ebs-rcm.com`                         | `login.remita.net`                  |
+| **Content markers**    | "REVENUE RECEIPT", "Lagos State Government", "EBS" | "RRR", "Remita Retrieval Reference" |
+| **Identifying fields** | `transId/transCode`, `payerId`                     | RRR (12 digits), payment details    |
 
 ---
 
@@ -195,7 +195,7 @@ Remita receipts contain:
 === STATUS MAPPING ===
 
 - "Approved", "Successful", "Paid", "Completed" → "PAID"
-- "Pending", "Processing", "In Progress" → "PENDING"  
+- "Pending", "Processing", "In Progress" → "PENDING"
 - "Failed", "Declined", "Rejected" → "FAILED"
 - Anything else → "UNKNOWN"
 
@@ -278,12 +278,14 @@ function crossValidateReceipts(
     if (lasgResult.transactionAnchor !== remitaResult.transactionAnchor) {
       errors.push(
         `Transaction mismatch: LASG anchor "${lasgResult.transactionAnchor}" ` +
-        `does not match Remita anchor "${remitaResult.transactionAnchor}". ` +
-        `These receipts may not be for the same transaction.`
+          `does not match Remita anchor "${remitaResult.transactionAnchor}". ` +
+          `These receipts may not be for the same transaction.`
       );
     }
   } else {
-    errors.push("Could not extract transaction anchor from one or both receipts.");
+    errors.push(
+      "Could not extract transaction anchor from one or both receipts."
+    );
   }
 
   // 3. Amount verification against expected batch total
@@ -291,7 +293,7 @@ function crossValidateReceipts(
   if (Math.abs(lasgResult.amountPaid - expectedAmount) > tolerance) {
     errors.push(
       `Amount mismatch: LASG receipt shows ₦${lasgResult.amountPaid.toLocaleString()}, ` +
-      `expected ₦${expectedAmount.toLocaleString()}.`
+        `expected ₦${expectedAmount.toLocaleString()}.`
     );
   }
 
@@ -299,7 +301,9 @@ function crossValidateReceipts(
 
   // 5. Payment status check
   if (remitaResult.status !== "PAID") {
-    errors.push(`Remita payment status is "${remitaResult.status}", expected "PAID".`);
+    errors.push(
+      `Remita payment status is "${remitaResult.status}", expected "PAID".`
+    );
   }
 
   return { valid: errors.length === 0, errors };
@@ -310,44 +314,52 @@ function crossValidateReceipts(
 
 ## Summary: What Each Prompt Covers
 
-| Concern | Prompt 1 (LASG) | Prompt 2 (Remita) | Server Logic |
-|---|:---:|:---:|:---:|
-| Document type detection | ✅ `isCorrectDocument` | ✅ `isCorrectDocument` | validates both |
-| Swap detection | ✅ flags if Remita content | ✅ flags if LASG content | reports to user |
-| EBS fields (transId, transCode) | ✅ extracted | — | builds receipt URL |
-| PayerID / PayerType | ✅ extracted | — | matches against user table |
-| Amount paid | ✅ extracted | ✅ extracted | compared against CoD fees |
-| RRR | — | ✅ extracted | uniqueness check in DB |
-| Transaction anchor | ✅ extracted | ✅ extracted | cross-matched server-side |
-| Payment status | — | ✅ extracted | must be "PAID" |
+| Concern                         |      Prompt 1 (LASG)       |    Prompt 2 (Remita)     |        Server Logic        |
+| ------------------------------- | :------------------------: | :----------------------: | :------------------------: |
+| Document type detection         |   ✅ `isCorrectDocument`   |  ✅ `isCorrectDocument`  |       validates both       |
+| Swap detection                  | ✅ flags if Remita content | ✅ flags if LASG content |      reports to user       |
+| EBS fields (transId, transCode) |        ✅ extracted        |            —             |     builds receipt URL     |
+| PayerID / PayerType             |        ✅ extracted        |            —             | matches against user table |
+| Amount paid                     |        ✅ extracted        |       ✅ extracted       | compared against CoD fees  |
+| RRR                             |             —              |       ✅ extracted       |   uniqueness check in DB   |
+| Transaction anchor              |        ✅ extracted        |       ✅ extracted       | cross-matched server-side  |
+| Payment status                  |             —              |       ✅ extracted       |       must be "PAID"       |
 
 ---
 
 ## Key Prompt Engineering Decisions
 
 ### 1. **Structured Document Identity Block**
+
 Each prompt begins with an explicit "this IS / this IS NOT" declaration. This dramatically reduces hallucination when the model sees mixed-content documents.
 
 ### 2. **Bidirectional Mismatch Detection**
-Both prompts can detect the *other* document type and return a structured error, enabling clean user messaging ("Please swap your uploads").
+
+Both prompts can detect the _other_ document type and return a structured error, enabling clean user messaging ("Please swap your uploads").
 
 ### 3. **Transaction Anchor as Cross-Validation Key**
+
 Rather than relying on fragile heuristics, we extract the same numeric reference from both documents in different formats:
+
 - LASG: `AssessRef<X-Y-Z>` or `Teller-X-Y-Z`
 - Remita: `Lasg-X-Y-Z`
 
 This is the **strongest signal** that both receipts belong to the same transaction.
 
 ### 4. **Amount Tolerance**
+
 We use a 1% tolerance for amount matching to handle rounding differences between systems.
 
 ### 5. **Separation of Concerns**
-AI handles *extraction* only. All *validation logic* (anchor matching, RRR uniqueness, amount comparison) runs server-side in deterministic code. This keeps the system predictable and auditable.
+
+AI handles _extraction_ only. All _validation logic_ (anchor matching, RRR uniqueness, amount comparison) runs server-side in deterministic code. This keeps the system predictable and auditable.
 
 ### 6. **Low Temperature (0–0.1)**
+
 Both prompts should use `temperature: 0` for maximum determinism — these are extraction tasks, not creative ones.
 
 ### 7. **Explicit Output Schema with Error Variant**
+
 Each prompt defines both the success schema AND the mismatch schema, so the AI always returns parseable JSON regardless of input quality.
 
 ---
@@ -356,16 +368,16 @@ Each prompt defines both the success schema AND the mismatch schema, so the AI a
 
 From the spec document, here are the test pairs with their expected cross-validation anchors:
 
-| RRR | LASG transId/transCode | Expected Anchor Pattern |
-|---|---|---|
-| `351432045770` | `60636044/BGRARMJE` | Shared ref from both receipts |
-| `321431514817` | `60636044/BGRARMJE` | Same LASG receipt, different RRR |
-| `211431515010` | `60627021/MXBTKHYF` | — |
-| `311431600485` | `60627072/KPSVJJVP` | — |
-| `151430832486` | `60619531/QEIFWGEX` | — |
-| `201430874469` | `60619537/QLGVDXTH` | — |
-| `231416799697` | `60315564/MYEYYRAS` | — |
-| `271421125038` | `60393107/UAUSCUMF` | — |
-| `191392819355` | `60050629/ZCYYDEIA` | — |
+| RRR            | LASG transId/transCode | Expected Anchor Pattern          |
+| -------------- | ---------------------- | -------------------------------- |
+| `351432045770` | `60636044/BGRARMJE`    | Shared ref from both receipts    |
+| `321431514817` | `60636044/BGRARMJE`    | Same LASG receipt, different RRR |
+| `211431515010` | `60627021/MXBTKHYF`    | —                                |
+| `311431600485` | `60627072/KPSVJJVP`    | —                                |
+| `151430832486` | `60619531/QEIFWGEX`    | —                                |
+| `201430874469` | `60619537/QLGVDXTH`    | —                                |
+| `231416799697` | `60315564/MYEYYRAS`    | —                                |
+| `271421125038` | `60393107/UAUSCUMF`    | —                                |
+| `191392819355` | `60050629/ZCYYDEIA`    | —                                |
 
 > **Note:** The actual anchor values need to be extracted from live receipt content. The RRR values above are derived by removing dashes from the spec (e.g., `3514-3204-5770` → `351432045770`).

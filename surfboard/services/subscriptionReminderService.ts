@@ -20,7 +20,9 @@ export async function sendExpiringSubscriptionReminders(): Promise<{
   failed: number;
 }> {
   const now = new Date();
-  const windowEnd = new Date(now.getTime() + REMINDER_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  const windowEnd = new Date(
+    now.getTime() + REMINDER_WINDOW_DAYS * 24 * 60 * 60 * 1000
+  );
 
   const subscriptions = await prisma.subscription.findMany({
     where: {
@@ -28,7 +30,9 @@ export async function sendExpiringSubscriptionReminders(): Promise<{
       platform: "surfboard",
       currentEnd: { lte: windowEnd },
     },
-    include: { user: { select: { email: true, firstName: true, phoneNumber: true } } },
+    include: {
+      user: { select: { email: true, firstName: true, phoneNumber: true } },
+    },
   });
 
   let reminded = 0;
@@ -38,9 +42,12 @@ export async function sendExpiringSubscriptionReminders(): Promise<{
     if (!sub.currentEnd) continue;
     // Already reminded for this exact expiry cycle — skip until it renews
     // (which bumps currentEnd forward, making this comparison false again).
-    if (sub.expiryReminderSentAt && sub.expiryReminderSentAt >= sub.currentEnd) continue;
+    if (sub.expiryReminderSentAt && sub.expiryReminderSentAt >= sub.currentEnd)
+      continue;
 
-    const daysLeft = Math.ceil((sub.currentEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+    const daysLeft = Math.ceil(
+      (sub.currentEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
+    );
 
     try {
       await sendMail({
@@ -51,7 +58,11 @@ export async function sendExpiringSubscriptionReminders(): Promise<{
       });
 
       if (sub.user.phoneNumber) {
-        await sendWhatsAppSubscriptionExpiryReminder(sub.user.phoneNumber, sub.planName, daysLeft).catch(() => {});
+        await sendWhatsAppSubscriptionExpiryReminder(
+          sub.user.phoneNumber,
+          sub.planName,
+          daysLeft
+        ).catch(() => {});
       }
 
       await prisma.subscription.update({
@@ -60,7 +71,10 @@ export async function sendExpiringSubscriptionReminders(): Promise<{
       });
       reminded++;
     } catch (error) {
-      console.error(`Failed to send expiry reminder for subscription ${sub.id}:`, error);
+      console.error(
+        `Failed to send expiry reminder for subscription ${sub.id}:`,
+        error
+      );
       failed++;
     }
   }

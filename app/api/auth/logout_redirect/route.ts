@@ -37,7 +37,10 @@ export async function GET(request: NextRequest) {
     if (userData) {
       // Determine which platform session to use for the redirect decision
       // Prioritize 'from' param, then legacy 'platform' field
-      const activePlatform = fromPlatform || userData.platform || Object.keys(userData.platforms)[0] as Platform;
+      const activePlatform =
+        fromPlatform ||
+        userData.platform ||
+        (Object.keys(userData.platforms)[0] as Platform);
       const session = userData.platforms[activePlatform];
       const role = session?.role || userData.role || "";
 

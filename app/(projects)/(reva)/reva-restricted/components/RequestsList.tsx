@@ -356,7 +356,9 @@ const RequestList = ({
                     {request.status}
                   </Badge>
                   <Badge
-                    style={getPaymentStatusColor(request.paymentStatus || undefined)}
+                    style={getPaymentStatusColor(
+                      request.paymentStatus || undefined
+                    )}
                   >
                     {getPaymentStatusIcon(request.paymentStatus || undefined)}
                     {request.paymentStatus}
@@ -403,7 +405,9 @@ const RequestList = ({
                           {request.address}
                         </p>
                         {request.lga && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{request.lga}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {request.lga}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -422,8 +426,8 @@ const RequestList = ({
                                   6
                                 )}, ${request.lng.toFixed(6)}`
                               : request.lat
-                              ? `Lat: ${request.lat.toFixed(6)}`
-                              : `Lng: ${request.lng?.toFixed(6)}`}
+                                ? `Lat: ${request.lat.toFixed(6)}`
+                                : `Lng: ${request.lng?.toFixed(6)}`}
                           </p>
                         </div>
                       </div>

@@ -113,7 +113,9 @@ export default ViewDetails;
 
 const Detail = ({ label = "", value = "" }) => (
   <div className="flex justify-between items-center border-b pb-2">
-    <span className="text-gray-600 dark:text-gray-400 font-medium">{label}:</span>
+    <span className="text-gray-600 dark:text-gray-400 font-medium">
+      {label}:
+    </span>
     <span className="text-gray-800 dark:text-gray-200 font-semibold text-right ml-4 max-w-[60%] truncate">
       {value}
     </span>

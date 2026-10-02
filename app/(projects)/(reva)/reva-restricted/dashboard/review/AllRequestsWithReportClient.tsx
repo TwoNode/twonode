@@ -254,11 +254,23 @@ const AllRequestsWithReportClient: React.FC<
   const filteredCount =
     filteredData.filtered.length + filteredData.filteredOneTime.length;
 
-  const oneTimeTotalPages = Math.max(1, Math.ceil(filteredData.filteredOneTime.length / PAGE_SIZE));
-  const pagedOneTime = filteredData.filteredOneTime.slice((oneTimePage - 1) * PAGE_SIZE, oneTimePage * PAGE_SIZE);
+  const oneTimeTotalPages = Math.max(
+    1,
+    Math.ceil(filteredData.filteredOneTime.length / PAGE_SIZE)
+  );
+  const pagedOneTime = filteredData.filteredOneTime.slice(
+    (oneTimePage - 1) * PAGE_SIZE,
+    oneTimePage * PAGE_SIZE
+  );
 
-  const requestsTotalPages = Math.max(1, Math.ceil(filteredData.filtered.length / PAGE_SIZE));
-  const pagedRequests = filteredData.filtered.slice((requestsPage - 1) * PAGE_SIZE, requestsPage * PAGE_SIZE);
+  const requestsTotalPages = Math.max(
+    1,
+    Math.ceil(filteredData.filtered.length / PAGE_SIZE)
+  );
+  const pagedRequests = filteredData.filtered.slice(
+    (requestsPage - 1) * PAGE_SIZE,
+    requestsPage * PAGE_SIZE
+  );
 
   return (
     <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">
@@ -282,7 +294,11 @@ const AllRequestsWithReportClient: React.FC<
           <RequestList requests={pagedOneTime} />
           {oneTimeTotalPages > 1 && (
             <div className="mt-3 flex justify-end">
-              <Pagination page={oneTimePage} totalPages={oneTimeTotalPages} onPageChange={setOneTimePage} />
+              <Pagination
+                page={oneTimePage}
+                totalPages={oneTimeTotalPages}
+                onPageChange={setOneTimePage}
+              />
             </div>
           )}
         </section>
@@ -303,7 +319,11 @@ const AllRequestsWithReportClient: React.FC<
             <RequestList requests={pagedRequests} />
             {requestsTotalPages > 1 && (
               <div className="flex justify-end">
-                <Pagination page={requestsPage} totalPages={requestsTotalPages} onPageChange={setRequestsPage} />
+                <Pagination
+                  page={requestsPage}
+                  totalPages={requestsTotalPages}
+                  onPageChange={setRequestsPage}
+                />
               </div>
             )}
           </>

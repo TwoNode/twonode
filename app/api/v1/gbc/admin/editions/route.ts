@@ -21,7 +21,10 @@ const bodySchema = z.object({
 export const POST = withAuth<GBCRole>(
   async (req, ctx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const data = await validateBody(req, bodySchema);
     const editions = await createEdition(data, ctx.session.sub);

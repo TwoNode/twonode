@@ -55,14 +55,23 @@ const PROFILE_SELECT = {
 
 /** metadata is a free-form Json? column — only ever expect a plain object here. */
 function readPreferences(metadata: unknown): ProfilePreferences {
-  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return {};
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata))
+    return {};
   const preferences = (metadata as Record<string, unknown>).preferences;
-  if (!preferences || typeof preferences !== "object" || Array.isArray(preferences)) return {};
+  if (
+    !preferences ||
+    typeof preferences !== "object" ||
+    Array.isArray(preferences)
+  )
+    return {};
   return preferences as ProfilePreferences;
 }
 
 export async function getProfile(userId: string) {
-  const dbUser = await prisma.surfboardUser.findUnique({ where: { id: userId }, select: PROFILE_SELECT });
+  const dbUser = await prisma.surfboardUser.findUnique({
+    where: { id: userId },
+    select: PROFILE_SELECT,
+  });
   if (!dbUser) throw new NotFoundError("User");
   const { metadata, ...rest } = dbUser;
   return { ...rest, preferences: readPreferences(metadata) };
@@ -71,7 +80,10 @@ export async function getProfile(userId: string) {
 export async function updateProfile(userId: string, formData: FormData) {
   const updates: Record<string, any> = {};
 
-  const currentDbUser = await prisma.surfboardUser.findUnique({ where: { id: userId }, select: { isKycValidated: true, metadata: true } });
+  const currentDbUser = await prisma.surfboardUser.findUnique({
+    where: { id: userId },
+    select: { isKycValidated: true, metadata: true },
+  });
   if (!currentDbUser) throw new NotFoundError("User");
   const isLocked = currentDbUser.isKycValidated === true;
 
@@ -80,7 +92,9 @@ export async function updateProfile(userId: string, formData: FormData) {
   if (theme !== null || timezone !== null) {
     const currentPreferences = readPreferences(currentDbUser.metadata);
     const currentMetadata =
-      currentDbUser.metadata && typeof currentDbUser.metadata === "object" && !Array.isArray(currentDbUser.metadata)
+      currentDbUser.metadata &&
+      typeof currentDbUser.metadata === "object" &&
+      !Array.isArray(currentDbUser.metadata)
         ? (currentDbUser.metadata as Record<string, unknown>)
         : {};
     updates.metadata = {
@@ -116,7 +130,8 @@ export async function updateProfile(userId: string, formData: FormData) {
 
   const payerIDValue = formData.get("payerID");
   if (payerIDValue !== null && !isLocked) {
-    updates.payerID = payerIDValue === "" ? null : parseInt(payerIDValue as string, 10);
+    updates.payerID =
+      payerIDValue === "" ? null : parseInt(payerIDValue as string, 10);
   }
 
   const fileFields = ["logo", "signature"] as const;
@@ -136,7 +151,11 @@ export async function updateProfile(userId: string, formData: FormData) {
     }
   }
 
-  const updated = await prisma.surfboardUser.update({ where: { id: userId }, data: updates, select: PROFILE_SELECT });
+  const updated = await prisma.surfboardUser.update({
+    where: { id: userId },
+    data: updates,
+    select: PROFILE_SELECT,
+  });
   const { metadata, ...rest } = updated;
   return { ...rest, preferences: readPreferences(metadata) };
 }

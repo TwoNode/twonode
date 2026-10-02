@@ -24,7 +24,8 @@ export function InquiryModal({ open, onOpenChange, onSend, isSending }: any) {
         <DialogHeader>
           <DialogTitle>Account Update Inquiry</DialogTitle>
           <DialogDescription className="text-gray-400 dark:text-gray-500">
-            Send an email to the admin team detailing what you want to change in your profile.
+            Send an email to the admin team detailing what you want to change in
+            your profile.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">

@@ -14,7 +14,8 @@ export const GET = withAuth<SurfboardRole>(
       | "records-ii"
       | "intake"
       | null;
-    if (!role) throw new ValidationError({ role: "role query param is required" });
+    if (!role)
+      throw new ValidationError({ role: "role query param is required" });
     const data = await getUniqueQueryReasons(role);
     return NextResponse.json({ success: true, data });
   },

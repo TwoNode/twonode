@@ -81,8 +81,12 @@ export default function RevaForm() {
   return (
     <Card className="p-6 max-w-lg mx-auto mt-10 bg-white shadow-lg rounded-2xl">
       <CardContent>
-        <h2 className="text-2xl font-bold mb-2 text-center text-gray-800">REVA Due Diligence Request</h2>
-        <p className="text-center text-gray-500 mb-6 italic">"Your due diligence just got intelligent"</p>
+        <h2 className="text-2xl font-bold mb-2 text-center text-gray-800">
+          REVA Due Diligence Request
+        </h2>
+        <p className="text-center text-gray-500 mb-6 italic">
+          "Your due diligence just got intelligent"
+        </p>
 
         <div className="space-y-4">
           <div>
@@ -108,7 +112,9 @@ export default function RevaForm() {
           </div>
 
           <div>
-            <label className="block text-gray-600 mb-1">Address of the Property</label>
+            <label className="block text-gray-600 mb-1">
+              Address of the Property
+            </label>
             <input
               type="text"
               name="address"
@@ -146,7 +152,9 @@ export default function RevaForm() {
           </div>
 
           <div>
-            <label className="block text-gray-600 mb-1">Supporting Documents</label>
+            <label className="block text-gray-600 mb-1">
+              Supporting Documents
+            </label>
             <input
               type="file"
               onChange={handleFileChange}

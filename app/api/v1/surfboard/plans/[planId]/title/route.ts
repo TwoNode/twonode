@@ -12,12 +12,22 @@ const bodySchema = z.object({ surveyTitle: z.string().min(1) });
 export const PATCH = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { planId } = await routeCtx.params;
     const { surveyTitle } = await validateBody(req, bodySchema);
-    const data = await updatePlanSurveyTitle(ctx.session.role, planId, surveyTitle);
+    const data = await updatePlanSurveyTitle(
+      ctx.session.role,
+      planId,
+      surveyTitle
+    );
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN] }
+  {
+    platform: Platform.SURFBOARD,
+    roles: [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN],
+  }
 );

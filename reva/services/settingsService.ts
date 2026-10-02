@@ -22,7 +22,8 @@ export const DEFAULT_REVA_SETTINGS: RevaSettingsData = {
 };
 
 function mergeSettings(dbSettings: any): RevaSettingsData {
-  if (!dbSettings || typeof dbSettings !== "object") return { ...DEFAULT_REVA_SETTINGS };
+  if (!dbSettings || typeof dbSettings !== "object")
+    return { ...DEFAULT_REVA_SETTINGS };
   return {
     emailVerification: {
       ...DEFAULT_REVA_SETTINGS.emailVerification,
@@ -32,7 +33,9 @@ function mergeSettings(dbSettings: any): RevaSettingsData {
 }
 
 export async function getCurrentSettings(): Promise<RevaSettingsData> {
-  const row = await prisma.revaSettings.findFirst({ orderBy: { updatedAt: "desc" } });
+  const row = await prisma.revaSettings.findFirst({
+    orderBy: { updatedAt: "desc" },
+  });
   if (!row || !row.settings) {
     return DEFAULT_REVA_SETTINGS;
   }
@@ -66,7 +69,9 @@ export async function updateSettings(
         : current.emailVerification.enforcedSince;
   }
 
-  const existing = await prisma.revaSettings.findFirst({ orderBy: { updatedAt: "desc" } });
+  const existing = await prisma.revaSettings.findFirst({
+    orderBy: { updatedAt: "desc" },
+  });
   if (existing) {
     await prisma.revaSettings.update({
       where: { id: existing.id },

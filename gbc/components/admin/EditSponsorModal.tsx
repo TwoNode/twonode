@@ -69,7 +69,10 @@ export function EditSponsorModal({ sponsor, tiers }: EditSponsorModalProps) {
       let newLogoS3Key: string | undefined;
 
       if (logoFile) {
-        const uploadResult = await gbcApi.uploads.file("sponsor-logo", logoFile);
+        const uploadResult = await gbcApi.uploads.file(
+          "sponsor-logo",
+          logoFile
+        );
         if (!uploadResult.success || !uploadResult.data) {
           toast.error("Failed to upload new logo");
           setIsSubmitting(false);
@@ -214,7 +217,8 @@ export function EditSponsorModal({ sponsor, tiers }: EditSponsorModalProps) {
                     conflict in the installed Radix version. Select still
                     holds the value; this only controls display. */}
                 <span>
-                  {editions.find((e) => e.key === selectedEdition)?.name ?? selectedEdition}
+                  {editions.find((e) => e.key === selectedEdition)?.name ??
+                    selectedEdition}
                 </span>
               </SelectTrigger>
               <SelectContent>

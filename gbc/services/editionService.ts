@@ -1,5 +1,9 @@
 import prisma from "@/lib/prisma";
-import { NotFoundError, ValidationError, ConflictError } from "@/lib/api/errors";
+import {
+  NotFoundError,
+  ValidationError,
+  ConflictError,
+} from "@/lib/api/errors";
 import type { GBCEdition } from "@/gbc/utils/settings";
 import type { GBCEditionStatus } from "@/prisma/generated";
 import { resolveSettingsEdition } from "@/gbc/services/settingsService";
@@ -33,17 +37,23 @@ import { resolveSettingsEdition } from "@/gbc/services/settingsService";
  * certificate/receipt access); every other edition's status is derived
  * purely from whether its endDate has passed.
  */
-function deriveStatus(row: { status: string; endDate: Date }): GBCEditionStatus {
+function deriveStatus(row: {
+  status: string;
+  endDate: Date;
+}): GBCEditionStatus {
   if (row.status === "ACTIVE") return "ACTIVE";
   return row.endDate < new Date() ? "PAST" : "UPCOMING";
 }
 
-async function withSyncedStatus<T extends { key: string; status: string; endDate: Date }>(
-  row: T
-): Promise<T> {
+async function withSyncedStatus<
+  T extends { key: string; status: string; endDate: Date },
+>(row: T): Promise<T> {
   const correctStatus = deriveStatus(row);
   if (correctStatus === row.status) return row;
-  await prisma.gBCEdition.update({ where: { key: row.key }, data: { status: correctStatus } });
+  await prisma.gBCEdition.update({
+    where: { key: row.key },
+    data: { status: correctStatus },
+  });
   return { ...row, status: correctStatus };
 }
 
@@ -81,12 +91,17 @@ export async function getEditions(): Promise<GBCEdition[]> {
 }
 
 /** Recycle bin — soft-deleted editions, most recently deleted first. */
-export async function getDeletedEditions(): Promise<(GBCEdition & { deletedAt: string })[]> {
+export async function getDeletedEditions(): Promise<
+  (GBCEdition & { deletedAt: string })[]
+> {
   const rows = await prisma.gBCEdition.findMany({
     where: { deletedAt: { not: null } },
     orderBy: [{ deletedAt: "desc" }],
   });
-  return rows.map((row) => ({ ...toGBCEdition(row), deletedAt: row.deletedAt!.toISOString() }));
+  return rows.map((row) => ({
+    ...toGBCEdition(row),
+    deletedAt: row.deletedAt!.toISOString(),
+  }));
 }
 
 /**
@@ -101,7 +116,9 @@ export async function getCurrentEdition(): Promise<GBCEdition | null> {
 }
 
 export async function getActiveEdition(): Promise<GBCEdition | null> {
-  const row = await prisma.gBCEdition.findFirst({ where: { status: "ACTIVE" } });
+  const row = await prisma.gBCEdition.findFirst({
+    where: { status: "ACTIVE" },
+  });
   return row ? toGBCEdition(row) : null;
 }
 
@@ -112,14 +129,32 @@ async function getEditionOrThrow(key: string) {
 }
 
 async function editionStats(key: string) {
-  const [ticketsSold, checkedIn, revenueAgg, sponsors, speakers] = await Promise.all([
-    prisma.gBCTicket.count({ where: { edition: key, paymentStatus: "COMPLETED" } }),
-    prisma.gBCTicket.count({ where: { edition: key, checkedIn: true } }),
-    prisma.gBCTicket.aggregate({ where: { edition: key, paymentStatus: "COMPLETED" }, _sum: { price: true } }),
-    prisma.gBCSponsor.findMany({ where: { edition: key, visible: true }, orderBy: [{ order: "asc" }] }),
-    prisma.gBCSpeaker.findMany({ where: { edition: key, visible: true }, orderBy: [{ order: "asc" }] }),
-  ]);
-  return { ticketsSold, checkedIn, revenue: revenueAgg._sum.price || 0, sponsors, speakers };
+  const [ticketsSold, checkedIn, revenueAgg, sponsors, speakers] =
+    await Promise.all([
+      prisma.gBCTicket.count({
+        where: { edition: key, paymentStatus: "COMPLETED" },
+      }),
+      prisma.gBCTicket.count({ where: { edition: key, checkedIn: true } }),
+      prisma.gBCTicket.aggregate({
+        where: { edition: key, paymentStatus: "COMPLETED" },
+        _sum: { price: true },
+      }),
+      prisma.gBCSponsor.findMany({
+        where: { edition: key, visible: true },
+        orderBy: [{ order: "asc" }],
+      }),
+      prisma.gBCSpeaker.findMany({
+        where: { edition: key, visible: true },
+        orderBy: [{ order: "asc" }],
+      }),
+    ]);
+  return {
+    ticketsSold,
+    checkedIn,
+    revenue: revenueAgg._sum.price || 0,
+    sponsors,
+    speakers,
+  };
 }
 
 /** No revenue — backs the public Past Editions page. */
@@ -136,12 +171,21 @@ export async function getEditionAdminStats(key: string) {
   return { edition, ...stats };
 }
 
-export type CreateEditionInput = Omit<GBCEdition, "status"> & { status?: GBCEdition["status"] };
+export type CreateEditionInput = Omit<GBCEdition, "status"> & {
+  status?: GBCEdition["status"];
+};
 
-export async function createEdition(data: CreateEditionInput, userId: string): Promise<GBCEdition[]> {
-  const existing = await prisma.gBCEdition.findUnique({ where: { key: data.key } });
+export async function createEdition(
+  data: CreateEditionInput,
+  userId: string
+): Promise<GBCEdition[]> {
+  const existing = await prisma.gBCEdition.findUnique({
+    where: { key: data.key },
+  });
   if (existing) {
-    throw new ValidationError({ key: `An edition with key "${data.key}" already exists` });
+    throw new ValidationError({
+      key: `An edition with key "${data.key}" already exists`,
+    });
   }
 
   await prisma.gBCEdition.create({
@@ -158,7 +202,13 @@ export async function createEdition(data: CreateEditionInput, userId: string): P
     },
   });
   await prisma.gBCAuditLog.create({
-    data: { userId, action: "CREATE_EDITION", entity: "GBCEdition", entityId: data.key, changes: JSON.stringify(data) },
+    data: {
+      userId,
+      action: "CREATE_EDITION",
+      entity: "GBCEdition",
+      entityId: data.key,
+      changes: JSON.stringify(data),
+    },
   });
 
   return getEditions();
@@ -190,41 +240,78 @@ export async function updateEdition(
       ...(data.theme !== undefined ? { theme: data.theme } : {}),
       ...(data.subTheme !== undefined ? { subTheme: data.subTheme } : {}),
       ...(data.venue !== undefined ? { venue: data.venue } : {}),
-      ...(data.startDate !== undefined ? { startDate: new Date(data.startDate) } : {}),
-      ...(data.endDate !== undefined ? { endDate: new Date(data.endDate) } : {}),
-      ...(data.ticketPrefix !== undefined ? { ticketPrefix: data.ticketPrefix } : {}),
+      ...(data.startDate !== undefined
+        ? { startDate: new Date(data.startDate) }
+        : {}),
+      ...(data.endDate !== undefined
+        ? { endDate: new Date(data.endDate) }
+        : {}),
+      ...(data.ticketPrefix !== undefined
+        ? { ticketPrefix: data.ticketPrefix }
+        : {}),
     },
   });
   await prisma.gBCAuditLog.create({
-    data: { userId, action: "UPDATE_EDITION", entity: "GBCEdition", entityId: key, changes: JSON.stringify(data) },
+    data: {
+      userId,
+      action: "UPDATE_EDITION",
+      entity: "GBCEdition",
+      entityId: key,
+      changes: JSON.stringify(data),
+    },
   });
 
   return getEditions();
 }
 
-export async function activateEdition(key: string, userId: string): Promise<GBCEdition[]> {
+export async function activateEdition(
+  key: string,
+  userId: string
+): Promise<GBCEdition[]> {
   const target = await getEditionOrThrow(key);
   if (target.status === "ACTIVE") return getEditions();
 
-  const currentlyActive = await prisma.gBCEdition.findFirst({ where: { status: "ACTIVE" } });
+  const currentlyActive = await prisma.gBCEdition.findFirst({
+    where: { status: "ACTIVE" },
+  });
   if (currentlyActive) {
-    throw new ConflictError(`Edition "${currentlyActive.key}" is already active — archive it first`);
+    throw new ConflictError(
+      `Edition "${currentlyActive.key}" is already active — archive it first`
+    );
   }
 
-  await prisma.gBCEdition.update({ where: { key }, data: { status: "ACTIVE" } });
+  await prisma.gBCEdition.update({
+    where: { key },
+    data: { status: "ACTIVE" },
+  });
   await prisma.gBCAuditLog.create({
-    data: { userId, action: "ACTIVATE_EDITION", entity: "GBCEdition", entityId: key, changes: JSON.stringify({ key, status: "ACTIVE" }) },
+    data: {
+      userId,
+      action: "ACTIVATE_EDITION",
+      entity: "GBCEdition",
+      entityId: key,
+      changes: JSON.stringify({ key, status: "ACTIVE" }),
+    },
   });
 
   return getEditions();
 }
 
-export async function archiveEdition(key: string, userId: string): Promise<GBCEdition[]> {
+export async function archiveEdition(
+  key: string,
+  userId: string
+): Promise<GBCEdition[]> {
   await getEditionOrThrow(key);
 
   await prisma.gBCEdition.update({ where: { key }, data: { status: "PAST" } });
   await prisma.gBCAuditLog.create({
-    data: { userId, action: "ARCHIVE_EDITION", entity: "GBCEdition", entityId: key, changes: JSON.stringify({ key, status: "PAST" }) },
+    data: {
+      userId,
+      action: "ARCHIVE_EDITION",
+      entity: "GBCEdition",
+      entityId: key,
+      changes: JSON.stringify({ key, status: "PAST" }),
+    },
   });
 
   return getEditions();
@@ -238,28 +325,52 @@ export async function archiveEdition(key: string, userId: string): Promise<GBCEd
  * "archive it first" makes the admin take that as its own deliberate step
  * rather than have a delete silently double as an archive.
  */
-export async function softDeleteEdition(key: string, userId: string): Promise<GBCEdition[]> {
+export async function softDeleteEdition(
+  key: string,
+  userId: string
+): Promise<GBCEdition[]> {
   const target = await getEditionOrThrow(key);
   if (target.status === "ACTIVE") {
-    throw new ConflictError(`Edition "${key}" is currently active — archive it before deleting`);
+    throw new ConflictError(
+      `Edition "${key}" is currently active — archive it before deleting`
+    );
   }
 
-  await prisma.gBCEdition.update({ where: { key }, data: { deletedAt: new Date() } });
+  await prisma.gBCEdition.update({
+    where: { key },
+    data: { deletedAt: new Date() },
+  });
   await prisma.gBCAuditLog.create({
-    data: { userId, action: "DELETE_EDITION", entity: "GBCEdition", entityId: key, changes: JSON.stringify({ key }) },
+    data: {
+      userId,
+      action: "DELETE_EDITION",
+      entity: "GBCEdition",
+      entityId: key,
+      changes: JSON.stringify({ key }),
+    },
   });
 
   return getEditions();
 }
 
-export async function restoreEdition(key: string, userId: string): Promise<GBCEdition[]> {
+export async function restoreEdition(
+  key: string,
+  userId: string
+): Promise<GBCEdition[]> {
   const edition = await prisma.gBCEdition.findUnique({ where: { key } });
   if (!edition) throw new NotFoundError("Edition");
-  if (!edition.deletedAt) throw new ValidationError({ key: "Edition is not in the recycle bin" });
+  if (!edition.deletedAt)
+    throw new ValidationError({ key: "Edition is not in the recycle bin" });
 
   await prisma.gBCEdition.update({ where: { key }, data: { deletedAt: null } });
   await prisma.gBCAuditLog.create({
-    data: { userId, action: "RESTORE_EDITION", entity: "GBCEdition", entityId: key, changes: JSON.stringify({ key }) },
+    data: {
+      userId,
+      action: "RESTORE_EDITION",
+      entity: "GBCEdition",
+      entityId: key,
+      changes: JSON.stringify({ key }),
+    },
   });
 
   return getEditions();
@@ -273,20 +384,27 @@ export async function restoreEdition(key: string, userId: string): Promise<GBCEd
  * history, and no admin click should be able to destroy that as a side
  * effect of tidying up an old edition record.
  */
-export async function permanentlyDeleteEdition(key: string, userId: string): Promise<(GBCEdition & { deletedAt: string })[]> {
+export async function permanentlyDeleteEdition(
+  key: string,
+  userId: string
+): Promise<(GBCEdition & { deletedAt: string })[]> {
   const edition = await prisma.gBCEdition.findUnique({ where: { key } });
   if (!edition) throw new NotFoundError("Edition");
   if (!edition.deletedAt) {
-    throw new ValidationError({ key: "Edition must be deleted (in the recycle bin) before it can be purged" });
+    throw new ValidationError({
+      key: "Edition must be deleted (in the recycle bin) before it can be purged",
+    });
   }
 
-  const [tickets, sponsors, partners, speakers, eventStats] = await Promise.all([
-    prisma.gBCTicket.count({ where: { edition: key } }),
-    prisma.gBCSponsor.count({ where: { edition: key } }),
-    prisma.gBCPartner.count({ where: { edition: key } }),
-    prisma.gBCSpeaker.count({ where: { edition: key } }),
-    prisma.gBCEventStats.count({ where: { edition: key } }),
-  ]);
+  const [tickets, sponsors, partners, speakers, eventStats] = await Promise.all(
+    [
+      prisma.gBCTicket.count({ where: { edition: key } }),
+      prisma.gBCSponsor.count({ where: { edition: key } }),
+      prisma.gBCPartner.count({ where: { edition: key } }),
+      prisma.gBCSpeaker.count({ where: { edition: key } }),
+      prisma.gBCEventStats.count({ where: { edition: key } }),
+    ]
+  );
   const attached = tickets + sponsors + partners + speakers + eventStats;
   if (attached > 0) {
     throw new ConflictError(
@@ -296,7 +414,13 @@ export async function permanentlyDeleteEdition(key: string, userId: string): Pro
 
   await prisma.gBCEdition.delete({ where: { key } });
   await prisma.gBCAuditLog.create({
-    data: { userId, action: "PERMANENTLY_DELETE_EDITION", entity: "GBCEdition", entityId: key, changes: JSON.stringify({ key }) },
+    data: {
+      userId,
+      action: "PERMANENTLY_DELETE_EDITION",
+      entity: "GBCEdition",
+      entityId: key,
+      changes: JSON.stringify({ key }),
+    },
   });
 
   return getDeletedEditions();

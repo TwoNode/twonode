@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 import { Loader2, Sparkles } from "lucide-react";

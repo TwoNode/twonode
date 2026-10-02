@@ -22,7 +22,10 @@ interface TicketPricingDisplayProps {
   edition?: string;
 }
 
-export function TicketPricingDisplay({ settings, edition }: TicketPricingDisplayProps) {
+export function TicketPricingDisplay({
+  settings,
+  edition,
+}: TicketPricingDisplayProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pricing, setPricing] = useState<GBCSettingsData["tickets"]>({
@@ -54,7 +57,10 @@ export function TicketPricingDisplay({ settings, edition }: TicketPricingDisplay
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const result = await gbcApi.settings.update({ tickets: pricing }, edition);
+      const result = await gbcApi.settings.update(
+        { tickets: pricing },
+        edition
+      );
 
       if (result.success) {
         toast.success("Ticket prices updated successfully");
@@ -470,10 +476,7 @@ export function TicketPricingDisplay({ settings, edition }: TicketPricingDisplay
                 type="number"
                 value={pricing.maxVipCapacity}
                 onChange={(e) =>
-                  handlePriceChange(
-                    "maxVipCapacity",
-                    parseInt(e.target.value)
-                  )
+                  handlePriceChange("maxVipCapacity", parseInt(e.target.value))
                 }
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 min="1"

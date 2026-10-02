@@ -32,10 +32,23 @@ const navigation = GBC_ROUTES.filter(
 ).map((r) => ({ name: r.label, href: r.path, icon: r.icon, roles: r.roles }));
 
 const GROUPS: { label: string; items: string[] }[] = [
-  { label: "Overview", items: ["Dashboard", "Tickets", "Check-In", "Attendees"] },
+  {
+    label: "Overview",
+    items: ["Dashboard", "Tickets", "Check-In", "Attendees"],
+  },
   { label: "Program", items: ["Editions"] },
   { label: "Content", items: ["Speakers", "Sponsors", "Gallery"] },
-  { label: "System", items: ["Inquiries", "Certificates", "Users", "Audit Logs", "Notifications", "Settings"] },
+  {
+    label: "System",
+    items: [
+      "Inquiries",
+      "Certificates",
+      "Users",
+      "Audit Logs",
+      "Notifications",
+      "Settings",
+    ],
+  },
 ];
 
 export function AdminSidebar({ onClose }: { onClose?: () => void }) {
@@ -63,8 +76,13 @@ export function AdminSidebar({ onClose }: { onClose?: () => void }) {
             GB
           </div>
           <div>
-            <div className="font-bold text-sm text-white leading-tight">GBC</div>
-            <div className="text-[10px]" style={{ color: GBC_COLORS.nav.textMuted }}>
+            <div className="font-bold text-sm text-white leading-tight">
+              GBC
+            </div>
+            <div
+              className="text-[10px]"
+              style={{ color: GBC_COLORS.nav.textMuted }}
+            >
               Admin panel
             </div>
           </div>
@@ -83,7 +101,10 @@ export function AdminSidebar({ onClose }: { onClose?: () => void }) {
       <nav className="px-3 py-3 flex-1 overflow-y-auto">
         {GROUPS.map((group) => {
           const items = navigation.filter(
-            (n) => group.items.includes(n.name) && role !== null && n.roles.includes(role)
+            (n) =>
+              group.items.includes(n.name) &&
+              role !== null &&
+              n.roles.includes(role)
           );
           if (items.length === 0) return null;
           return (
@@ -103,7 +124,9 @@ export function AdminSidebar({ onClose }: { onClose?: () => void }) {
                     onClick={onClose} // Close sidebar on navigation (mobile)
                     className="flex items-center gap-3 px-3 py-2.5 sm:py-2 rounded-lg mb-0.5 transition text-sm sm:text-base"
                     style={{
-                      background: isActive ? GBC_COLORS.nav.bgActive : "transparent",
+                      background: isActive
+                        ? GBC_COLORS.nav.bgActive
+                        : "transparent",
                       color: isActive ? "#fff" : GBC_COLORS.nav.text,
                       fontWeight: isActive ? 600 : 500,
                     }}

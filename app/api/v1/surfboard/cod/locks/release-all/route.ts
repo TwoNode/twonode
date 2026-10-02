@@ -4,19 +4,32 @@ import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
 import { ForbiddenError } from "@/lib/api/errors";
-import { MDA_ROLES, MDARole, releaseAllLocksForUser } from "@/surfboard/services/planLockService";
+import {
+  MDA_ROLES,
+  MDARole,
+  releaseAllLocksForUser,
+} from "@/surfboard/services/planLockService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
-const bodySchema = z.object({ role: z.enum(MDA_ROLES as [MDARole, ...MDARole[]]) });
+const bodySchema = z.object({
+  role: z.enum(MDA_ROLES as [MDARole, ...MDARole[]]),
+});
 
 /** Called when leaving the MDA admin page — release every lock the caller holds for their stage. */
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { role } = await validateBody(req, bodySchema);
-    if (role !== ctx.session.role && ctx.session.role !== SurfboardRole.SUPERADMIN && ctx.session.role !== SurfboardRole.MDA_SUPERADMIN) {
+    if (
+      role !== ctx.session.role &&
+      ctx.session.role !== SurfboardRole.SUPERADMIN &&
+      ctx.session.role !== SurfboardRole.MDA_SUPERADMIN
+    ) {
       throw new ForbiddenError();
     }
 
@@ -26,5 +39,8 @@ export const POST = withAuth<SurfboardRole>(
   // See the matching comment in locks/next/route.ts — this array only gates
   // who may call the route; SUPERADMIN callers were previously 403'd here
   // before ever reaching the handler's own SUPERADMIN allowance below.
-  { platform: Platform.SURFBOARD, roles: [...MDA_ROLES, SurfboardRole.SUPERADMIN] as SurfboardRole[] }
+  {
+    platform: Platform.SURFBOARD,
+    roles: [...MDA_ROLES, SurfboardRole.SUPERADMIN] as SurfboardRole[],
+  }
 );

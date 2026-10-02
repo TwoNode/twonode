@@ -49,7 +49,8 @@ interface InquiriesTableProps {
 }
 
 export function InquiriesTable({ inquiries, editions }: InquiriesTableProps) {
-  const editionName = (key: string) => editions.find((e) => e.key === key)?.name ?? `Edition ${key}`;
+  const editionName = (key: string) =>
+    editions.find((e) => e.key === key)?.name ?? `Edition ${key}`;
   const [viewInquiry, setViewInquiry] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -164,7 +165,10 @@ export function InquiriesTable({ inquiries, editions }: InquiriesTableProps) {
                   <TableCell className="text-sm">
                     {inquiry.phone || "—"}
                   </TableCell>
-                  <TableCell className="max-w-[12rem] truncate text-sm" title={editionName(inquiry.edition)}>
+                  <TableCell
+                    className="max-w-[12rem] truncate text-sm"
+                    title={editionName(inquiry.edition)}
+                  >
                     {editionName(inquiry.edition)}
                   </TableCell>
                   <TableCell>

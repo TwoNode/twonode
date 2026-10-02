@@ -61,7 +61,12 @@ export default function AdminUsersList() {
     reload,
   } = useServerList<AdminUser, Record<string, never>>(
     async ({ page, pageSize, search }) =>
-      revaApi.admin.users.listPaginated({ page, pageSize, search: search || undefined, scope: "admins" }),
+      revaApi.admin.users.listPaginated({
+        page,
+        pageSize,
+        search: search || undefined,
+        scope: "admins",
+      }),
     { initialFilters: {} }
   );
 
@@ -175,7 +180,9 @@ export default function AdminUsersList() {
       <CardContent>
         {filteredUsers.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-500 dark:text-gray-400">No admin users found</p>
+            <p className="text-gray-500 dark:text-gray-400">
+              No admin users found
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -212,7 +219,9 @@ export default function AdminUsersList() {
                       </div>
                     </div>
 
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{user.email}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      {user.email}
+                    </p>
 
                     <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                       <div className="flex items-center gap-1">
@@ -345,7 +354,13 @@ export default function AdminUsersList() {
             <p className="text-sm text-gray-500">
               Page {page} of {totalPages} • {total} admin users
             </p>
-            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              pageSize={pageSize}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
       </CardContent>

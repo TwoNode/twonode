@@ -27,7 +27,9 @@ export default function HomeGallery({
         // setting's year didn't match the data's actual year.
         const galleryResult = await gbcApi.gallery.list();
         if (galleryResult.success) {
-          setItems(galleryResult.data?.slice(0, gallery?.itemsPerPage ?? 6) ?? []);
+          setItems(
+            galleryResult.data?.slice(0, gallery?.itemsPerPage ?? 6) ?? []
+          );
         }
       } catch (error) {
         console.error("Error fetching gallery items:", error);
@@ -58,7 +60,9 @@ export default function HomeGallery({
         {items.length === 0 ? (
           <div className="text-center py-12">
             <ImageIcon className="h-24 w-24 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">No gallery items yet.</p>
+            <p className="text-gray-500 dark:text-gray-400">
+              No gallery items yet.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -96,7 +100,9 @@ export default function HomeGallery({
                   )}
                 </div>
                 <div className="p-4">
-                  <h3 className="font-bold text-lg mb-1 text-gray-900 dark:text-white">{item.title}</h3>
+                  <h3 className="font-bold text-lg mb-1 text-gray-900 dark:text-white">
+                    {item.title}
+                  </h3>
                   {item.description && (
                     <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2">
                       {item.description}

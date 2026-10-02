@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/lib/api/withAuth";
-import { getAllFacilitators, getAllFacilitatorsAndPlanNumbers } from "@/surfboard/services/planService";
+import {
+  getAllFacilitators,
+  getAllFacilitatorsAndPlanNumbers,
+} from "@/surfboard/services/planService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 export const GET = withAuth<SurfboardRole>(

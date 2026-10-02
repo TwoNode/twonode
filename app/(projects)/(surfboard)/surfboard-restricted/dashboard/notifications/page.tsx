@@ -54,18 +54,9 @@ import { ViewToggle } from "@/components/ui/view-toggle";
 import { useViewMode } from "@/hooks/useViewMode";
 
 type NotificationType =
-  | "INFO"
-  | "SUCCESS"
-  | "WARNING"
-  | "ERROR"
-  | "SYSTEM"
-  | "PLAN"
-  | "SHARING";
+  "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "SYSTEM" | "PLAN" | "SHARING";
 type NotificationAudience =
-  | "SPECIFIC_USERS"
-  | "GENERAL_ADMINS"
-  | "SUPERADMIN"
-  | "ALL_USERS";
+  "SPECIFIC_USERS" | "GENERAL_ADMINS" | "SUPERADMIN" | "ALL_USERS";
 
 interface Notification {
   id: string;
@@ -98,12 +89,17 @@ const audienceLabels: Record<NotificationAudience, string> = {
 
 const TYPE_TONE: Record<NotificationType, string> = {
   INFO: "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30",
-  SUCCESS: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30",
-  WARNING: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30",
-  ERROR: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30",
-  SYSTEM: "bg-slate-100 dark:bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-500/30",
+  SUCCESS:
+    "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30",
+  WARNING:
+    "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30",
+  ERROR:
+    "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30",
+  SYSTEM:
+    "bg-slate-100 dark:bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-500/30",
   PLAN: "bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-500/30",
-  SHARING: "bg-teal-100 dark:bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-500/30",
+  SHARING:
+    "bg-teal-100 dark:bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-500/30",
 };
 
 const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
@@ -259,17 +255,27 @@ export default function AdminNotificationsPage() {
           });
 
       if (result.success) {
-        toast.success(editingId ? "Notification updated" : "Notification created successfully");
+        toast.success(
+          editingId
+            ? "Notification updated"
+            : "Notification created successfully"
+        );
         setShowCreateDialog(false);
         setEditingId(null);
         setFormData(EMPTY_FORM);
         reload();
         loadStats();
       } else {
-        toast.error(result.error || `Failed to ${editingId ? "update" : "create"} notification`);
+        toast.error(
+          result.error ||
+            `Failed to ${editingId ? "update" : "create"} notification`
+        );
       }
     } catch (error) {
-      console.error(`Error ${editingId ? "updating" : "creating"} notification:`, error);
+      console.error(
+        `Error ${editingId ? "updating" : "creating"} notification:`,
+        error
+      );
       toast.error(`Error ${editingId ? "updating" : "creating"} notification`);
     } finally {
       setCreating(false);
@@ -325,7 +331,8 @@ export default function AdminNotificationsPage() {
     },
   ];
 
-  const hasActiveFilters = !!search.trim() || typeFilter !== "ALL" || audienceFilter !== "ALL";
+  const hasActiveFilters =
+    !!search.trim() || typeFilter !== "ALL" || audienceFilter !== "ALL";
 
   const clearFilters = () => {
     setSearch("");
@@ -351,13 +358,18 @@ export default function AdminNotificationsPage() {
           </div>
 
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={openCreateDialog}>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={openCreateDialog}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Create Notification
             </Button>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>{editingId ? "Edit Notification" : "Create New Notification"}</DialogTitle>
+                <DialogTitle>
+                  {editingId ? "Edit Notification" : "Create New Notification"}
+                </DialogTitle>
                 <DialogDescription>
                   {editingId
                     ? "Editing doesn't re-send the email or WhatsApp copy — those already went out when it was first created."
@@ -462,7 +474,10 @@ export default function AdminNotificationsPage() {
                       id="sendEmail"
                       checked={formData.sendEmail}
                       onChange={(e) =>
-                        setFormData({ ...formData, sendEmail: e.target.checked })
+                        setFormData({
+                          ...formData,
+                          sendEmail: e.target.checked,
+                        })
                       }
                       className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-white/15"
                     />
@@ -479,7 +494,10 @@ export default function AdminNotificationsPage() {
                     id="showAsModal"
                     checked={formData.showAsModal}
                     onChange={(e) =>
-                      setFormData({ ...formData, showAsModal: e.target.checked })
+                      setFormData({
+                        ...formData,
+                        showAsModal: e.target.checked,
+                      })
                     }
                     className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-white/15"
                   />
@@ -561,7 +579,9 @@ export default function AdminNotificationsPage() {
               <div className={`text-2xl font-bold ${stat.color} mb-1`}>
                 {stat.value}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {stat.label}
+              </div>
             </motion.div>
           ))}
         </div>
@@ -579,7 +599,10 @@ export default function AdminNotificationsPage() {
               className="pl-9"
             />
           </div>
-          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as NotificationType | "ALL")}>
+          <Select
+            value={typeFilter}
+            onValueChange={(v) => setTypeFilter(v as NotificationType | "ALL")}
+          >
             <SelectTrigger className="w-full lg:w-44">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
@@ -594,7 +617,12 @@ export default function AdminNotificationsPage() {
               <SelectItem value="SHARING">Sharing</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={audienceFilter} onValueChange={(v) => setAudienceFilter(v as NotificationAudience | "ALL")}>
+          <Select
+            value={audienceFilter}
+            onValueChange={(v) =>
+              setAudienceFilter(v as NotificationAudience | "ALL")
+            }
+          >
             <SelectTrigger className="w-full lg:w-48">
               <SelectValue placeholder="Audience" />
             </SelectTrigger>
@@ -616,7 +644,11 @@ export default function AdminNotificationsPage() {
               Clear
             </Button>
           )}
-          <ViewToggle value={viewMode} onChange={setViewMode} className="shrink-0" />
+          <ViewToggle
+            value={viewMode}
+            onChange={setViewMode}
+            className="shrink-0"
+          />
         </div>
       </div>
 
@@ -635,7 +667,12 @@ export default function AdminNotificationsPage() {
                   : "No notifications match your filters"}
               </p>
               {hasActiveFilters && (
-                <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="mt-4"
+                >
                   Clear filters
                 </Button>
               )}
@@ -658,7 +695,10 @@ export default function AdminNotificationsPage() {
                       {notification.type}
                     </span>
                     {!notification.isRead && (
-                      <BellRing className="h-3.5 w-3.5 text-blue-500 shrink-0" aria-label="Unread" />
+                      <BellRing
+                        className="h-3.5 w-3.5 text-blue-500 shrink-0"
+                        aria-label="Unread"
+                      />
                     )}
                   </div>
 
@@ -708,7 +748,13 @@ export default function AdminNotificationsPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Page {page} of {totalPages} • {total} notifications
               </p>
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+              />
             </div>
           )}
         </div>
@@ -748,7 +794,12 @@ export default function AdminNotificationsPage() {
                         : "No notifications match your filters"}
                     </p>
                     {hasActiveFilters && (
-                      <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearFilters}
+                        className="mt-4"
+                      >
                         Clear filters
                       </Button>
                     )}
@@ -823,7 +874,13 @@ export default function AdminNotificationsPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Page {page} of {totalPages} • {total} notifications
               </p>
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+              />
             </div>
           )}
         </div>

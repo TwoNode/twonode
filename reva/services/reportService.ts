@@ -1,9 +1,15 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@/prisma/generated";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
-import { deleteManyFromS3, uploadToS3FromServer } from "@/app/(projects)/(reva)/reva/actions/awsActions";
+import {
+  deleteManyFromS3,
+  uploadToS3FromServer,
+} from "@/app/(projects)/(reva)/reva/actions/awsActions";
 import { sendMail, sendEmailToAllAdmins } from "@/utils/email";
-import { notifyReportReady, notifySystemAlert } from "@/reva/services/notificationService";
+import {
+  notifyReportReady,
+  notifySystemAlert,
+} from "@/reva/services/notificationService";
 import { writeAudit } from "@/lib/audit";
 import { Platform } from "@/utils/platform";
 
@@ -30,13 +36,23 @@ export async function getAllRequestsWithUserByAdmin({
   onlyWithReport?: boolean;
   includeOneTimeRequests?: boolean;
 } = {}) {
-  const reportFilter = onlyWithReport ? { report: { not: Prisma.JsonNull as any } } : undefined;
+  const reportFilter = onlyWithReport
+    ? { report: { not: Prisma.JsonNull as any } }
+    : undefined;
 
   const properties = await prisma.property.findMany({
     take: limit,
     where: reportFilter,
     include: {
-      user: { select: { id: true, email: true, firstName: true, lastName: true, kindeId: true } },
+      user: {
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          kindeId: true,
+        },
+      },
     },
     orderBy: { updatedAt: "desc" },
   });
@@ -56,7 +72,15 @@ export async function getRequestByReferenceByAdmin(reference: string) {
   const request = await prisma.property.findUnique({
     where: { reference },
     include: {
-      user: { select: { id: true, email: true, firstName: true, lastName: true, kindeId: true } },
+      user: {
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          kindeId: true,
+        },
+      },
     },
   });
   if (!request) throw new NotFoundError("Request");
@@ -64,7 +88,9 @@ export async function getRequestByReferenceByAdmin(reference: string) {
 }
 
 export async function getOneTimeRequestByReferenceByAdmin(reference: string) {
-  const request = await prisma.oneTimeUserProperty.findUnique({ where: { reference } });
+  const request = await prisma.oneTimeUserProperty.findUnique({
+    where: { reference },
+  });
   if (!request) throw new NotFoundError("OneTime request");
   return request;
 }
@@ -80,12 +106,22 @@ export async function getAnyRequestByReferenceForAdmin(reference: string) {
   const property = await prisma.property.findUnique({
     where: { reference },
     include: {
-      user: { select: { id: true, email: true, firstName: true, lastName: true, kindeId: true } },
+      user: {
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          kindeId: true,
+        },
+      },
     },
   });
   if (property) return { type: "property" as const, data: property };
 
-  const oneTime = await prisma.oneTimeUserProperty.findUnique({ where: { reference } });
+  const oneTime = await prisma.oneTimeUserProperty.findUnique({
+    where: { reference },
+  });
   if (oneTime) return { type: "oneTime" as const, data: oneTime };
 
   throw new NotFoundError("Request");
@@ -108,11 +144,15 @@ async function uploadFilesToS3AndUpdateReport(
   );
 }
 
-export async function uploadDueDiligenceReport(formData: FormData, adminEmail: string) {
+export async function uploadDueDiligenceReport(
+  formData: FormData,
+  adminEmail: string
+) {
   const warnings: string[] = [];
 
   const reference = formData.get("reference") as string;
-  if (!reference) throw new ValidationError({ reference: "Missing property reference" });
+  if (!reference)
+    throw new ValidationError({ reference: "Missing property reference" });
 
   const fileKeys = [
     "transactionFlowImg",
@@ -150,7 +190,8 @@ export async function uploadDueDiligenceReport(formData: FormData, adminEmail: s
       surveyName: formData.get("surveyName"),
       historicalSurveys: formData.get("historicalSurveys"),
       zoning: formData.get("zoning"),
-      hasBuildingPlanApproval: formData.get("hasBuildingPlanApproval") === "true",
+      hasBuildingPlanApproval:
+        formData.get("hasBuildingPlanApproval") === "true",
       buildingPlanNo: formData.get("buildingPlanNo"),
       setbacksInfo: formData.get("setbacksInfo"),
       images: prevImages,
@@ -160,7 +201,11 @@ export async function uploadDueDiligenceReport(formData: FormData, adminEmail: s
         value !== null &&
         value !== undefined &&
         !(Array.isArray(value) && value.length === 0) &&
-        !(typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0)
+        !(
+          typeof value === "object" &&
+          !Array.isArray(value) &&
+          Object.keys(value).length === 0
+        )
     )
   );
 
@@ -170,15 +215,22 @@ export async function uploadDueDiligenceReport(formData: FormData, adminEmail: s
     try {
       await deleteManyFromS3(replacedImageUrls.map((url) => ({ url })));
     } catch (error) {
-      console.warn("[reportService] failed to delete some replaced images", error);
+      console.warn(
+        "[reportService] failed to delete some replaced images",
+        error
+      );
     }
   }
 
-  const existingProperty = await prisma.property.findUnique({ where: { reference } });
+  const existingProperty = await prisma.property.findUnique({
+    where: { reference },
+  });
   if (!existingProperty) throw new NotFoundError("Property");
 
   const previousReport =
-    existingProperty.report && typeof existingProperty.report === "object" ? existingProperty.report : {};
+    existingProperty.report && typeof existingProperty.report === "object"
+      ? existingProperty.report
+      : {};
 
   const result = await prisma.property.update({
     where: { reference },
@@ -210,12 +262,16 @@ export async function uploadDueDiligenceReport(formData: FormData, adminEmail: s
   return { data: result, warnings };
 }
 
-export async function uploadDirectLinkReport(formData: FormData, adminEmail: string) {
+export async function uploadDirectLinkReport(
+  formData: FormData,
+  adminEmail: string
+) {
   const warnings: string[] = [];
 
   const reference = formData.get("reference") as string;
   const isOneTimeRequest = formData.get("isOneTimeRequest") === "true";
-  if (!reference) throw new ValidationError({ reference: "Missing property reference" });
+  if (!reference)
+    throw new ValidationError({ reference: "Missing property reference" });
 
   const file = formData.get("directLink");
   if (!file || !(file instanceof File)) {
@@ -223,13 +279,19 @@ export async function uploadDirectLinkReport(formData: FormData, adminEmail: str
   }
 
   if (isOneTimeRequest) {
-    const existingRequest = await prisma.oneTimeUserProperty.findUnique({ where: { reference } });
+    const existingRequest = await prisma.oneTimeUserProperty.findUnique({
+      where: { reference },
+    });
     if (!existingRequest) throw new NotFoundError("OneTime request");
 
-    const directFileLink = await uploadToS3FromServer([file], reference, { useDirectFileName: true });
+    const directFileLink = await uploadToS3FromServer([file], reference, {
+      useDirectFileName: true,
+    });
 
     const previousReport =
-      existingRequest.report && typeof existingRequest.report === "object" ? existingRequest.report : {};
+      existingRequest.report && typeof existingRequest.report === "object"
+        ? existingRequest.report
+        : {};
 
     const report = {
       ...previousReport,
@@ -274,13 +336,20 @@ export async function uploadDirectLinkReport(formData: FormData, adminEmail: str
     return { data: result, warnings };
   }
 
-  const existingProperty = await prisma.property.findUnique({ where: { reference }, include: { user: true } });
+  const existingProperty = await prisma.property.findUnique({
+    where: { reference },
+    include: { user: true },
+  });
   if (!existingProperty) throw new NotFoundError("Property");
 
-  const directFileLink = await uploadToS3FromServer([file], reference, { useDirectFileName: true });
+  const directFileLink = await uploadToS3FromServer([file], reference, {
+    useDirectFileName: true,
+  });
 
   const previousReport =
-    existingProperty.report && typeof existingProperty.report === "object" ? existingProperty.report : {};
+    existingProperty.report && typeof existingProperty.report === "object"
+      ? existingProperty.report
+      : {};
 
   const report = {
     ...previousReport,
@@ -320,7 +389,13 @@ export async function uploadDirectLinkReport(formData: FormData, adminEmail: str
 }
 
 /** `path` is the full path+query (caller builds `?reference=`/`&email=` as needed — the one-time guest link needs both, the others need just `?reference=`). */
-function reportMailTemplate(opts: { title: string; greeting: string; body: string; reference: string; path: string }) {
+function reportMailTemplate(opts: {
+  title: string;
+  greeting: string;
+  body: string;
+  reference: string;
+  path: string;
+}) {
   const logoDisplay = `<div style="background-color: #1e40af; background-image: linear-gradient(to right, #00000020, #ffffff); width: 100%;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color: #ffffff; background-image: linear-gradient(to right, #00000020, #ffffff); padding: 16px 0;"><tr><td align="center"><img src="${process.env.ONLINE_BASE_URL}/logo.png" alt="TwoNode Technologies" style="height: 48px; max-width: 40%; margin-right: 8px;" /><img src="${process.env.ONLINE_BASE_URL}/reva/revaLogo.png" alt="REVA Logo" style="height: 48px; max-width: 40%;" /></td></tr></table></div>`;
 
   return `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">${logoDisplay}<div style="background-color: #1e40af; background-image: linear-gradient(to right, #1e40af, #111827); padding: 24px; text-align: center; color: white;"><h2 style="margin: 0; font-size: 24px;">🎉 Report ${
@@ -336,15 +411,24 @@ export async function approveDueDiligenceReport(
   reference: string,
   isApproved: boolean,
   adminEmail: string,
-  actorId?: string,
+  actorId?: string
 ) {
   const warnings: string[] = [];
-  if (!reference) throw new ValidationError({ reference: "Reference is required" });
+  if (!reference)
+    throw new ValidationError({ reference: "Reference is required" });
 
   const property = await prisma.property.findUnique({
     where: { reference },
     include: {
-      user: { select: { id: true, email: true, firstName: true, lastName: true, kindeId: true } },
+      user: {
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          kindeId: true,
+        },
+      },
     },
   });
 
@@ -361,7 +445,10 @@ export async function approveDueDiligenceReport(
 
   const result = await prisma.property.update({
     where: { reference },
-    data: { report: updatedReport, status: isApproved ? AVAILABLE : PROCESSING },
+    data: {
+      report: updatedReport,
+      status: isApproved ? AVAILABLE : PROCESSING,
+    },
   });
 
   await writeAudit(Platform.REVA, {
@@ -439,7 +526,11 @@ export async function approveDueDiligenceReport(
     warnings.push("Notifications not sent");
   }
 
-  return { data: result, warnings, message: `Report ${isApproved ? "approved" : "rejected"} successfully` };
+  return {
+    data: result,
+    warnings,
+    message: `Report ${isApproved ? "approved" : "rejected"} successfully`,
+  };
 }
 
 /**
@@ -453,12 +544,15 @@ export async function approveOneTimeDueDiligenceReport(
   reference: string,
   isApproved: boolean,
   adminEmail: string,
-  actorId?: string,
+  actorId?: string
 ) {
   const warnings: string[] = [];
-  if (!reference) throw new ValidationError({ reference: "Reference is required" });
+  if (!reference)
+    throw new ValidationError({ reference: "Reference is required" });
 
-  const property = await prisma.oneTimeUserProperty.findUnique({ where: { reference } });
+  const property = await prisma.oneTimeUserProperty.findUnique({
+    where: { reference },
+  });
 
   if (!property || !property.report || typeof property.report !== "object") {
     throw new NotFoundError("Property or report");
@@ -473,7 +567,10 @@ export async function approveOneTimeDueDiligenceReport(
 
   const result = await prisma.oneTimeUserProperty.update({
     where: { reference },
-    data: { report: updatedReport, status: isApproved ? COMPLETED : PROCESSING },
+    data: {
+      report: updatedReport,
+      status: isApproved ? COMPLETED : PROCESSING,
+    },
   });
 
   await writeAudit(Platform.REVA, {

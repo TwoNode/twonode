@@ -18,7 +18,8 @@ export default async function AdminSpeakersPage({
   await requireAdmin();
 
   const raw = await searchParams;
-  const edition = firstParam(raw.edition) || (await getEditionCookieValue()) || "ALL";
+  const edition =
+    firstParam(raw.edition) || (await getEditionCookieValue()) || "ALL";
 
   const [speakers, editions] = await Promise.all([
     getAllSpeakers(edition === "ALL" ? undefined : edition),
@@ -70,7 +71,11 @@ export default async function AdminSpeakersPage({
         </Card>
       ) : (
         <Card className="p-6">
-          <SpeakersManager initialSpeakers={speakers} editions={editions} selectedEdition={edition} />
+          <SpeakersManager
+            initialSpeakers={speakers}
+            editions={editions}
+            selectedEdition={edition}
+          />
         </Card>
       )}
     </div>

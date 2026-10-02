@@ -18,7 +18,10 @@ import { toast } from "sonner";
 import { gbcApi } from "@/gbc/apiClient";
 import { GalleryItem } from "@/gbc/types/gallery";
 import { Switch } from "@/components/ui/switch";
-import { EditionSelect, useEditions } from "@/gbc/components/admin/EditionSelect";
+import {
+  EditionSelect,
+  useEditions,
+} from "@/gbc/components/admin/EditionSelect";
 
 interface EditGalleryModalProps {
   item: GalleryItem;
@@ -77,7 +80,10 @@ export function EditGalleryModal({ item }: EditGalleryModalProps) {
 
       // If a new file is uploaded, handle it
       if (mediaFile) {
-        const uploadResult = await gbcApi.uploads.file("gallery-media", mediaFile);
+        const uploadResult = await gbcApi.uploads.file(
+          "gallery-media",
+          mediaFile
+        );
 
         if (!uploadResult.success || !uploadResult.data) {
           toast.error("Failed to upload new media");

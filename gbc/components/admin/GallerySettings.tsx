@@ -28,7 +28,10 @@ export function GallerySettings({ settings, edition }: Props) {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const result = await gbcApi.settings.update({ gallery: formData }, edition);
+      const result = await gbcApi.settings.update(
+        { gallery: formData },
+        edition
+      );
 
       if (result.success) {
         toast.success("Gallery settings updated");

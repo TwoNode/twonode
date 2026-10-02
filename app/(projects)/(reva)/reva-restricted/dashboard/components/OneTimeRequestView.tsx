@@ -10,23 +10,23 @@ import {
 } from "@/components/ui/card";
 import { format } from "date-fns";
 import Link from "next/link";
-import { 
-  ArrowRight, 
-  Download, 
-  MapPin, 
-  FileText, 
-  User, 
-  Mail, 
-  Phone, 
-  Calendar, 
-  CheckCircle2, 
-  Clock, 
+import {
+  ArrowRight,
+  Download,
+  MapPin,
+  FileText,
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  CheckCircle2,
+  Clock,
   AlertCircle,
   Map,
   Home,
   FileCheck,
   Image as ImageIcon,
-  MessageSquare
+  MessageSquare,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -77,9 +77,9 @@ interface OneTimeRequestViewProps {
 
 export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
   const isReportReady = request?.report?.isApproved === true;
-  const isProcessing = request.status === 'Processing';
-  const isCompleted = request.status === 'Completed';
-  const isPaid = request.paymentStatus === 'Paid';
+  const isProcessing = request.status === "Processing";
+  const isCompleted = request.status === "Completed";
+  const isPaid = request.paymentStatus === "Paid";
 
   // Format dates
   const createdAt = formatDate(request.createdAt);
@@ -88,9 +88,20 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
 
   // Get status badge variant and icon
   const getStatusConfig = () => {
-    if (isCompleted) return { variant: 'default' as const, icon: <CheckCircle2 className="h-4 w-4 mr-2" /> };
-    if (isProcessing) return { variant: 'secondary' as const, icon: <Clock className="h-4 w-4 mr-2" /> };
-    return { variant: 'outline' as const, icon: <AlertCircle className="h-4 w-4 mr-2" /> };
+    if (isCompleted)
+      return {
+        variant: "default" as const,
+        icon: <CheckCircle2 className="h-4 w-4 mr-2" />,
+      };
+    if (isProcessing)
+      return {
+        variant: "secondary" as const,
+        icon: <Clock className="h-4 w-4 mr-2" />,
+      };
+    return {
+      variant: "outline" as const,
+      icon: <AlertCircle className="h-4 w-4 mr-2" />,
+    };
   };
 
   const { variant: statusVariant, icon: statusIcon } = getStatusConfig();
@@ -100,8 +111,12 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
       {/* Header with Reference and Status */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Verification Request</h1>
-          <p className="text-muted-foreground">Reference: {request.reference}</p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Verification Request
+          </h1>
+          <p className="text-muted-foreground">
+            Reference: {request.reference}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={statusVariant} className="text-sm h-8 px-3">
@@ -110,7 +125,10 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
               {request.status}
             </div>
           </Badge>
-          <Badge variant={isPaid ? 'default' : 'destructive' as const} className="h-8 px-3">
+          <Badge
+            variant={isPaid ? "default" : ("destructive" as const)}
+            className="h-8 px-3"
+          >
             {request.paymentStatus}
           </Badge>
         </div>
@@ -118,7 +136,10 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
 
       {isProcessing && (
         <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-md">
-          <p className="text-sm">This request is currently being processed. You'll be notified when there are updates.</p>
+          <p className="text-sm">
+            This request is currently being processed. You'll be notified when
+            there are updates.
+          </p>
         </div>
       )}
 
@@ -137,18 +158,26 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Parcel ID</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Parcel ID
+                  </p>
                   <p className="font-mono text-sm">{request.parcelId}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Verification Fee</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Verification Fee
+                  </p>
                   <p className="font-semibold">{totalCost}</p>
                 </div>
               </div>
-              
+
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Description</p>
-                <p className="text-sm">{request.description || 'No description provided'}</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Description
+                </p>
+                <p className="text-sm">
+                  {request.description || "No description provided"}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -163,7 +192,9 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Address</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Address
+                </p>
                 <p className="text-sm">{request.address}</p>
               </div>
               <div className="space-y-1">
@@ -213,15 +244,21 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Requested On</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Requested On
+                </p>
                 <p className="text-sm">{createdAt}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Last Updated</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Last Updated
+                </p>
                 <p className="text-sm">{updatedAt}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Reference</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Reference
+                </p>
                 <p className="font-mono text-sm">{request.reference}</p>
               </div>
             </CardContent>
@@ -237,24 +274,36 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Requester</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Requester
+                </p>
                 <p className="text-sm">{request.requester}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Email</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Email
+                </p>
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a href={`mailto:${request.email}`} className="text-sm hover:underline">
+                  <a
+                    href={`mailto:${request.email}`}
+                    className="text-sm hover:underline"
+                  >
                     {request.email}
                   </a>
                 </div>
               </div>
               {request.userPhoneNumber && (
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Phone</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Phone
+                  </p>
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" />
-                    <a href={`tel:${request.userPhoneNumber}`} className="text-sm hover:underline">
+                    <a
+                      href={`tel:${request.userPhoneNumber}`}
+                      className="text-sm hover:underline"
+                    >
                       {request.userPhoneNumber}
                     </a>
                   </div>
@@ -264,7 +313,8 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
           </Card>
 
           {/* Documents & Images */}
-          {(request.documentsUrls?.length > 0 || request.site_images?.length > 0) && (
+          {(request.documentsUrls?.length > 0 ||
+            request.site_images?.length > 0) && (
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
@@ -275,7 +325,9 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
               <CardContent className="space-y-4">
                 {request.documentsUrls?.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Documents</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">
+                      Documents
+                    </p>
                     <div className="space-y-2">
                       {request.documentsUrls.map((doc, index) => (
                         <a
@@ -295,7 +347,9 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
 
                 {request.site_images?.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Site Images</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">
+                      Site Images
+                    </p>
                     <div className="grid grid-cols-2 gap-2">
                       {request.site_images.map((img, index) => (
                         <a
@@ -330,7 +384,9 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <FileCheck className="h-5 w-5 text-green-600" />
-              <CardTitle className="text-lg text-green-800">Verification Report</CardTitle>
+              <CardTitle className="text-lg text-green-800">
+                Verification Report
+              </CardTitle>
             </div>
           </CardHeader>
           <CardContent>
@@ -341,7 +397,11 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
                   <p className="text-green-800 font-medium">Approved</p>
                 </div>
                 <Button variant="outline" size="sm" asChild>
-                  <a href={request.report.downloadUrl} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={request.report.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Download Report
                   </a>
@@ -349,8 +409,12 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
               </div>
               {request.report.approvedAt && (
                 <div>
-                  <p className="text-sm font-medium text-green-700">Approved On</p>
-                  <p className="text-sm">{formatDate(request.report.approvedAt)}</p>
+                  <p className="text-sm font-medium text-green-700">
+                    Approved On
+                  </p>
+                  <p className="text-sm">
+                    {formatDate(request.report.approvedAt)}
+                  </p>
                 </div>
               )}
             </div>
@@ -361,7 +425,9 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
       {/* Admin Actions */}
       <div className="flex justify-end gap-3 pt-2">
         <Button variant="outline" asChild>
-          <Link href={`/reva/onetimerequest?reference=${request.reference}&email=${encodeURIComponent(request.email)}`}>
+          <Link
+            href={`/reva/onetimerequest?reference=${request.reference}&email=${encodeURIComponent(request.email)}`}
+          >
             <ArrowRight className="h-4 w-4 mr-2" />
             View Full Details
           </Link>

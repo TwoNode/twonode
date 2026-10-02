@@ -1,5 +1,5 @@
 {
-  "artifactType":  "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
-  "summary":  "Implementation plan for integrating Remita payment gateway into the surfboard project. Covers creating a Remita utility client, database schema changes, new server actions for RRR generation and payment verification, and admin UI updates. Includes the proposed payment flow and environment variable requirements.",
-  "updatedAt":  "2026-01-11T16:32:51.420292317Z"
+  "artifactType": "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
+  "summary": "Implementation plan for integrating Remita payment gateway into the surfboard project. Covers creating a Remita utility client, database schema changes, new server actions for RRR generation and payment verification, and admin UI updates. Includes the proposed payment flow and environment variable requirements.",
+  "updatedAt": "2026-01-11T16:32:51.420292317Z"
 }

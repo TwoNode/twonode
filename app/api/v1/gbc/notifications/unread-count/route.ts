@@ -5,7 +5,10 @@ import { Platform, GBCRole } from "@/utils/platform";
 
 export const GET = withAuth<GBCRole>(
   async (_req, ctx) => {
-    const data = await getUnreadGBCNotificationCount(ctx.session.sub, ctx.session.role as "ADMIN" | "SUPERADMIN");
+    const data = await getUnreadGBCNotificationCount(
+      ctx.session.sub,
+      ctx.session.role as "ADMIN" | "SUPERADMIN"
+    );
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.GBC, roles: [GBCRole.ADMIN, GBCRole.SUPERADMIN] }

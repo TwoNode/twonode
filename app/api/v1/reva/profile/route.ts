@@ -11,7 +11,10 @@ export const GET = withAuth<RevaRole>(
     const data = await getProfile(ctx.session.sub);
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.REVA, roles: [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN] }
+  {
+    platform: Platform.REVA,
+    roles: [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN],
+  }
 );
 
 const updateSchema = z.object({
@@ -23,11 +26,17 @@ const updateSchema = z.object({
 export const PATCH = withAuth<RevaRole>(
   async (req, ctx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const body = await validateBody(req, updateSchema);
     const data = await updateProfile(ctx.session.sub, body);
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.REVA, roles: [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN] }
+  {
+    platform: Platform.REVA,
+    roles: [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN],
+  }
 );

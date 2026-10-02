@@ -100,7 +100,8 @@ function getActivePlatform(pathname: string): Platform | null {
     pathname.startsWith("/surfboard") ||
     pathname.startsWith("/surfboard-restricted") ||
     pathname.startsWith("/surfboard-mda")
-  ) return Platform.SURFBOARD;
+  )
+    return Platform.SURFBOARD;
   if (pathname.startsWith("/gbc")) return Platform.GBC;
   if (pathname.startsWith("/scram")) return Platform.SCRAM;
   return null;
@@ -127,7 +128,8 @@ function resolveLoginRedirect(pathname: string): string {
 // confirmed, so sending the user back to a login page would be wrong — they
 // land on their own dashboard home instead.
 function resolveDashboardRedirect(pathname: string): string {
-  if (pathname.startsWith("/reva-restricted")) return "/reva-restricted/dashboard";
+  if (pathname.startsWith("/reva-restricted"))
+    return "/reva-restricted/dashboard";
   if (pathname.startsWith("/reva")) return "/reva/dashboard";
   if (pathname.startsWith("/surfboard-mda")) return "/surfboard-mda/dashboard";
   if (pathname.startsWith("/surfboard-restricted"))
@@ -215,7 +217,10 @@ function computeRouteAccess(
         new Date(subscription.expiresAt) >= new Date();
 
       if (!isGracePeriod) {
-        return { hasAccess: false, redirectPath: "/surfboard/dashboard/subscription" };
+        return {
+          hasAccess: false,
+          redirectPath: "/surfboard/dashboard/subscription",
+        };
       }
     }
     return { hasAccess: true };
@@ -277,20 +282,32 @@ async function tryNativeSession(
 
   const role = nativeSession.role;
   let subscription: SubscriptionData | null = null;
-  if (activePlatform === Platform.SURFBOARD && pathname.startsWith("/surfboard/dashboard")) {
-    subscription = (await getUserActiveSubscription(nativeSession.sub)) as SubscriptionData | null;
+  if (
+    activePlatform === Platform.SURFBOARD &&
+    pathname.startsWith("/surfboard/dashboard")
+  ) {
+    subscription = (await getUserActiveSubscription(
+      nativeSession.sub
+    )) as SubscriptionData | null;
   }
 
-  const { hasAccess, redirectPath } = computeRouteAccess(pathname, role, subscription);
+  const { hasAccess, redirectPath } = computeRouteAccess(
+    pathname,
+    role,
+    subscription
+  );
   console.log(
     "🛡️ Proxy [native] - Access:",
     hasAccess,
-    "role:", role,
-    "platform:", activePlatform
+    "role:",
+    role,
+    "platform:",
+    activePlatform
   );
 
   if (redirectPath) return createRedirectResponse(req, redirectPath);
-  if (!hasAccess) return createRedirectResponse(req, resolveDashboardRedirect(pathname));
+  if (!hasAccess)
+    return createRedirectResponse(req, resolveDashboardRedirect(pathname));
   return NextResponse.next();
 }
 
@@ -313,8 +330,11 @@ const proxyWithLogic = withDynamicAuth(
     const activePlatform = getActivePlatform(pathname);
 
     // If not a platform route we care about, skip
-    if (!activePlatform && !protectedRoutes.some((route) => pathname.startsWith(route))) {
-       return NextResponse.next();
+    if (
+      !activePlatform &&
+      !protectedRoutes.some((route) => pathname.startsWith(route))
+    ) {
+      return NextResponse.next();
     }
 
     // Get the authenticated user from Kinde
@@ -343,7 +363,10 @@ const proxyWithLogic = withDynamicAuth(
         }
 
         const redirectPath = resolveLoginRedirect(pathname);
-        console.log("🛡️ Proxy - No session data found, redirecting to:", redirectPath);
+        console.log(
+          "🛡️ Proxy - No session data found, redirecting to:",
+          redirectPath
+        );
         return createRedirectResponse(req, redirectPath);
       }
 
@@ -355,15 +378,18 @@ const proxyWithLogic = withDynamicAuth(
       const platformSession = userData.platforms[activePlatform];
 
       console.log("🛡️ Proxy - Multi-Platform Session:", {
-          activePlatform,
-          hasSession: !!platformSession,
-          role: platformSession?.role,
-          allPlatforms: Object.keys(userData.platforms)
+        activePlatform,
+        hasSession: !!platformSession,
+        role: platformSession?.role,
+        allPlatforms: Object.keys(userData.platforms),
       });
 
       if (!platformSession) {
         const redirectPath = resolveLoginRedirect(pathname);
-        console.log("🛡️ Proxy - Missing platform session, redirecting to:", redirectPath);
+        console.log(
+          "🛡️ Proxy - Missing platform session, redirecting to:",
+          redirectPath
+        );
         return createRedirectResponse(req, redirectPath);
       }
 
@@ -375,15 +401,28 @@ const proxyWithLogic = withDynamicAuth(
       );
 
       if (gatedRedirect) {
-        console.log("🛡️ Proxy - Subscription gate, redirecting to:", gatedRedirect);
+        console.log(
+          "🛡️ Proxy - Subscription gate, redirecting to:",
+          gatedRedirect
+        );
         return createRedirectResponse(req, gatedRedirect);
       }
 
-      console.log("🛡️ Proxy - Access granted:", hasAccess, "--", role, "in platform:", activePlatform);
+      console.log(
+        "🛡️ Proxy - Access granted:",
+        hasAccess,
+        "--",
+        role,
+        "in platform:",
+        activePlatform
+      );
 
       if (!hasAccess) {
         const redirectPath = resolveDashboardRedirect(pathname);
-        console.log("🛡️ Proxy - User does not have required role, redirecting to:", redirectPath);
+        console.log(
+          "🛡️ Proxy - User does not have required role, redirecting to:",
+          redirectPath
+        );
         return createRedirectResponse(req, redirectPath);
       }
 

@@ -22,7 +22,10 @@ const UPLOADERS: Record<string, typeof uploadSponsorLogo> = {
 export const POST = withAuth<GBCRole>(
   async (req, _ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { kind } = await routeCtx.params;
     const uploader = UPLOADERS[kind];
@@ -30,7 +33,8 @@ export const POST = withAuth<GBCRole>(
 
     const formData = await req.formData();
     const file = formData.get("file");
-    if (!(file instanceof File)) throw new ValidationError({ file: "No file provided" });
+    if (!(file instanceof File))
+      throw new ValidationError({ file: "No file provided" });
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const data = await uploader(buffer, file.name, file.type, file.size);

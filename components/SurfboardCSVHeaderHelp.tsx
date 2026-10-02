@@ -61,7 +61,7 @@ export default function SurfboardCSVHeaderHelp() {
       >
         {isOpen ? "▼" : "▶"} CSV Header Help
       </button>
-      
+
       {isOpen && (
         <div
           style={{
@@ -107,8 +107,9 @@ export default function SurfboardCSVHeaderHelp() {
             </tbody>
           </table>
           <p style={{ marginTop: "1em" }}>
-            <b>Note:</b> The system automatically processes header capitalization
-            and spaces. Please ensure your CSV includes these required columns.
+            <b>Note:</b> The system automatically processes header
+            capitalization and spaces. Please ensure your CSV includes these
+            required columns.
           </p>
         </div>
       )}

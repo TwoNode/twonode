@@ -52,7 +52,12 @@ export default function AdminUsersPage() {
         roles: filters.roles as ("ADMIN" | "SUPERADMIN")[],
         statuses: filters.statuses,
       }),
-    { initialFilters: { roles: ["ADMIN", "SUPERADMIN"], statuses: [true, false] } }
+    {
+      initialFilters: {
+        roles: ["ADMIN", "SUPERADMIN"],
+        statuses: [true, false],
+      },
+    }
   );
 
   const handleFilterChange = (filters: {
@@ -62,7 +67,11 @@ export default function AdminUsersPage() {
     setFilters(filters);
   };
 
-  const [stats, setStats] = useState<{ total: number; superAdmins: number; admins: number } | null>(null);
+  const [stats, setStats] = useState<{
+    total: number;
+    superAdmins: number;
+    admins: number;
+  } | null>(null);
   useEffect(() => {
     gbcApi.users.stats().then((res) => {
       if (res.success && res.data) setStats(res.data);
@@ -166,7 +175,13 @@ export default function AdminUsersPage() {
                 <p className="text-sm text-gray-500">
                   Page {page} of {totalPages} • {total} admins
                 </p>
-                <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  pageSize={pageSize}
+                  onPageSizeChange={setPageSize}
+                />
               </div>
             )}
           </>

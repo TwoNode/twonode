@@ -51,7 +51,7 @@ const containerStyle = {
 
 const center = { lat: 6.5244, lng: 3.3792 };
 
-const libraries: ("places")[] = ["places"];
+const libraries: "places"[] = ["places"];
 
 const watchTime = 30000;
 
@@ -910,7 +910,9 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
                 </h3>
                 <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
                   Parcel ID:{" "}
-                  <span className="text-gray-900 dark:text-white font-medium">{parcelId}</span>
+                  <span className="text-gray-900 dark:text-white font-medium">
+                    {parcelId}
+                  </span>
                 </p>
               </div>
 
@@ -1020,42 +1022,68 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
             </h2>
             <div className="space-y-4 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Requester:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{title}</span>
+                <span className="text-gray-600 dark:text-gray-300">
+                  Requester:
+                </span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {title}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Address:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{address}</span>
+                <span className="text-gray-600 dark:text-gray-300">
+                  Address:
+                </span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {address}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Location:</span>
+                <span className="text-gray-600 dark:text-gray-300">
+                  Location:
+                </span>
                 <span className="font-medium text-gray-900 dark:text-white">
                   {location ? `${location.lat}, ${location.lng}` : "Not set"}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Parcel ID:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{parcelId}</span>
+                <span className="text-gray-600 dark:text-gray-300">
+                  Parcel ID:
+                </span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {parcelId}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-300">LGA:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{lga}</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {lga}
+                </span>
               </div>
               <div>
-                <span className="text-gray-600 dark:text-gray-300 block mb-1">Files:</span>
+                <span className="text-gray-600 dark:text-gray-300 block mb-1">
+                  Files:
+                </span>
                 <div className="space-y-1">
                   {fileNames.map((name, index) => (
-                    <div key={index} className="text-gray-800 dark:text-gray-200 border-b text-sm">
+                    <div
+                      key={index}
+                      className="text-gray-800 dark:text-gray-200 border-b text-sm"
+                    >
                       {name}
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <span className="text-gray-600 dark:text-gray-300 block mb-1">Site Images:</span>
+                <span className="text-gray-600 dark:text-gray-300 block mb-1">
+                  Site Images:
+                </span>
                 <div className="space-y-1">
                   {siteImageNames.map((name, index) => (
-                    <div key={index} className="text-gray-800 dark:text-gray-200 border-b text-sm">
+                    <div
+                      key={index}
+                      className="text-gray-800 dark:text-gray-200 border-b text-sm"
+                    >
                       {name}
                     </div>
                   ))}

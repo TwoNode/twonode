@@ -7,7 +7,11 @@ export const metadata: Metadata = {
 };
 
 const productLinks = [
-  { name: "Surfboard", href: "/surfboard", blurb: "Survey plan lodging & approvals" },
+  {
+    name: "Surfboard",
+    href: "/surfboard",
+    blurb: "Survey plan lodging & approvals",
+  },
   { name: "REVA", href: "/reva", blurb: "Property valuation requests" },
   { name: "GBC", href: "/gbc", blurb: "Grid & boundary charting" },
 ];
@@ -55,7 +59,8 @@ export default function GlobalNotFound() {
             <span
               className="select-none text-[7rem] font-extrabold leading-none tracking-tight sm:text-[9rem]"
               style={{
-                backgroundImage: "linear-gradient(135deg, #082f49 0%, #0369a1 55%, #0ea5e9 100%)",
+                backgroundImage:
+                  "linear-gradient(135deg, #082f49 0%, #0369a1 55%, #0ea5e9 100%)",
                 WebkitBackgroundClip: "text",
                 backgroundClip: "text",
                 color: "transparent",
@@ -92,7 +97,9 @@ export default function GlobalNotFound() {
                     <div className="text-sm font-semibold text-slate-900 group-hover:text-sky-700 dark:text-white dark:group-hover:text-sky-400">
                       {p.name}
                     </div>
-                    <div className="mt-0.5 text-xs text-slate-500 dark:text-gray-400">{p.blurb}</div>
+                    <div className="mt-0.5 text-xs text-slate-500 dark:text-gray-400">
+                      {p.blurb}
+                    </div>
                   </Link>
                 ))}
               </div>

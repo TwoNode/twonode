@@ -74,7 +74,9 @@ export function ResetPasswordCard({
       }
       setSuccess(true);
     } catch {
-      setError("Couldn't reach the server. Check your connection and try again.");
+      setError(
+        "Couldn't reach the server. Check your connection and try again."
+      );
       setIsSubmitting(false);
     }
   }
@@ -93,7 +95,10 @@ export function ResetPasswordCard({
       {success ? (
         <div className="w-full flex flex-col items-center gap-4 text-center">
           <CheckCircle2 className="h-10 w-10" style={{ color: accent }} />
-          <h1 className="text-2xl font-extrabold" style={{ color: headingColor }}>
+          <h1
+            className="text-2xl font-extrabold"
+            style={{ color: headingColor }}
+          >
             Password updated
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -102,7 +107,9 @@ export function ResetPasswordCard({
           <Link href={loginHref}>
             <Button
               className="px-6 py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
-              style={{ background: `linear-gradient(90deg, ${dark}, ${accent})` }}
+              style={{
+                background: `linear-gradient(90deg, ${dark}, ${accent})`,
+              }}
             >
               Continue to sign in
             </Button>
@@ -111,12 +118,15 @@ export function ResetPasswordCard({
       ) : !token ? (
         <div className="w-full flex flex-col items-center gap-4 text-center">
           <AlertCircle className="h-10 w-10 text-red-500" />
-          <h1 className="text-2xl font-extrabold" style={{ color: headingColor }}>
+          <h1
+            className="text-2xl font-extrabold"
+            style={{ color: headingColor }}
+          >
             Invalid link
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-300">
-            This password reset link is missing or malformed. Request a new
-            one from the sign-in page.
+            This password reset link is missing or malformed. Request a new one
+            from the sign-in page.
           </p>
           <Link
             href={loginHref}
@@ -148,7 +158,10 @@ export function ResetPasswordCard({
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4 text-left">
+          <form
+            onSubmit={handleSubmit}
+            className="w-full flex flex-col gap-4 text-left"
+          >
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="newPassword">New password</Label>
               <PasswordInput
@@ -175,9 +188,15 @@ export function ResetPasswordCard({
               type="submit"
               disabled={isSubmitting}
               className="w-full px-6 py-3 h-auto text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
-              style={{ background: `linear-gradient(90deg, ${dark}, ${accent})` }}
+              style={{
+                background: `linear-gradient(90deg, ${dark}, ${accent})`,
+              }}
             >
-              {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Update password"}
+              {isSubmitting ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                "Update password"
+              )}
             </Button>
           </form>
         </>

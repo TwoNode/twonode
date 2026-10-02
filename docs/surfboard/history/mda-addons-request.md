@@ -1,33 +1,25 @@
-*MDA-Requested Enhancements*
-*1. Certificate of Deposit (CoD) Submission – Acceptance Checkbox*
-*Requirement*
+_MDA-Requested Enhancements_
+_1. Certificate of Deposit (CoD) Submission – Acceptance Checkbox_
+_Requirement_
 Before proceeding to payment during CoD submission, the system must require the user to explicitly acknowledge a "query-related" condition.
 
-*Functional Detail*
+_Functional Detail_
+
 1. Add a mandatory checkbox just before payment.
 2. The checkbox functions like a Terms & Conditions acceptance.
 3. The user cannot proceed to payment unless checked.
-“I accept that queries on my submission will attract additional fees.”
+   “I accept that queries on my submission will attract additional fees.”
 
-*Notes*
+_Notes_
 Text content should be configurable (admin-level setting).
 
-
-
-
-
-
-
-
-
-
-*2. Query Management Enhancements*
-*2.1 Query Permission Scope*
-*Requirement*
+_2. Query Management Enhancements_
+_2.1 Query Permission Scope_
+_Requirement_
 
 Charting MDA roles should now be able to raise queries:
 
-*2.2 Batched Query Dispatch Logic*
+_2.2 Batched Query Dispatch Logic_
 Problem Being Solved
 
 Queries are currently raised and sent independently, leading to fragmented feedback to surveyors.
@@ -51,44 +43,25 @@ Records I later raises a query.
 Both queries (Charting + Records I) are then sent together to the surveyor as a single consolidated query notification.
 
 Key Rule
-*Queries are dispatched only after all required workflow roles have either approved or queried.*
+_Queries are dispatched only after all required workflow roles have either approved or queried._
 
-*2.3 Query Response Fee Logic*
+_2.3 Query Response Fee Logic_
 Requirement
 
 Responding to queries will now require payment of the CoD fee for that specific record.
 
-*Configuration*
+_Configuration_
 
 The payable amount must be configurable via Settings:
 
 Example:100% of CoD fee
 
-*Notes*
--System  must block query response submission until payment is completed.
+_Notes_
+-System must block query response submission until payment is completed.
 -Fee rule applies per queried record, not per submission batch.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-*3. Plan Types & Workflow Routing*
-*3.1 Plan Type Visibility*
+_3. Plan Types & Workflow Routing_
+_3.1 Plan Type Visibility_
 Requirement
 
 Plan Type must be:
@@ -97,17 +70,8 @@ Clearly displayed per record
 
 If a Reference Plan Number exists, it must also be visible to MDA users.
 
-
-
-
-
-
-
-
-
-
-*4. OSSG API Integration & Document Hashing*
-*4.1 Document Preparation*
+_4. OSSG API Integration & Document Hashing_
+_4.1 Document Preparation_
 Requirement
 
 Generate a hash of the final document.
@@ -118,7 +82,7 @@ Export the final document as PNG.
 
 Ready for transmission to the OSSG server via API.
 
-*4.2 OSSG API Payload Mapping*
+_4.2 OSSG API Payload Mapping_
 
 The following fields must be sent to OSSG with exact mappings:
 
@@ -144,26 +108,7 @@ Detect continuous numeric sequences before the suffix (e.g., “ARA”).
 Compress continuous ranges.
 Non-continuous values remain listed individually.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-*5. New Role: Archive*
+_5. New Role: Archive_
 Requirement
 
 Introduce a new role: Archive.
@@ -179,5 +124,3 @@ Purpose
 To track physical plan delivery from:
 
 Records II Officer → Archive Officer
-
-

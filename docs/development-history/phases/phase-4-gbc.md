@@ -10,7 +10,7 @@ This spec is built from a complete read of all 12 files under `app/(projects)/(G
 
 ### Critical finding, already fixed ahead of this spec
 
-`app/(projects)/(GBC)/utils/auth.ts`'s `requireAdmin()`/`requireAuth()` — the guard 10 of the 12 action files call to gate every admin mutation — had their real Kinde/database check **entirely commented out** and unconditionally returned a hardcoded fake admin. Every ticket/sponsor/speaker/gallery/partner/upload/inquiry/settings mutation in the product was therefore callable by anyone who could reach the server action's reference directly, no session or role required at all (`proxy.ts` gates the restricted *pages* correctly via the real multi-platform session, but Next.js Server Actions are invokable without visiting the page that would normally block access). Fixed as an interim hotfix (commit `f1031de` on `rebuild/foundations`, 2026-08-28) using the same Kinde session + `GBCUser` lookup the already-built-but-unused `getCurrentGBCUser()`/`checkIsAdmin()` correctly implement — full writeup in `progress.md`. This spec's service migration will replace `requireAdmin()` entirely with typed `withAuth<GBCRole>` routes, same as every other product; the hotfix is the bridge until each service ships.
+`app/(projects)/(GBC)/utils/auth.ts`'s `requireAdmin()`/`requireAuth()` — the guard 10 of the 12 action files call to gate every admin mutation — had their real Kinde/database check **entirely commented out** and unconditionally returned a hardcoded fake admin. Every ticket/sponsor/speaker/gallery/partner/upload/inquiry/settings mutation in the product was therefore callable by anyone who could reach the server action's reference directly, no session or role required at all (`proxy.ts` gates the restricted _pages_ correctly via the real multi-platform session, but Next.js Server Actions are invokable without visiting the page that would normally block access). Fixed as an interim hotfix (commit `f1031de` on `rebuild/foundations`, 2026-08-28) using the same Kinde session + `GBCUser` lookup the already-built-but-unused `getCurrentGBCUser()`/`checkIsAdmin()` correctly implement — full writeup in `progress.md`. This spec's service migration will replace `requireAdmin()` entirely with typed `withAuth<GBCRole>` routes, same as every other product; the hotfix is the bridge until each service ships.
 
 A follow-up sweep (same day) checked every auth-guard-shaped function across the whole repo (`surfAuth.ts`, `revaAuth.ts`, `gbcAuth.ts`, both `authActions.ts` files, `withAuth.ts`) — the GBC stub was isolated, not a wider pattern. It did surface one more dead-but-correct GBC auth implementation (`utils/gbcAuth.ts` — `verifyGBCAdminAccess`/`getAuthenticatedGBCUserFromCookie`/etc., zero importers anywhere) noted below for cleanup, and one unrelated finding out of this phase's scope: `surfboard-restricted/dashboard/certificates/page.tsx` (Phase 2, already marked complete) is a live, nav-registered admin page that only renders hardcoded mock data instead of real batch data — flagged to you, not touched here.
 
@@ -18,20 +18,20 @@ A follow-up sweep (same day) checked every auth-guard-shaped function across the
 
 ### The real action-file surface is 12 files, not 11
 
-| File | Lines | Fate |
-|---|---|---|
-| `ticket-actions.ts` | 1,284 (+ ~35 for the new `getGBCTicketAvailability` split, already added) | → `ticketService.ts` |
-| `settings-actions.ts` | 619 | → `settingsService.ts` — **the plan's service list omitted this file entirely** |
-| `upload-actions.ts` | 326 | → folded into `cmsService.ts` (all 4 upload kinds are for sponsor/partner/speaker/gallery entities `cmsService` already owns) |
-| `admin-actions.ts` | 283 | → `adminUserService.ts` — **also omitted from the plan's list**; this is the *live* admin-management implementation (see below) |
-| `contact-actions.ts` | 240 | → `contactService.ts` (inquiry functions only — see dead-code note) |
-| `sponsor-actions.ts` | 235 | → `cmsService.ts` (sponsors + the live partner functions embedded in this file) |
-| `gallery-actions.ts` | 182 | → `cmsService.ts` |
-| `speaker-actions.ts` | 162 | → `cmsService.ts` |
-| `user-actions.ts` | 109 | **dead — not migrated** |
-| `partners-actions.ts` | 83 | **dead — not migrated** |
-| `qr-verification.ts` | 67 | → `qrCheckinService.ts` |
-| `certificate-actions.ts` | 59 | → `certificateService.ts` |
+| File                     | Lines                                                                     | Fate                                                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `ticket-actions.ts`      | 1,284 (+ ~35 for the new `getGBCTicketAvailability` split, already added) | → `ticketService.ts`                                                                                                            |
+| `settings-actions.ts`    | 619                                                                       | → `settingsService.ts` — **the plan's service list omitted this file entirely**                                                 |
+| `upload-actions.ts`      | 326                                                                       | → folded into `cmsService.ts` (all 4 upload kinds are for sponsor/partner/speaker/gallery entities `cmsService` already owns)   |
+| `admin-actions.ts`       | 283                                                                       | → `adminUserService.ts` — **also omitted from the plan's list**; this is the _live_ admin-management implementation (see below) |
+| `contact-actions.ts`     | 240                                                                       | → `contactService.ts` (inquiry functions only — see dead-code note)                                                             |
+| `sponsor-actions.ts`     | 235                                                                       | → `cmsService.ts` (sponsors + the live partner functions embedded in this file)                                                 |
+| `gallery-actions.ts`     | 182                                                                       | → `cmsService.ts`                                                                                                               |
+| `speaker-actions.ts`     | 162                                                                       | → `cmsService.ts`                                                                                                               |
+| `user-actions.ts`        | 109                                                                       | **dead — not migrated**                                                                                                         |
+| `partners-actions.ts`    | 83                                                                        | **dead — not migrated**                                                                                                         |
+| `qr-verification.ts`     | 67                                                                        | → `qrCheckinService.ts`                                                                                                         |
+| `certificate-actions.ts` | 59                                                                        | → `certificateService.ts`                                                                                                       |
 
 ### Three duplicate/dead code paths, resolved by checking real importers (not guessed)
 
@@ -45,7 +45,7 @@ Mirrors the same discipline Phase 2 used for `codActions.ts`'s dead create/updat
 
 ### Two smaller dead-code notes
 
-- **`generateTicketNumber()`** (`utils/index.ts`) — hardcodes the `"GBC2"` prefix and is never called anywhere; real ticket numbers come from `GBCTicket.ticketNumber`'s Prisma `@default(dbgenerated(...))`, which hardcodes the *same* `'GBC2_'` prefix at the DB level. This is the literal thing the edition-metadata work (below) fixes — moving generation from a hardcoded SQL default to `${activeEdition.ticketPrefix}_...` computed in `ticketService.ts`.
+- **`generateTicketNumber()`** (`utils/index.ts`) — hardcodes the `"GBC2"` prefix and is never called anywhere; real ticket numbers come from `GBCTicket.ticketNumber`'s Prisma `@default(dbgenerated(...))`, which hardcodes the _same_ `'GBC2_'` prefix at the DB level. This is the literal thing the edition-metadata work (below) fixes — moving generation from a hardcoded SQL default to `${activeEdition.ticketPrefix}_...` computed in `ticketService.ts`.
 - **`utils/gbcAuth.ts`** (`getAuthenticatedGBCUser`, `getAuthenticatedGBCUserFromCookie`, `verifyGBCAdminAccess`, `verifyGBCUserAccess`, `getUserFromGBCDB`) and `utils/auth.ts`'s `getCurrentGBCUser`/`checkIsAdmin`/`checkIsSuperAdmin` — all correctly implemented, all zero importers. Both get deleted once every route this phase touches moves onto `withAuth<GBCRole>`, which supersedes all of them.
 
 ### Public vs. admin ticket-stats split (already done, part of the hotfix)
@@ -57,6 +57,7 @@ Mirrors the same discipline Phase 2 used for `codActions.ts`'s dead create/updat
 Four asked directly, three more resolved by investigation.
 
 **Asked:**
+
 1. **Auth-fix timing** → interim hotfix now, not folded into the phased migration. Shipped same day (`f1031de`), see above.
 2. **My Ticket / checkout screens** — the plan's "accepted from the design-overview artifacts, review still needed" turned out to have no artifacts to review; designed fresh as an original UI/UX pass (see below), not ported from anything.
 3. **Disabled public-user login (`/gbc/login`, already renamed to `_page.tsx` so it 404s)** → repurposed as My Ticket's entry point rather than left dead. Since `GBCTicket` has no relation to `GBCUser`, a real login was never the right flow for ticket-holders — reusing this path avoids orphaned dead code and gives My Ticket a natural, discoverable URL.
@@ -84,11 +85,11 @@ GBC has run as 1.0, 2.0, and will keep running annually, but nothing in the sche
 
 ## My Ticket + checkout screens (original design — no source artifacts existed to port)
 
-Since `GBCTicket` has no relation to `GBCUser` — buyers never get an account — this follows REVA's `onetimerequest` precedent: reference+email (here, **ticket number + email**, since a group/pair purchase shares one payment reference across several attendees, and "My Ticket" means *your* ticket specifically, not everyone's who paid alongside you) is the auth, not a login.
+Since `GBCTicket` has no relation to `GBCUser` — buyers never get an account — this follows REVA's `onetimerequest` precedent: reference+email (here, **ticket number + email**, since a group/pair purchase shares one payment reference across several attendees, and "My Ticket" means _your_ ticket specifically, not everyone's who paid alongside you) is the auth, not a login.
 
 - **Entry point**: `/gbc/login` — the disabled route itself (`_page.tsx` → `page.tsx`, its content replaced) per decision #3 above, not the homepage. A clean two-field lookup form (ticket number, email), styled as a proper standalone page, not a login form wearing a different label. Errors on mismatch say "we couldn't find that ticket" (matches REVA's `getUserPropertyById`'s resolved not-a-distinct-forbidden pattern — doesn't confirm/deny which field was wrong, so it can't be used to probe valid ticket numbers).
 - **Ticket view**: event name/date/venue/theme (from the active edition), the attendee's own name/ticket type/QR code, a check-in status badge, and — once past editions exist — which edition this ticket belongs to.
-- **Checkout flow**: the existing purchase form (`gbc/tickets`) stays the entry point for buying; "My Ticket" is purely the *after-purchase* lookup, reached via the confirmation email's link and this new entry point, not a redesign of the purchase flow itself (that flow works today and isn't part of what's broken or missing).
+- **Checkout flow**: the existing purchase form (`gbc/tickets`) stays the entry point for buying; "My Ticket" is purely the _after-purchase_ lookup, reached via the confirmation email's link and this new entry point, not a redesign of the purchase flow itself (that flow works today and isn't part of what's broken or missing).
 
 `ticketService.ts` gets one new function for this: `lookupMyTicket(ticketNumber, email)` — public, throws `NotFoundError` on any mismatch (never "wrong email" specifically, per the anti-probing reasoning above).
 
@@ -97,83 +98,91 @@ Since `GBCTicket` has no relation to `GBCUser` — buyers never get an account �
 8 services, not the plan's 6 — `settingsService.ts` and `adminUserService.ts` are new-found scope, same category of correction Phase 3 made for REVA's `reportService.ts`/`adminUserService.ts` split.
 
 ### `ticketService.ts` (from `ticket-actions.ts`)
+
 `createTicket`, `createGroupTicket`, `createPairTicket` (the last two share a new `validateAttendees(data, count)` helper — the source had ~150 lines of byte-for-byte duplicated per-attendee validation between the 5-attendee and 2-attendee versions, differing only in the count), `verifyPayment`, `lookupMyTicket` (new), `getTicketAvailability` (public, already split), `getTicketByNumber` (public — also backs the certificate page), `getTicketStats` (admin), `getTickets`/`getTicketById`/`exportTickets`/`deleteTicket`/`generateTicketQRCode` (admin), `checkInTicket` (admin). Ticket-number generation moves here per the edition work above.
 
 ### `qrCheckinService.ts` (from `qr-verification.ts`)
+
 `verifyQRCodeHash` — unchanged logic (HMAC-SHA256, already correct), just relocated and route-gated (admin — this is the server-side half of the QR scanner, not a public endpoint).
 
 ### `cmsService.ts` (from `gallery-actions.ts` + `sponsor-actions.ts` + `speaker-actions.ts` + `upload-actions.ts`, minus dead `partners-actions.ts`)
+
 Public reads: `getGalleryItems(year?)`, `getSponsors()`, `getPartners()`, `getSpeakers()`. Admin reads: `getAllGalleryItems()`, `getAllSponsors()`, `getAllSpeakers()` (no admin-all variant for partners exists in the source — not invented here either; partner management works off the same public-visible list). Mutations: full CRUD for gallery/sponsors/speakers, create+delete only for partners (matches the source — there's no `updateGBCPartner` today). Uploads: `uploadSponsorLogo`/`uploadPartnerLogo`/`uploadSpeakerPhoto`/`uploadGalleryMedia`, `deleteFile`/`deleteFiles`, `getUploadLimits`.
 
 ### `contactService.ts` (from `contact-actions.ts`, inquiry functions only)
+
 `submitContactForm` (public), `getInquiries`/`updateInquiryStatus`/`deleteInquiry`/`replyToInquiry` (admin).
 
 ### `certificateService.ts` (from `certificate-actions.ts`)
+
 `sendBulkCertificates` (admin). The public certificate page (`gbc/certificate/[ticketNumber]`) uses `ticketService.getTicketByNumber`, not this service.
 
 ### `settingsService.ts` (from `settings-actions.ts` — new-found scope)
+
 `getSettings()` (public — event details are meant to be shown on the public site, matches the source having no auth check on the read path). Write side consolidated: the source's `updateGBCSettingsSection`/`updateGBCSetting`/`updateMultipleGBCSettings`/`bulkUpdateSettings` are four wrappers around the same path-navigation logic duplicated three different ways — collapses to one `updateSettings(patch: DeepPartial<GBCSettingsData>)` doing a real deep-merge, plus the low-level `replaceSettings(full)` the merge writer calls internally (mirrors `updateAllGBCSettings`). `resetToDefaults()`/`getPreviousSettings()`/`rollback()` stay distinct (real, different operations) — reset and rollback require SUPERADMIN, matching the source.
 
 ### `adminUserService.ts` (from `admin-actions.ts` — new-found scope, canonical over the two dead duplicates)
+
 `getAllAdmins` (ADMIN/SUPERADMIN), `addAdmin`/`updateAdminRole`/`deleteAdmin`/`toggleAdminStatus` (SUPERADMIN, self-protection guards preserved), `DEV_EMAIL` env swap for the hardcoded personal-email exclusion.
 
 ### `editionService.ts` (new)
+
 `getEditions()`, `getActiveEdition()`, `getEditionPublicRecap(key)` (no revenue — backs the Past Editions page), `getEditionAdminStats(key)` (admin, revenue included — backs the event-switcher's read-only view), `createEdition` / `activateEdition` / `archiveEdition` (SUPERADMIN, enforces exactly one `ACTIVE` entry).
 
 ## API route table
 
-| Route | Method | Service fn | Roles | Notes |
-|---|---|---|---|---|
-| `/tickets` | POST | `createTicket` | *public* | multipart |
-| `/tickets/group` | POST | `createGroupTicket` | *public* | 5 attendees |
-| `/tickets/pair` | POST | `createPairTicket` | *public* | 2 attendees |
-| `/tickets/availability` | GET | `getTicketAvailability` | *public* | capacity only, no revenue |
-| `/tickets/lookup` | GET | `lookupMyTicket` | *public* | `?ticketNumber=&email=` |
-| `/tickets/:ticketNumber` | GET | `getTicketByNumber` | *public* | also backs the certificate page |
-| `/payments/verify` | POST | `verifyPayment` | *public* | body: `{reference, sendEmail?}` |
-| `/admin/tickets` | GET | `getTickets` | ADMIN, SUPERADMIN | `?status=&search=&limit=` |
-| `/admin/tickets/:id` | GET, DELETE | `getTicketById`/`deleteTicket` | ADMIN, SUPERADMIN | |
-| `/admin/tickets/:id/qr-code` | POST | `generateTicketQRCode` | ADMIN, SUPERADMIN | |
-| `/admin/tickets/check-in` | POST | `checkInTicket` | ADMIN, SUPERADMIN | body: `{ticketNumber}` |
-| `/admin/tickets/export` | GET | `exportTickets` | ADMIN, SUPERADMIN | |
-| `/admin/tickets/stats` | GET | `getTicketStats` | ADMIN, SUPERADMIN | revenue + full breakdown |
-| `/admin/qr/verify` | POST | `verifyQRCodeHash` | ADMIN, SUPERADMIN | body: `{qrDataString, maxAgeHours?}` |
-| `/gallery` | GET | `getGalleryItems` | *public* | `?year=` |
-| `/sponsors` | GET | `getSponsors` | *public* | |
-| `/partners` | GET | `getPartners` | *public* | |
-| `/speakers` | GET | `getSpeakers` | *public* | |
-| `/admin/gallery` | GET, POST | `getAllGalleryItems`/create | ADMIN, SUPERADMIN | |
-| `/admin/gallery/:id` | PATCH, DELETE | update/delete | ADMIN, SUPERADMIN | |
-| `/admin/sponsors` | GET, POST | `getAllSponsors`/create | ADMIN, SUPERADMIN | |
-| `/admin/sponsors/:id` | PATCH, DELETE | update/delete | ADMIN, SUPERADMIN | |
-| `/admin/partners` | POST | create | ADMIN, SUPERADMIN | no admin-list/update routes — matches the source |
-| `/admin/partners/:id` | DELETE | delete | ADMIN, SUPERADMIN | |
-| `/admin/speakers` | GET, POST | `getAllSpeakers`/create | ADMIN, SUPERADMIN | |
-| `/admin/speakers/:id` | PATCH, DELETE | update/delete | ADMIN, SUPERADMIN | |
-| `/admin/uploads/:kind` | POST | `upload*` | ADMIN, SUPERADMIN | `:kind` ∈ sponsor-logo\|partner-logo\|speaker-photo\|gallery-media, multipart |
-| `/admin/uploads` | DELETE | `deleteFile`/`deleteFiles` | ADMIN, SUPERADMIN | body: `{key}` or `{keys[]}` |
-| `/admin/uploads/limits` | GET | `getUploadLimits` | ADMIN, SUPERADMIN | |
-| `/contact` | POST | `submitContactForm` | *public* | |
-| `/admin/inquiries` | GET | `getInquiries` | ADMIN, SUPERADMIN | `?status=&type=` |
-| `/admin/inquiries/:id/status` | PATCH | `updateInquiryStatus` | ADMIN, SUPERADMIN | |
-| `/admin/inquiries/:id/reply` | POST | `replyToInquiry` | ADMIN, SUPERADMIN | |
-| `/admin/inquiries/:id` | DELETE | `deleteInquiry` | ADMIN, SUPERADMIN | |
-| `/admin/certificates/send` | POST | `sendBulkCertificates` | ADMIN, SUPERADMIN | body: `{ticketNumbers[], emailBody}` |
-| `/settings` | GET | `getSettings` | *public* | |
-| `/admin/settings` | PATCH | `updateSettings` | ADMIN, SUPERADMIN | deep-merge patch |
-| `/admin/settings/reset` | POST | `resetToDefaults` | SUPERADMIN | |
-| `/admin/settings/previous` | GET | `getPreviousSettings` | ADMIN, SUPERADMIN | |
-| `/admin/settings/rollback` | POST | `rollback` | SUPERADMIN | |
-| `/admin/users` | GET, POST | `getAllAdmins`/`addAdmin` | ADMIN+SUPERADMIN (GET) / SUPERADMIN (POST) | |
-| `/admin/users/:id/role` | PATCH | `updateAdminRole` | SUPERADMIN | |
-| `/admin/users/:id/status` | PATCH | `toggleAdminStatus` | SUPERADMIN | body: `{isActive}` |
-| `/admin/users/:id` | DELETE | `deleteAdmin` | SUPERADMIN | |
-| `/editions` | GET | `getEditions` | *public* | |
-| `/editions/:key/recap` | GET | `getEditionPublicRecap` | *public* | no revenue |
-| `/admin/editions` | POST | `createEdition` | SUPERADMIN | |
-| `/admin/editions/:key/stats` | GET | `getEditionAdminStats` | ADMIN, SUPERADMIN | revenue included |
-| `/admin/editions/:key/activate` | PATCH | `activateEdition` | SUPERADMIN | |
-| `/admin/editions/:key/archive` | PATCH | `archiveEdition` | SUPERADMIN | |
+| Route                           | Method        | Service fn                     | Roles                                      | Notes                                                                         |
+| ------------------------------- | ------------- | ------------------------------ | ------------------------------------------ | ----------------------------------------------------------------------------- |
+| `/tickets`                      | POST          | `createTicket`                 | _public_                                   | multipart                                                                     |
+| `/tickets/group`                | POST          | `createGroupTicket`            | _public_                                   | 5 attendees                                                                   |
+| `/tickets/pair`                 | POST          | `createPairTicket`             | _public_                                   | 2 attendees                                                                   |
+| `/tickets/availability`         | GET           | `getTicketAvailability`        | _public_                                   | capacity only, no revenue                                                     |
+| `/tickets/lookup`               | GET           | `lookupMyTicket`               | _public_                                   | `?ticketNumber=&email=`                                                       |
+| `/tickets/:ticketNumber`        | GET           | `getTicketByNumber`            | _public_                                   | also backs the certificate page                                               |
+| `/payments/verify`              | POST          | `verifyPayment`                | _public_                                   | body: `{reference, sendEmail?}`                                               |
+| `/admin/tickets`                | GET           | `getTickets`                   | ADMIN, SUPERADMIN                          | `?status=&search=&limit=`                                                     |
+| `/admin/tickets/:id`            | GET, DELETE   | `getTicketById`/`deleteTicket` | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/tickets/:id/qr-code`    | POST          | `generateTicketQRCode`         | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/tickets/check-in`       | POST          | `checkInTicket`                | ADMIN, SUPERADMIN                          | body: `{ticketNumber}`                                                        |
+| `/admin/tickets/export`         | GET           | `exportTickets`                | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/tickets/stats`          | GET           | `getTicketStats`               | ADMIN, SUPERADMIN                          | revenue + full breakdown                                                      |
+| `/admin/qr/verify`              | POST          | `verifyQRCodeHash`             | ADMIN, SUPERADMIN                          | body: `{qrDataString, maxAgeHours?}`                                          |
+| `/gallery`                      | GET           | `getGalleryItems`              | _public_                                   | `?year=`                                                                      |
+| `/sponsors`                     | GET           | `getSponsors`                  | _public_                                   |                                                                               |
+| `/partners`                     | GET           | `getPartners`                  | _public_                                   |                                                                               |
+| `/speakers`                     | GET           | `getSpeakers`                  | _public_                                   |                                                                               |
+| `/admin/gallery`                | GET, POST     | `getAllGalleryItems`/create    | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/gallery/:id`            | PATCH, DELETE | update/delete                  | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/sponsors`               | GET, POST     | `getAllSponsors`/create        | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/sponsors/:id`           | PATCH, DELETE | update/delete                  | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/partners`               | POST          | create                         | ADMIN, SUPERADMIN                          | no admin-list/update routes — matches the source                              |
+| `/admin/partners/:id`           | DELETE        | delete                         | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/speakers`               | GET, POST     | `getAllSpeakers`/create        | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/speakers/:id`           | PATCH, DELETE | update/delete                  | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/uploads/:kind`          | POST          | `upload*`                      | ADMIN, SUPERADMIN                          | `:kind` ∈ sponsor-logo\|partner-logo\|speaker-photo\|gallery-media, multipart |
+| `/admin/uploads`                | DELETE        | `deleteFile`/`deleteFiles`     | ADMIN, SUPERADMIN                          | body: `{key}` or `{keys[]}`                                                   |
+| `/admin/uploads/limits`         | GET           | `getUploadLimits`              | ADMIN, SUPERADMIN                          |                                                                               |
+| `/contact`                      | POST          | `submitContactForm`            | _public_                                   |                                                                               |
+| `/admin/inquiries`              | GET           | `getInquiries`                 | ADMIN, SUPERADMIN                          | `?status=&type=`                                                              |
+| `/admin/inquiries/:id/status`   | PATCH         | `updateInquiryStatus`          | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/inquiries/:id/reply`    | POST          | `replyToInquiry`               | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/inquiries/:id`          | DELETE        | `deleteInquiry`                | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/certificates/send`      | POST          | `sendBulkCertificates`         | ADMIN, SUPERADMIN                          | body: `{ticketNumbers[], emailBody}`                                          |
+| `/settings`                     | GET           | `getSettings`                  | _public_                                   |                                                                               |
+| `/admin/settings`               | PATCH         | `updateSettings`               | ADMIN, SUPERADMIN                          | deep-merge patch                                                              |
+| `/admin/settings/reset`         | POST          | `resetToDefaults`              | SUPERADMIN                                 |                                                                               |
+| `/admin/settings/previous`      | GET           | `getPreviousSettings`          | ADMIN, SUPERADMIN                          |                                                                               |
+| `/admin/settings/rollback`      | POST          | `rollback`                     | SUPERADMIN                                 |                                                                               |
+| `/admin/users`                  | GET, POST     | `getAllAdmins`/`addAdmin`      | ADMIN+SUPERADMIN (GET) / SUPERADMIN (POST) |                                                                               |
+| `/admin/users/:id/role`         | PATCH         | `updateAdminRole`              | SUPERADMIN                                 |                                                                               |
+| `/admin/users/:id/status`       | PATCH         | `toggleAdminStatus`            | SUPERADMIN                                 | body: `{isActive}`                                                            |
+| `/admin/users/:id`              | DELETE        | `deleteAdmin`                  | SUPERADMIN                                 |                                                                               |
+| `/editions`                     | GET           | `getEditions`                  | _public_                                   |                                                                               |
+| `/editions/:key/recap`          | GET           | `getEditionPublicRecap`        | _public_                                   | no revenue                                                                    |
+| `/admin/editions`               | POST          | `createEdition`                | SUPERADMIN                                 |                                                                               |
+| `/admin/editions/:key/stats`    | GET           | `getEditionAdminStats`         | ADMIN, SUPERADMIN                          | revenue included                                                              |
+| `/admin/editions/:key/activate` | PATCH         | `activateEdition`              | SUPERADMIN                                 |                                                                               |
+| `/admin/editions/:key/archive`  | PATCH         | `archiveEdition`               | SUPERADMIN                                 |                                                                               |
 
 All paths are relative to `/api/v1/gbc`. ~46 routes total.
 
@@ -185,13 +194,13 @@ The shared Paystack webhook (`app/api/webhooks/paystack/route.ts`) currently log
 
 ## Route/nav registry
 
-New file, `gbc/access/routes.ts` — same shape as `surfboard/access/routes.ts`/`reva/access/routes.ts` (`GBCRouteEntry {path, label, icon, roles, group, showInNav?}`, `GBCRouteGroup = "admin" | "guest"` — no separate "user" group the way REVA has one, since GBC ticket-holders never get an account; the public site itself *is* the "user" experience). `canAccessRoute`/`getNavItemsForRole` back `proxy.ts`'s GBC branch (replacing the direct `canAccessGBCAdminPanel`/`canAccessGBCSuperAdminPanel` calls) and `gbcAdminPanelLayout.tsx`'s sidebar. `/gbc/restricted/superadmin` gets the same treatment as REVA's and Surfboard's equivalent dead `proxy.ts` branches — no real page exists at that path, kept as a direct role check, not a registry entry.
+New file, `gbc/access/routes.ts` — same shape as `surfboard/access/routes.ts`/`reva/access/routes.ts` (`GBCRouteEntry {path, label, icon, roles, group, showInNav?}`, `GBCRouteGroup = "admin" | "guest"` — no separate "user" group the way REVA has one, since GBC ticket-holders never get an account; the public site itself _is_ the "user" experience). `canAccessRoute`/`getNavItemsForRole` back `proxy.ts`'s GBC branch (replacing the direct `canAccessGBCAdminPanel`/`canAccessGBCSuperAdminPanel` calls) and `gbcAdminPanelLayout.tsx`'s sidebar. `/gbc/restricted/superadmin` gets the same treatment as REVA's and Surfboard's equivalent dead `proxy.ts` branches — no real page exists at that path, kept as a direct role check, not a registry entry.
 
 Entries: admin group covers `gbc/restricted/{,gallery,speakers,sponsors,tickets,inquiries,certificates,settings,attendees,check-in,users,editions}`; guest group covers the repurposed My Ticket entry point (`/gbc/login`) plus `gbc/{,about,contact,gallery,speakers,sponsors,tickets,editions}` and the certificate page — all public, `roles: []`, registered for documentation/future-use consistency with REVA's guest group even though `proxy.ts`'s matcher doesn't currently gate any of them (none are under `/gbc/restricted`).
 
 ## Naming standardization
 
-`gbc/restricted` → `gbc-restricted` — but unlike Phase 2/3's equivalent renames, there's nothing to leave alone here: checked `app/api/auth/success/` directly and the Kinde callback route is **already** `gbc-restricted` (hyphenated), while the *page* routes are still the old `gbc/restricted` (nested, no hyphen) — the callback was set up ahead of the page-route convention catching up to it, not behind it. So this step is simpler than Surfboard's or REVA's: physical page-folder rename, every internal reference updated, `next.config.mjs` gets permanent redirects for the old prefix — no Kinde dashboard action needed at all, since the registered redirect URI already matches the target name.
+`gbc/restricted` → `gbc-restricted` — but unlike Phase 2/3's equivalent renames, there's nothing to leave alone here: checked `app/api/auth/success/` directly and the Kinde callback route is **already** `gbc-restricted` (hyphenated), while the _page_ routes are still the old `gbc/restricted` (nested, no hyphen) — the callback was set up ahead of the page-route convention catching up to it, not behind it. So this step is simpler than Surfboard's or REVA's: physical page-folder rename, every internal reference updated, `next.config.mjs` gets permanent redirects for the old prefix — no Kinde dashboard action needed at all, since the registered redirect URI already matches the target name.
 
 ## Folder move
 
@@ -238,7 +247,7 @@ Steps 1-16 above executed in the order laid out, each committed and pushed separ
 10. **`adminUserService.ts`** (`63b1ee3`) — admin management with self-demotion/self-deletion/self-deactivation guards preserved from the source. 12 tests.
 11. **Webhook repoint** (`e843294`) — the shared `app/api/webhooks/paystack/route.ts`'s GBC branch, previously falling through to `onUnhandled()`, now calls `ticketService.verifyPayment` with a ticket-status idempotency check. 6 tests, live-verified with a real signed request.
 12. **My Ticket entry point** (`9c81961`) — repurposed the already-disabled `/gbc/login` route as a guest ticket-lookup page (ticket number + email, no account — `GBCTicket` has no relation to `GBCUser`), mirroring REVA's `onetimerequest` pattern, including its anti-probing generic not-found message.
-13. **`gbc/access/routes.ts` registry** (`f05c837`, corrected same-day by `68b66a1`) — first pass wired the registry's nav side into `components/layouts/gbcAdminPanelLayout.tsx`, matching this spec's own description of the step; a repo-wide grep afterward found that component (and its `useGBCAdminAccess` hook) unused anywhere. Follow-up commit rewired the *real* live sidebar (`AdminSidebar.tsx`/`AdminMobileNav.tsx`) instead, surfacing the actual gaps: `/gbc-restricted/attendees` and `/gbc-restricted/editions` had working pages nothing linked to.
+13. **`gbc/access/routes.ts` registry** (`f05c837`, corrected same-day by `68b66a1`) — first pass wired the registry's nav side into `components/layouts/gbcAdminPanelLayout.tsx`, matching this spec's own description of the step; a repo-wide grep afterward found that component (and its `useGBCAdminAccess` hook) unused anywhere. Follow-up commit rewired the _real_ live sidebar (`AdminSidebar.tsx`/`AdminMobileNav.tsx`) instead, surfacing the actual gaps: `/gbc-restricted/attendees` and `/gbc-restricted/editions` had working pages nothing linked to.
 14. **Naming standardization** (`a716b23`) — `gbc/restricted` → `gbc-restricted`, `gbc/restricted-login` → `gbc-restricted/login`. Simpler than Surfboard's/REVA's equivalent renames since the Kinde callback was already hyphenated. The 13 admin pages moved into a new `(admin)` route group so the login page can sit outside the sidebar layout while every admin URL stays flat.
 15. **Folder move** (`7c9ac8b`) — `app/(projects)/(GBC)/{components,types,utils}/` → `gbc/{components,types,utils}/`, ~60 files' imports converted to aliases rather than hand-recomputed relative paths. Five more confirmed-dead files deleted rather than moved (two layouts, two hooks, `utils/gbcAuth.ts`, `gbc-colors.ts`), plus three dead functions removed from inside the otherwise-live `gbc/utils/auth.ts`.
 16. **Final integration pass** (this report) — see below.
@@ -263,6 +272,7 @@ Steps 1-16 above executed in the order laid out, each committed and pushed separ
 ### Next up
 
 Phase 4 is complete. Two items carried forward, not blocking anything:
+
 - **Your action needed (not blocking, but will bite on the next schema change): `prisma db push` is broken on this machine's local Postgres** — missing PostGIS, unrelated to GBC, surfaced during the edition-metadata migration (step 8). Needs `postgresql-16-postgis-3` (or equivalent) installed, which requires `sudo` this session doesn't have.
 - **The 12 legacy `"use server"` action files' remaining frontend consumers** (page/component imports across the app) still call the legacy actions directly rather than the new `/api/v1/gbc/*` routes — repointing them is its own dedicated pass, deliberately not bundled into this phase, matching Phase 2's and Phase 3's precedent for Surfboard's and REVA's frontend cutovers. All 12 action files stay in place, still fully functional, until that happens.
 

@@ -9,11 +9,13 @@ This document describes the comprehensive implementation of the Kinde Management
 ## Key Improvements
 
 ### 1. **Type-Safe API Client**
+
 - Implemented a robust `KindeApiClient` class with proper TypeScript interfaces
 - Comprehensive error handling with detailed error messages
 - Centralized API configuration management
 
 ### 2. **Enhanced Data Structures**
+
 ```typescript
 interface KindeUserData {
   email: string;
@@ -48,6 +50,7 @@ interface KindeApiResponse<T = any> {
 ### 3. **Core API Methods**
 
 #### User Management
+
 - `createUser()` - Create new users with proper validation
 - `getUser()` - Retrieve user details by ID
 - `getUsers()` - List users with pagination support
@@ -56,10 +59,12 @@ interface KindeApiResponse<T = any> {
 - `getUserByEmail()` - Find users by email address
 
 #### User Status Management
+
 - `suspendUser()` - Suspend user accounts
 - `unsuspendUser()` - Reactivate suspended accounts
 
 #### Permissions & Roles
+
 - `getUserPermissions()` - Get user permissions
 - `getUserRoles()` - Get user roles
 - `getAllPermissions()` - List all available permissions
@@ -68,6 +73,7 @@ interface KindeApiResponse<T = any> {
 ### 4. **Enhanced Helper Functions**
 
 #### Basic Operations
+
 ```typescript
 async function createKindeUser(userData: {
   email: string;
@@ -90,22 +96,26 @@ async function updateKindeUser(kindeId: string, updates: Partial<...>): Promise<
 ### 5. **New Admin Functions**
 
 #### User Details Management
+
 - `getKindeUserDetails()` - Get detailed user information
 - `updateKindeUserDetails()` - Update user details via form data
 - `getKindeUsersList()` - Get paginated list of users
 - `getKindeUserByEmail()` - Search users by email
 
 #### User Synchronization
+
 - `syncKindeUserWithDatabase()` - Sync individual user with database
 - `bulkSyncKindeUsers()` - Bulk sync multiple users with database
 
 #### Permissions & Roles Management
+
 - `getKindeUserPermissions()` - Get user permissions
 - `getKindeUserRoles()` - Get user roles
 - `getAllKindePermissions()` - Get all available permissions
 - `getAllKindeRoles()` - Get all available roles
 
 #### System Management
+
 - `getKindeApiStatus()` - Check API connectivity and status
 
 ## Environment Variables Required
@@ -118,12 +128,13 @@ KINDE_MANAGEMENT_API_TOKEN=your_management_api_token
 ## Usage Examples
 
 ### Creating a New User
+
 ```typescript
 const result = await createKindeUser({
   email: "user@example.com",
   firstName: "John",
   lastName: "Doe",
-  password: "securePassword123"
+  password: "securePassword123",
 });
 
 if (result.success) {
@@ -134,6 +145,7 @@ if (result.success) {
 ```
 
 ### Updating User Details
+
 ```typescript
 const formData = new FormData();
 formData.append("kindeId", "user_id");
@@ -144,6 +156,7 @@ const result = await updateKindeUserDetails(formData);
 ```
 
 ### Bulk User Synchronization
+
 ```typescript
 const result = await bulkSyncKindeUsers(50);
 if (result.success) {
@@ -155,6 +168,7 @@ if (result.success) {
 ```
 
 ### Checking API Status
+
 ```typescript
 const status = await getKindeApiStatus();
 if (status.success && status.data.connected) {
@@ -218,4 +232,4 @@ Based on the [Kinde Management API documentation](https://docs.kinde.com/kinde-a
 2. **Monitoring**: Add logging and monitoring for API calls
 3. **Caching**: Implement caching for frequently accessed data
 4. **Rate Limiting**: Add rate limiting to prevent API abuse
-5. **Webhooks**: Implement webhook handling for real-time updates 
+5. **Webhooks**: Implement webhook handling for real-time updates

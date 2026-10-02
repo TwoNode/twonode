@@ -48,7 +48,9 @@ export async function getAuthenticatedRevaUser() {
     throw new Error("Not Authenticated");
   }
 
-  const revaUser = await prisma.revaUser.findUnique({ where: { id: nativeSession.sub } });
+  const revaUser = await prisma.revaUser.findUnique({
+    where: { id: nativeSession.sub },
+  });
   if (!revaUser) {
     throw new Error("User not found in Reva DB");
   }
@@ -60,17 +62,20 @@ export async function getAuthenticatedRevaUser() {
 export async function _verifyRevaAdminAccess() {
   try {
     const user = await getAuthenticatedRevaUser();
-    
+
     if (!user || !user.role) {
-      return { hasAccess: false, message: "User not authenticated or role not found" };
+      return {
+        hasAccess: false,
+        message: "User not authenticated or role not found",
+      };
     }
 
     const hasAccess = canAccessRevaAdminPanel(user.role);
-    
-    return { 
-      hasAccess, 
+
+    return {
+      hasAccess,
       message: hasAccess ? "Access granted" : "Insufficient permissions",
-      user 
+      user,
     };
   } catch (error) {
     console.error("Error verifying admin access:", error);
@@ -82,17 +87,20 @@ export async function _verifyRevaAdminAccess() {
 export async function _verifyRevaUserAccess() {
   try {
     const user = await getAuthenticatedRevaUser();
-    
+
     if (!user || !user.role) {
-      return { hasAccess: false, message: "User not authenticated or role not found" };
+      return {
+        hasAccess: false,
+        message: "User not authenticated or role not found",
+      };
     }
 
     const hasAccess = canAccessRevaUserPanel(user.role);
-    
-    return { 
-      hasAccess, 
+
+    return {
+      hasAccess,
       message: hasAccess ? "Access granted" : "Insufficient permissions",
-      user 
+      user,
     };
   } catch (error) {
     console.error("Error verifying user access:", error);

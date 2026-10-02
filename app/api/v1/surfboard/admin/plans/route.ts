@@ -12,9 +12,14 @@ export const GET = withAuth<SurfboardRole>(
       ...pagination,
       search: params.get("search") || undefined,
       status: params.get("status") || undefined,
-      tab: (params.get("tab") as "all" | "person-count" | "queries" | null) || undefined,
+      tab:
+        (params.get("tab") as "all" | "person-count" | "queries" | null) ||
+        undefined,
     });
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN] }
+  {
+    platform: Platform.SURFBOARD,
+    roles: [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN],
+  }
 );

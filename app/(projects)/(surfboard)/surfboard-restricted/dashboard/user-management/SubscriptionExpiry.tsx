@@ -1,5 +1,8 @@
 import { format } from "date-fns";
-import { subscriptionExpiry, type ExpiryTone } from "@/surfboard/utils/subscriptionExpiry";
+import {
+  subscriptionExpiry,
+  type ExpiryTone,
+} from "@/surfboard/utils/subscriptionExpiry";
 
 const TONE_CLASSES: Record<ExpiryTone, string> = {
   none: "text-gray-500 dark:text-gray-400",
@@ -9,11 +12,17 @@ const TONE_CLASSES: Record<ExpiryTone, string> = {
 };
 
 /** One line under a user's plan: when the subscription ends, and how close (or how far past) that is. */
-export function SubscriptionExpiry({ currentEnd }: { currentEnd?: Date | string | null }) {
+export function SubscriptionExpiry({
+  currentEnd,
+}: {
+  currentEnd?: Date | string | null;
+}) {
   const { tone, date, relative } = subscriptionExpiry(currentEnd);
 
   if (!date) {
-    return <div className={`mt-1 text-xs ${TONE_CLASSES.none}`}>No end date</div>;
+    return (
+      <div className={`mt-1 text-xs ${TONE_CLASSES.none}`}>No end date</div>
+    );
   }
 
   return (

@@ -12,7 +12,10 @@ const bodySchema = z.object({ planIds: z.array(z.string().uuid()).min(1) });
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { planIds } = await validateBody(req, bodySchema);
     const data = await submitPhysicalCopies(ctx.session.sub, planIds);

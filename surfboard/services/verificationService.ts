@@ -14,7 +14,9 @@ export async function downloadPlanPdfAsBase64(planId: string): Promise<string> {
   let lastError = "Failed to download PDF";
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId } });
+      const plan = await prisma.surfboardPlan.findUnique({
+        where: { id: planId },
+      });
       if (!plan || !plan.redCopyFileUrl) throw new NotFoundError("PDF URL");
 
       const res = await fetch(plan.redCopyFileUrl);
@@ -34,7 +36,12 @@ export async function downloadPlanPdfAsBase64(planId: string): Promise<string> {
   throw new ValidationError({ pdf: lastError });
 }
 
-export async function savePlanVerificationResult(planId: string, verdict: string, score: number, verificationData: any) {
+export async function savePlanVerificationResult(
+  planId: string,
+  verdict: string,
+  score: number,
+  verificationData: any
+) {
   await prisma.surfboardPlan.update({
     where: { id: planId },
     data: {

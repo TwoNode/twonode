@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, Layers, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Layers,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +26,11 @@ import {
 } from "@/components/ui/dialog";
 import { gbcApi } from "@/gbc/apiClient";
 import type { SponsorTierWithCount } from "@/gbc/types/sponsor";
-import { TIER_SIZES, TIER_SIZE_LABELS, type TierSize } from "@/gbc/utils/sponsorTiers";
+import {
+  TIER_SIZES,
+  TIER_SIZE_LABELS,
+  type TierSize,
+} from "@/gbc/utils/sponsorTiers";
 
 const selectClass =
   "h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -31,21 +44,36 @@ function sizeLabel(size: string) {
  * order sections appear on the public sponsors page. Closing the dialog
  * refreshes the page so the sponsor forms and list pick up the changes.
  */
-export function ManageSponsorTiersButton({ initialTiers }: { initialTiers: SponsorTierWithCount[] }) {
+export function ManageSponsorTiersButton({
+  initialTiers,
+}: {
+  initialTiers: SponsorTierWithCount[];
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [tiers, setTiers] = useState(initialTiers);
   const [busy, setBusy] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
-  const [draft, setDraft] = useState({ name: "", description: "", size: "STANDARD" as string });
-  const [adding, setAdding] = useState({ name: "", description: "", size: "STANDARD" as string });
+  const [draft, setDraft] = useState({
+    name: "",
+    description: "",
+    size: "STANDARD" as string,
+  });
+  const [adding, setAdding] = useState({
+    name: "",
+    description: "",
+    size: "STANDARD" as string,
+  });
 
   async function reload() {
     const res = await gbcApi.sponsorTiers.list();
     if (res.success) setTiers(res.data);
   }
 
-  async function run(action: () => Promise<{ success: boolean; error?: string }>, done: string) {
+  async function run(
+    action: () => Promise<{ success: boolean; error?: string }>,
+    done: string
+  ) {
     setBusy(true);
     try {
       const res = await action();
@@ -73,7 +101,12 @@ export function ManageSponsorTiersButton({ initialTiers }: { initialTiers: Spons
 
   async function saveEdit(key: string) {
     const ok = await run(
-      () => gbcApi.sponsorTiers.update(key, { name: draft.name, description: draft.description, size: draft.size }),
+      () =>
+        gbcApi.sponsorTiers.update(key, {
+          name: draft.name,
+          description: draft.description,
+          size: draft.size,
+        }),
       "Tier updated"
     );
     if (ok) setEditingKey(null);
@@ -81,7 +114,12 @@ export function ManageSponsorTiersButton({ initialTiers }: { initialTiers: Spons
 
   async function addTier() {
     const ok = await run(
-      () => gbcApi.sponsorTiers.create({ name: adding.name, description: adding.description, size: adding.size }),
+      () =>
+        gbcApi.sponsorTiers.create({
+          name: adding.name,
+          description: adding.description,
+          size: adding.size,
+        }),
       "Tier added"
     );
     if (ok) setAdding({ name: "", description: "", size: "STANDARD" });
@@ -108,7 +146,8 @@ export function ManageSponsorTiersButton({ initialTiers }: { initialTiers: Spons
         <DialogHeader>
           <DialogTitle>Sponsor tiers</DialogTitle>
           <DialogDescription>
-            Tiers appear on the public sponsors page in this order. Renaming a tier keeps its sponsors in it.
+            Tiers appear on the public sponsors page in this order. Renaming a
+            tier keeps its sponsors in it.
           </DialogDescription>
         </DialogHeader>
 
@@ -124,20 +163,37 @@ export function ManageSponsorTiersButton({ initialTiers }: { initialTiers: Spons
                 <div className="space-y-3">
                   <div>
                     <Label htmlFor={`name-${tier.key}`}>Name</Label>
-                    <Input id={`name-${tier.key}`} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+                    <Input
+                      id={`name-${tier.key}`}
+                      value={draft.name}
+                      onChange={(e) =>
+                        setDraft({ ...draft, name: e.target.value })
+                      }
+                    />
                   </div>
                   <div>
-                    <Label htmlFor={`desc-${tier.key}`}>Tagline (optional)</Label>
+                    <Label htmlFor={`desc-${tier.key}`}>
+                      Tagline (optional)
+                    </Label>
                     <Input
                       id={`desc-${tier.key}`}
                       value={draft.description}
                       placeholder="Shown under the heading"
-                      onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                      onChange={(e) =>
+                        setDraft({ ...draft, description: e.target.value })
+                      }
                     />
                   </div>
                   <div>
                     <Label htmlFor={`size-${tier.key}`}>Card size</Label>
-                    <select id={`size-${tier.key}`} className={selectClass} value={draft.size} onChange={(e) => setDraft({ ...draft, size: e.target.value })}>
+                    <select
+                      id={`size-${tier.key}`}
+                      className={selectClass}
+                      value={draft.size}
+                      onChange={(e) =>
+                        setDraft({ ...draft, size: e.target.value })
+                      }
+                    >
                       {TIER_SIZES.map((size) => (
                         <option key={size} value={size}>
                           {TIER_SIZE_LABELS[size]}
@@ -146,11 +202,22 @@ export function ManageSponsorTiersButton({ initialTiers }: { initialTiers: Spons
                     </select>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => saveEdit(tier.key)} disabled={busy}>
-                      {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Button
+                      size="sm"
+                      onClick={() => saveEdit(tier.key)}
+                      disabled={busy}
+                    >
+                      {busy && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
                       Save
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setEditingKey(null)} disabled={busy}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setEditingKey(null)}
+                      disabled={busy}
+                    >
                       <X className="mr-1 h-4 w-4" />
                       Cancel
                     </Button>
@@ -159,17 +226,32 @@ export function ManageSponsorTiersButton({ initialTiers }: { initialTiers: Spons
               ) : (
                 <div className="flex items-center gap-3">
                   <div className="flex flex-col">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={`Move ${tier.name} up`} disabled={busy || index === 0} onClick={() => move(index, -1)}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      aria-label={`Move ${tier.name} up`}
+                      disabled={busy || index === 0}
+                      onClick={() => move(index, -1)}
+                    >
                       <ArrowUp className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={`Move ${tier.name} down`} disabled={busy || index === tiers.length - 1} onClick={() => move(index, 1)}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      aria-label={`Move ${tier.name} down`}
+                      disabled={busy || index === tiers.length - 1}
+                      onClick={() => move(index, 1)}
+                    >
                       <ArrowDown className="h-4 w-4" />
                     </Button>
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{tier.name}</p>
                     <p className="text-xs text-gray-500">
-                      {sizeLabel(tier.size)} · {tier.sponsorCount} {tier.sponsorCount === 1 ? "sponsor" : "sponsors"}
+                      {sizeLabel(tier.size)} · {tier.sponsorCount}{" "}
+                      {tier.sponsorCount === 1 ? "sponsor" : "sponsors"}
                     </p>
                   </div>
                   <Button
@@ -179,7 +261,11 @@ export function ManageSponsorTiersButton({ initialTiers }: { initialTiers: Spons
                     disabled={busy}
                     onClick={() => {
                       setEditingKey(tier.key);
-                      setDraft({ name: tier.name, description: tier.description ?? "", size: tier.size });
+                      setDraft({
+                        name: tier.name,
+                        description: tier.description ?? "",
+                        size: tier.size,
+                      });
                     }}
                   >
                     <Pencil className="h-4 w-4" />
@@ -190,8 +276,17 @@ export function ManageSponsorTiersButton({ initialTiers }: { initialTiers: Spons
                     aria-label={`Delete ${tier.name}`}
                     className="text-red-600 hover:text-red-700"
                     disabled={busy}
-                    title={tier.sponsorCount > 0 ? "Move its sponsors to another tier first" : undefined}
-                    onClick={() => run(() => gbcApi.sponsorTiers.remove(tier.key), "Tier deleted")}
+                    title={
+                      tier.sponsorCount > 0
+                        ? "Move its sponsors to another tier first"
+                        : undefined
+                    }
+                    onClick={() =>
+                      run(
+                        () => gbcApi.sponsorTiers.remove(tier.key),
+                        "Tier deleted"
+                      )
+                    }
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -212,11 +307,21 @@ export function ManageSponsorTiersButton({ initialTiers }: { initialTiers: Spons
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="new-tier-name">Name</Label>
-              <Input id="new-tier-name" value={adding.name} placeholder="e.g. Gold Partners" onChange={(e) => setAdding({ ...adding, name: e.target.value })} />
+              <Input
+                id="new-tier-name"
+                value={adding.name}
+                placeholder="e.g. Gold Partners"
+                onChange={(e) => setAdding({ ...adding, name: e.target.value })}
+              />
             </div>
             <div>
               <Label htmlFor="new-tier-size">Card size</Label>
-              <select id="new-tier-size" className={selectClass} value={adding.size} onChange={(e) => setAdding({ ...adding, size: e.target.value })}>
+              <select
+                id="new-tier-size"
+                className={selectClass}
+                value={adding.size}
+                onChange={(e) => setAdding({ ...adding, size: e.target.value })}
+              >
                 {TIER_SIZES.map((size) => (
                   <option key={size} value={size}>
                     {TIER_SIZE_LABELS[size]}
@@ -227,10 +332,24 @@ export function ManageSponsorTiersButton({ initialTiers }: { initialTiers: Spons
           </div>
           <div>
             <Label htmlFor="new-tier-desc">Tagline (optional)</Label>
-            <Input id="new-tier-desc" value={adding.description} placeholder="Shown under the heading" onChange={(e) => setAdding({ ...adding, description: e.target.value })} />
+            <Input
+              id="new-tier-desc"
+              value={adding.description}
+              placeholder="Shown under the heading"
+              onChange={(e) =>
+                setAdding({ ...adding, description: e.target.value })
+              }
+            />
           </div>
-          <Button type="submit" disabled={busy || adding.name.trim().length < 2}>
-            {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+          <Button
+            type="submit"
+            disabled={busy || adding.name.trim().length < 2}
+          >
+            {busy ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="mr-2 h-4 w-4" />
+            )}
             Add tier
           </Button>
         </form>

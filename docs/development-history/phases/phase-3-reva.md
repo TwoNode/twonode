@@ -10,11 +10,11 @@ This spec is built from a complete read of `revaActions.ts`, `revaActions2.ts`, 
 
 ## Source inventory — corrections to the plan's assumptions
 
-**`revaActions2.ts` is NOT dead code — it backs a live, production-critical path.** (Correcting an initial research pass that missed this — worth recording the correction itself, since it's exactly the kind of claim that needs verifying before anyone acts on it.) It carries no `"use server"` directive and has no *component/page* importing it, but the shared multi-product Paystack webhook handler — **`app/api/webhooks/paystack/route.ts`, not `app/api/reva/webhooks/paystack/route.ts`** — imports it wholesale (`import * as reva from ".../revaActions2"`) and calls five of its functions on every successful REVA charge: `updatePropertyTransactionStatus`, `updateOneTimeTransactionStatus`, `authGetTransactionData`, `getTransactionData`, `notifyPaymentReceived`. This is the real confirmation path for REVA payments — not a dead file.
+**`revaActions2.ts` is NOT dead code — it backs a live, production-critical path.** (Correcting an initial research pass that missed this — worth recording the correction itself, since it's exactly the kind of claim that needs verifying before anyone acts on it.) It carries no `"use server"` directive and has no _component/page_ importing it, but the shared multi-product Paystack webhook handler — **`app/api/webhooks/paystack/route.ts`, not `app/api/reva/webhooks/paystack/route.ts`** — imports it wholesale (`import * as reva from ".../revaActions2"`) and calls five of its functions on every successful REVA charge: `updatePropertyTransactionStatus`, `updateOneTimeTransactionStatus`, `authGetTransactionData`, `getTransactionData`, `notifyPaymentReceived`. This is the real confirmation path for REVA payments — not a dead file.
 
-The good news: all 5 of those specific functions are confirmed byte-identical to their `revaActions.ts` counterparts (per the fuller diff below), and none of them touch the broken `getAuthenticatedRevaUser` stub that makes a few *other*, genuinely-unused functions in this file unsafe (`authPaymentSuccessful`, `getUserProperties` — those two have no call sites anywhere, webhook included). So there's no behavior to reconcile for the live path — it's the same logic, just currently imported from the wrong place. **Migration implication**: once `propertyRequestService.ts`/`paymentService.ts`/`notificationService.ts` exist, `app/api/webhooks/paystack/route.ts`'s REVA branch gets repointed to import from them instead of `revaActions2.ts` — this is a required step in this phase's sequencing, not an optional cleanup. Only *after* that repoint can `revaActions2.ts` be deleted (its remaining functions — `authPaymentSuccessful`, `getUserProperties`, the two Paystack-config duplicates, the broken stub itself — are then genuinely unreferenced).
+The good news: all 5 of those specific functions are confirmed byte-identical to their `revaActions.ts` counterparts (per the fuller diff below), and none of them touch the broken `getAuthenticatedRevaUser` stub that makes a few _other_, genuinely-unused functions in this file unsafe (`authPaymentSuccessful`, `getUserProperties` — those two have no call sites anywhere, webhook included). So there's no behavior to reconcile for the live path — it's the same logic, just currently imported from the wrong place. **Migration implication**: once `propertyRequestService.ts`/`paymentService.ts`/`notificationService.ts` exist, `app/api/webhooks/paystack/route.ts`'s REVA branch gets repointed to import from them instead of `revaActions2.ts` — this is a required step in this phase's sequencing, not an optional cleanup. Only _after_ that repoint can `revaActions2.ts` be deleted (its remaining functions — `authPaymentSuccessful`, `getUserProperties`, the two Paystack-config duplicates, the broken stub itself — are then genuinely unreferenced).
 
-**The guest tracking page already exists — the plan's "no client view page" claim was wrong.** `app/(projects)/reva/onetimerequest/page.tsx` is a real, working status page: reference+email lookup (no login), a Submitted → In Progress → Completed tracker, payment/report-approval badges, and a download-report affordance once approved. It's linked from the approval email, the post-payment landing page, and both the user-side and admin-side request lists. The actual (smaller) gap: `checkPaymentSuccess`'s payment-confirmation email doesn't include this page's link — only the *approval* email does. A guest who pays but whose report isn't approved yet has no emailed way back to the tracker if they lose the tab. Worth fixing as a small addition during this phase, not a new page build.
+**The guest tracking page already exists — the plan's "no client view page" claim was wrong.** `app/(projects)/reva/onetimerequest/page.tsx` is a real, working status page: reference+email lookup (no login), a Submitted → In Progress → Completed tracker, payment/report-approval badges, and a download-report affordance once approved. It's linked from the approval email, the post-payment landing page, and both the user-side and admin-side request lists. The actual (smaller) gap: `checkPaymentSuccess`'s payment-confirmation email doesn't include this page's link — only the _approval_ email does. A guest who pays but whose report isn't approved yet has no emailed way back to the tracker if they lose the tab. Worth fixing as a small addition during this phase, not a new page build.
 
 **The `OneTimeUserProperty` notification gap is real, and the mechanism is now precisely understood.** `approveOneTimeDueDiligenceReport` (`adminDbActions.ts`) has its entire notification-trigger block commented out — not because it crashes, but because whoever wrote it correctly avoided calling `notifyReportReady(property, property.user.id)` (the pattern the sibling `approveDueDiligenceReport` uses for regular `Property` rows) since `OneTimeUserProperty` has no `user` relation at all, only a plain `email` field. The guest still gets an email today (`sendMail({to: property.email, ...})` fires independently), just no `Notification` DB row and no `notifySystemAlert` admin-side echo. **Needs a decision**: build a `OneTimeUserProperty`-safe notification path (keyed on `email`, not `user.id`) during this phase, or leave the email-only behavior as intentional and just remove the dead commented-out code?
 
@@ -33,21 +33,26 @@ Much simpler than Surfboard: `Role` enum (`prisma/schema/reva.prisma`) is `USER 
 ### From `revaActions.ts` → 3 services (`reva/services/`)
 
 **`propertyRequestService.ts`** — CRUD for both `Property` (authenticated) and `OneTimeUserProperty` (guest), kept together since they're the same conceptual entity split across two tables:
+
 - `saveToOneTimeProperty`, `saveToPropertyTable`, `updateOneTimeTransactionStatus`, `updatePropertyTransactionStatus`, `getUserPropertyById`, `getUserProperties` (+ private `getAllUserProperties`), `getTransactionData`, `authGetTransactionData`, `getOneTimeRequestByReference`, `downloadOneTimeRequestReport`
 
 **`paymentService.ts`** — Paystack-integrated submission and verification, depends on `propertyRequestService.ts` for the underlying create/update calls:
+
 - `saveFormDataAndInitiatePaystack`, `checkPaymentSuccess`, `authSaveFormDataAndInitiatePaystack`, `authPaymentSuccessful`
 
 **`notificationService.ts`** — the generic `Notification` CRUD + trigger functions (not in the plan's original 3-service list, but real, substantial, cross-cutting functionality that needs its own home rather than being crammed into the two above):
+
 - `createNotification`, `getUserNotifications`, `getAdminNotifications`, `getSuperAdminNotifications`, `markNotificationAsRead`, `dismissNotification`, `getUnreadNotificationCount`, `notifyNewPropertyRequest`, `notifyPaymentReceived`, `notifyReportReady`, `notifySystemAlert`
 - **Not migrated**: `testNotificationAccessControl`, `testNotificationCreation` — dev-only integration-test functions, zero route call sites, same treatment as Surfboard's `deleteAllBatches` (not exposed over HTTP; delete in Phase 5 if no longer needed for manual testing).
 
 ### From `reva-restricted/actions/adminDbActions.ts` → 2 services (new scope beyond the plan's original naming, discovered by reading the file)
 
 **`reportService.ts`** (matches the plan's original name) — admin review/approval of due-diligence reports:
+
 - `getAllRequestsWithUserByAdmin`, `getRequestByReferenceByAdmin`, `getOneTimeRequestByReferenceByAdmin`, `uploadDueDiligenceReport`, `uploadDirectLinkReport`, `approveDueDiligenceReport`, `approveOneTimeDueDiligenceReport` (gets its notification path fixed here, per the open question above, once you've answered it)
 
 **`adminUserService.ts`** (new — this is real admin user-management functionality the original 3-service plan didn't account for, since it wasn't visible until `adminDbActions.ts` was actually read):
+
 - `createAdminUser`, `getAllAdminUsers`, `getAllUsers`, `makeUserAdmin`, `removeAdminPrivileges`, `deactivateUser`, `reactivateUser`, `deleteUser`
 - `verifyRevaAdminPermissions`/`verifyRevaSuperAdminPermissions` fold into `withAuth`'s role check at the route layer, same as every other product — not migrated as standalone functions.
 - `sendEmailToAllAdmins`/`sendEmailToAllSuperAdmins`/`sendMail` (email helpers currently living in `adminDbActions.ts`) — check for overlap with the existing `utils/email.ts` (`sendEmailToAdmin`) before deciding whether these become internal helpers inside the two services above or get promoted to a shared `reva/utils/email.ts`. Not a blocking decision, just don't duplicate an email-sending utility that already exists.
@@ -81,11 +86,13 @@ const createPropertySchema = z.object({
 });
 
 // POST /api/v1/reva/one-time-properties — saveToOneTimeProperty (public/guest)
-const createOneTimePropertySchema = createPropertySchema.extend({
-  requester: z.string().optional(),
-  email: z.string().email(),
-  userPhoneNumber: z.string().optional(),
-}).omit({ /* title/description not part of the guest form per the source */ });
+const createOneTimePropertySchema = createPropertySchema
+  .extend({
+    requester: z.string().optional(),
+    email: z.string().email(),
+    userPhoneNumber: z.string().optional(),
+  })
+  .omit({/* title/description not part of the guest form per the source */});
 
 // GET /api/v1/reva/one-time-properties/lookup?reference=&email= — getOneTimeRequestByReference
 // public; reference+email pair IS the auth, matching the source exactly
@@ -100,7 +107,10 @@ const verifyPaymentSchema = z.object({ reference: z.string().min(1) });
 // approveOneTimeDueDiligenceReport (one shared route, :isOneTime resolved server-side
 // by checking which table the reference belongs to, mirroring the source's own
 // two-function split rather than forcing a single ambiguous model)
-const approveReportSchema = z.object({ isApproved: z.boolean(), comment: z.string().optional() });
+const approveReportSchema = z.object({
+  isApproved: z.boolean(),
+  comment: z.string().optional(),
+});
 
 // POST /api/v1/reva/admin/users — createAdminUser
 const createAdminUserSchema = z.object({
@@ -113,38 +123,38 @@ const createAdminUserSchema = z.object({
 
 ### Full route table
 
-| Route | Method | Service fn | Roles | Notes |
-|---|---|---|---|---|
-| `/properties` | GET | `getUserProperties` | USER, ADMIN, SUPERADMIN | own properties |
-| `/properties` | POST | `saveToPropertyTable` (via `authSaveFormDataAndInitiatePaystack` for the full submit+pay flow) | USER, ADMIN, SUPERADMIN | multipart |
-| `/properties/:id` | GET | `getUserPropertyById`-equivalent for `Property` (source doesn't have one — see open question) | USER, ADMIN, SUPERADMIN | owner |
-| `/properties/:id/status` | PATCH | `updatePropertyTransactionStatus` | USER, ADMIN, SUPERADMIN | owner |
-| `/properties/transactions/:reference` | GET | `authGetTransactionData` | USER, ADMIN, SUPERADMIN | owner |
-| `/one-time-properties` | POST | `saveFormDataAndInitiatePaystack` | *public* | multipart, guest submit + Paystack init |
-| `/one-time-properties/:id` | GET | `getUserPropertyById` | *public* | id-based, no email check in source — flag if this should also require email match for consistency with the reference+email pattern used elsewhere |
-| `/one-time-properties/:id/status` | PATCH | `updateOneTimeTransactionStatus` | *public* | matches source (no auth check today) |
-| `/one-time-properties/lookup` | GET | `getOneTimeRequestByReference` | *public* | `?reference=&email=` — the real guest auth pattern |
-| `/one-time-properties/lookup/report` | GET | `downloadOneTimeRequestReport` | *public* | `?reference=&email=`, gated on `report.isApproved` |
-| `/one-time-properties/transactions/:reference` | GET | `getTransactionData` | *public* | |
-| `/payments/one-time/initiate` | POST | (part of `saveFormDataAndInitiatePaystack`) | *public* | |
-| `/payments/one-time/verify` | POST | `checkPaymentSuccess` | *public* | body: `{reference}` |
-| `/payments/verify` | POST | `authPaymentSuccessful` | USER, ADMIN, SUPERADMIN | body: `{reference}` |
-| `/notifications` | GET | `getUserNotifications`/`getAdminNotifications`/`getSuperAdminNotifications` | any authenticated | one route, role from session picks which — not a caller-supplied param like the source's current (unverified) `role` argument |
-| `/notifications` | POST | `createNotification` | ADMIN, SUPERADMIN | |
-| `/notifications/:id/read` | POST | `markNotificationAsRead` | any authenticated | |
-| `/notifications/:id/dismiss` | POST | `dismissNotification` | any authenticated | |
-| `/notifications/unread-count` | GET | `getUnreadNotificationCount` | any authenticated | |
-| `/admin/requests` | GET | `getAllRequestsWithUserByAdmin` | ADMIN, SUPERADMIN | |
-| `/admin/requests/:reference` | GET | `getRequestByReferenceByAdmin` / `getOneTimeRequestByReferenceByAdmin` | ADMIN, SUPERADMIN | one route, resolves which table server-side |
-| `/admin/requests/:reference/report` | POST | `uploadDueDiligenceReport` / `uploadDirectLinkReport` | ADMIN, SUPERADMIN | multipart or `{directLink}` body, mirrors source's 2 upload paths |
-| `/admin/requests/:reference/approve` | POST | `approveDueDiligenceReport` / `approveOneTimeDueDiligenceReport` | ADMIN, SUPERADMIN | body: `{isApproved, comment?}` |
-| `/admin/users` | GET | `getAllUsers` / `getAllAdminUsers` | ADMIN, SUPERADMIN / SUPERADMIN | `?scope=all\|admins` |
-| `/admin/users` | POST | `createAdminUser` | SUPERADMIN | |
-| `/admin/users/:id/role` | PATCH | `makeUserAdmin` / `removeAdminPrivileges` | SUPERADMIN | body: `{action: "promote"\|"demote"}` |
-| `/admin/users/:id/status` | PATCH | `deactivateUser` / `reactivateUser` | SUPERADMIN | body: `{active: boolean}` |
-| `/admin/users/:id` | DELETE | `deleteUser` | SUPERADMIN | |
-| `/profile` | GET | `getProfile` | USER, ADMIN, SUPERADMIN | own profile |
-| `/profile` | PATCH | `updateProfile` | USER, ADMIN, SUPERADMIN | body: `{firstName?, lastName?, email?}` — password change goes through the existing `/api/v1/auth/change-password` instead, not a route in this table |
+| Route                                          | Method | Service fn                                                                                     | Roles                          | Notes                                                                                                                                                 |
+| ---------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/properties`                                  | GET    | `getUserProperties`                                                                            | USER, ADMIN, SUPERADMIN        | own properties                                                                                                                                        |
+| `/properties`                                  | POST   | `saveToPropertyTable` (via `authSaveFormDataAndInitiatePaystack` for the full submit+pay flow) | USER, ADMIN, SUPERADMIN        | multipart                                                                                                                                             |
+| `/properties/:id`                              | GET    | `getUserPropertyById`-equivalent for `Property` (source doesn't have one — see open question)  | USER, ADMIN, SUPERADMIN        | owner                                                                                                                                                 |
+| `/properties/:id/status`                       | PATCH  | `updatePropertyTransactionStatus`                                                              | USER, ADMIN, SUPERADMIN        | owner                                                                                                                                                 |
+| `/properties/transactions/:reference`          | GET    | `authGetTransactionData`                                                                       | USER, ADMIN, SUPERADMIN        | owner                                                                                                                                                 |
+| `/one-time-properties`                         | POST   | `saveFormDataAndInitiatePaystack`                                                              | _public_                       | multipart, guest submit + Paystack init                                                                                                               |
+| `/one-time-properties/:id`                     | GET    | `getUserPropertyById`                                                                          | _public_                       | id-based, no email check in source — flag if this should also require email match for consistency with the reference+email pattern used elsewhere     |
+| `/one-time-properties/:id/status`              | PATCH  | `updateOneTimeTransactionStatus`                                                               | _public_                       | matches source (no auth check today)                                                                                                                  |
+| `/one-time-properties/lookup`                  | GET    | `getOneTimeRequestByReference`                                                                 | _public_                       | `?reference=&email=` — the real guest auth pattern                                                                                                    |
+| `/one-time-properties/lookup/report`           | GET    | `downloadOneTimeRequestReport`                                                                 | _public_                       | `?reference=&email=`, gated on `report.isApproved`                                                                                                    |
+| `/one-time-properties/transactions/:reference` | GET    | `getTransactionData`                                                                           | _public_                       |                                                                                                                                                       |
+| `/payments/one-time/initiate`                  | POST   | (part of `saveFormDataAndInitiatePaystack`)                                                    | _public_                       |                                                                                                                                                       |
+| `/payments/one-time/verify`                    | POST   | `checkPaymentSuccess`                                                                          | _public_                       | body: `{reference}`                                                                                                                                   |
+| `/payments/verify`                             | POST   | `authPaymentSuccessful`                                                                        | USER, ADMIN, SUPERADMIN        | body: `{reference}`                                                                                                                                   |
+| `/notifications`                               | GET    | `getUserNotifications`/`getAdminNotifications`/`getSuperAdminNotifications`                    | any authenticated              | one route, role from session picks which — not a caller-supplied param like the source's current (unverified) `role` argument                         |
+| `/notifications`                               | POST   | `createNotification`                                                                           | ADMIN, SUPERADMIN              |                                                                                                                                                       |
+| `/notifications/:id/read`                      | POST   | `markNotificationAsRead`                                                                       | any authenticated              |                                                                                                                                                       |
+| `/notifications/:id/dismiss`                   | POST   | `dismissNotification`                                                                          | any authenticated              |                                                                                                                                                       |
+| `/notifications/unread-count`                  | GET    | `getUnreadNotificationCount`                                                                   | any authenticated              |                                                                                                                                                       |
+| `/admin/requests`                              | GET    | `getAllRequestsWithUserByAdmin`                                                                | ADMIN, SUPERADMIN              |                                                                                                                                                       |
+| `/admin/requests/:reference`                   | GET    | `getRequestByReferenceByAdmin` / `getOneTimeRequestByReferenceByAdmin`                         | ADMIN, SUPERADMIN              | one route, resolves which table server-side                                                                                                           |
+| `/admin/requests/:reference/report`            | POST   | `uploadDueDiligenceReport` / `uploadDirectLinkReport`                                          | ADMIN, SUPERADMIN              | multipart or `{directLink}` body, mirrors source's 2 upload paths                                                                                     |
+| `/admin/requests/:reference/approve`           | POST   | `approveDueDiligenceReport` / `approveOneTimeDueDiligenceReport`                               | ADMIN, SUPERADMIN              | body: `{isApproved, comment?}`                                                                                                                        |
+| `/admin/users`                                 | GET    | `getAllUsers` / `getAllAdminUsers`                                                             | ADMIN, SUPERADMIN / SUPERADMIN | `?scope=all\|admins`                                                                                                                                  |
+| `/admin/users`                                 | POST   | `createAdminUser`                                                                              | SUPERADMIN                     |                                                                                                                                                       |
+| `/admin/users/:id/role`                        | PATCH  | `makeUserAdmin` / `removeAdminPrivileges`                                                      | SUPERADMIN                     | body: `{action: "promote"\|"demote"}`                                                                                                                 |
+| `/admin/users/:id/status`                      | PATCH  | `deactivateUser` / `reactivateUser`                                                            | SUPERADMIN                     | body: `{active: boolean}`                                                                                                                             |
+| `/admin/users/:id`                             | DELETE | `deleteUser`                                                                                   | SUPERADMIN                     |                                                                                                                                                       |
+| `/profile`                                     | GET    | `getProfile`                                                                                   | USER, ADMIN, SUPERADMIN        | own profile                                                                                                                                           |
+| `/profile`                                     | PATCH  | `updateProfile`                                                                                | USER, ADMIN, SUPERADMIN        | body: `{firstName?, lastName?, email?}` — password change goes through the existing `/api/v1/auth/change-password` instead, not a route in this table |
 
 ## Route/nav registry
 
@@ -186,6 +196,7 @@ Broader than the plan originally named, since the cataloging pass found more sca
 ## Sequencing
 
 Same discipline as Phase 2 — plumbing before consumers, live-verified at each step, not just `tsc`/`build`:
+
 1. ~~Answer the open questions above~~ — done, see Decisions section.
 2. `propertyRequestService.ts` (foundational — `paymentService.ts` depends on it).
 3. `paymentService.ts`.
@@ -226,7 +237,7 @@ Steps 2-12 above executed in the order laid out, each committed and pushed separ
 - **`getUserPropertyById` gated on email match, not just id** — the one guest-data route in REVA missing the reference+email pattern used everywhere else in the product; closing it matches the product's own established convention rather than introducing a new one.
 - **`isOneTimeRequest` discriminated by key presence, not truthiness** (`"requester" in propertyData` vs `!!propertyData?.requester`) — `requester` is a nullable `OneTimeUserProperty` column, so a guest who left the name field blank still has the key; truthiness would have wrongly routed them down the `Property` branch. Found while wiring the `approveOneTimeDueDiligenceReport` notification path for real, since that's exactly the code path this bug would have silently broken.
 - **REVA's Paystack webhook branch rewritten defensively, not import-swapped** — your explicit instruction, given this file dispatches Surfboard/REVA/GBC events from one entry point. Added an idempotency check and amount reconciliation the source lacked entirely, both verified live.
-- **`/reva-restricted/dashboard/notifications` access widened to ADMIN, not left SUPERADMIN-only** — the source's own `proxy.ts` already let a plain ADMIN reach this page directly (only `/superadmin` got the stricter gate), and the backend already serves an ADMIN-scoped notification set (`getAdminNotifications`, distinct from `getSuperAdminNotifications`). The registry closes the mismatch by matching the *access* boundary that already existed, rather than encoding the sidebar's narrower *link visibility* as if it were the real gate.
+- **`/reva-restricted/dashboard/notifications` access widened to ADMIN, not left SUPERADMIN-only** — the source's own `proxy.ts` already let a plain ADMIN reach this page directly (only `/superadmin` got the stricter gate), and the backend already serves an ADMIN-scoped notification set (`getAdminNotifications`, distinct from `getSuperAdminNotifications`). The registry closes the mismatch by matching the _access_ boundary that already existed, rather than encoding the sidebar's narrower _link visibility_ as if it were the real gate.
 - **Three files deleted rather than migrated**, each confirmed dead by a zero-references grep rather than assumed: `revaActions2.ts` (only after its one real dependency — the shared webhook — was repointed), `components/pageNotFound/RevaPageNotFound.tsx`, `styles/reva-colors.css`.
 - **`adminDbActions.ts` (the legacy admin action file) was left in place, not deleted**, unlike `revaActions2.ts` — its frontend consumers (several still-live admin components) were never repointed to the new `/api/v1/reva/admin/*` routes in this phase, so deleting it would break real pages. Its literal path strings were still updated during the `viewdetails` → `details` rename (a link staying correct is different from the function it lives in being migrated) — repointing its actual callers to the new routes is frontend-cutover work, out of this phase's scope, same as `revaActions.ts`.
 
@@ -235,13 +246,14 @@ Steps 2-12 above executed in the order laid out, each committed and pushed separ
 - `tsc --noEmit` clean and a full production build clean after every commit in the sequence above, not just at the end.
 - 136/136 vitest passing (117 from services/webhook/registry across the phase, 19 more from `profileService.ts`).
 - Each service was live-verified against real seeded data in local Postgres as it was built (documented per-commit in `progress.md`): guest submission through to a real `Notification` row, the webhook's idempotency check (a second delivery for an already-paid reference correctly no-op'd), report approval for both `Property` and `OneTimeUserProperty` (confirming the guest notification gap is closed), every admin-user mutation's role gates and conflict guards, profile edit's email-uniqueness/`emailVerified` logic, and the `viewdetails`→`details` redirects with query strings intact.
-- **This report's own final integration pass** (2026-08-27, fresh seed — 1 SUPERADMIN, 1 ADMIN, 1 USER with a paid `Property`): confirmed `propertyRequestService.ts`'s property list, `profileService.ts`'s profile GET, `reportService.ts`'s admin request list and report approval, `adminUserService.ts`'s `scope=admins` cross-role check (ADMIN correctly 403's, SUPERADMIN succeeds), and a plain-USER 403 on an admin-only route all work correctly *together*, post-registry-extension, post-folder-move, post-rename. Specifically confirmed the resulting `Notification.link` reads `/reva/dashboard/details?reference=...` (the renamed path, not the old `/viewdetails`) — the one place the report-approval flow and the folder-move/rename work actually intersect. Both the renamed route's proxy gate (307 unauthenticated) and the old path's redirect (308 → new path, query string intact) reconfirmed live.
+- **This report's own final integration pass** (2026-08-27, fresh seed — 1 SUPERADMIN, 1 ADMIN, 1 USER with a paid `Property`): confirmed `propertyRequestService.ts`'s property list, `profileService.ts`'s profile GET, `reportService.ts`'s admin request list and report approval, `adminUserService.ts`'s `scope=admins` cross-role check (ADMIN correctly 403's, SUPERADMIN succeeds), and a plain-USER 403 on an admin-only route all work correctly _together_, post-registry-extension, post-folder-move, post-rename. Specifically confirmed the resulting `Notification.link` reads `/reva/dashboard/details?reference=...` (the renamed path, not the old `/viewdetails`) — the one place the report-approval flow and the folder-move/rename work actually intersect. Both the renamed route's proxy gate (307 unauthenticated) and the old path's redirect (308 → new path, query string intact) reconfirmed live.
 - **Not independently re-verified this pass**: real Kinde-authenticated page rendering per role (requires an actual Kinde login, external to automate) — covered instead by the registry's 14 unit tests plus repeated production-server smoke tests confirming the pages compile and serve without runtime errors.
 - **A pre-existing bug, not a regression**: `/reva/requestform` 500s (`window is not defined`, a client-side library evaluated during SSR) — isolated via a stash-and-rebuild A/B test during the folder-move step to predate all of this phase's work. Flagged here, not fixed — out of Phase 3's scope.
 
 ### Next up
 
 Phase 3 is complete. One item carried forward, not blocking anything:
+
 - **`adminDbActions.ts`/`revaActions.ts`'s remaining frontend consumers** (several admin components, the guest tracking/report-upload pages) still call the legacy `"use server"` actions directly rather than the new `/api/v1/reva/*` routes — repointing them is real work with its own testing surface, deliberately not bundled into this phase (matches Phase 2's precedent of leaving Surfboard's frontend cutover for a later, dedicated pass). Both legacy files stay in place, still fully functional, until that happens.
 
 Phase 4 (GBC) is next — its own full route-by-route spec gets written before it starts executing, per the same discipline this phase followed.

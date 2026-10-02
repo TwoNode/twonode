@@ -33,7 +33,8 @@ export async function getEmailVerificationSettings(
             enabled: Boolean(s.emailVerification.enabled),
             method: s.emailVerification.method || "OTP",
             gracePeriodDays: s.emailVerification.gracePeriodDays ?? 30,
-            enforcedSince: s.emailVerification.enforcedSince || DEFAULT_CONFIG.enforcedSince,
+            enforcedSince:
+              s.emailVerification.enforcedSince || DEFAULT_CONFIG.enforcedSince,
           };
         }
         break;
@@ -45,7 +46,8 @@ export async function getEmailVerificationSettings(
             enabled: Boolean(s.emailVerification.enabled),
             method: s.emailVerification.method || "OTP",
             gracePeriodDays: s.emailVerification.gracePeriodDays ?? 30,
-            enforcedSince: s.emailVerification.enforcedSince || DEFAULT_CONFIG.enforcedSince,
+            enforcedSince:
+              s.emailVerification.enforcedSince || DEFAULT_CONFIG.enforcedSince,
           };
         }
         break;
@@ -57,7 +59,8 @@ export async function getEmailVerificationSettings(
             enabled: Boolean(s.emailVerification.enabled),
             method: s.emailVerification.method || "OTP",
             gracePeriodDays: s.emailVerification.gracePeriodDays ?? 30,
-            enforcedSince: s.emailVerification.enforcedSince || DEFAULT_CONFIG.enforcedSince,
+            enforcedSince:
+              s.emailVerification.enforcedSince || DEFAULT_CONFIG.enforcedSince,
           };
         }
         break;
@@ -66,7 +69,10 @@ export async function getEmailVerificationSettings(
         return DEFAULT_CONFIG;
     }
   } catch (err) {
-    console.error(`Failed to load email verification settings for ${platform}:`, err);
+    console.error(
+      `Failed to load email verification settings for ${platform}:`,
+      err
+    );
   }
   return DEFAULT_CONFIG;
 }

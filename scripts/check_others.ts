@@ -15,12 +15,14 @@ const invalidHistoryIds = [
   "d61aabad-c97c-4e90-aad5-8f448261d3ff",
   "93f06498-f4a5-4c6c-91ee-b53233ad124d",
   "2d711ac8-f7c2-4859-8cc6-3cc4a2014a94",
-  "1cc46821-b470-4ae2-8f2e-b1825dd2e541"
+  "1cc46821-b470-4ae2-8f2e-b1825dd2e541",
 ];
 async function main() {
   const records = await prisma.subscriptionHistory.findMany({
-    where: { id: { in: invalidHistoryIds } }
+    where: { id: { in: invalidHistoryIds } },
   });
   console.log("Records remaining:", records.length);
 }
-main().catch(console.error).finally(()=>prisma.$disconnect());
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

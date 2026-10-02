@@ -35,9 +35,7 @@ export const insights: InsightPost[] = [
       "Surfboard could have shipped a comments feature. Instead we built a room. Here's the difference, and why it mattered for this industry specifically.",
     category: "Founder perspectives",
     date: "2026-04-03",
-    body: [
-      "Draft — to be replaced with the real write-up.",
-    ],
+    body: ["Draft — to be replaced with the real write-up."],
   },
   {
     slug: "the-second-industry",
@@ -46,9 +44,7 @@ export const insights: InsightPost[] = [
       "REVA didn't start with a real-estate idea. It started with the same shape of problem we'd already learned inside surveying, one industry over.",
     category: "Product stories",
     date: "2026-08-19",
-    body: [
-      "Draft — to be replaced with the real write-up.",
-    ],
+    body: ["Draft — to be replaced with the real write-up."],
   },
 ];
 

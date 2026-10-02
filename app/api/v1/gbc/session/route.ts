@@ -14,10 +14,15 @@ import { Platform } from "@/utils/platform";
  */
 export async function GET(req: NextRequest) {
   try {
-    const userData = (await getEncryptedUserData()) ?? (await getNativeSessionAsLegacyUserData(Platform.GBC));
+    const userData =
+      (await getEncryptedUserData()) ??
+      (await getNativeSessionAsLegacyUserData(Platform.GBC));
     if (!userData) throw new NotFoundError("Session");
     return NextResponse.json({ success: true, data: userData });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

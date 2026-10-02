@@ -1,7 +1,14 @@
 import prisma from "@/lib/prisma";
-import { ValidationError, ConflictError, NotFoundError } from "@/lib/api/errors";
+import {
+  ValidationError,
+  ConflictError,
+  NotFoundError,
+} from "@/lib/api/errors";
 import { uploadToS3FromServer } from "@/app/(projects)/(reva)/reva/actions/awsActions";
-import { initializePaystack, verifyPaystackTransaction } from "@/app/(projects)/(reva)/reva/actions/paystackActions";
+import {
+  initializePaystack,
+  verifyPaystackTransaction,
+} from "@/app/(projects)/(reva)/reva/actions/paystackActions";
 import { sendEmailToAdmin } from "@/utils/email";
 import {
   saveToOneTimeProperty,
@@ -23,8 +30,13 @@ import { Platform } from "@/utils/platform";
  * awsActions.ts/notificationActions.ts.
  */
 
-async function uploadFormFiles(formData: FormData, field: string): Promise<string[]> {
-  const files = formData.getAll(field).filter((f) => f instanceof File) as File[];
+async function uploadFormFiles(
+  formData: FormData,
+  field: string
+): Promise<string[]> {
+  const files = formData
+    .getAll(field)
+    .filter((f) => f instanceof File) as File[];
   return files.length > 0 ? uploadToS3FromServer(files) : [];
 }
 
@@ -70,8 +82,16 @@ export async function saveFormDataAndInitiatePaystack(formData: FormData) {
   });
 
   if (!paystackResponse || paystackResponse.status !== true) {
-    await updateOneTimeTransactionStatus(property.reference, "Processing", "Unpaid", paystackResponse?.message, null);
-    throw new ValidationError({ paystack: paystackResponse?.message ?? "Failed to initialize payment" });
+    await updateOneTimeTransactionStatus(
+      property.reference,
+      "Processing",
+      "Unpaid",
+      paystackResponse?.message,
+      null
+    );
+    throw new ValidationError({
+      paystack: paystackResponse?.message ?? "Failed to initialize payment",
+    });
   }
 
   return { paystack: paystackResponse.data, property };
@@ -122,29 +142,49 @@ export async function authSaveFormDataAndInitiatePaystack(
   });
 
   if (!paystackResponse || paystackResponse.status !== true) {
-    await updatePropertyTransactionStatus(property.reference, "Processing", "Unpaid", paystackResponse?.message, null);
-    throw new ValidationError({ paystack: paystackResponse?.message ?? "Failed to initialize payment" });
+    await updatePropertyTransactionStatus(
+      property.reference,
+      "Processing",
+      "Unpaid",
+      paystackResponse?.message,
+      null
+    );
+    throw new ValidationError({
+      paystack: paystackResponse?.message ?? "Failed to initialize payment",
+    });
   }
 
   return { paystack: paystackResponse.data, property };
 }
 
 export async function checkPaymentSuccess(reference: string) {
-  const existing = await prisma.oneTimeUserProperty.findUnique({ where: { reference } });
+  const existing = await prisma.oneTimeUserProperty.findUnique({
+    where: { reference },
+  });
   if (!existing) throw new NotFoundError("Transaction");
 
   if (existing.paymentStatus === "Paid") {
     return existing;
   }
 
-  const verification: any = await verifyPaystackTransaction(reference, existing.isLive);
+  const verification: any = await verifyPaystackTransaction(
+    reference,
+    existing.isLive
+  );
   if (!verification?.status) {
-    throw new ConflictError("Transaction verification failed or was unsuccessful");
+    throw new ConflictError(
+      "Transaction verification failed or was unsuccessful"
+    );
   }
 
   const updated = await prisma.oneTimeUserProperty.update({
     where: { reference },
-    data: { status: "Processing", paymentStatus: "Paid", statusMessage: "Payment completed successfully", error: null },
+    data: {
+      status: "Processing",
+      paymentStatus: "Paid",
+      statusMessage: "Payment completed successfully",
+      error: null,
+    },
   });
 
   await notifyPaymentReceived(updated);
@@ -158,14 +198,21 @@ export async function checkPaymentSuccess(reference: string) {
         html: `<p>Hello,</p><p>Your payment for reference <b>${updated.reference}</b> has been received. Your request is now being processed.</p><p>Thank you for using REVA.</p>`,
       });
     } catch (err) {
-      console.error("Failed to send payment confirmation email to client:", err);
+      console.error(
+        "Failed to send payment confirmation email to client:",
+        err
+      );
     }
   }
 
   return updated;
 }
 
-export async function authPaymentSuccessful(reference: string, userId: string, userEmail: string) {
+export async function authPaymentSuccessful(
+  reference: string,
+  userId: string,
+  userEmail: string
+) {
   const existing = await prisma.property.findFirst({
     where: { userId, OR: [{ reference }, { references: { has: reference } }] },
   });
@@ -175,14 +222,24 @@ export async function authPaymentSuccessful(reference: string, userId: string, u
     return existing;
   }
 
-  const verification: any = await verifyPaystackTransaction(reference, existing.isLive);
+  const verification: any = await verifyPaystackTransaction(
+    reference,
+    existing.isLive
+  );
   if (!verification?.status) {
-    throw new ConflictError("Transaction verification failed or was unsuccessful");
+    throw new ConflictError(
+      "Transaction verification failed or was unsuccessful"
+    );
   }
 
   const updated = await prisma.property.update({
     where: { reference },
-    data: { status: "Processing", paymentStatus: "Paid", statusMessage: "Payment completed successfully", error: null },
+    data: {
+      status: "Processing",
+      paymentStatus: "Paid",
+      statusMessage: "Payment completed successfully",
+      error: null,
+    },
   });
 
   await notifyPaymentReceived(updated, userId);
@@ -236,19 +293,43 @@ export async function adminVerifyTransaction(
   const verification: any = await verifyPaystackTransaction(reference, isLive);
 
   if (!verification?.status) {
-    return { reference, originalStatus, newStatus: "Unpaid" as const, success: false, message: "Failed to verify payment with Paystack", isLive, data: existing };
+    return {
+      reference,
+      originalStatus,
+      newStatus: "Unpaid" as const,
+      success: false,
+      message: "Failed to verify payment with Paystack",
+      isLive,
+      data: existing,
+    };
   }
 
   const paystackData = verification.data;
   const isPaid = paystackData.status === "success";
   const newStatus: "Paid" | "Unpaid" = isPaid ? "Paid" : "Unpaid";
-  const statusMessage = isPaid ? "Payment verified via admin verification" : `Payment verification failed: ${paystackData.status}`;
-  const errorField = isPaid ? null : paystackData.gateway_response || "Payment verification failed";
+  const statusMessage = isPaid
+    ? "Payment verified via admin verification"
+    : `Payment verification failed: ${paystackData.status}`;
+  const errorField = isPaid
+    ? null
+    : paystackData.gateway_response || "Payment verification failed";
 
   const updated =
     type === "authenticated"
-      ? await updatePropertyTransactionStatus(reference, "Processing", newStatus, statusMessage, errorField)
-      : await updateOneTimeTransactionStatus(reference, "Processing", newStatus, statusMessage, errorField);
+      ? await updatePropertyTransactionStatus(
+          reference,
+          "Processing",
+          newStatus,
+          statusMessage,
+          errorField
+        )
+      : await updateOneTimeTransactionStatus(
+          reference,
+          "Processing",
+          newStatus,
+          statusMessage,
+          errorField
+        );
 
   await writeAudit(Platform.REVA, {
     userId: actorId ?? null,
@@ -263,7 +344,9 @@ export async function adminVerifyTransaction(
     originalStatus,
     newStatus,
     success: true,
-    message: isPaid ? "Payment verified as successful" : `Payment status: ${paystackData.status}`,
+    message: isPaid
+      ? "Payment verified as successful"
+      : `Payment status: ${paystackData.status}`,
     isLive,
     data: updated,
   };

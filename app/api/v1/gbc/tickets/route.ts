@@ -11,6 +11,9 @@ export async function POST(req: NextRequest) {
     const result = await createTicket(data);
     return NextResponse.json({ success: true, data: result });
   } catch (err) {
-    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
+    return handleApiError(err, {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    });
   }
 }

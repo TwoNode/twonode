@@ -3,7 +3,12 @@ import { z } from "zod";
 import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { deleteSurfPlan, getSurfPlanById, getUserDisplayName, updateSurfPlan } from "@/surfboard/services/planService";
+import {
+  deleteSurfPlan,
+  getSurfPlanById,
+  getUserDisplayName,
+  updateSurfPlan,
+} from "@/surfboard/services/planService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 type RouteCtx = { params: Promise<{ planId: string }> };
@@ -49,12 +54,18 @@ const updatePlanBodySchema = z.object({
 export const PATCH = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { planId } = await routeCtx.params;
     const dto = await validateBody(req, updatePlanBodySchema);
     const user = await getUserDisplayName(ctx.session.sub);
-    const data = await updateSurfPlan(ctx.session.sub, user, { ...dto, id: planId } as any);
+    const data = await updateSurfPlan(ctx.session.sub, user, {
+      ...dto,
+      id: planId,
+    } as any);
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] }
@@ -63,7 +74,10 @@ export const PATCH = withAuth<SurfboardRole>(
 export const DELETE = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
+      return NextResponse.json(
+        { success: false, error: "Cross-origin request blocked" },
+        { status: 403 }
+      );
     }
     const { planId } = await routeCtx.params;
     const data = await deleteSurfPlan(ctx.session.sub, planId);

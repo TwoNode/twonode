@@ -37,7 +37,9 @@ export function VerifyEmailCard({
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const { theme } = useTheme();
-  const [status, setStatus] = useState<"pending" | "success" | "error">("pending");
+  const [status, setStatus] = useState<"pending" | "success" | "error">(
+    "pending"
+  );
   const [error, setError] = useState<string | null>(null);
 
   const dark = accentDark ?? accent;
@@ -46,7 +48,9 @@ export function VerifyEmailCard({
   useEffect(() => {
     if (!token) {
       setStatus("error");
-      setError("This link is missing its token. Request a new one from your account settings.");
+      setError(
+        "This link is missing its token. Request a new one from your account settings."
+      );
       return;
     }
 
@@ -63,7 +67,9 @@ export function VerifyEmailCard({
         setStatus("success");
       } catch {
         if (!cancelled) {
-          setError("Couldn't reach the server. Check your connection and try again.");
+          setError(
+            "Couldn't reach the server. Check your connection and try again."
+          );
           setStatus("error");
         }
       }
@@ -87,8 +93,14 @@ export function VerifyEmailCard({
 
       {status === "pending" && (
         <div className="w-full flex flex-col items-center gap-4 text-center">
-          <Loader2 className="h-10 w-10 animate-spin" style={{ color: accent }} />
-          <h1 className="text-2xl font-extrabold" style={{ color: headingColor }}>
+          <Loader2
+            className="h-10 w-10 animate-spin"
+            style={{ color: accent }}
+          />
+          <h1
+            className="text-2xl font-extrabold"
+            style={{ color: headingColor }}
+          >
             Verifying your email
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -100,7 +112,10 @@ export function VerifyEmailCard({
       {status === "success" && (
         <div className="w-full flex flex-col items-center gap-4 text-center">
           <CheckCircle2 className="h-10 w-10" style={{ color: accent }} />
-          <h1 className="text-2xl font-extrabold" style={{ color: headingColor }}>
+          <h1
+            className="text-2xl font-extrabold"
+            style={{ color: headingColor }}
+          >
             Email verified
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -109,7 +124,9 @@ export function VerifyEmailCard({
           <Link href={loginHref}>
             <Button
               className="px-6 py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
-              style={{ background: `linear-gradient(90deg, ${dark}, ${accent})` }}
+              style={{
+                background: `linear-gradient(90deg, ${dark}, ${accent})`,
+              }}
             >
               Continue to sign in
             </Button>
@@ -120,7 +137,10 @@ export function VerifyEmailCard({
       {status === "error" && (
         <div className="w-full flex flex-col items-center gap-4 text-center">
           <AlertCircle className="h-10 w-10 text-red-500" />
-          <h1 className="text-2xl font-extrabold" style={{ color: headingColor }}>
+          <h1
+            className="text-2xl font-extrabold"
+            style={{ color: headingColor }}
+          >
             Verification failed
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-300">{error}</p>
