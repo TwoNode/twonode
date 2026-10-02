@@ -110,11 +110,15 @@ export function DashboardShell({
       element: (
         <ConfirmedLogoutLink
           key="logout"
-          onConfirm={() => {
-            fetch(
-              logoutRedirectUrl ?? "/api/auth/logout_redirect?from=surfboard"
-            );
-            router.push(postLogoutPath);
+          onConfirm={async () => {
+            try {
+              await fetch(
+                logoutRedirectUrl ?? "/api/auth/logout_redirect?from=surfboard"
+              );
+            } catch {
+            } finally {
+              window.location.href = postLogoutPath;
+            }
           }}
           trigger={
             <button
@@ -204,12 +208,18 @@ export function DashboardShell({
             roleLabel={roleLabel}
             profileHref={profileHref}
             settingsHref={settingsHref}
-            onLogout={() => {
-              fetch(
-                logoutRedirectUrl ?? "/api/auth/logout_redirect?from=surfboard"
-              );
-              router.push(postLogoutPath);
+            onLogout={async () => {
+              try {
+                await fetch(
+                  logoutRedirectUrl ??
+                    "/api/auth/logout_redirect?from=surfboard"
+                );
+              } catch {
+              } finally {
+                window.location.href = postLogoutPath;
+              }
             }}
+
             className="ml-2 ring-2 ring-white/15"
             accentColor={isMda ? "#7C3AED" : undefined}
             accentColorDark={isMda ? "#5B21B6" : undefined}

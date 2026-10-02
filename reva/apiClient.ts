@@ -29,29 +29,50 @@ export type DownloadTarget = "report" | `document:${number}`;
  * cookies, so no credentials option is needed.
  */
 
+import { Platform } from "@/utils/platform";
+import { clientRefreshManager } from "@/lib/auth/clientRefreshManager";
+
 const BASE = "/api/v1/reva";
 
 async function jsonFetch<T>(
   url: string,
-  init?: RequestInit
+  init?: RequestInit,
+  isRetry = false
 ): Promise<ApiResult<T>> {
   const res = await fetch(url, {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
   });
+
+  if (res.status === 401 && !isRetry && !url.includes("/api/v1/auth/")) {
+    const refreshed = await clientRefreshManager.refresh(Platform.REVA);
+    if (refreshed) {
+      return jsonFetch<T>(url, init, true);
+    }
+  }
+
   return res.json();
 }
 
 async function formFetch<T>(
   url: string,
   formData: FormData,
-  init?: RequestInit
+  init?: RequestInit,
+  isRetry = false
 ): Promise<ApiResult<T>> {
   const res = await fetch(url, {
     ...init,
     method: init?.method ?? "POST",
     body: formData,
   });
+
+  if (res.status === 401 && !isRetry && !url.includes("/api/v1/auth/")) {
+    const refreshed = await clientRefreshManager.refresh(Platform.REVA);
+    if (refreshed) {
+      return formFetch<T>(url, formData, init, true);
+    }
+  }
+
   return res.json();
 }
 

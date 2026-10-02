@@ -141,9 +141,13 @@ export function AdminSidebar({ onClose }: { onClose?: () => void }) {
         })}
 
         <ConfirmedLogoutLink
-          onConfirm={() => {
-            fetch("/api/auth/logout_redirect?from=gbc");
-            router.push("/gbc-restricted/login");
+          onConfirm={async () => {
+            try {
+              await fetch("/api/auth/logout_redirect?from=gbc");
+            } catch {
+            } finally {
+              window.location.href = "/gbc-restricted/login";
+            }
           }}
           trigger={
             <Button

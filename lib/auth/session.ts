@@ -5,6 +5,7 @@ import { verifyToken, signAccessToken, JWTPayload } from "@/lib/auth/jwt";
 import {
   getAccessTokenCookie,
   setAuthCookies,
+  setAccessTokenCookie,
   clearAuthCookies,
 } from "@/lib/auth/cookies";
 import { findUserById } from "@/lib/auth/userLookup";
@@ -175,6 +176,41 @@ export async function rotateRefreshToken(
     const existing = await prisma.refreshToken.findUnique({
       where: { tokenHash },
     });
+
+    // Concurrency grace period (30 seconds):
+    // If this token was rotated within the last 30 seconds and has a valid replacement,
+    // this was caused by concurrent requests (e.g. multiple tabs waking up simultaneously),
+    // NOT a token theft attack. Re-issue an access token for the active session.
+    const GRACE_PERIOD_MS = 30 * 1000;
+    if (
+      existing?.revokedAt &&
+      existing.replacedBy &&
+      Date.now() - existing.revokedAt.getTime() < GRACE_PERIOD_MS
+    ) {
+      const replacement = await prisma.refreshToken.findUnique({
+        where: { tokenHash: existing.replacedBy },
+      });
+      if (
+        replacement &&
+        !replacement.revokedAt &&
+        replacement.expiresAt > new Date()
+      ) {
+        const user = await findUserById(platform, replacement.userId);
+        if (user && user.isActive) {
+          const mustVerifyNow = await computeMustVerifyNow(platform, user);
+          const newAccessToken = await signAccessToken({
+            sub: user.id,
+            role: user.role,
+            platform,
+            emailVerified: user.emailVerified,
+            mustVerifyNow,
+          });
+          await setAccessTokenCookie(platform, newAccessToken);
+          return { ok: true };
+        }
+      }
+    }
+
     if (existing?.revokedAt) {
       await prisma.refreshToken.updateMany({
         where: { familyId: existing.familyId },
@@ -243,4 +279,37 @@ export async function rotateRefreshToken(
   );
 
   return { ok: true };
+}
+
+/**
+ * Revokes all active refresh tokens in the database for a user and clears
+ * the native auth cookies. Can safely be called with or without a platform.
+ */
+export async function revokeUserSession(
+  platform?: Platform | null,
+  userId?: string | null
+): Promise<void> {
+  if (userId) {
+    await prisma.refreshToken
+      .updateMany({
+        where: {
+          userId,
+          ...(platform ? { platform } : {}),
+          revokedAt: null,
+        },
+        data: { revokedAt: new Date() },
+      })
+      .catch(() => {});
+  }
+
+  if (platform) {
+    await clearAuthCookies(platform);
+  } else {
+    // Clear all known product platforms if platform was not specified
+    await Promise.all([
+      clearAuthCookies(Platform.SURFBOARD),
+      clearAuthCookies(Platform.REVA),
+      clearAuthCookies(Platform.GBC),
+    ]).catch(() => {});
+  }
 }

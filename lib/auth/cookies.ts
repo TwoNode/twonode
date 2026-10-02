@@ -41,6 +41,22 @@ export async function setAuthCookies(
   });
 }
 
+export async function setAccessTokenCookie(
+  platform: Platform,
+  accessToken: string
+) {
+  const { access } = cookieNames(platform);
+  const cookieStore = await cookies();
+
+  cookieStore.set(access, accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 15 * 60,
+  });
+}
+
 export async function clearAuthCookies(platform: Platform) {
   const { access, refresh } = cookieNames(platform);
   const cookieStore = await cookies();
