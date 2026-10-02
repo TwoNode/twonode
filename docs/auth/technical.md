@@ -40,7 +40,13 @@ A native-login attempt against an account that has never set a password (Kinde-o
 
 Every refresh call **rotates** the token: the old one is marked used, a new one is issued in the same `familyId`. If an already-used (or otherwise invalid) refresh token is presented again, the entire `familyId` is revoked — this is the standard defense against a stolen refresh token being replayed after the legitimate user has already rotated past it.
 
-A real bug here was found and fixed during the post-Phase-5 audit: rotation wasn't preserving the _original_ session length — every rotation reset the new token to a fresh 30-day expiry regardless of the original `rememberMe` choice, silently turning a 1-day "don't remember me" session into a rolling 30-day one the moment it refreshed. Fixed to inherit the current token's `expiresAt` and set the cookie's `maxAge` to the actual remaining lifetime.
+To prevent multi-tab concurrency races (e.g. multiple tabs waking up simultaneously and sending the same refresh token at once), rotation includes a **30-second concurrency grace window**: if a token was rotated within the last 30 seconds and has an active replacement, the server returns a valid access token for that session rather than misidentifying concurrent tabs as token theft.
+
+On the client, token refreshing is coordinated by `lib/auth/clientRefreshManager.ts`:
+
+- **Single-Flight Deduplication**: Multiple simultaneous 401 responses or tab wakeups share one single-flight refresh Promise instead of firing redundant requests.
+- **Dynamic Rescheduling**: Whenever a refresh occurs (via periodic timer, tab focus/wake, or 401 interceptor), the next background timer is shifted to `now + 13m`, avoiding redundant rotations.
+- **401 Interceptors**: `surfboard/apiClient.ts`, `reva/apiClient.ts`, and `gbc/apiClient.ts` intercept 401 UNAUTHENTICATED responses, refresh via the manager, and retry the failed request transparently.
 
 ### 1.5 CSRF & rate limiting
 
@@ -106,6 +112,12 @@ Reads the user's platform/role from the (about-to-be-cleared) session to send th
 - Surfboard: `/surfboard-restricted/login` (admin/superadmin), `/surfboard-mda/login` (MDA roles), or `/surfboard/login` (user).
 - GBC: `/gbc-restricted/login` (admin) or `/gbc/login` (user).
 - No session found: falls back to `/`.
+
+Both `/api/auth/logout_redirect` (browser redirect flow) and `/api/v1/auth/logout` (API JSON flow) share `revokeUserSession()` (`lib/auth/session.ts`):
+
+- Revokes active `RefreshToken` entries in Postgres for that user.
+- Safely decodes `sub` (userId) from the access token even if the 15-minute token has expired.
+- Clears both the native cookies (`access_token_${platform}`, `refresh_token_${platform}`) and the legacy `USER_SESSION` cookie.
 
 ---
 

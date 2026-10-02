@@ -196,9 +196,13 @@ export function GBCUserMenu({ size = 36, className }: GBCUserMenuProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                fetch("/api/auth/logout_redirect?from=gbc");
-                router.push("/gbc-restricted/login");
+              onClick={async () => {
+                try {
+                  await fetch("/api/auth/logout_redirect?from=gbc");
+                } catch {
+                } finally {
+                  window.location.href = "/gbc-restricted/login";
+                }
               }}
             >
               Log out

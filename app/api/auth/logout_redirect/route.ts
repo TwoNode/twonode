@@ -4,8 +4,7 @@ import {
   clearEncryptedUserCookie,
   getEncryptedUserData,
 } from "@/utils/encryptedCookies";
-import { getEffectiveUserData } from "@/lib/auth/session";
-import { clearAuthCookies } from "@/lib/auth/cookies";
+import { getEffectiveUserData, revokeUserSession } from "@/lib/auth/session";
 import {
   canAccessRevaAdminPanel,
   canAccessSurfAdminPanel,
@@ -76,12 +75,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Also clear the native JWT session cookies for this platform — the
-    // legacy USER_SESSION cookie clear below never touched these, so a
-    // natively-authenticated user stayed silently logged in after "logout".
-    if (fromPlatform) {
-      await clearAuthCookies(fromPlatform);
-    }
+    // Revoke all active refresh tokens in the database and clear the native
+    // JWT session cookies for this platform.
+    const targetPlatform =
+      fromPlatform || (userData?.platform as Platform) || null;
+    const userId = userData?.userId || null;
+    await revokeUserSession(targetPlatform, userId);
 
     // Clear the cookie and redirect
     const response = NextResponse.redirect(new URL(redirectUrl, request.url));

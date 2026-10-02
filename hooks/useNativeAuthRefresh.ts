@@ -20,22 +20,10 @@ import { Platform } from "@/utils/platform";
  * stop retrying for this mount; proxy.ts's own redirect-on-unauthenticated
  * handles the real "you're logged out" case on the next navigation.
  */
+import { clientRefreshManager } from "@/lib/auth/clientRefreshManager";
+
 export function useNativeAuthRefresh(platform: Platform) {
   useEffect(() => {
-    // Fire ~2 minutes before the 15-minute access token expires.
-    const INTERVAL_MS = 13 * 60 * 1000;
-
-    const performSilentRefresh = async () => {
-      try {
-        await fetch(`/api/v1/auth/refresh?platform=${platform}`, {
-          method: "POST",
-        });
-      } catch {
-        // Network hiccup — let the next interval retry.
-      }
-    };
-
-    const timer = setInterval(performSilentRefresh, INTERVAL_MS);
-    return () => clearInterval(timer);
+    return clientRefreshManager.register(platform);
   }, [platform]);
 }
