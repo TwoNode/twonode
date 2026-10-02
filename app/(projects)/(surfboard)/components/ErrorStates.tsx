@@ -21,7 +21,7 @@ export function PlanDetailsErrorState({
   showHomeButton = false,
 }: ErrorStateProps) {
   return (
-    <div className="flex items-center justify-center min-h-[400px] p-6">
+    <div className="flex items-center justify-center min-h-100 p-6">
       <Card className="max-w-md w-full border-red-200 bg-red-50/50">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center text-center space-y-4">
@@ -93,7 +93,7 @@ export function PlanFormErrorState({
   onGoBack,
 }: ErrorStateProps) {
   return (
-    <div className="flex items-center justify-center min-h-[400px] p-6">
+    <div className="flex items-center justify-center min-h-100 p-6">
       <Card className="max-w-md w-full border-amber-200 bg-amber-50/50">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center text-center space-y-4">
@@ -150,7 +150,7 @@ export function GenericErrorState({
   icon: Icon = AlertTriangle,
 }: ErrorStateProps & { icon?: React.ElementType }) {
   return (
-    <div className="flex items-center justify-center min-h-[300px] p-6">
+    <div className="flex items-center justify-center min-h-75 p-6">
       <div className="text-center space-y-4 max-w-md">
         <div className="flex justify-center">
           <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center">
@@ -180,7 +180,7 @@ export function NotFoundState({
   onGoBack,
 }: ErrorStateProps) {
   return (
-    <div className="flex items-center justify-center min-h-[400px] p-6">
+    <div className="flex items-center justify-center min-h-100 p-6">
       <div className="text-center space-y-6 max-w-md">
         <div className="flex justify-center">
           <div className="w-24 h-24 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center">
