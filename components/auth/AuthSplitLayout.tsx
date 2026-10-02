@@ -102,7 +102,7 @@ export function AuthSplitLayout({
           <div className="flex-1 min-h-0 flex items-center justify-center p-6 pb-2 xl:p-16 xl:pb-4">
             <PlatformNetworkGraphic
               variant={networkVariant}
-              className="max-w-[240px] lg:max-w-[260px] xl:max-w-[300px]"
+              className="max-w-60 lg:max-w-65 xl:max-w-75"
             />
           </div>
 

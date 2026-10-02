@@ -306,13 +306,51 @@ export async function verifyQRServicePayment(
         to: transaction.payerEmail,
         subject: `Access Granted: Survey Plan ${transaction.plan.planNumber}`,
         html: `
-          <h2>Your Survey Plan Access is Ready</h2>
-          <p>You have successfully purchased a 1-hour access pass for <strong>${serviceName}</strong> on Survey Plan <strong>${transaction.plan.planNumber}</strong>.</p>
-          <p>Click the secure link below to access your session immediately:</p>
-          <p><a href="${accessUrl}" style="padding: 10px 20px; background-color: #0284c7; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">Access Survey Plan</a></p>
-          <p><strong>Or use this Access Code if you are already on the page:</strong></p>
-          <p style="font-family: monospace; font-size: 1.2em; background-color: #f1f5f9; padding: 10px; border-radius: 5px;">${updatedTransaction.accessToken}</p>
-          <p><small>This access will expire 1 hour from the time of purchase.</small></p>
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Your Survey Plan Access is Ready</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1a1a1a;">
+              <div style="max-width: 520px; margin: 0 auto; padding: 24px 20px;">
+                <!-- Brand Header -->
+                <div style="padding: 20px 0 16px; border-bottom: 3px solid #233dff;">
+                  <span style="font-size: 16px; font-weight: 700; color: #141c4d; letter-spacing: .02em;">Surfboard</span>
+                  <span style="font-size: 13px; color: #888888; margin-left: 8px;">by TwoNode Technologies</span>
+                </div>
+
+                <!-- Body -->
+                <div style="padding: 28px 0 20px;">
+                  <h2 style="margin: 0 0 16px; font-size: 18px; font-weight: 600; color: #111827;">Your Survey Plan Access is Ready</h2>
+                  <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #374151;">
+                    You have successfully purchased a 1-hour access pass for <strong>${serviceName}</strong> on Survey Plan <strong>${transaction.plan.planNumber}</strong>.
+                  </p>
+                  
+                  <div style="margin: 24px 0;">
+                    <a href="${accessUrl}" style="background-color: #233dff; background-image: linear-gradient(135deg, #233dff, #141c4d); color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">Access Survey Plan</a>
+                  </div>
+
+                  <p style="margin: 20px 0 8px; font-size: 14px; font-weight: 600; color: #111827;">Or use this Access Code directly:</p>
+                  <p style="margin: 0 0 16px; text-align: center;">
+                    <span style="background: #f4f4f5; color: #141c4d; padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 20px; letter-spacing: .1em; font-family: monospace; display: inline-block;">${updatedTransaction.accessToken}</span>
+                  </p>
+                  <p style="color: #6b7280; font-size: 13px;">This access session expires in 1 hour from the time of purchase.</p>
+                </div>
+
+                <!-- Footer -->
+                <div style="padding: 20px 0; border-top: 1px solid #e5e5e5; color: #888888; font-size: 12px; line-height: 1.6;">
+                  <a href="https://www.twonodetechnologies.com" style="color: #141c4d; text-decoration: none; font-weight: 600;">TwoNode Technologies</a>
+                  &nbsp;&middot;&nbsp;
+                  <a href="mailto:info@twonodetechnologies.com" style="color: #888888; text-decoration: none;">info@twonodetechnologies.com</a>
+                  <p style="margin: 6px 0 0; color: #9ca3af; font-size: 11px;">
+                    This is an automated notification from Surfboard. Please do not reply directly to this email.
+                  </p>
+                </div>
+              </div>
+            </body>
+          </html>
         `,
       });
     } catch (err) {

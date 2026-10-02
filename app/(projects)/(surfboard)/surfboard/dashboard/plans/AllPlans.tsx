@@ -1467,7 +1467,7 @@ export default function AllPlans() {
                     >
                       <div className="flex flex-col lg:flex-row max-h-[80vh] overflow-auto">
                         {/* Preset Options - Enhanced Design */}
-                        <div className="border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-white/10 bg-linear-to-br from-gray-50 to-white lg:min-w-[200px]">
+                        <div className="border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-white/10 bg-linear-to-br from-gray-50 to-white lg:min-w-50">
                           <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-surface">
                             <div className="flex items-center gap-2">
                               <div className="p-1.5 sm:p-2 bg-linear-to-br from-blue-500 to-purple-600 rounded-md">
@@ -1658,7 +1658,7 @@ export default function AllPlans() {
                                       ? date > filters.dateTo
                                       : false
                                   }
-                                  className="rounded-xl border-2 border-blue-100 p-1.5 sm:p-2 lg:p-3 w-full min-w-[200px] max-w-xs"
+                                  className="rounded-xl border-2 border-blue-100 p-1.5 sm:p-2 lg:p-3 w-full min-w-50 max-w-xs"
                                 />
                               </div>
                               <div>
@@ -1682,7 +1682,7 @@ export default function AllPlans() {
                                       ? date < filters.dateFrom
                                       : false
                                   }
-                                  className="rounded-xl border-2 border-purple-100 p-1.5 sm:p-2 lg:p-3 w-full min-w-[200px] max-w-xs"
+                                  className="rounded-xl border-2 border-purple-100 p-1.5 sm:p-2 lg:p-3 w-full min-w-50 max-w-xs"
                                 />
                               </div>
                             </div>
@@ -1863,7 +1863,7 @@ export default function AllPlans() {
                         <div className="flex items-start gap-2">
                           <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
                           <div
-                            className="text-sm text-gray-900 dark:text-white truncate max-w-[150px]"
+                            className="text-sm text-gray-900 dark:text-white truncate max-w-37.5"
                             title={plan.facilitator || "N/A"}
                           >
                             {plan.facilitator || "N/A"}
@@ -2036,7 +2036,7 @@ export default function AllPlans() {
                   value={pagination.pageSize.toString()}
                   onValueChange={handlePageSizeChange}
                 >
-                  <SelectTrigger className="w-[110px] h-9">
+                  <SelectTrigger className="w-27.5 h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -2066,7 +2066,7 @@ export default function AllPlans() {
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-gray-200 dark:border-white/15 rounded-lg min-w-[100px] text-center">
+                  <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-gray-200 dark:border-white/15 rounded-lg min-w-25 text-center">
                     Page {pagination.page} of {pagination.totalPages}
                   </span>
                   <Button
@@ -2371,7 +2371,7 @@ export default function AllPlans() {
               value={pagination.pageSize.toString()}
               onValueChange={handlePageSizeChange}
             >
-              <SelectTrigger className="w-[110px] h-9">
+              <SelectTrigger className="w-27.5 h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -2401,7 +2401,7 @@ export default function AllPlans() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-gray-200 dark:border-white/15 rounded-lg min-w-[100px] text-center">
+              <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-gray-200 dark:border-white/15 rounded-lg min-w-25 text-center">
                 Page {pagination.page} of {pagination.totalPages}
               </span>
               <Button

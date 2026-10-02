@@ -231,81 +231,85 @@ function generateNotificationEmailHtml(
   },
   recipient: { firstName: string; lastName: string }
 ): string {
-  const typeColors: Record<SurfboardNotificationType, string> = {
-    INFO: "#3b82f6",
-    SUCCESS: "#10b981",
-    WARNING: "#f59e0b",
-    ERROR: "#ef4444",
-    SYSTEM: "#6366f1",
-    PLAN: "#8b5cf6",
-    SHARING: "#ec4899",
+  const brand = {
+    name: "Surfboard",
+    accent: "#233dff",
+    accentDark: "#141c4d",
   };
 
-  const color = typeColors[notification.type] || "#3b82f6";
+  const recipientName = [recipient.firstName, recipient.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const greeting = recipientName ? `Hi ${recipientName},` : "Hi,";
   const withBaseUrl = addBaseUrl(notification.link || "");
+
+  // Format message paragraphs cleanly
+  const formattedParagraphs = notification.message
+    .split("\n\n")
+    .map((paragraph) => {
+      const formatted = paragraph.replace(/\n/g, "<br />");
+      return `<p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #374151;">${formatted}</p>`;
+    })
+    .join("");
 
   return `
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${notification.title}</title>
       </head>
-      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f3f4f6;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px;">
-          <tr>
-            <td align="center">
-              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <tr>
-                  <td style="background-color: ${color}; padding: 30px; text-align: center;">
-                    <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: bold;">
-                      Surfboard Notification
-                    </h1>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 40px 30px;">
-                    <p style="margin: 0 0 20px; color: #374151; font-size: 16px;">
-                      Hello ${recipient.firstName} ${recipient.lastName},
-                    </p>
-                    <h2 style="margin: 0 0 15px; color: #111827; font-size: 20px; font-weight: 600;">
-                      ${notification.title}
-                    </h2>
-                    <p style="margin: 0 0 25px; color: #4b5563; font-size: 15px; line-height: 1.6;">
-                      ${notification.message}
-                    </p>
-                    ${
-                      notification.link
-                        ? `
-                    <table cellpadding="0" cellspacing="0" style="margin: 25px 0;">
-                      <tr>
-                        <td style="background-color: ${color}; border-radius: 6px; padding: 12px 30px;">
-                          <a href="${withBaseUrl}" style="color: #ffffff; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
-                            View Details
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                    `
-                        : ""
-                    }
-                  </td>
-                </tr>
-                <tr>
-                  <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb;">
-                    <p style="margin: 0; color: #6b7280; font-size: 13px; text-align: center;">
-                      This is an automated notification from Surfboard. Please do not reply to this email.
-                    </p>
-                    <p style="margin: 10px 0 0; color: #6b7280; font-size: 13px; text-align: center;">
-                      © ${new Date().getFullYear()} Surfboard. All rights reserved.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1a1a1a;">
+        <div style="max-width: 520px; margin: 0 auto; padding: 24px 20px;">
+          <!-- Brand Header with Accent Bar -->
+          <div style="padding: 20px 0 16px; border-bottom: 3px solid ${brand.accent};">
+            <span style="font-size: 16px; font-weight: 700; color: ${brand.accentDark}; letter-spacing: .02em;">${brand.name}</span>
+            <span style="font-size: 13px; color: #888888; margin-left: 8px;">by TwoNode Technologies</span>
+          </div>
+
+          <!-- Body -->
+          <div style="padding: 28px 0 20px;">
+            <p style="margin: 0 0 16px; font-size: 15px; color: #111827; font-weight: 500;">
+              ${greeting}
+            </p>
+
+            <h2 style="margin: 0 0 16px; font-size: 18px; font-weight: 600; color: #111827; letter-spacing: -0.01em;">
+              ${notification.title}
+            </h2>
+
+            <div style="margin: 0 0 24px;">
+              ${formattedParagraphs}
+            </div>
+
+            ${
+              notification.link
+                ? `
+            <div style="margin: 28px 0;">
+              <a href="${withBaseUrl}" style="background-color: ${brand.accent}; background-image: linear-gradient(135deg, ${brand.accent}, ${brand.accentDark}); color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">
+                View Details
+              </a>
+            </div>
+            `
+                : ""
+            }
+
+            <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
+              You can track this and other survey activities directly on your Surfboard dashboard.
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="padding: 20px 0; border-top: 1px solid #e5e5e5; color: #888888; font-size: 12px; line-height: 1.6;">
+            <a href="https://www.twonodetechnologies.com" style="color: ${brand.accentDark}; text-decoration: none; font-weight: 600;">TwoNode Technologies</a>
+            &nbsp;&middot;&nbsp;
+            <a href="mailto:info@twonodetechnologies.com" style="color: #888888; text-decoration: none;">info@twonodetechnologies.com</a>
+            <p style="margin: 6px 0 0; color: #9ca3af; font-size: 11px;">
+              This is an automated notification from Surfboard. Please do not reply directly to this email.
+            </p>
+          </div>
+        </div>
       </body>
     </html>
   `;

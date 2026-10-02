@@ -549,6 +549,7 @@ export const sendNotificationMail = async ({
   subject,
   text = "",
   html = "",
+  fromName,
 }: EmailOptions) => {
   try {
     const transporter = createTransport({
@@ -560,7 +561,9 @@ export const sendNotificationMail = async ({
     });
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: fromName
+        ? `"${fromName}" <${process.env.EMAIL_USER}>`
+        : `"Surfboard · TwoNode Technologies" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       text,

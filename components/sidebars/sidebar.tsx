@@ -98,7 +98,7 @@ export function Sidebar({
         // the time, so it never fights other z-50 chrome (navbars,
         // dropdowns) during normal collapsed/expanded desktop states.
         isPeeking || sidebar.isOpen ? "z-100" : "z-50",
-        "w-[240px] border-r shadow-lg",
+        "w-60 border-r shadow-lg",
         showFull ? sideBarWidthClass : RAIL_WIDTH_CLASS,
         sidebar.isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}
