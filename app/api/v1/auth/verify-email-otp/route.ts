@@ -33,9 +33,20 @@ export async function POST(req: NextRequest) {
     const userId = session.sub;
 
     // Records the attempt first, then counts, so a burst of parallel requests
-    // can't all read the same low count (see consumeRateLimit).
+    // can't all read the same low count (see consumeRateLimit). Limited per
+    // address AND per account: an address-only limit is sidestepped by
+    // rotating IPs, and requesting a new code resets that code's own attempt
+    // cap, so the account needs a ceiling of its own.
     const clientIp = getClientIp(req);
-    if (!(await consumeRateLimit(`verify-otp:${clientIp}`, userId))) {
+    const withinIpLimit = await consumeRateLimit(
+      `verify-otp:${clientIp}`,
+      userId
+    );
+    const withinUserLimit = await consumeRateLimit(
+      `verify-otp-user:${platform}:${userId}`,
+      userId
+    );
+    if (!withinIpLimit || !withinUserLimit) {
       return NextResponse.json(
         { success: false, error: "Too many attempts. Please try again later." },
         { status: 429 }

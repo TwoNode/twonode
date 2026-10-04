@@ -78,12 +78,47 @@ describe("POST /verify-email-otp", () => {
     );
   });
 
-  it("is 429 when the limiter refuses, without comparing the code", async () => {
+  it("is limited per address AND per account, each recorded against the session's user", async () => {
     mockSession.getServerSession.mockResolvedValue({
       sub: "me",
       role: "USER",
     });
-    mockRate.consumeRateLimit.mockResolvedValue(false);
+
+    await POST(post({}));
+
+    expect(mockRate.consumeRateLimit).toHaveBeenCalledWith(
+      "verify-otp:1.2.3.4",
+      "me"
+    );
+    expect(mockRate.consumeRateLimit).toHaveBeenCalledWith(
+      "verify-otp-user:surfboard:me",
+      "me"
+    );
+  });
+
+  it("is 429 when the per-address limiter refuses, without comparing the code", async () => {
+    mockSession.getServerSession.mockResolvedValue({
+      sub: "me",
+      role: "USER",
+    });
+    mockRate.consumeRateLimit.mockImplementation(
+      async (key: string) => !key.startsWith("verify-otp:")
+    );
+
+    const res = await POST(post({}));
+
+    expect(res.status).toBe(429);
+    expect(mockOtp.verifyEmailOtp).not.toHaveBeenCalled();
+  });
+
+  it("is 429 when the per-account limiter refuses even from a fresh address — rotating IPs doesn't reset it", async () => {
+    mockSession.getServerSession.mockResolvedValue({
+      sub: "me",
+      role: "USER",
+    });
+    mockRate.consumeRateLimit.mockImplementation(
+      async (key: string) => !key.startsWith("verify-otp-user:")
+    );
 
     const res = await POST(post({}));
 
