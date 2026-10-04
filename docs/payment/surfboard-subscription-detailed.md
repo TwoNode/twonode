@@ -53,11 +53,14 @@ _(Paths current as of the 2026-08 architecture rebuild — see `docs/development
 ### C. Domain Logic
 
 - **`surfboard/services/subscriptionService.ts`**: Low-level DB interactions.
-  - `createOrUpdateSubscription`: The source of truth for DB state transitions.
+  - `applyPaymentPeriod`: **the one place a payment buys time** (see "Purchases add" in §5). `createOrUpdateSubscription` (the client verify call and one-time payments) delegates to it, and so does the `charge.success` webhook.
+  - `createOrUpdateSubscription`: The source of truth for DB state transitions on the verify path; resolves the Paystack plan, then calls `applyPaymentPeriod`.
   - `getUserActiveSubscription` / `getUserAndActiveSub`: Access-control reads (grace-period logic, see §5).
 - **`surfboard/services/subscriptionAnalyticsService.ts`**: Admin-facing subscription analytics/reporting.
 - **`app/(projects)/(surfboard)/utils/computePeriod.ts`**: Date calculation engine (not moved into `surfboard/` — a small, dependency-free utility left in place during the Phase 2 folder move).
-  - Determines `currentStart` and `currentEnd` based on `monthly`, `quarterly`, or `annually` intervals.
+  - `computePeriodPerTimestamp`: the period for a payment made when nothing is running — `currentStart` and `currentEnd` for `monthly`, `quarterly` or `annually`.
+  - `computeExtendedPeriod`: the period a payment buys given what the account already has — a fresh period if nothing is running, otherwise it starts the second the current one ends (§5, "Purchases add").
+  - `addCalendarMonths`: calendar-month addition that clamps month-ends (31 Jan + 1 month = 28 Feb). _It used to overflow (3 Mar), so periods starting on the 29th–31st ran up to three days long._
 
 ---
 
@@ -149,6 +152,16 @@ To prevent cross-platform data contamination (e.g., Reva payments showing up in 
 ### Quarterly Interval (Fixed)
 
 The `computePeriodPerTimestamp` function previously used 4 months for quarterly intervals. This has been corrected to **3 months** to match standard quarterly billing cycles (Jan, Apr, Jul, Oct).
+
+### Purchases add to remaining time
+
+A payment made while paid time remains **starts when that time ends** instead of replacing it (`computeExtendedPeriod`). So an early payment, a sponsored/admin-granted year followed by the surveyor's own card renewal, or a plan switch never throws paid days away. `Subscription.currentStart`..`currentEnd` describe the whole continuous coverage; the `SubscriptionHistory` row for a payment records only the stretch _that_ payment bought (`startDate`..`endDate`, `amount` in kobo).
+
+Time is added only on top of a period that is **still running and in a coverage status** (`active`, `past_due`, `canceled`); an ended period, or an `expired` one, starts fresh from the payment date. Month-end anniversaries (29th–31st) clamp to the shorter month and stay on the clamped day afterwards — at most three days earlier than the original date, not compounding.
+
+**Each payment is credited at most once.** Its Paystack reference is the key, recorded in `SubscriptionHistory` (`eventType` `subscription.create` for the verify path, `subscription.success` for the webhook; the two are the same ledger). The client's verify call and the `charge.success` webhook both run for every payment, so without this an additive period would double-credit. One transaction holds a Postgres advisory lock on the reference (those two paths run one after the other) and on the user (two _different_ payments for one account can't both read the same `currentEnd`), always in that order. A reference already credited to another account is refused (409 on verify; logged and acknowledged on the webhook).
+
+**`subscription.create` never credits time.** It carries no transaction reference, so crediting from it as well would double-count; it only syncs Paystack's identity/billing fields (subscription code, email token, customer, plan, next charge date) and creates a missing row with an empty period that the payment's own credit then extends.
 
 ### Idempotency
 
