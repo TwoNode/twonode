@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Platform } from "@/utils/platform";
 import { validateCSRF } from "@/lib/auth/csrf";
-import {
-  checkRateLimit,
-  recordAttempt,
-  getClientIp,
-} from "@/lib/auth/rateLimit";
+import { consumeRateLimit, getClientIp } from "@/lib/auth/rateLimit";
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
 import { resendPendingRegistration } from "@/lib/auth/pendingRegistration";
@@ -27,18 +23,29 @@ export async function POST(req: NextRequest) {
     }
 
     const clientIp = getClientIp(req);
-    if (!(await checkRateLimit(`register-resend:${clientIp}`))) {
-      return NextResponse.json(
+    const tooMany = () =>
+      NextResponse.json(
         { success: false, error: "Too many attempts. Please try again later." },
         { status: 429 }
       );
+
+    if (!(await consumeRateLimit(`register-resend:${clientIp}`))) {
+      return tooMany();
     }
 
     const { platform, pendingRegistrationId } = await validateBody(
       req,
       resendSchema
     );
-    await recordAttempt(`register-resend:${clientIp}`);
+
+    // Per-registration bucket too: each resend emails a real inbox, so one
+    // pending signup shouldn't be resendable without limit from many IPs.
+    if (
+      !(await consumeRateLimit(`register-resend-for:${pendingRegistrationId}`))
+    ) {
+      return tooMany();
+    }
+
     await resendPendingRegistration(platform, pendingRegistrationId);
 
     return NextResponse.json({

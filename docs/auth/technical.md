@@ -12,14 +12,14 @@ Built in `docs/development-history/phases/phase-1-foundations.md` (Steps 4-6), a
 
 ### 1.1 Routes — `app/api/v1/auth/*`
 
-| Route                          | Method | Auth                 | Purpose                                                                                                                                                 |
-| ------------------------------ | ------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/api/v1/auth/register`        | POST   | public               | Creates a `{Reva,Surfboard,GBC}User` row. Role is **never** accepted from the client — always the lowest-privilege value, since this is a public route. |
-| `/api/v1/auth/login`           | POST   | public, CSRF-checked | `bcrypt.compare` against `passwordHash`; issues a session on success (see 1.3).                                                                         |
-| `/api/v1/auth/refresh`         | POST   | refresh cookie       | Rotates the refresh token; see 1.4 for the reuse-detection behavior.                                                                                    |
-| `/api/v1/auth/logout`          | POST   | session              | Revokes the current refresh token, clears cookies.                                                                                                      |
-| `/api/v1/auth/me`              | GET    | session              | Returns the caller's identity/role for the given platform.                                                                                              |
-| `/api/v1/auth/change-password` | POST   | session              | Shared across all three products — REVA's settings page, for example, calls this directly rather than having its own password-change function.          |
+| Route                          | Method | Auth                 | Purpose                                                                                                                                                                                                                              |
+| ------------------------------ | ------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/api/v1/auth/register`        | POST   | public, CSRF-checked | **Final step of OTP/link-first registration** (see 1.7): takes `{pendingRegistrationId, code, password}`, verifies, and creates the already-verified `{Reva,Surfboard,GBC}User` row. Never accepts an email or role from the client. |
+| `/api/v1/auth/login`           | POST   | public, CSRF-checked | `bcrypt.compare` against `passwordHash`; issues a session on success (see 1.3).                                                                                                                                                      |
+| `/api/v1/auth/refresh`         | POST   | refresh cookie       | Rotates the refresh token; see 1.4 for the reuse-detection behavior.                                                                                                                                                                 |
+| `/api/v1/auth/logout`          | POST   | session              | Revokes the current refresh token, clears cookies.                                                                                                                                                                                   |
+| `/api/v1/auth/me`              | GET    | session              | Returns the caller's identity/role for the given platform.                                                                                                                                                                           |
+| `/api/v1/auth/change-password` | POST   | session              | Shared across all three products — REVA's settings page, for example, calls this directly rather than having its own password-change function.                                                                                       |
 
 A native-login attempt against an account that has never set a password (Kinde-only account) fails with the same generic "Invalid email or password" a wrong password would — not a different, account-enumerating message.
 
@@ -40,7 +40,9 @@ A native-login attempt against an account that has never set a password (Kinde-o
 
 Every refresh call **rotates** the token: the old one is marked used, a new one is issued in the same `familyId`. If an already-used (or otherwise invalid) refresh token is presented again, the entire `familyId` is revoked — this is the standard defense against a stolen refresh token being replayed after the legitimate user has already rotated past it.
 
-To prevent multi-tab concurrency races (e.g. multiple tabs waking up simultaneously and sending the same refresh token at once), rotation includes a **30-second concurrency grace window**: if a token was rotated within the last 30 seconds and has an active replacement, the server returns a valid access token for that session rather than misidentifying concurrent tabs as token theft.
+The old token is **claimed and its replacement created in a single transaction**, with `replacedBy` written by the claim itself. The claim is also the concurrency guard: under READ COMMITTED, of two simultaneous refreshes only one matches `revokedAt: null`. (Writing `replacedBy` in a later, separate step left a window where a second tab saw a revoked token with no successor, read it as theft, revoked the whole family and wiped the browser's cookies.)
+
+To prevent multi-tab concurrency races (e.g. multiple tabs waking up simultaneously and sending the same refresh token at once), rotation includes a **30-second concurrency grace window**: if a token was rotated within the last 30 seconds and has an active replacement, the server returns a valid access token for that session rather than misidentifying concurrent tabs as token theft. The grace pass issues an access token only (never a second refresh token) and applies only to a token of the same platform whose successor is still live — a token revoked by logout or a theft response never qualifies. Trade-off: for those 30 seconds a stolen, just-rotated token can still obtain an access token.
 
 On the client, token refreshing is coordinated by `lib/auth/clientRefreshManager.ts`:
 
@@ -50,12 +52,24 @@ On the client, token refreshing is coordinated by `lib/auth/clientRefreshManager
 
 ### 1.5 CSRF & rate limiting
 
-- **CSRF** (`lib/auth/csrf.ts`): Origin/Referer validation on mutating routes (`login`, `change-password`, etc.) — no separate CSRF token to manage.
-- **Rate limiting** (`lib/auth/rateLimit.ts`): DB-backed (`LoginAttempt` table), keyed on `ip:email`, checked before every login attempt.
+- **CSRF** (`lib/auth/csrf.ts`): Origin/Referer validation on mutating routes (`login`, `change-password`, etc.) — no separate CSRF token to manage. An unparseable `Origin` (e.g. the literal `null` from a sandboxed iframe) is rejected, not thrown. Note this is a browser cross-site guard only: a non-browser client can set any Origin, so it is never a substitute for authenticating the caller.
+- **Rate limiting** (`lib/auth/rateLimit.ts`): DB-backed (`LoginAttempt` table), 5 attempts per 5-minute window per key.
+  - `checkRateLimit` + `recordAttempt`: check first, record on failure — used by login, keyed on `ip:email` (email lowercased so varying case can't reset the limit).
+  - `consumeRateLimit`: **records first, then counts**, so successes are counted and a burst of parallel requests can't all read the same low count. Used wherever a request costs something or can be guessed at in parallel: `register/send-otp` (buckets `register-send:<ip>` and `register-send-to:<platform>:<email>`), `register/resend-otp` (`register-resend:<ip>`, `register-resend-for:<pendingId>`) and `register` completion (`register-complete:<ip>`).
 
 ### 1.6 Registration/login schema
 
 `passwordHash`/`authProviders` (`AuthProvider[]`, values `NATIVE` | `KINDE`) live directly on `RevaUser`/`SurfboardUser`/`GBCUser` — there's no separate identity table. An account's `authProviders` array is additive, so the same account _could_ eventually link both a password and a Kinde identity (the mechanism supports it; nothing in the product currently drives a user through that linking flow).
+
+### 1.7 OTP/link-first registration (`lib/auth/pendingRegistration.ts`)
+
+No user row exists until the emailed secret is confirmed. `POST /register/send-otp` stores the signup in a `PendingRegistration` row (bcrypt-hashed password, `sha256` of the secret, `method` fixed at issue time) and emails either a 6-digit OTP or a link, per the platform's admin-configured `method`. `POST /register` then verifies and creates the account in one step. Properties worth knowing before changing it:
+
+- **The email is fixed server-side at `send-otp`.** The completion request has no `email` field; the account is built from the pending row, so verifying one address can't be attached to another.
+- **The password binds the verification to the person who chose it.** Completion requires the password the signup was started with (checked with `bcrypt.compare` after the secret matches). `send-otp` upserts on `(platform, email)`, so someone who resubmits a victim's address with a password they know would otherwise turn the victim's later code-entry into an account the attacker can log into. The OTP flow sends the password the form already holds; the link landing page (`RegisterVerifyLinkCard`) asks for it, because the link is often opened on a different device.
+- **The attempt cap is atomic.** An attempt is reserved with a conditional `updateMany` (`attempts < 5`) _before_ the secret is compared, so a burst of parallel guesses is admitted at most 5 at a time. (A read-then-increment cap let all 40 of a 40-way burst through.) A resend issues a new secret and resets the counter.
+- **The claim and the account creation are one transaction.** The row's `usedAt: null → now` claim and the user insert commit together: a simultaneous second completion waits on the row lock, then gets the winner's committed account (idempotent) rather than a unique-constraint error, and a failed insert rolls the claim back so the user can retry. The account is created already verified (`emailVerifiedVia` set in the same insert).
+- **Emails are stored lowercase and looked up case-insensitively** (`findUserByEmail`: exact match on the unique index first, then `mode: "insensitive"`), so `John@Gmail.com` at login finds the account registered as `john@gmail.com` and can't be registered a second time.
 
 ---
 
@@ -116,7 +130,7 @@ Reads the user's platform/role from the (about-to-be-cleared) session to send th
 Both `/api/auth/logout_redirect` (browser redirect flow) and `/api/v1/auth/logout` (API JSON flow) share `revokeUserSession()` (`lib/auth/session.ts`):
 
 - Revokes active `RefreshToken` entries in Postgres for that user.
-- Safely decodes `sub` (userId) from the access token even if the 15-minute token has expired.
+- Identifies the user from the access token even if the 15-minute token has expired, via `verifyTokenAllowExpired` (`lib/auth/jwt.ts`): the **signature is verified** (expiry up to the refresh-token lifetime is tolerated) and the token's `platform` must match. An unverified decode would let anyone with a victim's user id forge a cookie and revoke that user's sessions.
 - Clears both the native cookies (`access_token_${platform}`, `refresh_token_${platform}`) and the legacy `USER_SESSION` cookie.
 
 ---

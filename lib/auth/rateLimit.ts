@@ -11,6 +11,26 @@ export async function checkRateLimit(identifier: string): Promise<boolean> {
   return count < MAX_ATTEMPTS;
 }
 
+/**
+ * Records the attempt FIRST, then checks the window count. checkRateLimit +
+ * recordAttempt (check, do the work, record only on failure) leaves two
+ * holes: a burst of parallel requests all read the same low count before
+ * any of them records, and successful requests are never counted at all.
+ * Use this for anything that costs something (sends email, hashes a
+ * password) or can be guessed at in parallel.
+ */
+export async function consumeRateLimit(
+  identifier: string,
+  userId?: string
+): Promise<boolean> {
+  await prisma.loginAttempt.create({ data: { identifier, userId } });
+  const since = new Date(Date.now() - WINDOW_MS);
+  const count = await prisma.loginAttempt.count({
+    where: { identifier, createdAt: { gt: since } },
+  });
+  return count <= MAX_ATTEMPTS;
+}
+
 export async function recordAttempt(identifier: string, userId?: string) {
   await prisma.loginAttempt.create({ data: { identifier, userId } });
 }

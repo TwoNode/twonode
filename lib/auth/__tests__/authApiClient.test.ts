@@ -7,6 +7,7 @@ import {
   getMe,
   registerSendOtp,
   registerComplete,
+  describeFailure,
   registerResendOtp,
 } from "@/lib/auth/authApiClient";
 
@@ -167,7 +168,7 @@ describe("authApiClient email verification methods", () => {
       expect(result).toEqual({ success: true, data: mockData });
     });
 
-    it("registerComplete posts to /api/v1/auth/register with pendingRegistrationId and code", async () => {
+    it("registerComplete posts to /api/v1/auth/register with pendingRegistrationId, code and the original password", async () => {
       const mockUser = {
         id: "usr_1",
         email: "new@example.com",
@@ -184,6 +185,7 @@ describe("authApiClient email verification methods", () => {
         platform: Platform.SURFBOARD,
         pendingRegistrationId: "preg_1",
         code: "654321",
+        password: "Passw0rd!x",
       });
 
       expect(fetchMock).toHaveBeenCalledWith("/api/v1/auth/register", {
@@ -193,6 +195,7 @@ describe("authApiClient email verification methods", () => {
           platform: Platform.SURFBOARD,
           pendingRegistrationId: "preg_1",
           code: "654321",
+          password: "Passw0rd!x",
         }),
       });
       expect(result).toEqual({ success: true, data: mockUser });
@@ -224,6 +227,29 @@ describe("authApiClient email verification methods", () => {
         }
       );
       expect(result.success).toBe(true);
+    });
+  });
+  describe("describeFailure", () => {
+    it("surfaces the first field message from a ValidationError's details", () => {
+      expect(
+        describeFailure({
+          error: "Invalid request",
+          code: "VALIDATION_ERROR",
+          details: { code: "Incorrect or expired code" },
+        })
+      ).toBe("Incorrect or expired code");
+    });
+
+    it("falls back to the generic error for non-validation failures", () => {
+      expect(
+        describeFailure({ error: "Too many attempts.", code: "RATE_LIMITED" })
+      ).toBe("Too many attempts.");
+    });
+
+    it("never returns an empty string", () => {
+      expect(describeFailure({ error: "" })).toBe(
+        "Something went wrong. Please try again."
+      );
     });
   });
 });

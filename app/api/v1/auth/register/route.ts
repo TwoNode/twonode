@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Platform } from "@/utils/platform";
 import { validateCSRF } from "@/lib/auth/csrf";
-import {
-  checkRateLimit,
-  recordAttempt,
-  getClientIp,
-} from "@/lib/auth/rateLimit";
+import { consumeRateLimit, getClientIp } from "@/lib/auth/rateLimit";
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
 import { completePendingRegistration } from "@/lib/auth/pendingRegistration";
@@ -20,6 +16,9 @@ const registerSchema = z.object({
   // lib/auth/pendingRegistration.ts). The hash comparison doesn't care
   // which; only the length floor is a shared sanity check.
   code: z.string().min(6),
+  // The password the registration was started with — see
+  // completePendingRegistration for why the emailed secret alone isn't enough.
+  password: z.string().min(1),
   // Deliberately no `email` field — the account is created from the
   // PendingRegistration row's own stored email (see
   // lib/auth/pendingRegistration.ts's send-otp step), never from this
@@ -48,29 +47,24 @@ export async function POST(req: NextRequest) {
     }
 
     const clientIp = getClientIp(req);
-    if (!(await checkRateLimit(`register:${clientIp}`))) {
+    // consume = record first, then check: counts successes too and holds up
+    // under a burst of parallel requests (see consumeRateLimit).
+    if (!(await consumeRateLimit(`register-complete:${clientIp}`))) {
       return NextResponse.json(
         { success: false, error: "Too many attempts. Please try again later." },
         { status: 429 }
       );
     }
 
-    const { platform, pendingRegistrationId, code } = await validateBody(
-      req,
-      registerSchema
-    );
+    const { platform, pendingRegistrationId, code, password } =
+      await validateBody(req, registerSchema);
 
-    let user;
-    try {
-      user = await completePendingRegistration(
-        platform,
-        pendingRegistrationId,
-        code
-      );
-    } catch (err) {
-      await recordAttempt(`register:${clientIp}`);
-      throw err;
-    }
+    const user = await completePendingRegistration(
+      platform,
+      pendingRegistrationId,
+      code,
+      password
+    );
 
     await issueSession(user.id, user.role, platform, 30 * 24 * 60 * 60, user);
 
