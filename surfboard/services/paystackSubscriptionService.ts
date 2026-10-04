@@ -5,8 +5,17 @@ import {
   logPaystackEnvironment,
   getPaystackSecretForWebhook,
 } from "@/utils/paystackConfig";
-import { createOrUpdateSubscription } from "@/surfboard/services/subscriptionService";
-import { NotFoundError, ValidationError } from "@/lib/api/errors";
+import {
+  applyOneTimeSubscriptionPayment,
+  createOrUpdateSubscription,
+} from "@/surfboard/services/subscriptionService";
+import {
+  buildOneTimeReference,
+  findOneTimePaymentProblem,
+  findOneTimeReferenceProblem,
+  isPlanId,
+} from "@/surfboard/services/oneTimePayment";
+import { ApiError, NotFoundError, ValidationError } from "@/lib/api/errors";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/paystackActions.ts (the
@@ -36,9 +45,9 @@ export async function initiateSubscription(
   email: string,
   planId: keyof typeof SUBSCRIPTION_PLANS
 ) {
-  const selectedPlan = SUBSCRIPTION_PLANS[planId];
-  if (!selectedPlan)
+  if (!isPlanId(planId))
     throw new ValidationError({ planId: "Invalid subscription plan" });
+  const selectedPlan = SUBSCRIPTION_PLANS[planId];
 
   const isLive = process.env.NODE_ENV === "production";
   await logPaystackEnvironment(isLive);
@@ -125,14 +134,16 @@ export async function initiateOneTimeSubscription(
   email: string,
   planId: keyof typeof SUBSCRIPTION_PLANS
 ) {
-  const selectedPlan = SUBSCRIPTION_PLANS[planId];
-  if (!selectedPlan)
+  if (!isPlanId(planId))
     throw new ValidationError({ planId: "Invalid subscription plan" });
+  const selectedPlan = SUBSCRIPTION_PLANS[planId];
 
   const isLive = process.env.NODE_ENV === "production";
   await logPaystackEnvironment(isLive);
 
-  const reference = `SURFBOARD_ONETIME_SUB_${isLive ? "live" : "test"}_${Date.now()}_${userId}`;
+  // The trailing user id is what binds the reference to this account when the
+  // payment is later verified (see oneTimePayment.ts).
+  const reference = buildOneTimeReference(isLive, userId);
   const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
 
   // No server-side `paystack.transaction.initialize()` call — see
@@ -301,18 +312,26 @@ export async function verifySubscription(userId: string, reference: string) {
 /**
  * Counterpart to verifySubscription for a one-time (no-`plan`) payment —
  * Paystack's verify response has no plan_object/subscription for these, so
- * this doesn't try to read one. planId is passed in by the caller (the
- * client already knows which plan it initiated payment for) rather than
- * round-tripped through Paystack metadata.
+ * this doesn't try to read one.
+ *
+ * `planId` and `reference` are CLAIMS from the browser (the checkout is
+ * popup-driven, so the client picks the amount, the metadata and the
+ * reference). They are only honoured once Paystack's own record of the
+ * transaction backs them up: the reference was issued to this account, was
+ * paid in full in NGN for the claimed plan, and has not already been applied.
  */
 export async function verifyOneTimeSubscription(
   userId: string,
   reference: string,
-  planId: keyof typeof SUBSCRIPTION_PLANS
+  planId: string
 ) {
-  const selectedPlan = SUBSCRIPTION_PLANS[planId];
-  if (!selectedPlan)
+  if (!isPlanId(planId))
     throw new ValidationError({ planId: "Invalid subscription plan" });
+
+  // Refuse a reference that wasn't issued to this account before spending a
+  // Paystack API call on it.
+  const early = findOneTimeReferenceProblem({ planId, userId, reference });
+  if (early) throw new ApiError(403, early.code, early.message);
 
   const isLive = process.env.NODE_ENV === "production";
   const paystack = await createPaystackInstance(isLive);
@@ -326,27 +345,52 @@ export async function verifyOneTimeSubscription(
   }
 
   const { data } = verification;
-  const customerId = data.customer.id;
-  const customerCode = data.customer.customer_code;
-  const authorization = data.authorization?.authorization_code ?? "";
-  const paidAt = data.paid_at;
-
-  const sub = await createOrUpdateSubscription({
+  const problem = findOneTimePaymentProblem({
+    planId,
     userId,
     reference,
-    subCode: "",
-    emailToken: "",
+    transaction: data,
+  });
+  if (problem) {
+    console.error("[verifyOneTimeSubscription] payment rejected", {
+      userId,
+      reference,
+      planId,
+      code: problem.code,
+      paidKobo: data.amount,
+      currency: data.currency,
+    });
+    throw new ApiError(
+      400,
+      problem.code,
+      `${problem.message}. It was not applied — contact support with reference ${reference}.`
+    );
+  }
+
+  const result = await applyOneTimeSubscriptionPayment({
+    userId,
+    reference,
     planId,
-    customerCode,
-    customerId: String(customerId),
-    authorization,
-    status: "active",
-    paidAt,
-    skipHistory: true,
-    provider: "paystack_onetime",
+    customerCode: data.customer.customer_code,
+    customerId: String(data.customer.id),
+    authorization: data.authorization?.authorization_code ?? "",
+    paidAt: data.paid_at,
   });
 
-  return { planName: sub.planName, subscription: sub };
+  if (result.status === "used_by_another_account") {
+    throw new ApiError(
+      409,
+      "PAYMENT_ALREADY_USED",
+      "This payment has already been applied to another account."
+    );
+  }
+
+  // `already_applied`: a repeat of a payment that was already credited (a
+  // double-click, or the webhook got here first) — success, nothing changes.
+  return {
+    planName: result.subscription?.planName ?? SUBSCRIPTION_PLANS[planId].name,
+    subscription: result.subscription,
+  };
 }
 
 export async function disableSubscription(userId: string): Promise<{

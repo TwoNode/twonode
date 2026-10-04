@@ -201,3 +201,66 @@ export async function createOrUpdateSubscription({
 
   return sub;
 }
+
+export type OneTimeApplyResult =
+  | {
+      status: "applied";
+      subscription: Awaited<ReturnType<typeof createOrUpdateSubscription>>;
+    }
+  | {
+      status: "already_applied";
+      subscription: Awaited<
+        ReturnType<typeof createOrUpdateSubscription>
+      > | null;
+    }
+  | { status: "used_by_another_account" };
+
+/**
+ * Applies a VERIFIED one-time payment (the caller has already checked amount,
+ * currency and reference ownership — see oneTimePayment.ts) exactly once.
+ *
+ * The payment's reference is recorded in SubscriptionHistory, which is also the
+ * single-use ledger: a reference already recorded for this user is not applied
+ * again (so a replay, or the late webhook for a payment the verify call already
+ * handled, can't rewrite a period that a newer payment has since set), and a
+ * reference recorded for a DIFFERENT user is refused.
+ */
+export async function applyOneTimeSubscriptionPayment(args: {
+  userId: string;
+  reference: string;
+  planId: PlanId;
+  customerCode: string;
+  customerId: string;
+  authorization: string;
+  paidAt?: string | Date;
+}): Promise<OneTimeApplyResult> {
+  const prior = await prisma.subscriptionHistory.findFirst({
+    where: { reference: args.reference, eventType: "subscription.create" },
+    select: { userId: true },
+  });
+  if (prior && prior.userId !== args.userId) {
+    return { status: "used_by_another_account" };
+  }
+  if (prior) {
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: args.userId },
+    });
+    return { status: "already_applied", subscription };
+  }
+
+  const subscription = await createOrUpdateSubscription({
+    userId: args.userId,
+    reference: args.reference,
+    subCode: "",
+    emailToken: "",
+    planId: args.planId,
+    customerCode: args.customerCode,
+    customerId: args.customerId,
+    authorization: args.authorization,
+    status: "active",
+    paidAt: args.paidAt,
+    skipHistory: false,
+    provider: "paystack_onetime",
+  });
+  return { status: "applied", subscription };
+}
