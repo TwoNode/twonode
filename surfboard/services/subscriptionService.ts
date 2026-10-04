@@ -247,7 +247,24 @@ export async function applyPaymentPeriod(args: {
   ) as Promise<ApplyPaymentResult>;
 }
 
-export async function createOrUpdateSubscription({
+type PlanPayment = {
+  userId: string;
+  planId: PlanId;
+  reference: string;
+  subCode?: string;
+  customerCode: string;
+  customerId: string;
+  authorization: string;
+  emailToken: string;
+  status?: string;
+  paidAt?: string | Date;
+  nextPaymentDate?: string | Date;
+  /** "paystack" (default, recurring — has a real Paystack subscription object) or "paystack_onetime" (one-off payment, no auto-renew, no subscription object to look up/disable). */
+  provider?: string;
+};
+
+/** Resolves the Paystack plan for `planId`, then credits the payment through applyPaymentPeriod. */
+async function applyPlanPayment({
   userId,
   planId,
   reference,
@@ -260,30 +277,14 @@ export async function createOrUpdateSubscription({
   nextPaymentDate,
   status = "active",
   provider = "paystack",
-}: {
-  userId: string;
-  planId: PlanId;
-  reference: string;
-  subCode?: string;
-  customerCode: string;
-  customerId: string;
-  authorization: string;
-  emailToken: string;
-  status?: string;
-  paidAt?: string | Date;
-  nextPaymentDate?: string | Date;
-  /** @deprecated Ignored. The ledger row is what makes a payment apply once; it is no longer optional. */
-  skipHistory?: boolean;
-  /** "paystack" (default, recurring — has a real Paystack subscription object) or "paystack_onetime" (one-off payment, no auto-renew, no subscription object to look up/disable). */
-  provider?: string;
-}) {
+}: PlanPayment): Promise<ApplyPaymentResult> {
   const selectedPlan = SUBSCRIPTION_PLANS[planId];
   if (!selectedPlan) throw new Error("Invalid subscription plan");
 
   const isLive = process.env.NODE_ENV === "production";
   const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
 
-  const result = await applyPaymentPeriod({
+  return applyPaymentPeriod({
     userId,
     reference,
     eventType: "subscription.create",
@@ -306,6 +307,15 @@ export async function createOrUpdateSubscription({
       nextPaymentDate: nextPaymentDate ? new Date(nextPaymentDate) : undefined,
     },
   });
+}
+
+export async function createOrUpdateSubscription(
+  args: PlanPayment & {
+    /** @deprecated Ignored. The ledger row is what makes a payment apply once; it is no longer optional. */
+    skipHistory?: boolean;
+  }
+) {
+  const result = await applyPlanPayment(args);
 
   if (result.status === "used_by_another_account") {
     throw new ApiError(
@@ -317,4 +327,38 @@ export async function createOrUpdateSubscription({
   // `already_applied`: a repeat of a payment that was already credited (the
   // verify call and the webhook both run for every payment) — nothing changes.
   return result.subscription!;
+}
+
+/**
+ * What applying a VERIFIED one-time payment did. `used_by_another_account`
+ * and `already_applied` are reported rather than thrown so the verify call
+ * and the webhook can each answer in their own way.
+ */
+export type OneTimeApplyResult = ApplyPaymentResult;
+
+/**
+ * Applies a VERIFIED one-time payment (the caller has already checked amount,
+ * currency and reference ownership — see oneTimePayment.ts). Credits it
+ * through applyPaymentPeriod, so it is added to any paid time that remains and
+ * applied at most once: a reference already credited to this user is a no-op
+ * (a replay, or the late webhook for a payment the verify call already
+ * handled, can't rewrite a period a newer payment has since set) and one
+ * credited to a DIFFERENT user is refused.
+ */
+export async function applyOneTimeSubscriptionPayment(args: {
+  userId: string;
+  reference: string;
+  planId: PlanId;
+  customerCode: string;
+  customerId: string;
+  authorization: string;
+  paidAt?: string | Date;
+}): Promise<OneTimeApplyResult> {
+  return applyPlanPayment({
+    ...args,
+    subCode: "",
+    emailToken: "",
+    status: "active",
+    provider: "paystack_onetime",
+  });
 }

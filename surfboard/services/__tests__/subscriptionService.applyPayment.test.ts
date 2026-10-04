@@ -89,8 +89,11 @@ vi.mock("@/surfboard/services/paystackSubscriptionService", () => mockPlan);
 
 (globalThis as any).__makeTx = makeTx;
 
-const { applyPaymentPeriod, createOrUpdateSubscription } =
-  await import("@/surfboard/services/subscriptionService");
+const {
+  applyPaymentPeriod,
+  createOrUpdateSubscription,
+  applyOneTimeSubscriptionPayment,
+} = await import("@/surfboard/services/subscriptionService");
 
 const at = (y: number, m: number, d: number, h = 0, mi = 0, s = 0) =>
   new Date(y, m - 1, d, h, mi, s);
@@ -340,5 +343,83 @@ describe("createOrUpdateSubscription (verify call / one-time payments)", () => {
       status: 409,
       code: "PAYMENT_ALREADY_USED",
     });
+  });
+});
+
+describe("applyOneTimeSubscriptionPayment (a VERIFIED one-time payment)", () => {
+  const plan = {
+    plan_code: "PLN_M",
+    name: "SURF_MONTHLY",
+    interval: "monthly" as const,
+    amount: 1_670_000,
+    currency: "NGN",
+  };
+  const apply = (over: Record<string, any> = {}) =>
+    applyOneTimeSubscriptionPayment({
+      userId: "u1",
+      reference: "SURFBOARD_ONETIME_SUB_live_1_u1",
+      planId: "monthly",
+      customerCode: "CUS_1",
+      customerId: "1",
+      authorization: "AUTH_1",
+      paidAt: PAID.toISOString(),
+      ...over,
+    });
+
+  beforeEach(() => {
+    mockPlan.getOrCreatePaystackPlan.mockResolvedValue(plan);
+  });
+
+  it("applies a new payment as a one-time subscription and records its reference (kobo) in the ledger", async () => {
+    const r = await apply();
+
+    expect(r.status).toBe("applied");
+    expect(db.subs.get("u1")).toMatchObject({
+      provider: "paystack_onetime",
+      status: "active",
+      planName: "SURF_MONTHLY",
+    });
+    expect(db.history).toEqual([
+      expect.objectContaining({
+        reference: "SURFBOARD_ONETIME_SUB_live_1_u1",
+        eventType: "subscription.create",
+        amount: 1_670_000,
+      }),
+    ]);
+  });
+
+  it("adds to paid time that remains — a one-time payment made early loses no days", async () => {
+    seedRunning(at(2026, 12, 31, 23, 59, 59));
+
+    await apply();
+
+    expect(ymd(db.subs.get("u1").currentEnd)).toBe("2027-01-31");
+  });
+
+  it("does not apply the same reference twice — a replay, or the late webhook, can't rewrite a newer period", async () => {
+    await apply();
+    const after = { ...db.subs.get("u1") };
+
+    const again = await apply();
+
+    expect(again.status).toBe("already_applied");
+    expect(db.subs.get("u1")).toEqual(after);
+    expect(db.history).toHaveLength(1);
+  });
+
+  it("refuses a reference that was already applied to a different account", async () => {
+    await apply();
+
+    const other = await apply({ userId: "u2" });
+
+    expect(other.status).toBe("used_by_another_account");
+    expect(db.subs.has("u2")).toBe(false);
+  });
+
+  it("the client's verify call and the webhook racing for the same payment credit it once", async () => {
+    const results = await Promise.all(Array.from({ length: 4 }, () => apply()));
+
+    expect(results.filter((r) => r.status === "applied")).toHaveLength(1);
+    expect(db.history).toHaveLength(1);
   });
 });

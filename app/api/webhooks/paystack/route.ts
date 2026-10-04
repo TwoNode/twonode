@@ -9,13 +9,14 @@ import {
 import { notifyPaymentReceived as notifyRevaPaymentReceived } from "@/reva/services/notificationService";
 import { verifyPayment as verifyGBCTicketPayment } from "@/gbc/services/ticketService";
 import {
+  applyOneTimeSubscriptionPayment,
   applyPaymentPeriod,
-  createOrUpdateSubscription,
 } from "@/surfboard/services/subscriptionService";
+import type { PlanId } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
 import {
-  SUBSCRIPTION_PLANS,
-  type PlanId,
-} from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
+  findOneTimePaymentProblem,
+  userIdFromOneTimeReference,
+} from "@/surfboard/services/oneTimePayment";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -82,6 +83,16 @@ export type ChargeSuccessData = {
     }>;
   };
 };
+
+/**
+ * Thrown by a handler when an event is well-formed and authentic (the
+ * signature checked out) but must NOT be applied — e.g. a one-time
+ * subscription payment that doesn't cover the plan it claims. Unlike any other
+ * error it is NOT retried: the route records the event as `rejected` (with the
+ * reason, so it can be queried) and answers 200, because Paystack redelivering
+ * the same payload would only be rejected again.
+ */
+export class WebhookRejection extends Error {}
 
 // ─────────────────────────── Route ───────────────────────────
 export async function POST(req: NextRequest) {
@@ -164,6 +175,11 @@ export async function POST(req: NextRequest) {
     }
     await completeEvent(ledgerId, "ok");
   } catch (err: any) {
+    if (err instanceof WebhookRejection) {
+      console.error("[paystack-webhook] REJECTED", err.message);
+      await completeEvent(ledgerId, "rejected", err.message);
+      return NextResponse.json({ ok: true, rejected: true });
+    }
     console.error("[paystack-webhook] error", err);
     await failEvent(ledgerId, String(err?.message || err));
     return NextResponse.json({ error: "Handler error" }, { status: 500 });
@@ -315,11 +331,11 @@ async function beginEvent(args: {
   }
 }
 
-async function completeEvent(id: string, status: string) {
+async function completeEvent(id: string, status: string, error?: string) {
   if (prisma?.webhookEvent && id !== "noop") {
     await prisma.webhookEvent.update({
       where: { id },
-      data: { status, processedAt: new Date() },
+      data: { status, processedAt: new Date(), ...(error ? { error } : {}) },
     });
   }
 }
@@ -660,53 +676,71 @@ async function onInvoicePaymentFailed(data: InvoiceData) {
 // ---- Recurring charge success (renewal) ----
 // ---- One-time (non-recurring) subscription payment ----
 // Defense-in-depth backstop alongside the client-driven verifyOneTimeSubscription
-// call (app/api/v1/surfboard/subscription/verify-onetime/route.ts) — mirrors
-// onSubscriptionChargeSuccess below but reads planId from metadata (there's
-// no plan_object/subscription on a no-`plan` charge) and goes through the
-// upsert-safe createOrUpdateSubscription rather than a raw update, since this
+// call (app/api/v1/surfboard/subscription/verify-onetime/route.ts) — this
 // webhook can in principle arrive before the client's own verify call does.
+//
+// The checkout is popup-driven, so `metadata` (including `plan_id`) and the
+// reference are chosen by the browser; only the reference, amount and currency
+// Paystack reports are trustworthy. The account is therefore taken from the
+// reference this server issued (not from the customer's email, which the payer
+// types), and the payment must cover the plan it claims — the same checks, in
+// the same module, that the verify call applies. A payment that doesn't pass
+// is rejected, not retried (see WebhookRejection).
 async function onOneTimeSubscriptionChargeSuccess(data: ChargeSuccessData) {
   if (!prisma) return;
 
-  const userId = await findSurfboardUserIdFromEvent(data);
+  const reference = data.reference ?? "";
+  const userId = userIdFromOneTimeReference(reference);
   if (!userId) {
-    console.warn(
-      "⚠️ charge.success (one-time subscription): SurfboardUser not found"
+    throw new WebhookRejection(
+      `one-time subscription charge with a reference not issued by this app (${reference || "none"})`
     );
-    return;
   }
 
-  const meta = data.metadata ?? {};
-  const planId = meta.plan_id as PlanId | undefined;
-  if (!planId || !SUBSCRIPTION_PLANS[planId]) {
-    console.warn(
-      `⚠️ charge.success (one-time subscription): missing/invalid plan_id in metadata (${planId})`
-    );
-    return;
-  }
-
-  const customerId = data.customer?.id;
-  const customerCode = data.customer?.customer_code;
-  const authorization = data.authorization?.authorization_code ?? "";
-  const paidAt = data.paid_at;
-
-  await createOrUpdateSubscription({
-    userId,
-    reference: data.reference || `REF-${Date.now()}`,
-    subCode: "",
-    emailToken: "",
+  const planId = data.metadata?.plan_id;
+  const problem = findOneTimePaymentProblem({
     planId,
-    customerCode: customerCode ?? "",
-    customerId: customerId ? String(customerId) : "",
-    authorization,
-    status: "active",
-    paidAt,
-    skipHistory: false,
-    provider: "paystack_onetime",
+    userId,
+    reference,
+    transaction: data,
+  });
+  if (problem) {
+    throw new WebhookRejection(
+      `one-time subscription payment ${reference} rejected: ${problem.code} — ${problem.message} (paid ${data.amount} ${data.currency}, claimed plan ${String(planId)})`
+    );
+  }
+
+  const user = await prisma.surfboardUser.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+  if (!user) {
+    throw new WebhookRejection(
+      `one-time subscription payment ${reference}: no Surfboard user ${userId}`
+    );
+  }
+
+  const result = await applyOneTimeSubscriptionPayment({
+    userId,
+    reference,
+    // Validated by findOneTimePaymentProblem above (own-key plan id).
+    planId: planId as PlanId,
+    customerCode: data.customer?.customer_code ?? "",
+    customerId: data.customer?.id ? String(data.customer.id) : "",
+    authorization: data.authorization?.authorization_code ?? "",
+    paidAt: data.paid_at,
   });
 
+  if (result.status === "used_by_another_account") {
+    throw new WebhookRejection(
+      `one-time subscription payment ${reference} was already applied to a different account than ${userId}`
+    );
+  }
+
   console.log(
-    `✅ charge.success (one-time subscription): ${data.reference} for user ${userId}`
+    result.status === "already_applied"
+      ? `ℹ️ charge.success (one-time subscription): ${reference} already applied (idempotent)`
+      : `✅ charge.success (one-time subscription): ${reference} for user ${userId}`
   );
 }
 
