@@ -162,28 +162,66 @@ export async function rotateRefreshToken(
     .update(rawRefreshToken)
     .digest("hex");
 
-  const rotated = await prisma.refreshToken.updateMany({
-    where: {
-      tokenHash,
-      platform,
-      revokedAt: null,
-      expiresAt: { gt: new Date() },
-    },
-    data: { revokedAt: new Date() },
+  const newRawRefreshToken = crypto.randomBytes(32).toString("hex");
+  const newTokenHash = crypto
+    .createHash("sha256")
+    .update(newRawRefreshToken)
+    .digest("hex");
+
+  // Claim the old token AND create its replacement in one transaction, with
+  // `replacedBy` set by the claim itself. Anything less leaves a window where
+  // the old token is revoked but has no recorded successor — a second tab
+  // refreshing in that window looks exactly like token theft and gets the
+  // whole family revoked. The claim is also the concurrency guard: under
+  // READ COMMITTED the second of two simultaneous updateMany calls waits for
+  // the first to commit, re-evaluates `revokedAt: null`, and matches nothing.
+  const claimed = await prisma.$transaction(async (tx) => {
+    const claim = await tx.refreshToken.updateMany({
+      where: {
+        tokenHash,
+        platform,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: { revokedAt: new Date(), replacedBy: newTokenHash },
+    });
+    if (claim.count === 0) return null;
+
+    const current = await tx.refreshToken.findUnique({ where: { tokenHash } });
+    if (!current) return null;
+
+    await tx.refreshToken.create({
+      data: {
+        userId: current.userId,
+        platform,
+        tokenHash: newTokenHash,
+        familyId: current.familyId,
+        // Inherit the rotated token's own expiry rather than resetting to a
+        // fresh +30 days — rotation refreshes the token value, it shouldn't
+        // extend (or shorten) the session length the original login/
+        // rememberMe choice set.
+        expiresAt: current.expiresAt,
+      },
+    });
+    return current;
   });
 
-  if (rotated.count === 0) {
+  if (!claimed) {
     const existing = await prisma.refreshToken.findUnique({
       where: { tokenHash },
     });
 
-    // Concurrency grace period (30 seconds):
-    // If this token was rotated within the last 30 seconds and has a valid replacement,
-    // this was caused by concurrent requests (e.g. multiple tabs waking up simultaneously),
-    // NOT a token theft attack. Re-issue an access token for the active session.
+    // Concurrency grace period (30 seconds): a token rotated moments ago whose
+    // replacement is still live was presented again by a concurrent request
+    // (e.g. several tabs waking at once), not by a thief. Re-issue an access
+    // token only — never a second refresh token — for the active session.
+    // Platform must match: a token minted for another product is not ours to
+    // vouch for.
     const GRACE_PERIOD_MS = 30 * 1000;
     if (
-      existing?.revokedAt &&
+      existing &&
+      existing.platform === platform &&
+      existing.revokedAt &&
       existing.replacedBy &&
       Date.now() - existing.revokedAt.getTime() < GRACE_PERIOD_MS
     ) {
@@ -221,43 +259,15 @@ export async function rotateRefreshToken(
     return { ok: false, reason: "invalid" };
   }
 
-  const currentToken = await prisma.refreshToken.findUnique({
-    where: { tokenHash },
-  });
-  const user = currentToken
-    ? await findUserById(platform, currentToken.userId)
-    : null;
-
-  if (!currentToken || !user || !user.isActive) {
+  const user = await findUserById(platform, claimed.userId);
+  if (!user || !user.isActive) {
+    await prisma.refreshToken.updateMany({
+      where: { tokenHash: newTokenHash },
+      data: { revokedAt: new Date() },
+    });
     await clearAuthCookies(platform);
     return { ok: false, reason: "inactive" };
   }
-
-  const newRawRefreshToken = crypto.randomBytes(32).toString("hex");
-  const newTokenHash = crypto
-    .createHash("sha256")
-    .update(newRawRefreshToken)
-    .digest("hex");
-
-  await prisma.$transaction([
-    prisma.refreshToken.update({
-      where: { id: currentToken.id },
-      data: { replacedBy: newTokenHash },
-    }),
-    prisma.refreshToken.create({
-      data: {
-        userId: currentToken.userId,
-        platform,
-        tokenHash: newTokenHash,
-        familyId: currentToken.familyId,
-        // Inherit the rotated token's own expiry rather than resetting to a
-        // fresh +30 days — rotation refreshes the token value, it shouldn't
-        // extend (or shorten) the session length the original login/
-        // rememberMe choice set.
-        expiresAt: currentToken.expiresAt,
-      },
-    }),
-  ]);
 
   const mustVerifyNow = await computeMustVerifyNow(platform, user);
   const newAccessToken = await signAccessToken({
@@ -269,7 +279,7 @@ export async function rotateRefreshToken(
   });
   const remainingSeconds = Math.max(
     0,
-    Math.floor((currentToken.expiresAt.getTime() - Date.now()) / 1000)
+    Math.floor((claimed.expiresAt.getTime() - Date.now()) / 1000)
   );
   await setAuthCookies(
     platform,

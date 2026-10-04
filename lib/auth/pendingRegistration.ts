@@ -8,7 +8,6 @@ import { getEmailVerificationSettings } from "@/lib/auth/emailVerificationSettin
 import {
   findUserByEmail,
   createNativeUser,
-  markEmailVerified,
   type NativeAuthUser,
 } from "@/lib/auth/userLookup";
 
@@ -42,6 +41,12 @@ function generateLinkToken(): string {
 
 function hashSecret(secret: string): string {
   return crypto.createHash("sha256").update(secret).digest("hex");
+}
+
+function secretMatches(storedHash: string, secret: string): boolean {
+  const a = Buffer.from(storedHash, "hex");
+  const b = Buffer.from(hashSecret(secret), "hex");
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 function registerVerifyPath(platform: Platform): string {
@@ -173,15 +178,25 @@ export async function resendPendingRegistration(
   await sendPendingRegistrationSecret(platform, method, row, secret);
 }
 
+const EXPIRED_MESSAGE = "This registration has expired — please start over";
+
 /**
  * Verifies the OTP/link token and creates the account in one step — there
  * is no separate "mark this pending registration verified" call a client
  * could invoke and then walk away from with a verified-but-uncommitted row.
+ *
+ * `password` must be the password the registration was started with. The
+ * emailed secret proves the address is the caller's; the password proves the
+ * caller is also the person who chose it. Without it, anyone could (re)submit
+ * a victim's address with a password they know, and the victim — entering the
+ * code from the newest email — would create an account the attacker can log
+ * into.
  */
 export async function completePendingRegistration(
   platform: Platform,
   pendingRegistrationId: string,
-  secret: string
+  secret: string,
+  password: string
 ): Promise<NativeAuthUser> {
   const cleanSecret = (secret || "").trim();
   // Length check is just a cheap pre-DB sanity check — a 6-digit OTP and a
@@ -195,66 +210,103 @@ export async function completePendingRegistration(
     where: { id: pendingRegistrationId },
   });
   if (!row || row.platform !== platform || row.expiresAt < new Date()) {
-    throw new ValidationError({
-      code: "This registration has expired — please start over",
-    });
+    throw new ValidationError({ code: EXPIRED_MESSAGE });
   }
+  const via = row.method === "LINK" ? "LINK" : "OTP";
 
   // Idempotent retry window: if the row was completed within the last 30 seconds
-  // (e.g. concurrent browser requests, double-clicks, or React StrictMode in dev),
-  // and the secret matches, return the created user rather than failing.
+  // (e.g. a double-click or React StrictMode in dev) by someone presenting the
+  // same secret AND password, return the created user rather than failing.
   if (row.usedAt) {
     const isRecent = Date.now() - row.usedAt.getTime() < 30 * 1000;
-    if (isRecent && row.codeHash === hashSecret(cleanSecret)) {
+    if (
+      isRecent &&
+      secretMatches(row.codeHash, cleanSecret) &&
+      (await bcrypt.compare(password, row.passwordHash))
+    ) {
       const existing = await findUserByEmail(platform, row.email);
       if (existing) {
-        const via = row.method === "LINK" ? "LINK" : "OTP";
         return { ...existing, emailVerified: true, emailVerifiedVia: via };
       }
     }
-    throw new ValidationError({
-      code: "This registration has expired — please start over",
-    });
+    throw new ValidationError({ code: EXPIRED_MESSAGE });
   }
 
-  if (row.attempts >= MAX_ATTEMPTS) {
-    throw new ValidationError({
-      code: "Too many attempts — please request a new code",
-    });
-  }
-
-  if (row.codeHash !== hashSecret(cleanSecret)) {
-    await prisma.pendingRegistration.update({
+  // Reserve an attempt atomically BEFORE comparing anything. A read-then-
+  // increment cap lets a burst of parallel guesses all see the same low
+  // count; this conditional update admits exactly MAX_ATTEMPTS of them.
+  const reserved = await prisma.pendingRegistration.updateMany({
+    where: { id: row.id, usedAt: null, attempts: { lt: MAX_ATTEMPTS } },
+    data: { attempts: { increment: 1 } },
+  });
+  if (reserved.count === 0) {
+    const fresh = await prisma.pendingRegistration.findUnique({
       where: { id: row.id },
-      data: { attempts: { increment: 1 } },
     });
+    throw new ValidationError({
+      code:
+        fresh && !fresh.usedAt && fresh.attempts >= MAX_ATTEMPTS
+          ? "Too many attempts — please request a new code"
+          : EXPIRED_MESSAGE,
+    });
+  }
+
+  if (!secretMatches(row.codeHash, cleanSecret)) {
     throw new ValidationError({ code: "Incorrect or expired code" });
   }
 
-  // Re-check at completion time too — someone else could have registered
-  // this email in the window between send-otp and a slow/retried complete.
-  const existing = await findUserByEmail(platform, row.email);
-  if (existing) {
-    await prisma.pendingRegistration.update({
-      where: { id: row.id },
-      data: { usedAt: new Date() },
+  if (!(await bcrypt.compare(password, row.passwordHash))) {
+    throw new ValidationError({
+      password: "That isn't the password this registration was started with",
     });
-    throw new ConflictError("Email address is already registered");
   }
 
-  const via = row.method === "LINK" ? "LINK" : "OTP";
-  const user = await createNativeUser(platform, {
-    email: row.email,
-    passwordHash: row.passwordHash,
-    firstName: row.firstName,
-    lastName: row.lastName,
-  });
-  await markEmailVerified(platform, user.id, via);
+  // Claim the row and create the account in ONE transaction. The claim
+  // (usedAt: null -> now) is the concurrency guard: a simultaneous second
+  // completion blocks on the row lock until this commits, then matches
+  // nothing, and falls through to the idempotent lookup below — by which
+  // point the account this transaction created is committed and visible.
+  // If account creation fails, the claim rolls back with it, so the user can
+  // retry instead of being left with a consumed, account-less registration.
+  let user: NativeAuthUser | null = null;
+  try {
+    user = await prisma.$transaction(async (tx) => {
+      const claim = await tx.pendingRegistration.updateMany({
+        where: { id: row.id, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+      if (claim.count === 0) return null;
+      return createNativeUser(
+        platform,
+        {
+          email: row.email,
+          passwordHash: row.passwordHash,
+          firstName: row.firstName,
+          lastName: row.lastName,
+          emailVerifiedVia: via,
+        },
+        tx
+      );
+    });
+  } catch (err) {
+    // Someone registered this address between send-otp and now.
+    if ((err as { code?: string })?.code === "P2002") {
+      await prisma.pendingRegistration.update({
+        where: { id: row.id },
+        data: { usedAt: new Date() },
+      });
+      throw new ConflictError("Email address is already registered");
+    }
+    throw err;
+  }
 
-  await prisma.pendingRegistration.update({
-    where: { id: row.id },
-    data: { usedAt: new Date() },
-  });
+  if (user) {
+    return { ...user, emailVerified: true, emailVerifiedVia: via };
+  }
 
-  return { ...user, emailVerified: true, emailVerifiedVia: via };
+  const existing = await findUserByEmail(platform, row.email);
+  if (existing) {
+    return { ...existing, emailVerified: true, emailVerifiedVia: via };
+  }
+  throw new ValidationError({ code: EXPIRED_MESSAGE });
 }

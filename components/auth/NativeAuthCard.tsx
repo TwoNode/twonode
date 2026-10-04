@@ -22,6 +22,7 @@ import {
   registerSendOtp,
   registerComplete,
   registerResendOtp,
+  describeFailure,
   requestPasswordReset,
 } from "@/lib/auth/authApiClient";
 import { useTheme } from "@/hooks/useTheme";
@@ -173,7 +174,7 @@ function NativeAuthCardInner({
           lastName,
         });
         if (!result.success) {
-          setError(result.error || "Something went wrong. Please try again.");
+          setError(describeFailure(result));
           setIsSubmitting(false);
           return;
         }
@@ -286,9 +287,10 @@ function NativeAuthCardInner({
         platform,
         pendingRegistrationId,
         code,
+        password,
       });
       if (!result.success) {
-        setError(result.error || "Invalid code. Please check and try again.");
+        setError(describeFailure(result));
         setSubmittingOtp(false);
         return;
       }
@@ -322,7 +324,7 @@ function NativeAuthCardInner({
             : "A new verification link has been sent to your email."
         );
       } else {
-        setError(res.error || "Failed to resend. Please try again later.");
+        setError(describeFailure(res));
       }
     } catch {
       setError("Couldn't reach the server. Please try again later.");

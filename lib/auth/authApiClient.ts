@@ -5,6 +5,29 @@ import type { Platform } from "@/utils/platform";
 
 type SessionUser = { id: string; email: string; role: string };
 
+/**
+ * ValidationError responses say only "Invalid request"; the useful text is the
+ * first field message in `details`. Use this wherever a failed auth call's
+ * message is shown to the user.
+ */
+export function describeFailure(res: {
+  error: string;
+  code?: string;
+  details?: unknown;
+}): string {
+  if (
+    res.code === "VALIDATION_ERROR" &&
+    res.details &&
+    typeof res.details === "object"
+  ) {
+    const first = Object.values(
+      res.details as Record<string, unknown>
+    ).flat()[0];
+    if (typeof first === "string") return first;
+  }
+  return res.error || "Something went wrong. Please try again.";
+}
+
 async function jsonFetch<T>(url: string, body: unknown): Promise<ApiResult<T>> {
   const res = await fetch(url, {
     method: "POST",
@@ -36,11 +59,16 @@ export function registerSendOtp(input: {
   return jsonFetch("/api/v1/auth/register/send-otp", input);
 }
 
-/** Step 2 — verifies the code and creates the account in one step; returns a signed-in session like login(). */
+/**
+ * Step 2 — verifies the code and creates the account in one step; returns a
+ * signed-in session like login(). `password` must be the one the signup was
+ * started with: it binds the verification to the person who chose it.
+ */
 export function registerComplete(input: {
   platform: Platform;
   pendingRegistrationId: string;
   code: string;
+  password: string;
 }): Promise<ApiResult<SessionUser>> {
   return jsonFetch("/api/v1/auth/register", input);
 }

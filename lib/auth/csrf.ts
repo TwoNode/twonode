@@ -6,7 +6,14 @@ export function validateCSRF(req: NextRequest): boolean {
 
   const origin = req.headers.get("origin");
   if (origin) {
-    return new URL(origin).host === host;
+    // Sandboxed iframes and some redirects send the literal string
+    // "Origin: null", which isn't a parseable URL — reject it rather than
+    // letting new URL() throw into a 500.
+    try {
+      return new URL(origin).host === host;
+    } catch {
+      return false;
+    }
   }
 
   // Fallback to Referer if Origin header is missing
