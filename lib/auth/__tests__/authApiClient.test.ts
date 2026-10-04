@@ -17,7 +17,7 @@ describe("authApiClient email verification methods", () => {
   });
 
   describe("verifyEmailOtp", () => {
-    it("posts to /api/v1/auth/verify-email-otp with platform, code, and optional userId", async () => {
+    it("posts to /api/v1/auth/verify-email-otp with platform and code only", async () => {
       const fetchMock = vi.fn().mockResolvedValue({
         json: async () => ({
           success: true,
@@ -29,7 +29,6 @@ describe("authApiClient email verification methods", () => {
       const result = await verifyEmailOtp({
         platform: Platform.SURFBOARD,
         code: "123456",
-        userId: "user-123",
       });
 
       expect(fetchMock).toHaveBeenCalledWith("/api/v1/auth/verify-email-otp", {
@@ -38,7 +37,6 @@ describe("authApiClient email verification methods", () => {
         body: JSON.stringify({
           platform: Platform.SURFBOARD,
           code: "123456",
-          userId: "user-123",
         }),
       });
       expect(result).toEqual({
