@@ -13,28 +13,10 @@ import {
   acceptInvitation,
   getInvitation,
   type InvitationDetails,
+  describeFailure,
 } from "@/lib/auth/authApiClient";
 import { useTheme } from "@/hooks/useTheme";
 import type { Platform } from "@/utils/platform";
-
-/** ValidationError responses say only "Invalid request"; the useful text is the first field message in `details`. */
-function describeFailure(res: {
-  error: string;
-  code?: string;
-  details?: unknown;
-}): string {
-  if (
-    res.code === "VALIDATION_ERROR" &&
-    res.details &&
-    typeof res.details === "object"
-  ) {
-    const first = Object.values(
-      res.details as Record<string, unknown>
-    ).flat()[0];
-    if (typeof first === "string") return first;
-  }
-  return res.error || "Something went wrong. Please try again.";
-}
 
 export type AcceptInviteCardProps = {
   platform: Platform;

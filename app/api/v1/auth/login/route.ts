@@ -33,7 +33,8 @@ export async function POST(req: NextRequest) {
       req,
       loginSchema
     );
-    const identifier = `${getClientIp(req)}:${email}`;
+    // Lowercased so varying the casing of one address can't reset its limit.
+    const identifier = `${getClientIp(req)}:${email.trim().toLowerCase()}`;
 
     if (!(await checkRateLimit(identifier))) {
       return NextResponse.json(

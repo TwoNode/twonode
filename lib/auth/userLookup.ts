@@ -108,21 +108,36 @@ const toNativeAuthUser = {
   }),
 };
 
+/**
+ * Emails are matched exactly first (hits the unique index and keeps working
+ * for any legacy row whose stored casing differs), then case-insensitively —
+ * so "John@Gmail.com" at login finds the account registered as
+ * "john@gmail.com". Registration stores lowercase; everything that looks an
+ * account up by email goes through here, so none of them need to normalize.
+ */
 export async function findUserByEmail(
   platform: Platform,
   email: string
 ): Promise<NativeAuthUser | null> {
+  const exact = email.trim();
+  const loose = { equals: exact, mode: "insensitive" as const };
   switch (platform) {
     case Platform.REVA: {
-      const u = await prisma.revaUser.findUnique({ where: { email } });
+      const u =
+        (await prisma.revaUser.findUnique({ where: { email: exact } })) ??
+        (await prisma.revaUser.findFirst({ where: { email: loose } }));
       return u ? toNativeAuthUser.reva(u) : null;
     }
     case Platform.SURFBOARD: {
-      const u = await prisma.surfboardUser.findUnique({ where: { email } });
+      const u =
+        (await prisma.surfboardUser.findUnique({ where: { email: exact } })) ??
+        (await prisma.surfboardUser.findFirst({ where: { email: loose } }));
       return u ? toNativeAuthUser.surfboard(u) : null;
     }
     case Platform.GBC: {
-      const u = await prisma.gBCUser.findUnique({ where: { email } });
+      const u =
+        (await prisma.gBCUser.findUnique({ where: { email: exact } })) ??
+        (await prisma.gBCUser.findFirst({ where: { email: loose } }));
       return u ? toNativeAuthUser.gbc(u) : null;
     }
     default:
@@ -152,6 +167,8 @@ export async function findUserById(
   }
 }
 
+type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 /**
  * Registration is native-auth-only: creates a brand new user row with no
  * kindeId. `role` is never accepted from the caller — always the lowest
@@ -165,43 +182,52 @@ export async function createNativeUser(
     passwordHash: string;
     firstName: string;
     lastName: string;
-  }
+    /** Set when the address was already proven before the account exists (OTP-first registration), so the row is born verified in a single write. */
+    emailVerifiedVia?: "OTP" | "LINK";
+  },
+  db: TxClient | typeof prisma = prisma
 ): Promise<NativeAuthUser> {
+  const verified = data.emailVerifiedVia
+    ? { emailVerified: true, emailVerifiedVia: data.emailVerifiedVia }
+    : {};
   switch (platform) {
     case Platform.REVA: {
-      const u = await prisma.revaUser.create({
+      const u = await db.revaUser.create({
         data: {
           email: data.email,
           passwordHash: data.passwordHash,
           firstName: data.firstName,
           lastName: data.lastName,
           authProviders: ["NATIVE"],
+          ...verified,
           kindeId: `native:${crypto.randomUUID()}`, // kindeId is required+unique; native-only accounts get a placeholder, never a real Kinde id
         },
       });
       return toNativeAuthUser.reva(u);
     }
     case Platform.SURFBOARD: {
-      const u = await prisma.surfboardUser.create({
+      const u = await db.surfboardUser.create({
         data: {
           email: data.email,
           passwordHash: data.passwordHash,
           firstName: data.firstName,
           lastName: data.lastName,
           authProviders: ["NATIVE"],
+          ...verified,
           kindeId: `native:${crypto.randomUUID()}`,
         },
       });
       return toNativeAuthUser.surfboard(u);
     }
     case Platform.GBC: {
-      const u = await prisma.gBCUser.create({
+      const u = await db.gBCUser.create({
         data: {
           email: data.email,
           passwordHash: data.passwordHash,
           firstName: data.firstName,
           lastName: data.lastName,
           authProviders: ["NATIVE"],
+          ...verified,
           kindeId: `native:${crypto.randomUUID()}`,
         },
       });
@@ -278,8 +304,6 @@ export async function emailInUse(
       return false;
   }
 }
-
-type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 /**
  * Creates the account for an accepted admin invitation. Separate from

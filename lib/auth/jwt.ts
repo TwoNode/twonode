@@ -1,4 +1,4 @@
-import { SignJWT, jwtVerify, decodeJwt } from "jose";
+import { SignJWT, jwtVerify } from "jose";
 import { Platform } from "@/utils/platform";
 
 const secretKey = process.env.JWT_SECRET;
@@ -29,38 +29,39 @@ export async function signAccessToken(payload: JWTPayload): Promise<string> {
     .sign(JWT_SECRET);
 }
 
+function toPayload(p: Record<string, unknown>): JWTPayload {
+  return {
+    sub: p.sub as string,
+    role: p.role as string,
+    platform: p.platform as Platform,
+    emailVerified: Boolean(p.emailVerified),
+    mustVerifyNow: Boolean(p.mustVerifyNow),
+  };
+}
+
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    const p = payload as Record<string, unknown>;
-    return {
-      sub: p.sub as string,
-      role: p.role as string,
-      platform: p.platform as Platform,
-      emailVerified: Boolean(p.emailVerified),
-      mustVerifyNow: Boolean(p.mustVerifyNow),
-    };
+    return toPayload(payload as Record<string, unknown>);
   } catch {
     return null;
   }
 }
 
-/**
- * Decodes the access token payload without verifying expiration.
- * Useful for logout or cleanup handlers when the 15-minute token has expired,
- * but we still need the sub (userId) to revoke DB refresh tokens.
- */
-export function decodeAccessToken(token: string): JWTPayload | null {
+// Logout still has to identify the user when the 15-minute access token has
+// already expired — but only a token WE signed. Accepting expiry is fine;
+// accepting an unverified payload (jose's decodeJwt) would let anyone with a
+// victim's user id forge a cookie and revoke that user's sessions.
+const EXPIRED_TOKEN_TOLERANCE_SECONDS = 30 * 24 * 60 * 60; // the refresh-token lifetime
+
+export async function verifyTokenAllowExpired(
+  token: string
+): Promise<JWTPayload | null> {
   try {
-    const payload = decodeJwt(token) as Record<string, unknown>;
-    if (!payload?.sub) return null;
-    return {
-      sub: payload.sub as string,
-      role: (payload.role as string) || "",
-      platform: payload.platform as Platform,
-      emailVerified: Boolean(payload.emailVerified),
-      mustVerifyNow: Boolean(payload.mustVerifyNow),
-    };
+    const { payload } = await jwtVerify(token, JWT_SECRET, {
+      clockTolerance: EXPIRED_TOKEN_TOLERANCE_SECONDS,
+    });
+    return toPayload(payload as Record<string, unknown>);
   } catch {
     return null;
   }
