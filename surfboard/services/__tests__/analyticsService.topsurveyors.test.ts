@@ -36,7 +36,7 @@ describe("getTopSurveyors", () => {
     expect(args.where).toMatchObject({
       deleted: false,
       userId: { not: null },
-      planType: { notIn: ["PROVISIONAL", "PROVISIONAL_LAYOUT"] },
+      planType: { notIn: ["PROVISIONAL", "PROVISIONAL LAYOUT"] },
     });
     expect(mockPrisma.surfboardUser.findMany).not.toHaveBeenCalled();
   });
