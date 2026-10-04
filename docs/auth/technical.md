@@ -12,21 +12,30 @@ Built in `docs/development-history/phases/phase-1-foundations.md` (Steps 4-6), a
 
 ### 1.1 Routes — `app/api/v1/auth/*`
 
-| Route                          | Method | Auth                 | Purpose                                                                                                                                                                                                                              |
-| ------------------------------ | ------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/api/v1/auth/register`        | POST   | public, CSRF-checked | **Final step of OTP/link-first registration** (see 1.7): takes `{pendingRegistrationId, code, password}`, verifies, and creates the already-verified `{Reva,Surfboard,GBC}User` row. Never accepts an email or role from the client. |
-| `/api/v1/auth/login`           | POST   | public, CSRF-checked | `bcrypt.compare` against `passwordHash`; issues a session on success (see 1.3).                                                                                                                                                      |
-| `/api/v1/auth/refresh`         | POST   | refresh cookie       | Rotates the refresh token; see 1.4 for the reuse-detection behavior.                                                                                                                                                                 |
-| `/api/v1/auth/logout`          | POST   | session              | Revokes the current refresh token, clears cookies.                                                                                                                                                                                   |
-| `/api/v1/auth/me`              | GET    | session              | Returns the caller's identity/role for the given platform.                                                                                                                                                                           |
-| `/api/v1/auth/change-password` | POST   | session              | Shared across all three products — REVA's settings page, for example, calls this directly rather than having its own password-change function.                                                                                       |
+| Route                                 | Method | Auth                          | Purpose                                                                                                                                                                                                                                                  |
+| ------------------------------------- | ------ | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/v1/auth/register/send-otp`      | POST   | public, CSRF-checked          | **Step 1 of OTP/link-first registration** (see 1.7): stores a `PendingRegistration` and emails a 6-digit code or a link, per the platform's `method`.                                                                                                    |
+| `/api/v1/auth/register/resend-otp`    | POST   | public, CSRF-checked          | Re-issues the secret for a pending signup (new secret, attempt counter reset).                                                                                                                                                                           |
+| `/api/v1/auth/register`               | POST   | public, CSRF-checked          | **Final step of OTP/link-first registration**: takes `{pendingRegistrationId, code, password}`, verifies, and creates the already-verified `{Reva,Surfboard,GBC}User` row. Never accepts an email or role from the client.                               |
+| `/api/v1/auth/login`                  | POST   | public, CSRF-checked          | `bcrypt.compare` against `passwordHash`; issues a session on success (see 1.3).                                                                                                                                                                          |
+| `/api/v1/auth/refresh`                | POST   | refresh cookie                | Rotates the refresh token; see 1.4 for the reuse-detection behavior. Re-reads the user, so verification/settings changes reach the JWT within one refresh.                                                                                               |
+| `/api/v1/auth/logout`                 | POST   | session                       | Revokes the current refresh token, clears cookies.                                                                                                                                                                                                       |
+| `/api/v1/auth/me`                     | GET    | session                       | Caller's identity/role for the given platform, plus `emailVerified`, `emailVerifiedVia`, `mustVerifyNow`, `verificationMethod`, `verificationGraceEndsAt` (see 1.8). Not wrapped in `withAuth`, so it stays reachable while gated.                       |
+| `/api/v1/auth/change-password`        | POST   | session                       | Shared across all three products — REVA's settings page, for example, calls this directly rather than having its own password-change function. Revokes the user's refresh tokens.                                                                        |
+| `/api/v1/auth/request-password-reset` | POST   | public, CSRF-checked          | Emails a single-use reset link (1 h). Rate-limited; always answers generically so it can't be used to learn which emails have accounts.                                                                                                                  |
+| `/api/v1/auth/reset-password`         | POST   | public, CSRF-checked (token)  | Consumes the reset token, burns every other outstanding reset token for that user, **revokes all of the user's refresh tokens**, then sets the new hash.                                                                                                 |
+| `/api/v1/auth/verify-email`           | POST   | public, CSRF-checked (token)  | **Link** verification for an existing account: marks it verified `LINK`. Doesn't revoke refresh tokens (unlike reset-password). If the caller already holds a session for that same user, the session is re-issued so the gate lifts without a re-login. |
+| `/api/v1/auth/verify-email-otp`       | POST   | session (+ `userId` fallback) | **OTP** verification for an existing account (see 1.8, including a known gap in this route).                                                                                                                                                             |
+| `/api/v1/auth/resend-verification`    | POST   | public, CSRF-checked          | Re-sends the verification OTP or link for an existing, unverified account — method-aware. Rate-limited, non-enumerating.                                                                                                                                 |
+| `/api/v1/auth/invitations`            | GET    | public — invitation token     | Resolves an emailed admin-invitation token to the details the accept page shows (role, inviter). Same generic "invalid or expired" answer for every failure.                                                                                             |
+| `/api/v1/auth/accept-invite`          | POST   | public, CSRF-checked (token)  | Redeems an invitation: sets the password and creates the staff account (see 1.2).                                                                                                                                                                        |
 
 A native-login attempt against an account that has never set a password (Kinde-only account) fails with the same generic "Invalid email or password" a wrong password would — not a different, account-enumerating message.
 
 ### 1.2 Where native login is, and isn't, self-service
 
-- **Self-service** (public registration form, `allowRegister` on `NativeAuthCard`): REVA, Surfboard, GBC's regular user-facing login pages.
-- **Admin/invite-only** (no registration form — an existing privileged user must create the account first, e.g. via the REVA admin-user-management routes): Surfboard-restricted, Surfboard-MDA, REVA-restricted, GBC-restricted.
+- **Self-service** (public registration form, `allowRegister` on `NativeAuthCard`): REVA, Surfboard, GBC's regular user-facing login pages — via OTP/link-first registration (§1.7).
+- **Invitation-only** (no registration form): Surfboard-restricted, Surfboard-MDA, REVA-restricted, GBC-restricted. A superadmin invites the person from the product's admin area (`/api/v1/{surfboard,reva,gbc}/admin/invitations*`, built by `adminInvitationRoutes()` in `lib/api/adminInvitationRoutes.ts`). `lib/auth/adminInvitations.ts` stores an `AdminInvitation` row plus a sha256-hashed single-use token and emails the link (**7-day** TTL, `INVITATION_TTL_MS`). **No user row exists until the invitee follows the link and sets a password** (`POST /accept-invite`): the claim (`acceptedAt: null → now`) and the account creation share one transaction, so a second request racing on the same link matches no row. The created account is already verified (`emailVerifiedVia: "LINK"` — following the link proved the address), and the acceptance is written to the audit log with the inviter. Only the roles in `INVITABLE_ROLES` can be granted (the same set each product's old "add admin" screen offered), and `loginPathFor(platform, role)` decides which login page the invitee is sent to afterwards (`surfboard/access/routes.ts`).
 
 ### 1.3 Session issuance (`lib/auth/session.ts`)
 
@@ -34,6 +43,7 @@ A native-login attempt against an account that has never set a password (Kinde-o
 
 - **Access token**: `jose` HS256 JWT, **15-minute** lifetime, signed with `JWT_SECRET`.
 - **Refresh token**: a random value, **sha256-hashed** before it's stored in the `RefreshToken` table (shared across all three products, not a per-product table) — the plaintext token never touches the database. `rememberMe` at login sets the cookie/token lifetime to **30 days**; unchecked, **1 day**.
+- **Verification claims**: the access token carries `emailVerified` and a precomputed `mustVerifyNow` (§1.8) next to `sub`/`role`/`platform`, so the page and API gates need no database read. `issueSession(..., user)` computes them from the user row it is handed; `rotateRefreshToken` recomputes them on every refresh, so flipping the setting, or a user verifying, reaches an existing session within one refresh cycle (≤ ~15 min).
 - **Cookies**: platform-suffixed, not one fixed pair — `access_token_${platform}`, `refresh_token_${platform}` (`lib/auth/cookies.ts`). This is a deliberate deviation from proplity's fixed-pair cookies: it's what lets a user stay logged into REVA and Surfboard simultaneously in the same browser, matching a capability the legacy `USER_SESSION` cookie's `platforms` map already provided.
 
 ### 1.4 Refresh-token rotation & reuse detection (`app/api/v1/auth/refresh/route.ts`)
@@ -70,6 +80,57 @@ No user row exists until the emailed secret is confirmed. `POST /register/send-o
 - **The attempt cap is atomic.** An attempt is reserved with a conditional `updateMany` (`attempts < 5`) _before_ the secret is compared, so a burst of parallel guesses is admitted at most 5 at a time. (A read-then-increment cap let all 40 of a 40-way burst through.) A resend issues a new secret and resets the counter.
 - **The claim and the account creation are one transaction.** The row's `usedAt: null → now` claim and the user insert commit together: a simultaneous second completion waits on the row lock, then gets the winner's committed account (idempotent) rather than a unique-constraint error, and a failed insert rolls the claim back so the user can retry. The account is created already verified (`emailVerifiedVia` set in the same insert).
 - **Emails are stored lowercase and looked up case-insensitively** (`findUserByEmail`: exact match on the unique index first, then `mode: "insensitive"`), so `John@Gmail.com` at login finds the account registered as `john@gmail.com` and can't be registered a second time.
+
+### 1.8 Email-verification enforcement
+
+Accounts must prove they own their address before using a product, **but each platform's superadmin decides whether and when that is enforced**. Everything below is inert until a platform's `emailVerification.enabled` is switched on (default `false` on all three), so deploying the code changed nothing for existing users.
+
+**Settings** (`lib/auth/emailVerificationSettings.ts` → `getEmailVerificationSettings(platform)`, one normalised reader over three storage shapes):
+
+| Platform  | Stored in                                                                                                  | Admin UI                                                              |
+| --------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Surfboard | `SurfboardSettings.settings.emailVerification` (versioned JSON)                                            | Surfboard-restricted → Settings → **Security** tab                    |
+| GBC       | `GBCSettings.settings.emailVerification`, one row per edition (the reader uses the default/active edition) | GBC admin → Settings → `SystemSettings.tsx`                           |
+| REVA      | `RevaSettings` singleton (`reva/services/settingsService.ts`)                                              | **None yet** — stays `enabled: false` until a REVA settings UI exists |
+
+Shape: `{ enabled: boolean, method: "OTP" | "LINK", gracePeriodDays: number, enforcedSince: ISO string }`. Defaults: `enabled: false`, `method: "OTP"`, `gracePeriodDays: 30`. A read failure falls back to the defaults (i.e. **fail-open: not enforced**). `enforcedSince` is **stamped by the server, never accepted from the client**, and only on a genuine `false → true` transition of `enabled` — otherwise every account created between deploy and the moment a superadmin switched enforcement on would wrongly get zero grace.
+
+**Who is blocked** (`lib/auth/emailVerificationGate.ts` → `computeMustVerifyNow`):
+
+| Account                                                      | `mustVerifyNow`                                             |
+| ------------------------------------------------------------ | ----------------------------------------------------------- |
+| enforcement off, or already verified                         | `false`                                                     |
+| created **on/after** `enforcedSince`                         | `true` immediately (no grace)                               |
+| created **before** `enforcedSince` (grandfathered), in grace | `false` — they get a nag banner (`verificationGraceEndsAt`) |
+| grandfathered, `now ≥ enforcedSince + gracePeriodDays`       | `true`                                                      |
+
+`GET /api/v1/auth/me` returns `emailVerified`, `emailVerifiedVia` (`OTP` | `LINK` | `OAUTH` | null), `mustVerifyNow`, `verificationMethod` and `verificationGraceEndsAt` — the single source for both UI pieces below.
+
+**Enforcement points**
+
+- **API** — `withAuth` (`lib/api/withAuth.ts`) throws `EmailVerificationRequiredError` (**403**, code `EMAIL_VERIFICATION_REQUIRED`, distinct from `FORBIDDEN` and `SUBSCRIPTION_REQUIRED` so clients can route to the gate) when `session.mustVerifyNow && !session.emailVerified`. `allowUnverified: true` opts a route out; **no route currently uses it** — the verification, `me` and `logout` routes simply aren't wrapped in `withAuth`. The check is on the JWT claims, so it only covers routes that go through `withAuth`; legacy server actions and routes that read the legacy cookie are not covered by it.
+- **Pages** — `proxy.ts` (`tryNativeSession`) redirects a gated native session to `/{surfboard|reva|gbc-restricted}/verify-email` for every path except that page and `/logout`. Kinde/legacy-only sessions are not gated, which is acceptable because a Kinde sign-in is auto-verified (below).
+
+**Two ways to verify** (the platform's `method` picks which one is _issued_; either completes):
+
+- **OTP** — `lib/auth/emailVerificationOtp.ts`: 6-digit `crypto.randomInt` code, **sha256-hashed** in `EmailVerificationOtp` (the code is never stored), 10-minute expiry, max 5 wrong attempts per code, issuing a new code invalidates prior ones. `POST /verify-email-otp` is rate-limited per IP (`checkRateLimit`/`recordAttempt`, `verify-otp:<ip>`) and re-issues the session on success.
+- **Link** — `lib/auth/emailVerification.ts`: sha256-hashed token in `EmailVerificationToken`, 1-hour expiry, landing page `VerifyEmailCard` (token from the URL, verifies on mount).
+- `markEmailVerified(platform, id, via)` (`lib/auth/userLookup.ts`) sets `emailVerified` and `emailVerifiedVia` together.
+
+**OAuth sign-ins are auto-verified.** Every Kinde callback (`app/api/auth/success/*`) stamps `emailVerified: true, emailVerifiedVia: "OAUTH"` on a user that isn't verified yet — reaching the callback proves the identity provider confirmed the address, and `OAUTH` lets an admin tell that apart from our own verification. Accounts created through registration (§1.7) or an invitation (§1.2) are created already verified (`OTP`/`LINK`).
+
+**UI**
+
+- `components/auth/VerifyEmailGate.tsx` — the blocking screen the redirect lands on: OTP code entry or "check your email", plus Resend (`resend-verification` is method-aware). The verify endpoints re-issue the session server-side, so on success the gate just routes to the dashboard (`router.push` + `refresh`) — no re-login.
+- `components/dashboard/VerificationNagBanner.tsx` — shown to grandfathered, still-in-grace users with the days remaining; mounted in the Surfboard/REVA user layouts and the GBC admin layout.
+- `components/auth/RegisterVerifyLinkCard.tsx` — landing page for the **registration** link flow (§1.7; asks for the password because the link is often opened on another device). Distinct from `VerifyEmailCard`, which confirms an existing account.
+
+**Known gaps** (verified against the code on 2026-10-04; none exploited, documented so they aren't rediscovered):
+
+1. **`verifyEmailOtp` is not atomic.** It reads the active OTP, compares, then increments `attempts` in a separate statement, so a burst of parallel guesses can exceed the 5-attempt cap. §1.7's registration flow already uses the safe pattern (reserve the attempt with a conditional `updateMany` _before_ comparing) — port it. The per-IP rate limit is the only other brake.
+2. **`POST /verify-email-otp` accepts an unauthenticated `userId`** as a fallback when there is no session. Combined with gap 1 this lets a caller who knows a user id attempt codes against that account; the blast radius is limited (it can only mark that account verified, and the code expires in 10 minutes) but the fallback should go — require the session.
+3. **Verification re-issues the session with a hard-coded 30-day refresh lifetime** (`verify-email`, `verify-email-otp`), regardless of the "remember me" the user chose at login.
+4. **REVA has no admin UI** for these settings, so enforcement can't be switched on there without writing the `RevaSettings` row directly.
 
 ---
 
@@ -239,10 +300,8 @@ Confirmed by a dedicated post-Phase-5 audit (`docs/development-history/phases/ph
 
 Full retirement of the legacy cookie and `proxy.ts`'s cookie-based gating is a deliberately deferred, dedicated follow-up phase — not scheduled as of this writing.
 
-### 9.3 A known gap: `DashboardShell`'s sidebar nav only sees Kinde-sourced roles
+### 9.3 Resolved: `DashboardShell`'s sidebar nav used to only see Kinde-sourced roles
 
-**Found live, 2026-09-04, while verifying an unrelated dark-mode/UI change — not yet fixed.** `components/admin-panel/DashboardShell.tsx` (used by Surfboard-restricted admin and Surfboard-MDA) resolves its sidebar's nav items via `getNavItemsForRole(role, group)`, where `role` comes from the _server-side_ `getEncryptedUserData()` — the legacy, Kinde-only cookie described in §3. Native email/password login (`/api/v1/auth/login`) issues a session via `issueSession()`/`lib/auth/session.ts` and **never sets that cookie**.
+**Found 2026-09-04, fixed the same day (commit `10c288a0`).** `components/admin-panel/DashboardShell.tsx` (Surfboard-restricted admin and Surfboard-MDA) resolves its sidebar via `getNavItemsForRole(role, group)`, and `role` used to come from `getEncryptedUserData()` — the legacy, Kinde-only cookie from §3 — which native email+password login never sets. Admin and MDA staff who signed in with a password therefore saw an **empty sidebar**, whatever their role.
 
-Net effect: any admin or MDA staff member who logs in with email+password instead of "Continue with Google" gets an **empty sidebar** — no nav items at all — regardless of their actual role. Reproduced identically for a promoted Surfboard `ADMIN` and a promoted `MDA_SUPERADMIN`, so it isn't MDA-specific; it's the `DashboardShell`/legacy-cookie dependency itself. The rest of the shell (header, content area, the page itself) renders fine — only the registry-driven nav list is affected, because it's the one piece reading `userData?.role` from the cookie rather than the native session.
-
-Not fixed as part of that UI work since it's an auth-architecture question (does `DashboardShell` start reading the native session instead, or does native login also populate the legacy cookie the way Kinde does the reverse?) rather than a styling one. Flagged here for whoever picks up §9.2's eventual cutover.
+Both Surfboard dashboard layouts now resolve the user through `getEffectiveUserData()`, which uses the native session when there is one and falls back to the legacy cookie, so native-login staff get their full navigation. The remaining legacy-cookie dependencies are the ones listed in §9.2; the same "native session first, legacy fallback" pattern is what a future cutover of those consumers should follow.

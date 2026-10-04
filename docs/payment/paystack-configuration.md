@@ -101,10 +101,10 @@ metadata: {
 
 _(Historical — this is the changelog from when the `isLive` feature was originally built, pre-dating the 2026-08 architecture rebuild. The REVA/Surfboard action-file paths below no longer exist; see `docs/payment/subscription-payments-flow.md` §6 for their current `surfboard/services/*` / `reva/services/*` replacements. `utils/addBaseUrl.ts` and `utils/paystackConfig.ts` are shared utilities, unaffected by the rebuild's per-product folder moves and still live at the paths below.)_
 
-- `prisma/schema.prisma` - Added `isLive` field to both models
+- `prisma/schema/reva.prisma` - Added `isLive` to `Property` and `OneTimeUserProperty` (the schema was a single `prisma/schema.prisma` when this was written; it is now split per product under `prisma/schema/`)
 - `utils/addBaseUrl.ts` - Added `getPaystackCallbackUrl()` function
 - `utils/paystackConfig.ts` - Environment-based Paystack configuration
-- ~~`app/(projects)/reva/actions/paystackActions.ts`~~ / ~~`dbActions.ts`~~ — superseded by `reva/services/paymentService.ts` / `propertyRequestService.ts`
+- `app/(projects)/(reva)/reva/actions/paystackActions.ts` — **still live**, deliberately kept as the thin shared `verifyPaystackTransaction` utility (imported by `reva/services/paymentService.ts`); ~~`dbActions.ts`~~ is superseded by `reva/services/propertyRequestService.ts`
 - ~~`app/(projects)/(surfboard)/subboard/actions/{paystackActions,dbActions}.ts`~~ — superseded by `surfboard/services/paystackSubscriptionService.ts` and `surfboard/services/subscriptionService.ts`
 - `app/api/webhooks/paystack/route.ts` - the shared, current webhook path (the `app/api/reva/webhooks/paystack/route.ts` this originally referenced is legacy/superseded)
 

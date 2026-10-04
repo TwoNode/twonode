@@ -6,38 +6,39 @@ library plus files colocated directly with REVA pages under
 
 ## `reva/components/` — shared library
 
-| File                           | Description                                                                                                                                                                                                                    |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `RevaAdminDashboardHeader.tsx` | Header bar for the admin dashboard                                                                                                                                                                                             |
-| `RevaLoading.tsx`              | Loading spinner/state                                                                                                                                                                                                          |
-| `RevaUserDashboardHeader.tsx`  | Header bar for the user dashboard                                                                                                                                                                                              |
-| `shared/AuthLinks.tsx`         | Login/signup link block reused across auth pages                                                                                                                                                                               |
-| `shared/ComingSoon.tsx`        | Placeholder "coming soon" panel                                                                                                                                                                                                |
-| `shared/index.ts`              | Barrel export for the shared folder                                                                                                                                                                                            |
-| `shared/RevaFooterSection.tsx` | Public-site footer                                                                                                                                                                                                             |
-| `shared/RevaHeroSection.tsx`   | Public-site hero banner                                                                                                                                                                                                        |
-| `shared/Welcome.tsx`           | Dashboard welcome panel: initials/picture avatar, role chip, date, time-of-day greeting by first name (from the app session), two shortcut buttons, support link; `dashboardType` (`user`/`admin`) picks the default shortcuts |
+| File                           | Description                                                                                                                                                                                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RevaAdminDashboardHeader.tsx` | Header bar for the admin dashboard                                                                                                                                                                                                                            |
+| `RevaLoading.tsx`              | Loading spinner/state                                                                                                                                                                                                                                         |
+| `RevaUserDashboardHeader.tsx`  | Header bar for the user dashboard                                                                                                                                                                                                                             |
+| `shared/AuthLinks.tsx`         | Login/signup link block reused across auth pages                                                                                                                                                                                                              |
+| `shared/ComingSoon.tsx`        | Placeholder "coming soon" panel                                                                                                                                                                                                                               |
+| `shared/index.ts`              | Barrel export for the shared folder                                                                                                                                                                                                                           |
+| `shared/RevaFooterSection.tsx` | Public-site footer                                                                                                                                                                                                                                            |
+| `shared/RevaHeroSection.tsx`   | Public-site hero banner                                                                                                                                                                                                                                       |
+| `shared/Welcome.tsx`           | Dashboard welcome panel: initials/picture avatar, role chip, date, time-of-day greeting by first name (from the app session), two shortcut buttons, support link; `dashboardType` (`user`/`admin`) picks the default shortcuts                                |
+| `SecureDownloadDialog.tsx`     | Email-OTP dialog guarding report/document downloads: every click starts a fresh code round (no "verified once" caching); field errors come from `ValidationError.details`, not its generic top-level message. Backed by `reva/services/downloadOtpService.ts` |
 
 ## Colocated with pages (`app/(projects)/(reva)/`)
 
 ### Public site (`reva/`)
 
-| File                                                 | Description                                           |
-| ---------------------------------------------------- | ----------------------------------------------------- |
-| `AuthLinks.tsx`                                      | Auth link block for the public site                   |
-| `RevaFooterSection.tsx`                              | Footer (public site instance)                         |
-| `RevaHeroSection.tsx`                                | Hero banner (public site instance)                    |
-| `RevaLandingPage.tsx`                                | Full landing page composition                         |
-| `actions/awsActions.ts`                              | Server actions for AWS S3 uploads                     |
-| `actions/paystackActions.ts`                         | Server actions for Paystack payment init/verification |
-| `(auth)/error-login/RevaErrorLogin.tsx`              | Login-error page content                              |
-| `(auth)/login/RevaLogin.tsx`                         | Login form                                            |
-| `details/viewDetails.tsx`                            | Public request/property details view                  |
-| `onetimerequest/OneTimeRequest.tsx`                  | One-time due-diligence request form                   |
-| `onetimerequest/components/DownloadReportButton.tsx` | Download-report button for one-time requests          |
-| `requestform/RevaDueDiligenceForm.tsx`               | Standard due-diligence request form                   |
-| `verifypayment/PaymentErrorPage.tsx`                 | Payment verification error state                      |
-| `verifypayment/viewDetails.tsx`                      | Payment verification result view                      |
+| File                                                 | Description                                                                                              |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `AuthLinks.tsx`                                      | Auth link block for the public site                                                                      |
+| `RevaFooterSection.tsx`                              | Footer (public site instance)                                                                            |
+| `RevaHeroSection.tsx`                                | Hero banner (public site instance)                                                                       |
+| `RevaLandingPage.tsx`                                | Full landing page composition                                                                            |
+| `actions/awsActions.ts`                              | Server actions for AWS S3 uploads                                                                        |
+| `actions/paystackActions.ts`                         | Thin server-side `verifyPaystackTransaction` utility (the only REVA action file besides `awsActions.ts`) |
+| `(auth)/error-login/RevaErrorLogin.tsx`              | Login-error page content                                                                                 |
+| `(auth)/login/RevaLogin.tsx`                         | Login form                                                                                               |
+| `details/viewDetails.tsx`                            | Public request/property details view                                                                     |
+| `onetimerequest/OneTimeRequest.tsx`                  | One-time due-diligence request form                                                                      |
+| `onetimerequest/components/DownloadReportButton.tsx` | Download-report button for one-time requests                                                             |
+| `requestform/RevaDueDiligenceForm.tsx`               | Standard due-diligence request form                                                                      |
+| `verifypayment/PaymentErrorPage.tsx`                 | Payment verification error state                                                                         |
+| `verifypayment/viewDetails.tsx`                      | Payment verification result view                                                                         |
 
 ### User dashboard (`reva/dashboard/`)
 
