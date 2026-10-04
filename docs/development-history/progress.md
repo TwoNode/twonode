@@ -150,7 +150,13 @@ Everything below is merged to `dev` unless noted; commit/PR numbers are from `gi
 - **Auth hardening** ([#256](https://github.com/roji-tech/twonodes/pull/256), 2026-10-04) — single-flight client refresh manager + 401 retry interceptor, atomic OTP/refresh handling, signature-verified logout, CSRF/rate-limit tightening; promoted `dev` → `main` → `prod` ([#258](https://github.com/roji-tech/twonodes/pull/258)). Also fixed the stale analytics test and the old "empty admin sidebar on native login" gap (now resolved, `auth/technical.md` §9.3).
 - **Docs refresh** (2026-10-04) — `development-history/route-inventory.md` is now generated from the code (`npm run docs:routes`, 267 API routes + 145 pages); auth, payment (known gaps), deployment (migrations/cron), functions, components and pages docs brought up to date; new evaluations: [`surfboard/association-subscription.md`](../surfboard/association-subscription.md), [`mobile/surfboard-mobile-app-evaluation.md`](../mobile/surfboard-mobile-app-evaluation.md), [`integrations/nigeria-postcode-api.md`](../integrations/nigeria-postcode-api.md) (all proposals/research — nothing implemented).
 
-**Found, not fixed (documented, each in its own place):** one-time subscription verification doesn't bind amount/reference; the webhook ledger swallows Paystack retries; individual payments replace rather than extend the period; `SubscriptionHistory.amount` 100× suspicion; `verifyEmailOtp` attempt cap isn't atomic and `verify-email-otp` accepts an unauthenticated `userId`; the web map loads unlicensed tile sources; `npm run prisma:check` points at a schema path that no longer exists.
+**Found by the docs refresh, and what became of it (2026-10-05):**
+
+- One-time subscription verification didn't bind amount/reference → fixed in [#262](https://github.com/roji-tech/twonodes/pull/262).
+- The webhook ledger swallowed Paystack's retries (and the CoD handler swallowed its own errors) → fixed in [#261](https://github.com/roji-tech/twonodes/pull/261).
+- Individual payments replaced the subscription period instead of adding to it; `addMonths` overflowed month-ends (31 Jan + 1 month = 3 Mar); verify-path history amounts were 100× → fixed in [#263](https://github.com/roji-tech/twonodes/pull/263) (includes #262). Needs one staging check — see the PR.
+- `verifyEmailOtp`'s attempt cap wasn't atomic and `verify-email-otp` accepted an unauthenticated `userId` → fixed in [#260](https://github.com/roji-tech/twonodes/pull/260), plus a per-account attempt limiter.
+- Still open: the web map loads tile sources that aren't licensed for this use; `npm run prisma:check` points at a schema path that no longer exists; verification re-issues the session with a hard-coded 30-day refresh lifetime; `SubscriptionHistory.amount` rows from the old verify path are still 100× (not backfilled).
 
 ---
 

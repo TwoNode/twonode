@@ -1,6 +1,6 @@
 # Surfboard Association Subscription — evaluation and recommended design
 
-> **Status: proposal. Nothing in this document is implemented.** It evaluates the product requirements ("Surfboard Association Subscription PRB") and the two engineering write-ups that were produced from them, checks every factual claim against the code on `dev` (2026-10-04), and replaces them with one reconciled design.
+> **Status: proposal. The association feature itself is not implemented.** The Phase 0 prerequisites in §6 — defects this evaluation found in today's subscription flow — are fixed in pull requests #262 (one-time payment binding), #261 (webhook retries) and #263 (additive periods, month arithmetic), open when this was updated on 2026-10-05; each section below says which. The rest of the document describes the code as it was on `dev` on 2026-10-04. It evaluates the product requirements ("Surfboard Association Subscription PRB") and the two engineering write-ups that were produced from them, checks every factual claim against the code on `dev` (2026-10-04), and replaces them with one reconciled design.
 >
 > **Superseded inputs** (kept locally in the untracked `out/` folder; their useful content is carried here): `association_subscription_plan.md` ("Plan A") and Part I of `Surfboard_Association_and_Mobile_Feasibility_Analysis.md` ("Plan B"). Part II of that file (mobile) is evaluated in [`../mobile/surfboard-mobile-app-evaluation.md`](../mobile/surfboard-mobile-app-evaluation.md).
 
@@ -47,7 +47,7 @@ Two PRB statements drive most of the findings below: **#10/#13.9 "every purchase
 | "Active" rule                     | `status ∈ {active, past_due}` and not past `currentEnd + 24h`, or `canceled` but still inside the period. The API gate uses this; **the page gate in `proxy.ts` is stricter** (`status === "active"` or canceled-in-grace).                   | `surfboard/services/subscriptionService.ts:25`, `proxy.ts:213`                                                  |
 | What a lapsed subscription blocks | Only _capability_ actions (create/edit/share plans, QR). Reading own/shared plans, map, settings, subscription pages stay open ("Shared Access" vision).                                                                                      | `proxy.ts` `alwaysAllowedEvenUnsubscribed`; `requireActiveSubscription`                                         |
 | Individual payment paths          | (1) recurring: popup checkout → `verifySubscription` and webhook `subscription.create`/renewal `charge.success`; (2) one-time: popup → `verifyOneTimeSubscription` and webhook. Plans: monthly ₦16,700 · quarterly ₦50,000 · yearly ₦200,000. | `surfboard/services/paystackSubscriptionService.ts`, `app/(projects)/(surfboard)/utils/paystackSubscription.ts` |
-| Period maths                      | `computePeriodPerTimestamp` — **clamped** calendar `addMonths`, Lagos wall-clock, `currentEnd = nextCharge − 1s`.                                                                                                                             | `app/(projects)/(surfboard)/utils/computePeriod.ts`                                                             |
+| Period maths                      | `computePeriodPerTimestamp` — calendar months, Lagos wall-clock, `currentEnd = nextCharge − 1s`. Its `addMonths` **did not clamp** (`setMonth` overflowed first: 31 Jan + 1 month = 3 Mar); fixed in #263 as `addCalendarMonths`.             | `app/(projects)/(surfboard)/utils/computePeriod.ts`                                                             |
 | Webhook                           | One endpoint for all products; HMAC-verified; per-event ledger with **unique `signature`**; product routed from `metadata.platform`.                                                                                                          | `app/api/webhooks/paystack/route.ts`, `WebhookEvent` in `core.prisma`                                           |
 | Roles                             | `SurfboardRole`: `USER, ADMIN, SUPERADMIN` + six MDA roles. **One role per user.** A route registry (`surfboard/access/routes.ts`) drives nav _and_ access; `proxy.ts` has one branch per path prefix.                                        | `prisma/schema/surfboard.prisma:7`, `surfboard/access/routes.ts`, `proxy.ts`                                    |
 | Staff onboarding                  | Invitation system: `AdminInvitation` row + emailed single-use link; roles limited by `INVITABLE_ROLES`; accept page per product. Reusable for association admins.                                                                             | `lib/auth/adminInvitations.ts:39`                                                                               |
@@ -62,6 +62,8 @@ Severity: **P0** = fix before or with this feature · **P1** = must be designed 
 
 ### 4.1 [P0] Individual payments _replace_ the subscription period; the PRB says purchases _add_
 
+> **Fixed in #263 (open).** `applyPaymentPeriod` / `computeExtendedPeriod` now make every individual path additive and idempotent per payment reference — see [`../payment/surfboard-subscription-detailed.md`](../payment/surfboard-subscription-detailed.md) §5. The text below is the problem as found.
+
 Every individual path computes the new period **from the payment date** and overwrites `currentStart/currentEnd`:
 
 - `createOrUpdateSubscription` — `surfboard/services/subscriptionService.ts:129–137` (upsert).
@@ -75,6 +77,8 @@ Extending `currentEnd` does nothing to the surveyor's Paystack subscription, whi
 
 ### 4.3 [P0, pre-existing] The one-time payment verification does not check the amount or bind the reference
 
+> **Fixed in #262 (open).** The text below is the problem as found.
+
 `verifyOneTimeSubscription` (`paystackSubscriptionService.ts:308`) accepts a Paystack transaction if `status === "success"` and then grants the plan named by the **client-supplied** `planId`. It never compares `data.amount` with that plan's price, never checks that the reference was issued by `initiateOneTimeSubscription`, and never checks that the reference hasn't already been used by another account. The webhook path (`onOneTimeSubscriptionChargeSuccess`, `route.ts:672`) trusts `metadata.plan_id` the same way. The popup checkout is client-driven (no server-side `transaction.initialize`), so amount and metadata are client-controlled.
 
 By contrast the REVA and certificate-of-deposit webhook paths _compute_ the expected amount (`route.ts:892`, `route.ts:1014`) — but only **log** a mismatch and still confirm the payment ("for manual review rather than leaving a real payer stuck"). That is a defensible choice for a fixed-price request a real payer can't have mis-sized, and the wrong one for a subscription, where an underpayment is the exploit.
@@ -82,6 +86,8 @@ By contrast the REVA and certificate-of-deposit webhook paths _compute_ the expe
 _Assessment from reading the code; not exploited against Paystack._ Practical risk: pay a small amount through any flow, then call `verify-onetime` with that reference and `planId: "annually"`. **This affects today's production flow and the association flow would copy the same pattern if built naively.** Fix independently of this feature: server-side `initialize` with a locked amount, a `PENDING` payment row keyed by reference, and `data.amount`/`data.currency`/reference checks at both verify and webhook time.
 
 ### 4.4 [P0] A failed webhook is never retried — the ledger swallows Paystack's retries
+
+> **Fixed in #261 (open).** The text below is the problem as found; the association state machine should still be re-drivable (verify endpoint + reconciliation job) rather than rely on webhook redelivery alone.
 
 Paystack retries unacknowledged webhooks (live mode: every 3 minutes for the first four attempts, then hourly for up to 72 hours — [Paystack docs](https://paystack.com/docs/payments/webhooks/)). Our ledger inserts a row with a **unique `signature`** _before_ processing and, on a unique-constraint hit, returns `{ ok: true, duplicate: true }` (`route.ts:150`, `route.ts:307/311`). If the handler then throws, the route returns 500 and marks the row `error`… but the retry has the same payload, hits the unique constraint, and is acknowledged as a duplicate. **A transient failure (DB blip, timeout) during fulfilment permanently loses the event.**
 
@@ -105,7 +111,7 @@ The existing individual popup flow deliberately skips `transaction.initialize` (
 
 ### 4.8 [P1] Duration maths: calendar months, clamped, same convention as the rest of the app
 
-The PRB's examples are calendar months (31 Dec + 3 months = 31 Mar). Plan A's `Date#setMonth` overflows at month ends (30 Nov + 3 months → 2 Mar, not 28 Feb). Plan B's fixed 90/365 days happens to reproduce the two PRB examples but drifts (and 365 ≠ a leap year). The repo already has the right tool — a **clamped** `addMonths` with the `currentEnd = nextCharge − 1s` convention in `computePeriod.ts`. Reuse it. (Note: its `toLagosDate` builds a `Date` from Lagos wall-clock parts in the _server's_ local zone; on a UTC server stored instants are shifted by the Lagos offset. Harmless for date-granularity display but worth knowing before writing tests.)
+The PRB's examples are calendar months (31 Dec + 3 months = 31 Mar). Plan A's `Date#setMonth` overflows at month ends (30 Nov + 3 months → 2 Mar, not 28 Feb). Plan B's fixed 90/365 days happens to reproduce the two PRB examples but drifts (and 365 ≠ a leap year). **An earlier revision of this document said the repo already had a clamped `addMonths` to reuse — that was wrong:** the repo's own function had the same overflow bug (its clamp ran _after_ `setMonth` had already spilled into the next month, so 31 Jan + 1 month = 3 Mar). It is fixed in #263 as `addCalendarMonths` (clamps; tested in UTC, Africa/Lagos and a DST zone), with the `currentEnd = nextCharge − 1s` convention. Reuse that. (Note: `toLagosDate` builds a `Date` from Lagos wall-clock parts in the _server's_ local zone; on a UTC server stored instants are shifted by the Lagos offset. Harmless for date-granularity display, but only ever feed dates produced by `computePeriod` back into its helpers, never a raw Paystack instant.)
 
 ### 4.9 [P1] One role per user; association admins need their own accounts and a routing slot
 
@@ -244,27 +250,13 @@ expire stale PENDING rows.
 - Pricing endpoints are `SUPERADMIN`/`ADMIN` only; association routes expose price read-only.
 - Audit every initiate/fulfil/member-list read with `writeAudit`.
 
-### 5.4 One extension function for _all_ payers
+### 5.4 One extension function for _all_ payers — now `applyPaymentPeriod`
 
-```ts
-// Used by the association path AND by createOrUpdateSubscription / webhook renewals / one-time verify.
-function periodFor(existingEnd: Date | null, now: Date, months: number) {
-  const startInstant =
-    existingEnd && existingEnd > now
-      ? new Date(existingEnd.getTime() + 1000) // continue right after the current period (matches currentEnd = nextCharge − 1s)
-      : now; // lapsed or none: start from the payment/fulfilment date
-  const next = addMonthsClamped(startInstant, months); // the clamped helper already in computePeriod.ts
-  return {
-    currentStart:
-      existingEnd && existingEnd > now
-        ? /* keep original */ undefined
-        : startInstant,
-    currentEnd: new Date(next.getTime() - 1000),
-  };
-}
-```
+Implemented in #263 (open): `computeExtendedPeriod(interval, paidDate, existing)` in `computePeriod.ts` (the period a payment buys — it starts when remaining paid time ends, or fresh from the payment date if nothing is running) and `applyPaymentPeriod` in `subscriptionService.ts` (one transaction: advisory locks on the payment reference and on the user, a ledger check keyed by reference in `SubscriptionHistory`, the extension, the upsert, the history row). The association path should **call `applyPaymentPeriod` once per surveyor** rather than reimplement any of this.
 
-Rules: `status → "active"`, `cancelledAt → null`; never lower an existing `currentEnd`; record `previousEnd/newEnd` on the item and in history; for a surveyor with a live Paystack recurring subscription call the existing `disableSubscription` _after_ the extension commits and notify them. Cover with tests for: active extend, lapsed restart, within-24h-grace, month-end clamping (30 Nov + 3 months), leap years, and **association-then-individual-renewal stacking** (the §4.1 regression).
+One consequence to design for: the ledger key is the payment `reference`, and `applyPaymentPeriod` refuses a reference already credited to a _different_ user. An association pays **one** Paystack reference for N surveyors, so each `AssociationPaymentItem` needs its own key — e.g. `assoc:<paymentReference>:<surveyorId>` — passed as the `reference` for that surveyor's credit (the bulk Paystack reference stays on `AssociationPayment`). That also makes the fulfilment loop idempotent per surveyor, which is what a partial-failure retry needs.
+
+Rules the association path adds on top: `status → "active"`, `cancelledAt → null` (already what `applyPaymentPeriod` does); record `previousEnd/newEnd` on the item and in history; for a surveyor with a live Paystack recurring subscription call the existing `disableSubscription` _after_ the extension commits and notify them (§4.2). Association-then-individual-renewal stacking (the §4.1 regression) is covered by #263's tests; add association-specific cases (a bulk payment of N, a partial failure retried, an item for a surveyor who was deactivated meanwhile).
 
 ### 5.5 Surfaces
 
@@ -291,15 +283,15 @@ _Optional residence check:_ the state segment of a surveyor's NIPOST digital pos
 
 ## 6. Build order
 
-| Phase                                   | Scope                                                                                                                                                                                                                                                                          | Size |
-| :-------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--- |
-| **0 — prerequisites (independent PRs)** | (a) Server-side initialize + amount/reference binding for the one-time flow (§4.3). (b) Ledger fix so errored events are reprocessed (§4.4). (c) Shared additive `periodFor` used by all individual paths + regression tests (§4.1). (d) Audit the history-amount 100× (§4.5). | M    |
-| 1 — schema + service                    | Migration, `associationSubscriptionService` (`initiate`, `fulfil`, `applyExtension`), webhook branch, reconciliation cron, tests.                                                                                                                                              | M–L  |
-| 2 — admin                               | Associations CRUD, pricing, admin invitation + role plumbing (§4.9).                                                                                                                                                                                                           | M    |
-| 3 — association portal                  | Dashboard, members, subscribe, payment history, receipt.                                                                                                                                                                                                                       | L    |
-| 4 — surveyor side                       | "Subscribed by" derived field, notifications, reminder routing.                                                                                                                                                                                                                | S    |
+| Phase                                                                       | Scope                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Size |
+| :-------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--- |
+| **0 — prerequisites (independent PRs)** — _done in #262, #261, #263 (open)_ | (a) Amount/reference binding for the one-time flow (§4.3) — delivered in #262 by tying the reference to the user and checking Paystack's reported amount/currency, **without** a server-side `initialize` (the popup flow is unchanged); the association flow itself should still use server-side `initialize` (§4.7). (b) Ledger fix so errored events are reprocessed (§4.4). (c) Shared additive `periodFor` used by all individual paths + regression tests (§4.1). (d) Audit the history-amount 100× (§4.5). | M    |
+| 1 — schema + service                                                        | Migration, `associationSubscriptionService` (`initiate`, `fulfil`, `applyExtension`), webhook branch, reconciliation cron, tests.                                                                                                                                                                                                                                                                                                                                                                                 | M–L  |
+| 2 — admin                                                                   | Associations CRUD, pricing, admin invitation + role plumbing (§4.9).                                                                                                                                                                                                                                                                                                                                                                                                                                              | M    |
+| 3 — association portal                                                      | Dashboard, members, subscribe, payment history, receipt.                                                                                                                                                                                                                                                                                                                                                                                                                                                          | L    |
+| 4 — surveyor side                                                           | "Subscribed by" derived field, notifications, reminder routing.                                                                                                                                                                                                                                                                                                                                                                                                                                                   | S    |
 
-Phase 0 is the real critical path: items (a)–(c) fix defects that exist **today** and the association feature is unsafe without them.
+Phase 0 was the real critical path: items (a)–(c) fixed defects that existed in the individual flows and made the association feature unsafe to build on. They are in open PRs (#262, #261, #263) — build on them only once merged.
 
 ## 7. Decisions needed from the product owner
 
