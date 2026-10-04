@@ -4,7 +4,7 @@ import { Platform } from "@/utils/platform";
 import { clearAuthCookies, getAccessTokenCookie } from "@/lib/auth/cookies";
 import { validateCSRF } from "@/lib/auth/csrf";
 import { getServerSession, revokeUserSession } from "@/lib/auth/session";
-import { decodeAccessToken } from "@/lib/auth/jwt";
+import { verifyTokenAllowExpired } from "@/lib/auth/jwt";
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
 import { clearEncryptedUserCookie } from "@/utils/encryptedCookies";
@@ -28,8 +28,10 @@ export async function POST(req: NextRequest) {
     if (!userId) {
       const rawToken = await getAccessTokenCookie(platform);
       if (rawToken) {
-        const decoded = decodeAccessToken(rawToken);
-        userId = decoded?.sub;
+        const decoded = await verifyTokenAllowExpired(rawToken);
+        // Signature-verified, and issued for THIS platform — a token minted
+        // for another product must not revoke sessions here.
+        if (decoded?.platform === platform) userId = decoded.sub;
       }
     }
 
