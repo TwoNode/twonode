@@ -22,6 +22,7 @@ import { writeAudit } from "@/lib/audit";
 import { Platform } from "@/utils/platform";
 import { findUnpaidProblem, nairaToKobo } from "@/lib/paystackVerification";
 import { isPaystackLive } from "@/lib/paystackMode";
+import { resolveRevaPrice } from "@/reva/services/pricingService";
 
 /**
  * Migrated from revaActions.ts's Paystack-integrated submission/verification
@@ -47,10 +48,15 @@ export async function saveFormDataAndInitiatePaystack(formData: FormData) {
   const requester = formData.get("requester") as string;
   const address = formData.get("address") as string;
   const location = JSON.parse(formData.get("location") as string);
-  const lga = formData.get("lga") as string;
-  const totalCost = parseFloat(formData.get("totalCost") as string);
   const comments = formData.get("comments") as string;
   const parcelId = formData.get("parcelId") as string;
+
+  // The price and LGA come from the server's own lookup, not the form: the
+  // browser's `totalCost` is only compared with it (see resolveRevaPrice).
+  const { price: totalCost, lga } = await resolveRevaPrice(
+    location,
+    parseFloat(formData.get("totalCost") as string)
+  );
 
   const documentsUrls = await uploadFormFiles(formData, "files");
   const siteImages = await uploadFormFiles(formData, "site_images");
@@ -106,10 +112,15 @@ export async function authSaveFormDataAndInitiatePaystack(
   const title = formData.get("title") as string;
   const address = formData.get("address") as string;
   const location = JSON.parse(formData.get("location") as string);
-  const lga = formData.get("lga") as string;
-  const totalCost = parseFloat(formData.get("totalCost") as string);
   const comments = formData.get("comments") as string;
   const parcelId = formData.get("parcelId") as string;
+
+  // The price and LGA come from the server's own lookup, not the form: the
+  // browser's `totalCost` is only compared with it (see resolveRevaPrice).
+  const { price: totalCost, lga } = await resolveRevaPrice(
+    location,
+    parseFloat(formData.get("totalCost") as string)
+  );
 
   const documentsUrls = await uploadFormFiles(formData, "files");
   const siteImages = await uploadFormFiles(formData, "site_images");
