@@ -14,6 +14,7 @@ import {
   findOneTimePaymentProblem,
   findOneTimeReferenceProblem,
   isPlanId,
+  userIdFromSubscriptionReference,
 } from "@/surfboard/services/oneTimePayment";
 import { ApiError, NotFoundError, ValidationError } from "@/lib/api/errors";
 import { isPaystackLive } from "@/lib/paystackMode";
@@ -265,6 +266,17 @@ export async function getOrCreatePaystackPlan(
 }
 
 export async function verifySubscription(userId: string, reference: string) {
+  // Only credit a reference this account's own checkout created. Without
+  // this, any signed-in user could submit another customer's reference (it
+  // appears in receipts and the webhook ledger) and take the subscription.
+  if (userIdFromSubscriptionReference(reference) !== userId) {
+    throw new ApiError(
+      403,
+      "REFERENCE_NOT_ISSUED_TO_USER",
+      "This payment reference was not issued to your account"
+    );
+  }
+
   const isLive = isPaystackLive();
   const paystack = await createPaystackInstance(isLive);
 
