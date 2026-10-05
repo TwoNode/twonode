@@ -20,6 +20,9 @@ import type { Property, OneTimeUserProperty } from "@/prisma/generated";
 import { notifyPaymentReceived } from "@/reva/services/notificationService";
 import { writeAudit } from "@/lib/audit";
 import { Platform } from "@/utils/platform";
+import { findUnpaidProblem, nairaToKobo } from "@/lib/paystackVerification";
+import { isPaystackLive } from "@/lib/paystackMode";
+import { resolveRevaPrice } from "@/reva/services/pricingService";
 
 /**
  * Migrated from revaActions.ts's Paystack-integrated submission/verification
@@ -45,15 +48,20 @@ export async function saveFormDataAndInitiatePaystack(formData: FormData) {
   const requester = formData.get("requester") as string;
   const address = formData.get("address") as string;
   const location = JSON.parse(formData.get("location") as string);
-  const lga = formData.get("lga") as string;
-  const totalCost = parseFloat(formData.get("totalCost") as string);
   const comments = formData.get("comments") as string;
   const parcelId = formData.get("parcelId") as string;
+
+  // The price and LGA come from the server's own lookup, not the form: the
+  // browser's `totalCost` is only compared with it (see resolveRevaPrice).
+  const { price: totalCost, lga } = await resolveRevaPrice(
+    location,
+    parseFloat(formData.get("totalCost") as string)
+  );
 
   const documentsUrls = await uploadFormFiles(formData, "files");
   const siteImages = await uploadFormFiles(formData, "site_images");
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
 
   const property = await saveToOneTimeProperty({
     email,
@@ -104,15 +112,20 @@ export async function authSaveFormDataAndInitiatePaystack(
   const title = formData.get("title") as string;
   const address = formData.get("address") as string;
   const location = JSON.parse(formData.get("location") as string);
-  const lga = formData.get("lga") as string;
-  const totalCost = parseFloat(formData.get("totalCost") as string);
   const comments = formData.get("comments") as string;
   const parcelId = formData.get("parcelId") as string;
+
+  // The price and LGA come from the server's own lookup, not the form: the
+  // browser's `totalCost` is only compared with it (see resolveRevaPrice).
+  const { price: totalCost, lga } = await resolveRevaPrice(
+    location,
+    parseFloat(formData.get("totalCost") as string)
+  );
 
   const documentsUrls = await uploadFormFiles(formData, "files");
   const siteImages = await uploadFormFiles(formData, "site_images");
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
 
   const property = await saveToPropertyTable({
     user: { connect: { id: user.id } },
@@ -171,11 +184,11 @@ export async function checkPaymentSuccess(reference: string) {
     reference,
     existing.isLive
   );
-  if (!verification?.status) {
-    throw new ConflictError(
-      "Transaction verification failed or was unsuccessful"
-    );
-  }
+  const problem = findUnpaidProblem(verification, {
+    reference,
+    expectedKobo: nairaToKobo(existing.totalCost),
+  });
+  if (problem) throw new ConflictError(problem);
 
   const updated = await prisma.oneTimeUserProperty.update({
     where: { reference },
@@ -226,11 +239,11 @@ export async function authPaymentSuccessful(
     reference,
     existing.isLive
   );
-  if (!verification?.status) {
-    throw new ConflictError(
-      "Transaction verification failed or was unsuccessful"
-    );
-  }
+  const problem = findUnpaidProblem(verification, {
+    reference,
+    expectedKobo: nairaToKobo(existing.totalCost),
+  });
+  if (problem) throw new ConflictError(problem);
 
   const updated = await prisma.property.update({
     where: { reference },

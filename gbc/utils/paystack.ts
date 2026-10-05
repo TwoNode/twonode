@@ -4,6 +4,8 @@ import {
   createPaystackInstance,
   getPaystackSecretForWebhook,
 } from "@/utils/paystackConfig";
+import { getSiteUrl } from "@/lib/siteUrl";
+import { isPaystackLive } from "@/lib/paystackMode";
 
 interface InitializePaymentParams {
   email: string;
@@ -48,9 +50,7 @@ export async function initializePayment(
   params: InitializePaymentParams
 ): Promise<InitializePaymentResponse> {
   try {
-    const paystack = await createPaystackInstance(
-      process.env.NODE_ENV === "production"
-    );
+    const paystack = await createPaystackInstance(isPaystackLive());
     const response = await paystack.transaction.initialize({
       ...params,
       amount: params.amount.toString(), // Convert to string as expected by Paystack
@@ -103,9 +103,7 @@ export async function verifyPayment(
       throw new Error(`Payment reference is required. Received: ${reference}`);
     }
 
-    const paystack = await createPaystackInstance(
-      process.env.NODE_ENV === "production"
-    );
+    const paystack = await createPaystackInstance(isPaystackLive());
 
     const response = await paystack.transaction.verify({ reference });
 
@@ -190,7 +188,7 @@ export async function initializeTicketPayment(
   metadata?: Record<string, any>
 ) {
   const reference = generatePaymentReference(ticketNumber, ticketType);
-  const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/gbc/tickets/success?reference=${reference}`;
+  const callbackUrl = `${getSiteUrl()}/gbc/tickets/success?reference=${reference}`;
 
   return initializePayment({
     email,
@@ -213,9 +211,7 @@ export async function processRefund(
   amount?: number
 ): Promise<any> {
   try {
-    const paystack = await createPaystackInstance(
-      process.env.NODE_ENV === "production"
-    );
+    const paystack = await createPaystackInstance(isPaystackLive());
     const response = await paystack.refund.create({
       transaction: transactionReference,
       amount: amount ? nairaToKobo(amount) : undefined,

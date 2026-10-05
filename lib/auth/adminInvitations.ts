@@ -18,6 +18,7 @@ import {
 import { writeAudit } from "@/lib/audit";
 import { sendAdminInvitationEmail } from "@/utils/email";
 import { roleLabel } from "@/lib/api/adminInvitationTypes";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 /**
  * Inviting a new admin/staff member. Nothing is created in a product's user
@@ -151,8 +152,7 @@ async function deliver(
   rawToken: string,
   inviterName: string
 ): Promise<boolean> {
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com";
+  const siteUrl = getSiteUrl();
   const acceptUrl = `${siteUrl}${ACCEPT_PATH[platform]}?token=${rawToken}`;
 
   // Local/dev convenience only — the raw token is never persisted, so this is

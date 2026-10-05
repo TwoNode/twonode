@@ -10,6 +10,7 @@ import {
   createNativeUser,
   type NativeAuthUser,
 } from "@/lib/auth/userLookup";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 /**
  * OTP-first registration: no User row — verified or not — exists until the
@@ -83,8 +84,7 @@ async function sendPendingRegistrationSecret(
     return;
   }
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com";
+  const siteUrl = getSiteUrl();
   // Both the opaque row id and the raw token travel in the link — a fresh
   // page load from an email client has no prior client state to carry
   // pendingRegistrationId in, unlike the OTP step which gets it from the

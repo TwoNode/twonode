@@ -1,4 +1,5 @@
 "use server";
+import { isPaystackLive } from "@/lib/paystackMode";
 /**
  * Paystack Configuration Utility
  * Handles environment-based key selection for test vs live payments
@@ -62,7 +63,7 @@ export const getPaystackConfig = async (
 export const getPaystackSecretForWebhook = async () => {
   // Check if this is a live transaction by looking up the database record
   // For now, we'll use a simple heuristic based on environment
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
 
   if (isLive) {
     const liveSecretKey = process.env.PAYSTACK_LIVE_SECRET;

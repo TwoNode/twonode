@@ -5,8 +5,19 @@ import {
   logPaystackEnvironment,
   getPaystackSecretForWebhook,
 } from "@/utils/paystackConfig";
-import { createOrUpdateSubscription } from "@/surfboard/services/subscriptionService";
-import { NotFoundError, ValidationError } from "@/lib/api/errors";
+import {
+  applyOneTimeSubscriptionPayment,
+  createOrUpdateSubscription,
+} from "@/surfboard/services/subscriptionService";
+import {
+  buildOneTimeReference,
+  findOneTimePaymentProblem,
+  findOneTimeReferenceProblem,
+  isPlanId,
+  userIdFromSubscriptionReference,
+} from "@/surfboard/services/oneTimePayment";
+import { ApiError, NotFoundError, ValidationError } from "@/lib/api/errors";
+import { isPaystackLive } from "@/lib/paystackMode";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/paystackActions.ts (the
@@ -31,16 +42,41 @@ export type Plan = {
   updatedAt: string;
 };
 
+/**
+ * The plan fields the browser needs. Paystack's plan object also lists every
+ * subscription on the plan (other customers' subscription codes, email
+ * tokens and authorization ids), which must never reach a client.
+ */
+export function toPublicPlan(plan: {
+  id: number;
+  name: string;
+  plan_code: string;
+  amount: number;
+  interval: string;
+  currency: string;
+  description?: string;
+}) {
+  return {
+    id: plan.id,
+    name: plan.name,
+    plan_code: plan.plan_code,
+    amount: plan.amount,
+    interval: plan.interval,
+    currency: plan.currency,
+    description: plan.description,
+  };
+}
+
 export async function initiateSubscription(
   userId: string,
   email: string,
   planId: keyof typeof SUBSCRIPTION_PLANS
 ) {
-  const selectedPlan = SUBSCRIPTION_PLANS[planId];
-  if (!selectedPlan)
+  if (!isPlanId(planId))
     throw new ValidationError({ planId: "Invalid subscription plan" });
+  const selectedPlan = SUBSCRIPTION_PLANS[planId];
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
   await logPaystackEnvironment(isLive);
 
   const reference = `SURFBOARD_SUB_${isLive ? "live" : "test"}_${Date.now()}_${userId}`;
@@ -73,7 +109,7 @@ export async function initiateSubscription(
     // produced a 100x-inflated charge (₦50,000 -> ₦5,000,000) — reproduced
     // live in production. selectedPlan.amount is the real naira price.
     amount: selectedPlan.amount,
-    plan,
+    plan: toPublicPlan(plan),
     currency: "NGN",
     userId,
     metadata: {
@@ -125,14 +161,16 @@ export async function initiateOneTimeSubscription(
   email: string,
   planId: keyof typeof SUBSCRIPTION_PLANS
 ) {
-  const selectedPlan = SUBSCRIPTION_PLANS[planId];
-  if (!selectedPlan)
+  if (!isPlanId(planId))
     throw new ValidationError({ planId: "Invalid subscription plan" });
+  const selectedPlan = SUBSCRIPTION_PLANS[planId];
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
   await logPaystackEnvironment(isLive);
 
-  const reference = `SURFBOARD_ONETIME_SUB_${isLive ? "live" : "test"}_${Date.now()}_${userId}`;
+  // The trailing user id is what binds the reference to this account when the
+  // payment is later verified (see oneTimePayment.ts).
+  const reference = buildOneTimeReference(isLive, userId);
   const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
 
   // No server-side `paystack.transaction.initialize()` call — see
@@ -143,7 +181,7 @@ export async function initiateOneTimeSubscription(
     email,
     // See initiateSubscription's identical comment — same 100x-inflation bug.
     amount: selectedPlan.amount,
-    plan,
+    plan: toPublicPlan(plan),
     currency: "NGN",
     userId,
     metadata: {
@@ -228,7 +266,18 @@ export async function getOrCreatePaystackPlan(
 }
 
 export async function verifySubscription(userId: string, reference: string) {
-  const isLive = process.env.NODE_ENV === "production";
+  // Only credit a reference this account's own checkout created. Without
+  // this, any signed-in user could submit another customer's reference (it
+  // appears in receipts and the webhook ledger) and take the subscription.
+  if (userIdFromSubscriptionReference(reference) !== userId) {
+    throw new ApiError(
+      403,
+      "REFERENCE_NOT_ISSUED_TO_USER",
+      "This payment reference was not issued to your account"
+    );
+  }
+
+  const isLive = isPaystackLive();
   const paystack = await createPaystackInstance(isLive);
 
   const verification: any = await paystack.transaction.verify({ reference });
@@ -301,20 +350,28 @@ export async function verifySubscription(userId: string, reference: string) {
 /**
  * Counterpart to verifySubscription for a one-time (no-`plan`) payment —
  * Paystack's verify response has no plan_object/subscription for these, so
- * this doesn't try to read one. planId is passed in by the caller (the
- * client already knows which plan it initiated payment for) rather than
- * round-tripped through Paystack metadata.
+ * this doesn't try to read one.
+ *
+ * `planId` and `reference` are CLAIMS from the browser (the checkout is
+ * popup-driven, so the client picks the amount, the metadata and the
+ * reference). They are only honoured once Paystack's own record of the
+ * transaction backs them up: the reference was issued to this account, was
+ * paid in full in NGN for the claimed plan, and has not already been applied.
  */
 export async function verifyOneTimeSubscription(
   userId: string,
   reference: string,
-  planId: keyof typeof SUBSCRIPTION_PLANS
+  planId: string
 ) {
-  const selectedPlan = SUBSCRIPTION_PLANS[planId];
-  if (!selectedPlan)
+  if (!isPlanId(planId))
     throw new ValidationError({ planId: "Invalid subscription plan" });
 
-  const isLive = process.env.NODE_ENV === "production";
+  // Refuse a reference that wasn't issued to this account before spending a
+  // Paystack API call on it.
+  const early = findOneTimeReferenceProblem({ planId, userId, reference });
+  if (early) throw new ApiError(403, early.code, early.message);
+
+  const isLive = isPaystackLive();
   const paystack = await createPaystackInstance(isLive);
 
   const verification: any = await paystack.transaction.verify({ reference });
@@ -326,27 +383,52 @@ export async function verifyOneTimeSubscription(
   }
 
   const { data } = verification;
-  const customerId = data.customer.id;
-  const customerCode = data.customer.customer_code;
-  const authorization = data.authorization?.authorization_code ?? "";
-  const paidAt = data.paid_at;
-
-  const sub = await createOrUpdateSubscription({
+  const problem = findOneTimePaymentProblem({
+    planId,
     userId,
     reference,
-    subCode: "",
-    emailToken: "",
+    transaction: data,
+  });
+  if (problem) {
+    console.error("[verifyOneTimeSubscription] payment rejected", {
+      userId,
+      reference,
+      planId,
+      code: problem.code,
+      paidKobo: data.amount,
+      currency: data.currency,
+    });
+    throw new ApiError(
+      400,
+      problem.code,
+      `${problem.message}. It was not applied — contact support with reference ${reference}.`
+    );
+  }
+
+  const result = await applyOneTimeSubscriptionPayment({
+    userId,
+    reference,
     planId,
-    customerCode,
-    customerId: String(customerId),
-    authorization,
-    status: "active",
-    paidAt,
-    skipHistory: true,
-    provider: "paystack_onetime",
+    customerCode: data.customer.customer_code,
+    customerId: String(data.customer.id),
+    authorization: data.authorization?.authorization_code ?? "",
+    paidAt: data.paid_at,
   });
 
-  return { planName: sub.planName, subscription: sub };
+  if (result.status === "used_by_another_account") {
+    throw new ApiError(
+      409,
+      "PAYMENT_ALREADY_USED",
+      "This payment has already been applied to another account."
+    );
+  }
+
+  // `already_applied`: a repeat of a payment that was already credited (a
+  // double-click, or the webhook got here first) — success, nothing changes.
+  return {
+    planName: result.subscription?.planName ?? SUBSCRIPTION_PLANS[planId].name,
+    subscription: result.subscription,
+  };
 }
 
 export async function disableSubscription(userId: string): Promise<{

@@ -1,6 +1,7 @@
 // src/lib/email.ts
 import nodemailer from "nodemailer";
 import type { GBCCertificateTicket } from "@/gbc/components/certificates/types";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 // Create Zoho SMTP transporter - using same config as working email utility
 const transporter = nodemailer.createTransport({
@@ -207,9 +208,7 @@ function generateGBCTicketEmailHTML(data: GBCTicketEmailData): string {
       </ul>
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${
-          process.env.NEXT_PUBLIC_APP_URL
-        }" class="button">Visit Conference Website</a>
+        <a href="${getSiteUrl()}" class="button">Visit Conference Website</a>
       </div>
 
       <p>Looking forward to seeing you at GBC 2.0!</p>

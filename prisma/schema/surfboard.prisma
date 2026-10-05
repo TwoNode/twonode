@@ -154,7 +154,7 @@ model SubscriptionHistory {
   startDate       DateTime?
   endDate         DateTime?
   status          String // 'active' | 'past_due' | 'canceled'
-  eventType       String // "subscription.create", "subscription.disable", "invoice.success", etc.
+  eventType       String // payments: "subscription.create" | "subscription.success" (keyed by transaction reference); lifecycle: "subscription.synced", "subscription.disable", "invoice.payment_failed", etc.
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

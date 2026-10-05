@@ -1,6 +1,6 @@
 # Twonodes Architecture Rebuild — Progress Tracker
 
-Last Updated: 2026-09-24
+Last Updated: 2026-10-04
 
 See also: `docs/development-history/route-inventory.md` — the full list of every route (pages + API) across all three products, kept current as each phase renames/adds/retires routes.
 
@@ -129,6 +129,37 @@ Not yet done: the rest of Phase 10's public-site scope (main corporate
 site, GBC/REVA public sites, the remaining Surfboard public pages
 including `/surfboardplan/[id]`) is still fully open — only the Surfboard
 homepage itself is resolved.
+
+---
+
+## Work log, 2026-09-27 → 2026-10-04 (outside phase tracking)
+
+Everything below is merged to `dev` unless noted; commit/PR numbers are from `git log`. Behaviour is documented in the per-topic docs linked on each line, not repeated here.
+
+- **TwoNode `/v2` marketing site scaffolded** (2026-09-28, `41152a79`) — a redesigned corporate site under `app/v2` with its own root layout, alongside the existing `(main)` site. [`pages/main-site.md`](../pages/main-site.md).
+- **Surfboard one-time (non-recurring) subscription** ([#185](https://github.com/roji-tech/twonodes/pull/185), 2026-09-28) so Bank Transfer works; followed by the 100× price hotfix ([#202](https://github.com/roji-tech/twonodes/pull/202)/[#203](https://github.com/roji-tech/twonodes/pull/203)) and the "Duplicate Transaction Reference" fix ([#194](https://github.com/roji-tech/twonodes/pull/194)). [`payment/subscription-payments-flow.md`](../payment/subscription-payments-flow.md) §2.B–C.
+- **Subscription gate loosened + enforced where it matters** (2026-09-29, `715d73ec`) — a lapsed subscription now blocks only capability actions (create/edit/share, QR); reading shared and own plans stays open.
+- **Shared Access, per-plan Comments, private attachments** (2026-09-29/30) — email-invite sharing with immediate access, Plans-page filters/badges, a dashboard Shared Access card, a shared discussion thread per plan, and private per-viewer attachments uploaded direct to S3. [`functions/surfboard.md`](../functions/surfboard.md), [`components/surfboard.md`](../components/surfboard.md).
+- **Facilitator dashboard rearranged** ([#197](https://github.com/roji-tech/twonodes/pull/197)) — Plan Health card and analytics breakdown; survey-date filter fixed.
+- **GBC navbar edition switcher** wired to every admin page with an "All editions" option ([#196](https://github.com/roji-tech/twonodes/pull/196)).
+- **Real error boundaries** for each root-layout group (2026-09-29, `3fea6f9e`).
+- **Email-verification enforcement** ([#231](https://github.com/roji-tech/twonodes/pull/231), rollout fixes [#236](https://github.com/roji-tech/twonodes/pull/236)) — per-platform superadmin setting (off by default), OTP or link, grace period for existing accounts, `VerifyEmailGate`/`VerificationNagBanner`. [`auth/technical.md`](../auth/technical.md) §1.8.
+- **OTP/link-first registration** ([#237](https://github.com/roji-tech/twonodes/pull/237)) — no user row until the emailed secret is confirmed. [`auth/technical.md`](../auth/technical.md) §1.7.
+- **Migration history squashed to a single baseline, `0_init`** ([#238](https://github.com/roji-tech/twonodes/pull/238), 2026-10-01). Existing databases need `prisma migrate resolve --applied 0_init` once. [`DEPLOYMENT.md`](../DEPLOYMENT.md).
+- **Notification email redesign** (2026-10-02, `4f08b23c`) — one clean TwoNode/Surfboard branded template for notification, reminder and access-pass emails; Prisma `connection_limit` raised to 7.
+- **Auth hardening** ([#256](https://github.com/roji-tech/twonodes/pull/256), 2026-10-04) — single-flight client refresh manager + 401 retry interceptor, atomic OTP/refresh handling, signature-verified logout, CSRF/rate-limit tightening; promoted `dev` → `main` → `prod` ([#258](https://github.com/roji-tech/twonodes/pull/258)). Also fixed the stale analytics test and the old "empty admin sidebar on native login" gap (now resolved, `auth/technical.md` §9.3).
+- **Docs refresh** (2026-10-04) — `development-history/route-inventory.md` is now generated from the code (`npm run docs:routes`, 267 API routes + 145 pages); auth, payment (known gaps), deployment (migrations/cron), functions, components and pages docs brought up to date; new evaluations: [`surfboard/association-subscription.md`](../surfboard/association-subscription.md), [`mobile/surfboard-mobile-app-evaluation.md`](../mobile/surfboard-mobile-app-evaluation.md), [`integrations/nigeria-postcode-api.md`](../integrations/nigeria-postcode-api.md) (all proposals/research — nothing implemented).
+
+**Found by the docs refresh, and what became of it (2026-10-05):**
+
+- One-time subscription verification didn't bind amount/reference → fixed in [#262](https://github.com/roji-tech/twonodes/pull/262).
+- The webhook ledger swallowed Paystack's retries (and the CoD handler swallowed its own errors) → fixed in [#261](https://github.com/roji-tech/twonodes/pull/261).
+- Individual payments replaced the subscription period instead of adding to it; `addMonths` overflowed month-ends (31 Jan + 1 month = 3 Mar); verify-path history amounts were 100× → fixed in [#263](https://github.com/roji-tech/twonodes/pull/263) (includes #262). Needs one staging check — see the PR.
+- `verifyEmailOtp`'s attempt cap wasn't atomic and `verify-email-otp` accepted an unauthenticated `userId` → fixed in [#260](https://github.com/roji-tech/twonodes/pull/260), plus a per-account attempt limiter.
+- Still open: the web map loads tile sources that aren't licensed for this use; `npm run prisma:check` points at a schema path that no longer exists; verification re-issues the session with a hard-coded 30-day refresh lifetime; whether the production `SubscriptionHistory` has any 100× rows from the old verify path is unchecked (none in the staging database).
+- **Staging in Paystack test mode** ([#271](https://github.com/roji-tech/twonodes/pull/271), 2026-10-05): a Vercel preview now uses the test keys (`isPaystackLive()`), so staging no longer charges real cards. Setup is in `payment/paystack-configuration.md`.
+- **Webhook recognition in test mode** ([#278](https://github.com/roji-tech/twonodes/pull/278)): found by paying on staging — a first recurring charge's `subscription.create` and `charge.success` were marked `ok` but credited nothing, because the handlers matched live-only plan codes from env vars and read only `metadata.platform` (Paystack puts it in `custom_fields`). Plan names and `custom_fields` are now used.
+- **Verified on staging with real test-mode popups (2026-10-05):** a one-time payment (account active, one kobo-denominated history row, browser verify and webhook credit it once); an early repeat one-time payment (period end moved 5 Nov → 5 Dec: remaining days carried over; replaying the reference added nothing). A recurring first charge with the browser's verify call blocked (as if the tab closed): the `charge.success` webhook alone made the account active for one period and wrote one `subscription.success` history row, after #278. `Subscription.subCode` stays empty until a `subscription.create` event arrives; Paystack did not send one for this customer, who already had a subscription on that plan.
 
 ---
 

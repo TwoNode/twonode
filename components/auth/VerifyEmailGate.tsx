@@ -51,7 +51,6 @@ export function VerifyEmailGate({
   const [email, setEmail] = useState<string>(
     initialEmail || searchParams?.get("email") || ""
   );
-  const [userId, setUserId] = useState<string | null>(null);
   const [method, setMethod] = useState<"OTP" | "LINK">(initialMethod || "OTP");
   const [isAlreadyVerified, setIsAlreadyVerified] = useState(false);
   const [isUnauthenticated, setIsUnauthenticated] = useState(false);
@@ -88,7 +87,6 @@ export function VerifyEmailGate({
         if (result.success && result.data) {
           const user = result.data;
           setEmail(user.email);
-          setUserId(user.id);
           setMethod(user.verificationMethod);
           if (user.emailVerified) {
             setIsAlreadyVerified(true);
@@ -197,11 +195,7 @@ export function VerifyEmailGate({
       setErrorMessage(null);
 
       try {
-        const result = await verifyEmailOtp({
-          platform,
-          code: fullCode,
-          ...(userId ? { userId } : {}),
-        });
+        const result = await verifyEmailOtp({ platform, code: fullCode });
 
         if (!result.success) {
           setErrorMessage(
@@ -225,7 +219,7 @@ export function VerifyEmailGate({
         setSubmittingOtp(false);
       }
     },
-    [otp, platform, userId, dashboardHref, router]
+    [otp, platform, dashboardHref, router]
   );
 
   // Auto-submit OTP when 6th digit entered
@@ -331,7 +325,7 @@ export function VerifyEmailGate({
               router.push(dashboardHref);
               router.refresh();
             }}
-            className="w-full py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition flex items-center justify-center gap-2"
+            className="w-full py-3 h-auto text-white dark:text-white rounded-lg font-semibold shadow hover:opacity-90 transition flex items-center justify-center gap-2"
             style={{ background: `linear-gradient(90deg, ${dark}, ${accent})` }}
           >
             Go to Dashboard <ArrowRight className="h-4 w-4" />
@@ -354,7 +348,7 @@ export function VerifyEmailGate({
           </p>
           <Link href={loginHref} className="w-full">
             <Button
-              className="w-full py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
+              className="w-full py-3 h-auto text-white dark:text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
               style={{
                 background: `linear-gradient(90deg, ${dark}, ${accent})`,
               }}
@@ -452,7 +446,7 @@ export function VerifyEmailGate({
                 <Button
                   onClick={() => handleSubmitOtp()}
                   disabled={submittingOtp || otp.join("").length !== 6}
-                  className="w-full py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 h-auto text-white dark:text-white rounded-lg font-semibold shadow hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2"
                   style={{
                     background: `linear-gradient(90deg, ${dark}, ${accent})`,
                   }}
@@ -548,7 +542,7 @@ export function VerifyEmailGate({
               <Button
                 onClick={handleCheckLinkVerified}
                 disabled={checkingLinkStatus}
-                className="w-full py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition flex items-center justify-center gap-2"
+                className="w-full py-3 h-auto text-white dark:text-white rounded-lg font-semibold shadow hover:opacity-90 transition flex items-center justify-center gap-2"
                 style={{
                   background: `linear-gradient(90deg, ${dark}, ${accent})`,
                 }}

@@ -3,9 +3,13 @@ import {
   SUBSCRIPTION_PLANS,
   type PlanId,
 } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
-import { computePeriodPerTimestamp } from "@/app/(projects)/(surfboard)/utils/computePeriod";
+import {
+  computeExtendedPeriod,
+  type SubscriptionInterval,
+} from "@/app/(projects)/(surfboard)/utils/computePeriod";
 import { getOrCreatePaystackPlan } from "@/surfboard/services/paystackSubscriptionService";
-import { SubscriptionRequiredError } from "@/lib/api/errors";
+import { ApiError, SubscriptionRequiredError } from "@/lib/api/errors";
+import { isPaystackLive } from "@/lib/paystackMode";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/subscriptionActions.ts.
@@ -87,21 +91,164 @@ export async function getUserAndActiveSub(userId: string) {
   return { subscription: sub };
 }
 
-export async function createOrUpdateSubscription({
-  userId,
-  planId,
-  reference,
-  subCode,
-  customerCode,
-  customerId,
-  authorization,
-  emailToken,
-  paidAt,
-  nextPaymentDate,
-  status = "active",
-  skipHistory,
-  provider = "paystack",
-}: {
+/** What the history ledger calls a payment that bought time. Both are matched when looking for "has this payment already been applied?". */
+export type PaymentEventType = "subscription.create" | "subscription.success";
+const PAYMENT_EVENT_TYPES: PaymentEventType[] = [
+  "subscription.create",
+  "subscription.success",
+];
+
+export type PaymentRowFields = {
+  provider?: string;
+  status: string;
+  planCode?: string;
+  planName?: string;
+  interval?: string;
+  /** Kobo. */
+  amountKobo?: number;
+  currency?: string;
+  email?: string | null;
+  customerCode?: string | null;
+  customerId?: string | null;
+  authorization?: string | null;
+  emailToken?: string | null;
+  subCode?: string | null;
+  /** What Paystack says the next charge is; defaults to the end of the period bought. */
+  nextPaymentDate?: Date | null;
+};
+
+export type ApplyPaymentResult = {
+  status: "applied" | "already_applied" | "used_by_another_account";
+  subscription: Awaited<ReturnType<typeof prisma.subscription.upsert>> | null;
+};
+
+/**
+ * THE one place a payment buys subscription time. Every path that credits a
+ * payment — the client's verify call, the Paystack webhook for a renewal, a
+ * one-time payment — goes through here, so they all behave the same:
+ *
+ * - **Purchases add.** The period is computeExtendedPeriod's: a payment made
+ *   while paid time remains starts when that time ends instead of replacing
+ *   it, so no paid days are lost (whoever pays, whenever).
+ * - **A payment is applied at most once.** Its Paystack `reference` is the
+ *   key, recorded in SubscriptionHistory (the ledger). The verify call and the
+ *   webhook both fire for the same payment, and with additive periods a
+ *   second application would double-credit, so a reference already in the
+ *   ledger is a no-op for the same user and refused for another one.
+ * - **Concurrent payments can't corrupt each other.** One transaction holds
+ *   an advisory lock on the reference (the two paths for ONE payment run
+ *   one after the other, the second seeing the first's ledger row) and on the
+ *   user (two DIFFERENT payments for one account can't both read the same
+ *   `currentEnd` and each extend from it). Locks are taken in that fixed
+ *   order, so they can't deadlock.
+ */
+export async function applyPaymentPeriod(args: {
+  userId: string;
+  reference: string;
+  eventType: PaymentEventType;
+  paidAt: Date;
+  /** The interval that decides how much time this payment buys. */
+  periodInterval: SubscriptionInterval;
+  row: PaymentRowFields;
+}): Promise<ApplyPaymentResult> {
+  const { userId, reference, eventType, periodInterval, row } = args;
+  const paidAt = Number.isNaN(args.paidAt.getTime()) ? new Date() : args.paidAt;
+
+  return prisma.$transaction(
+    async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`subscription-payment-ref:${reference}`}))`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`subscription-payment-user:${userId}`}))`;
+
+      const prior = await tx.subscriptionHistory.findFirst({
+        where: { reference, eventType: { in: PAYMENT_EVENT_TYPES } },
+        select: { userId: true },
+      });
+      if (prior && prior.userId !== userId) {
+        return { status: "used_by_another_account", subscription: null };
+      }
+      if (prior) {
+        const subscription = await tx.subscription.findUnique({
+          where: { userId },
+        });
+        return { status: "already_applied", subscription };
+      }
+
+      const existing = await tx.subscription.findUnique({ where: { userId } });
+      const period = computeExtendedPeriod(periodInterval, paidAt, existing);
+      const now = new Date();
+      const nextPaymentDate = row.nextPaymentDate ?? period.nextCharge;
+
+      const subscription = await tx.subscription.upsert({
+        where: { userId },
+        update: {
+          status: row.status,
+          provider: row.provider,
+          planCode: row.planCode,
+          planName: row.planName,
+          interval: row.interval,
+          amount: row.amountKobo,
+          currency: row.currency,
+          email: row.email ?? undefined,
+          customerCode: row.customerCode ?? undefined,
+          customerId: row.customerId ?? undefined,
+          authorization: row.authorization ?? undefined,
+          emailToken: row.emailToken ?? undefined,
+          subCode: row.subCode || undefined,
+          currentStart: period.currentStart,
+          currentEnd: period.currentEnd,
+          nextPaymentDate,
+          cancelledAt: row.status === "canceled" ? now : null,
+          updatedAt: now,
+        },
+        create: {
+          userId,
+          provider: row.provider ?? "paystack",
+          email: row.email ?? null,
+          subCode: row.subCode || "",
+          planCode: row.planCode ?? "",
+          planName: row.planName ?? "",
+          interval: row.interval ?? periodInterval,
+          amount: row.amountKobo ?? 0,
+          status: row.status,
+          currency: row.currency ?? "NGN",
+          customerCode: row.customerCode ?? null,
+          customerId: row.customerId ?? null,
+          authorization: row.authorization ?? null,
+          emailToken: row.emailToken ?? null,
+          currentStart: period.currentStart,
+          currentEnd: period.currentEnd,
+          nextPaymentDate,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+
+      await tx.subscriptionHistory.create({
+        data: {
+          userId,
+          reference,
+          planCode: subscription.planCode,
+          planName: subscription.planName,
+          amount: row.amountKobo ?? subscription.amount,
+          interval: subscription.interval,
+          status: "active",
+          eventType,
+          startDate: period.windowStart,
+          endDate: period.currentEnd,
+          lastPaymentDate: paidAt,
+        },
+      });
+
+      return { status: "applied", subscription };
+    },
+    // Two lock waits plus a handful of queries; Prisma's 5s default is tight
+    // when a verify call and a webhook for the same payment queue behind each
+    // other.
+    { maxWait: 10_000, timeout: 20_000 }
+  ) as Promise<ApplyPaymentResult>;
+}
+
+type PlanPayment = {
   userId: string;
   planId: PlanId;
   reference: string;
@@ -113,91 +260,106 @@ export async function createOrUpdateSubscription({
   status?: string;
   paidAt?: string | Date;
   nextPaymentDate?: string | Date;
-  skipHistory?: boolean;
   /** "paystack" (default, recurring — has a real Paystack subscription object) or "paystack_onetime" (one-off payment, no auto-renew, no subscription object to look up/disable). */
   provider?: string;
-}) {
+};
+
+/** Resolves the Paystack plan for `planId`, then credits the payment through applyPaymentPeriod. */
+async function applyPlanPayment({
+  userId,
+  planId,
+  reference,
+  subCode,
+  customerCode,
+  customerId,
+  authorization,
+  emailToken,
+  paidAt,
+  nextPaymentDate,
+  status = "active",
+  provider = "paystack",
+}: PlanPayment): Promise<ApplyPaymentResult> {
   const selectedPlan = SUBSCRIPTION_PLANS[planId];
   if (!selectedPlan) throw new Error("Invalid subscription plan");
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
   const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
 
-  const now = new Date();
-  const paidDate = paidAt ? new Date(paidAt) : now;
-
-  const { currentStart, currentEnd, nextCharge } = computePeriodPerTimestamp(
-    plan.interval,
-    paidDate
-  );
-  const _nextPaymentDate = nextPaymentDate
-    ? new Date(nextPaymentDate)
-    : nextCharge;
-
-  const sub = await prisma.subscription.upsert({
-    where: { userId },
-    update: {
+  return applyPaymentPeriod({
+    userId,
+    reference,
+    eventType: "subscription.create",
+    paidAt: paidAt ? new Date(paidAt) : new Date(),
+    periodInterval: plan.interval,
+    row: {
       status,
       provider,
       planCode: plan.plan_code,
       planName: plan.name,
       interval: plan.interval,
-      amount: plan.amount,
+      // Paystack's Plan API amount is already kobo.
+      amountKobo: plan.amount,
       currency: "NGN",
       customerCode,
       customerId,
       authorization,
       emailToken,
-      subCode: subCode || undefined,
-      currentStart,
-      currentEnd,
-      nextPaymentDate: _nextPaymentDate,
-      cancelledAt: status === "canceled" ? now : null,
-      updatedAt: now,
-    },
-    create: {
-      userId,
-      provider,
-      subCode: subCode || "",
-      planCode: plan.plan_code,
-      planName: plan.name,
-      interval: plan.interval,
-      amount: plan.amount,
-      status,
-      currency: plan.currency,
-      customerCode,
-      customerId,
-      authorization,
-      emailToken,
-      currentStart,
-      currentEnd,
-      nextPaymentDate: _nextPaymentDate,
-      createdAt: now,
-      updatedAt: now,
+      subCode,
+      nextPaymentDate: nextPaymentDate ? new Date(nextPaymentDate) : undefined,
     },
   });
+}
 
-  const historyExists = await prisma.subscriptionHistory.findFirst({
-    where: { userId, reference, eventType: "subscription.create" },
-  });
-
-  if (!historyExists && !skipHistory) {
-    await prisma.subscriptionHistory.create({
-      data: {
-        userId,
-        reference,
-        planCode: plan.plan_code,
-        planName: plan.name,
-        amount: plan.amount * 100,
-        interval: plan.interval,
-        status: "active",
-        eventType: "subscription.create",
-        startDate: currentStart,
-        endDate: currentEnd,
-        lastPaymentDate: paidDate,
-      },
-    });
+export async function createOrUpdateSubscription(
+  args: PlanPayment & {
+    /** @deprecated Ignored. The ledger row is what makes a payment apply once; it is no longer optional. */
+    skipHistory?: boolean;
   }
+) {
+  const result = await applyPlanPayment(args);
 
-  return sub;
+  if (result.status === "used_by_another_account") {
+    throw new ApiError(
+      409,
+      "PAYMENT_ALREADY_USED",
+      "This payment has already been applied to another account."
+    );
+  }
+  // `already_applied`: a repeat of a payment that was already credited (the
+  // verify call and the webhook both run for every payment) — nothing changes.
+  return result.subscription!;
+}
+
+/**
+ * What applying a VERIFIED one-time payment did. `used_by_another_account`
+ * and `already_applied` are reported rather than thrown so the verify call
+ * and the webhook can each answer in their own way.
+ */
+export type OneTimeApplyResult = ApplyPaymentResult;
+
+/**
+ * Applies a VERIFIED one-time payment (the caller has already checked amount,
+ * currency and reference ownership — see oneTimePayment.ts). Credits it
+ * through applyPaymentPeriod, so it is added to any paid time that remains and
+ * applied at most once: a reference already credited to this user is a no-op
+ * (a replay, or the late webhook for a payment the verify call already
+ * handled, can't rewrite a period a newer payment has since set) and one
+ * credited to a DIFFERENT user is refused.
+ */
+export async function applyOneTimeSubscriptionPayment(args: {
+  userId: string;
+  reference: string;
+  planId: PlanId;
+  customerCode: string;
+  customerId: string;
+  authorization: string;
+  paidAt?: string | Date;
+}): Promise<OneTimeApplyResult> {
+  return applyPlanPayment({
+    ...args,
+    subCode: "",
+    emailToken: "",
+    status: "active",
+    provider: "paystack_onetime",
+  });
 }

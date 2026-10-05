@@ -8,7 +8,9 @@ import { NotFoundError } from "@/lib/api/errors";
 import { initiateSubscription } from "@/surfboard/services/paystackSubscriptionService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
-const schema = z.object({ planId: z.string().min(1) });
+const schema = z.object({
+  planId: z.enum(["monthly", "quarterly", "annually"]),
+});
 
 export const POST = withAuth<SurfboardRole>(
   async (req, ctx) => {
@@ -28,7 +30,7 @@ export const POST = withAuth<SurfboardRole>(
     const data = await initiateSubscription(
       ctx.session.sub,
       user.email,
-      planId as any
+      planId
     );
     return NextResponse.json({ success: true, data });
   },
