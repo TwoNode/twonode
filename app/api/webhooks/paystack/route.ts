@@ -3,6 +3,7 @@ import { getPaystackSecret } from "@/lib/paystackMode";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import * as mailer from "@/utils/email";
+import { findPaidAmountProblem, nairaToKobo } from "@/lib/paystackVerification";
 import {
   updatePropertyTransactionStatus,
   updateOneTimeTransactionStatus,
@@ -938,11 +939,10 @@ async function onInvoiceInformational(event: string, data: InvoiceData) {
  *    optional-chained call silently no-op on a missing function — a real
  *    misconfiguration (e.g. a bad import) now surfaces as a thrown error
  *    the outer handler logs and Paystack retries, not silence.
- *  - Reconciles the paid amount against the record's totalCost the same
- *    way onCertificatePaymentSuccess already does for Surfboard — logs a
- *    mismatch rather than failing, since Paystack's signature already
- *    guarantees the payload is authentic and a stuck payer is worse than
- *    a flagged-for-review one.
+ *  - Reconciles the paid amount against the record's totalCost. A shortfall
+ *    (or a non-NGN payment) is rejected, not confirmed: the signature proves
+ *    the payload is authentic, not that the amount is right, and the amount
+ *    was chosen by the payer's browser when the request was created.
  *  - Passes the already-updated row straight into notifyPaymentReceived
  *    instead of the source's separate re-fetch call.
  */
@@ -982,16 +982,18 @@ export async function handleReva(event: string, data: ChargeSuccessData) {
     return;
   }
 
-  const expectedKobo = Math.round((existing.totalCost ?? 0) * 100);
-  const paidKobo = data.amount ?? 0;
-  if (Math.abs(expectedKobo - paidKobo) > 1) {
-    console.error(`[reva-webhook] amount mismatch for ${reference}`, {
-      expectedKobo,
-      paidKobo,
-    });
-    // Log but don't fail — matches onCertificatePaymentSuccess's own choice
-    // for the same situation: still confirm the payment for manual review
-    // rather than leaving a real payer stuck.
+  const expectedKobo = nairaToKobo(existing.totalCost);
+  const problem = findPaidAmountProblem({
+    paidKobo: data.amount,
+    currency: data.currency,
+    expectedKobo,
+  });
+  if (problem) {
+    // Permanent: a retry would carry the same amount. Recorded as `rejected`
+    // and acknowledged; the request stays unpaid for an admin to review.
+    throw new WebhookRejection(
+      `[reva-webhook] ${reference} not confirmed: ${problem}`
+    );
   }
 
   const updated = isAuthenticated
@@ -1064,7 +1066,8 @@ export async function handleGBC(event: string, data: ChargeSuccessData) {
 }
 
 // ─────────────────────────── Certificate of Deposit (one-time) ───────────────────────────
-async function onCertificatePaymentSuccess(data: ChargeSuccessData) {
+/** Exported for direct unit testing (see app/api/webhooks/__tests__/). */
+export async function onCertificatePaymentSuccess(data: ChargeSuccessData) {
   if (!prisma) return;
 
   const reference = extractBatchReference(data);
@@ -1104,21 +1107,19 @@ async function onCertificatePaymentSuccess(data: ChargeSuccessData) {
 
     // Verify payment amount matches (with tolerance for rounding)
     // Database stores amount in NAIRA, Paystack sends in KOBO
-    const expectedAmountKobo = Math.trunc(batch.totalAmount * 100);
-    const paidAmountKobo = data.amount ?? 0;
-    const amountDiff = Math.abs(expectedAmountKobo - paidAmountKobo);
-
-    if (amountDiff > 1) {
-      // Allow 1 kobo difference for rounding
-      console.error("⚠️ Certificate payment amount mismatch:", {
-        reference,
-        batchCode: batch.batchCode,
-        expectedKobo: expectedAmountKobo,
-        paidKobo: paidAmountKobo,
-        differenceKobo: amountDiff,
-      });
-      // Log but don't fail - we still want to mark as paid for manual review
+    const problem = findPaidAmountProblem({
+      paidKobo: data.amount,
+      currency: data.currency,
+      expectedKobo: nairaToKobo(batch.totalAmount),
+    });
+    if (problem) {
+      // Permanent, so rejected rather than retried (see WebhookRejection).
+      // This throw sits inside the try below; it is rethrown untouched.
+      throw new WebhookRejection(
+        `[certificate-webhook] ${reference} (batch ${batch.batchCode}) not confirmed: ${problem}`
+      );
     }
+    const paidAmountKobo = data.amount ?? 0;
 
     // Update batch status
     const paidAt = data.paid_at ? new Date(data.paid_at) : new Date();
@@ -1136,6 +1137,7 @@ async function onCertificatePaymentSuccess(data: ChargeSuccessData) {
       } (₦${(paidAmountKobo / 100).toFixed(2)})`
     );
   } catch (error) {
+    if (error instanceof WebhookRejection) throw error;
     console.error(
       `❌ Error processing certificate payment for ${reference}:`,
       error

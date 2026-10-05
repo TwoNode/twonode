@@ -14,6 +14,7 @@ import {
   findOneTimePaymentProblem,
   findOneTimeReferenceProblem,
   isPlanId,
+  userIdFromSubscriptionReference,
 } from "@/surfboard/services/oneTimePayment";
 import { ApiError, NotFoundError, ValidationError } from "@/lib/api/errors";
 import { isPaystackLive } from "@/lib/paystackMode";
@@ -40,6 +41,31 @@ export type Plan = {
   createdAt: string;
   updatedAt: string;
 };
+
+/**
+ * The plan fields the browser needs. Paystack's plan object also lists every
+ * subscription on the plan (other customers' subscription codes, email
+ * tokens and authorization ids), which must never reach a client.
+ */
+export function toPublicPlan(plan: {
+  id: number;
+  name: string;
+  plan_code: string;
+  amount: number;
+  interval: string;
+  currency: string;
+  description?: string;
+}) {
+  return {
+    id: plan.id,
+    name: plan.name,
+    plan_code: plan.plan_code,
+    amount: plan.amount,
+    interval: plan.interval,
+    currency: plan.currency,
+    description: plan.description,
+  };
+}
 
 export async function initiateSubscription(
   userId: string,
@@ -83,7 +109,7 @@ export async function initiateSubscription(
     // produced a 100x-inflated charge (₦50,000 -> ₦5,000,000) — reproduced
     // live in production. selectedPlan.amount is the real naira price.
     amount: selectedPlan.amount,
-    plan,
+    plan: toPublicPlan(plan),
     currency: "NGN",
     userId,
     metadata: {
@@ -155,7 +181,7 @@ export async function initiateOneTimeSubscription(
     email,
     // See initiateSubscription's identical comment — same 100x-inflation bug.
     amount: selectedPlan.amount,
-    plan,
+    plan: toPublicPlan(plan),
     currency: "NGN",
     userId,
     metadata: {
@@ -240,6 +266,17 @@ export async function getOrCreatePaystackPlan(
 }
 
 export async function verifySubscription(userId: string, reference: string) {
+  // Only credit a reference this account's own checkout created. Without
+  // this, any signed-in user could submit another customer's reference (it
+  // appears in receipts and the webhook ledger) and take the subscription.
+  if (userIdFromSubscriptionReference(reference) !== userId) {
+    throw new ApiError(
+      403,
+      "REFERENCE_NOT_ISSUED_TO_USER",
+      "This payment reference was not issued to your account"
+    );
+  }
+
   const isLive = isPaystackLive();
   const paystack = await createPaystackInstance(isLive);
 

@@ -33,7 +33,8 @@ vi.mock("@/app/(projects)/(surfboard)/utils/computePeriod", () => ({
   computePeriodPerTimestamp: vi.fn(),
 }));
 
-const { handleReva } = await import("@/app/api/webhooks/paystack/route");
+const { handleReva, WebhookRejection } =
+  await import("@/app/api/webhooks/paystack/route");
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -172,31 +173,62 @@ describe("handleReva — authenticated (Property)", () => {
 });
 
 describe("handleReva — amount reconciliation", () => {
-  it("still confirms payment on an amount mismatch, matching onCertificatePaymentSuccess's own logged-not-failed policy", async () => {
+  const unpaid = (ref: string) => {
     mockPrisma.oneTimeUserProperty.findUnique.mockResolvedValue({
-      reference: "REVA_4",
+      reference: ref,
       totalCost: 50000,
       paymentStatus: "Unpaid",
     });
     mockUpdateOneTimeTransactionStatus.mockResolvedValue({
-      reference: "REVA_4",
+      reference: ref,
       totalCost: 50000,
       paymentStatus: "Paid",
     });
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  };
+
+  it("rejects an underpayment and leaves the request unpaid", async () => {
+    unpaid("REVA_4");
 
     // totalCost 50000 naira => expected 5,000,000 kobo; paid only 100 kobo
-    await handleReva("charge.success", {
-      reference: "REVA_4",
-      amount: 100,
-      metadata: {},
-    } as any);
+    await expect(
+      handleReva("charge.success", {
+        reference: "REVA_4",
+        amount: 100,
+        metadata: {},
+      } as any)
+    ).rejects.toBeInstanceOf(WebhookRejection);
 
-    expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("amount mismatch"),
-      expect.anything()
-    );
-    expect(mockUpdateOneTimeTransactionStatus).toHaveBeenCalled();
-    errorSpy.mockRestore();
+    expect(mockUpdateOneTimeTransactionStatus).not.toHaveBeenCalled();
+    expect(mockNotifyPaymentReceived).not.toHaveBeenCalled();
+  });
+
+  it("rejects a payment with no amount, and a non-NGN payment", async () => {
+    unpaid("REVA_5");
+    await expect(
+      handleReva("charge.success", { reference: "REVA_5", metadata: {} } as any)
+    ).rejects.toBeInstanceOf(WebhookRejection);
+    await expect(
+      handleReva("charge.success", {
+        reference: "REVA_5",
+        amount: 5_000_000,
+        currency: "USD",
+        metadata: {},
+      } as any)
+    ).rejects.toBeInstanceOf(WebhookRejection);
+    expect(mockUpdateOneTimeTransactionStatus).not.toHaveBeenCalled();
+  });
+
+  it("confirms an exact payment, within 1 kobo, and an overpayment", async () => {
+    for (const amount of [5_000_000, 4_999_999, 5_100_000]) {
+      vi.clearAllMocks();
+      unpaid("REVA_6");
+      await handleReva("charge.success", {
+        reference: "REVA_6",
+        amount,
+        currency: "NGN",
+        metadata: {},
+      } as any);
+      expect(mockUpdateOneTimeTransactionStatus).toHaveBeenCalledTimes(1);
+    }
   });
 });

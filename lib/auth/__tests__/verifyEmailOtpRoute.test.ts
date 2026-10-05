@@ -8,6 +8,7 @@ const mockRate = vi.hoisted(() => ({
 const mockSession = vi.hoisted(() => ({
   getServerSession: vi.fn(),
   issueSession: vi.fn(),
+  currentRefreshLifetimeSeconds: vi.fn(async () => 3600),
 }));
 const mockLookup = vi.hoisted(() => ({ findUserById: vi.fn() }));
 const mockOtp = vi.hoisted(() => ({ verifyEmailOtp: vi.fn() }));
@@ -138,7 +139,7 @@ describe("POST /verify-email-otp", () => {
       "me",
       "USER",
       "surfboard",
-      expect.any(Number),
+      3600, // the session's own remaining lifetime, not a fixed 30 days
       expect.objectContaining({ id: "me" })
     );
   });
