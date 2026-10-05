@@ -4,6 +4,7 @@ import {
   createPaystackInstance,
   getPaystackSecretForWebhook,
 } from "@/utils/paystackConfig";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 interface InitializePaymentParams {
   email: string;
@@ -190,7 +191,7 @@ export async function initializeTicketPayment(
   metadata?: Record<string, any>
 ) {
   const reference = generatePaymentReference(ticketNumber, ticketType);
-  const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/gbc/tickets/success?reference=${reference}`;
+  const callbackUrl = `${getSiteUrl()}/gbc/tickets/success?reference=${reference}`;
 
   return initializePayment({
     email,

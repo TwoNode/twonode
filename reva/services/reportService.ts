@@ -12,6 +12,7 @@ import {
 } from "@/reva/services/notificationService";
 import { writeAudit } from "@/lib/audit";
 import { Platform } from "@/utils/platform";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 /**
  * Migrated from reva-restricted/actions/adminDbActions.ts's report-review
@@ -312,9 +313,7 @@ export async function uploadDirectLinkReport(
         text: `Your due diligence report for request ${reference} is now available for download.`,
         html: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;"><h2 style="color: #4CAF50;">Your Due Diligence Report is Ready</h2><p>Dear ${
           existingRequest.requester || "Valued Customer"
-        },</p><p>Your due diligence report for request <strong>${reference}</strong> is now available for download.</p><p>You can download your report by clicking the link below:</p><p><a href="${
-          process.env.ONLINE_BASE_URL
-        }/reva/onetimerequest?reference=${reference}&email=${encodeURIComponent(
+        },</p><p>Your due diligence report for request <strong>${reference}</strong> is now available for download.</p><p>You can download your report by clicking the link below:</p><p><a href="${getSiteUrl()}/reva/onetimerequest?reference=${reference}&email=${encodeURIComponent(
           existingRequest.email
         )}" style="color: #1e40af; text-decoration: underline;">Download Report</a></p><p>Thank you for using our service.</p><p style="margin-top: 20px;">Best regards,</p><p><strong>REVA Team</strong></p></div>`,
       });
@@ -402,9 +401,7 @@ function reportMailTemplate(opts: {
     opts.title
   }!</h2><p style="margin: 8px 0 0; font-size: 16px;">Reference: #${opts.reference}</p></div><div style="padding: 24px; background-color: #f9fafb; color: #374151;">${
     opts.greeting
-  }<p>${opts.body}</p><div style="margin: 30px 0; text-align: center;"><a href="${
-    process.env.ONLINE_BASE_URL
-  }${opts.path}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #10b981; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">View Report</a></div><p style="font-size: 16px;">You can now view or download your report from the dashboard.</p><p style="font-size: 14px; color: #6b7280;">Thank you for using our platform.</p></div></div>`;
+  }<p>${opts.body}</p><div style="margin: 30px 0; text-align: center;"><a href="${getSiteUrl()}${opts.path}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #10b981; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">View Report</a></div><p style="font-size: 16px;">You can now view or download your report from the dashboard.</p><p style="font-size: 14px; color: #6b7280;">Thank you for using our platform.</p></div></div>`;
 }
 
 export async function approveDueDiligenceReport(

@@ -1,3 +1,5 @@
+import { getSiteUrl } from "@/lib/siteUrl";
+
 export const addBaseUrl = (url: string): string => {
   const baseUrl = process.env.BASE_URL;
   if (!baseUrl) {
@@ -16,7 +18,9 @@ export const addBaseUrl = (url: string): string => {
 export const getPaystackCallbackUrl = (url: string): string => {
   // For Paystack callbacks, we need to use the production URL even in development
   // because Paystack needs to reach our webhook endpoints
-  const callbackBaseUrl = process.env.BASE_URL || process.env.ONLINE_BASE_URL;
+  const callbackBaseUrl = process.env.BASE_URL
+    ? getSiteUrl()
+    : process.env.ONLINE_BASE_URL || getSiteUrl();
 
   if (!callbackBaseUrl) {
     throw new Error(

@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { sendMail } from "@/utils/email";
 import { sendWhatsAppSubscriptionExpiryReminder } from "@/lib/whatsapp";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 const REMINDER_WINDOW_DAYS = 3;
 
@@ -50,7 +51,7 @@ export async function sendExpiringSubscriptionReminders(): Promise<{
     );
 
     try {
-      const renewUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://surfboard.twonodes.com"}/surfboard/dashboard/subscription`;
+      const renewUrl = `${getSiteUrl()}/surfboard/dashboard/subscription`;
       await sendMail({
         to: sub.user.email,
         subject: `Your ${sub.planName} subscription is expiring soon`,
