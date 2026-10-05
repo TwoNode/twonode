@@ -106,7 +106,7 @@ export function ResetPasswordCard({
           </p>
           <Link href={loginHref}>
             <Button
-              className="px-6 py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
+              className="px-6 py-3 h-auto text-white dark:text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
               style={{
                 background: `linear-gradient(90deg, ${dark}, ${accent})`,
               }}
@@ -187,7 +187,7 @@ export function ResetPasswordCard({
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full px-6 py-3 h-auto text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
+              className="w-full px-6 py-3 h-auto text-white dark:text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
               style={{
                 background: `linear-gradient(90deg, ${dark}, ${accent})`,
               }}

@@ -325,7 +325,7 @@ export function VerifyEmailGate({
               router.push(dashboardHref);
               router.refresh();
             }}
-            className="w-full py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition flex items-center justify-center gap-2"
+            className="w-full py-3 h-auto text-white dark:text-white rounded-lg font-semibold shadow hover:opacity-90 transition flex items-center justify-center gap-2"
             style={{ background: `linear-gradient(90deg, ${dark}, ${accent})` }}
           >
             Go to Dashboard <ArrowRight className="h-4 w-4" />
@@ -348,7 +348,7 @@ export function VerifyEmailGate({
           </p>
           <Link href={loginHref} className="w-full">
             <Button
-              className="w-full py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
+              className="w-full py-3 h-auto text-white dark:text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
               style={{
                 background: `linear-gradient(90deg, ${dark}, ${accent})`,
               }}
@@ -446,7 +446,7 @@ export function VerifyEmailGate({
                 <Button
                   onClick={() => handleSubmitOtp()}
                   disabled={submittingOtp || otp.join("").length !== 6}
-                  className="w-full py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 h-auto text-white dark:text-white rounded-lg font-semibold shadow hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2"
                   style={{
                     background: `linear-gradient(90deg, ${dark}, ${accent})`,
                   }}
@@ -542,7 +542,7 @@ export function VerifyEmailGate({
               <Button
                 onClick={handleCheckLinkVerified}
                 disabled={checkingLinkStatus}
-                className="w-full py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition flex items-center justify-center gap-2"
+                className="w-full py-3 h-auto text-white dark:text-white rounded-lg font-semibold shadow hover:opacity-90 transition flex items-center justify-center gap-2"
                 style={{
                   background: `linear-gradient(90deg, ${dark}, ${accent})`,
                 }}

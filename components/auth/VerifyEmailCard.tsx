@@ -123,7 +123,7 @@ export function VerifyEmailCard({
           </p>
           <Link href={loginHref}>
             <Button
-              className="px-6 py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
+              className="px-6 py-3 h-auto text-white dark:text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
               style={{
                 background: `linear-gradient(90deg, ${dark}, ${accent})`,
               }}

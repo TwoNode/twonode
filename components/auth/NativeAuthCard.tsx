@@ -438,7 +438,7 @@ function NativeAuthCardInner({
                 type="button"
                 disabled={submittingOtp || otp.some((d) => !d)}
                 onClick={() => handleSubmitOtp()}
-                className="w-full px-6 py-3 h-auto text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
+                className="w-full px-6 py-3 h-auto text-white dark:text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
                 style={{
                   background: `linear-gradient(90deg, ${dark}, ${accent})`,
                 }}
@@ -589,7 +589,7 @@ function NativeAuthCardInner({
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full px-6 py-3 h-auto text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
+            className="w-full px-6 py-3 h-auto text-white dark:text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
             style={{ background: `linear-gradient(90deg, ${dark}, ${accent})` }}
           >
             {isSubmitting ? (
