@@ -20,6 +20,7 @@ import type { Property, OneTimeUserProperty } from "@/prisma/generated";
 import { notifyPaymentReceived } from "@/reva/services/notificationService";
 import { writeAudit } from "@/lib/audit";
 import { Platform } from "@/utils/platform";
+import { findUnpaidProblem, nairaToKobo } from "@/lib/paystackVerification";
 import { isPaystackLive } from "@/lib/paystackMode";
 
 /**
@@ -172,11 +173,11 @@ export async function checkPaymentSuccess(reference: string) {
     reference,
     existing.isLive
   );
-  if (!verification?.status) {
-    throw new ConflictError(
-      "Transaction verification failed or was unsuccessful"
-    );
-  }
+  const problem = findUnpaidProblem(verification, {
+    reference,
+    expectedKobo: nairaToKobo(existing.totalCost),
+  });
+  if (problem) throw new ConflictError(problem);
 
   const updated = await prisma.oneTimeUserProperty.update({
     where: { reference },
@@ -227,11 +228,11 @@ export async function authPaymentSuccessful(
     reference,
     existing.isLive
   );
-  if (!verification?.status) {
-    throw new ConflictError(
-      "Transaction verification failed or was unsuccessful"
-    );
-  }
+  const problem = findUnpaidProblem(verification, {
+    reference,
+    expectedKobo: nairaToKobo(existing.totalCost),
+  });
+  if (problem) throw new ConflictError(problem);
 
   const updated = await prisma.property.update({
     where: { reference },
