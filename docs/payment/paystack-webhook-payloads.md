@@ -61,13 +61,13 @@ GBC tickets (`STD_`/`REG_`/`EB_`/`CMP_GBC2_…`), Certificate of Deposit (`SurfC
 
 ## 4. Errors seen before #261
 
-20 `charge.success` rows ended `error`, all with the same message: `prisma.subscription.update() … No record was found for an update`. 16 of them were first-charge events (`SURFBOARD_SUB_…`). The old handler updated a subscription row that did not exist yet (the row used to be created only by `subscription.create` or the client's verify call). Since #263 the handler creates the row (`applyPaymentPeriod`), and since #261 a Paystack redelivery re-runs an `error` row. The other 4 carry GBC-style references and were not investigated.
+20 `charge.success` rows ended `error`, all with the same message: `prisma.subscription.update() … No record was found for an update`. 16 of them were first-charge events (`SURFBOARD_SUB_…`). The old handler updated a subscription row that did not exist yet (the row used to be created only by `subscription.create` or the client's verify call). Since #263 the handler creates the row (`applyPaymentPeriod`), and since #261 a Paystack redelivery re-runs an `error` row. The other 4 were GBC ticket payments (`REG_`/`EB_GBC2_…`, April 2026). Their `data.plan` is an empty object `{}` and their metadata has no `platform`, so before the GBC routing fix of 2026-05-07 they were handled as Surfboard subscription charges and failed the same way. No payment was lost: all 7 tickets behind them are `COMPLETED` (the success page confirms them). GBC payments now route to `handleGBC` by reference.
 
 Rows already stored as `error` are only re-run if Paystack sends them again; they are not retried by anything in this repo.
 
 ## 5. Gaps in this data
 
-- `subscription.create`, `subscription.disable` and `subscription.not_renew` do not appear in the ledger. Either Paystack is not sending them to this endpoint or the handler returns before recording them. Check the Paystack dashboard's webhook log before relying on them.
+- `subscription.create`, `subscription.disable` and `subscription.not_renew` do not appear in the ledger, and the route writes **every** signed event to the ledger before any handler or filter runs. So Paystack has never delivered them to this endpoint. Check which events the Paystack dashboard's webhook is subscribed to; until they are, the subscription handlers for those events are untested and a first charge is credited by `charge.success` and the browser's verify call alone.
 - No one-time payment (`SURFBOARD_ONETIME_SUB_…`) appears in the ledger, so the one-time webhook path added in #262 has not been exercised by real traffic yet.
 
 ## 6. Environments
