@@ -5,6 +5,7 @@ import { NotFoundError, ValidationError } from "@/lib/api/errors";
 import { writeAudit } from "@/lib/audit";
 import { Platform } from "@/utils/platform";
 import { requireActiveSubscription } from "@/surfboard/services/subscriptionService";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/qrEarningsActions.ts —
@@ -300,7 +301,7 @@ export async function verifyQRServicePayment(
       // Use the plan's UUID, not its plan number: plan numbers contain
       // slashes (e.g. "NNN/1457/A/004/2026/LA") which break the single
       // dynamic route segment at /surfboardplan/[id].
-      const accessUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://surfboard.twonodes.com"}/surfboardplan/${transaction.plan.id}?token=${updatedTransaction.accessToken}`;
+      const accessUrl = `${getSiteUrl()}/surfboardplan/${transaction.plan.id}?token=${updatedTransaction.accessToken}`;
 
       await sendNotificationMail({
         to: transaction.payerEmail,

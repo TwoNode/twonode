@@ -14,6 +14,7 @@ import { handleApiError } from "@/lib/api/errors";
 import { findUserByEmail } from "@/lib/auth/userLookup";
 import { sendPasswordResetEmail } from "@/utils/email";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 const requestSchema = z.object({
   platform: z.nativeEnum(Platform),
@@ -77,9 +78,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL ||
-        "https://www.twonodetechnologies.com";
+      const siteUrl = getSiteUrl();
       const resetPath =
         platform === Platform.SURFBOARD
           ? "/surfboard/reset-password"

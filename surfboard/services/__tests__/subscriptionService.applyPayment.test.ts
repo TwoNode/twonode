@@ -315,7 +315,7 @@ describe("createOrUpdateSubscription (verify call / one-time payments)", () => {
     const sub = await call({ provider: "paystack_onetime" });
 
     expect(sub.provider).toBe("paystack_onetime");
-    expect(ymd(sub.currentEnd)).toBe("2027-01-31");
+    expect(ymd(sub.currentEnd!)).toBe("2027-01-31");
     expect(db.history[0]).toMatchObject({
       reference: "REF_V",
       eventType: "subscription.create",

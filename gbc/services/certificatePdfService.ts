@@ -2,11 +2,8 @@ import path from "path";
 import { execFile } from "child_process";
 import type { GBCCertificateTicket } from "@/gbc/components/certificates/types";
 import { generateVerificationQRDataURL } from "@/gbc/utils/qr_code";
+import { getSiteUrl } from "@/lib/siteUrl";
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://www.twonodetechnologies.com";
 const WORKER_PATH = path.join(
   process.cwd(),
   "gbc",
@@ -52,7 +49,7 @@ void import("@react-pdf/renderer").catch(() => {
 });
 
 export function getCertificateVerificationUrl(ticketNumber: string): string {
-  return `${SITE_URL}/gbc/certificate/${ticketNumber}`;
+  return `${getSiteUrl()}/gbc/certificate/${ticketNumber}`;
 }
 
 /**
