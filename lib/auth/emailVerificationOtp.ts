@@ -7,6 +7,10 @@ import { markEmailVerified } from "@/lib/auth/userLookup";
 
 const OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
 const MAX_ATTEMPTS = 5;
+const NO_ACTIVE_CODE_MESSAGE =
+  "No active verification code found — please request a new code";
+const TOO_MANY_ATTEMPTS_MESSAGE =
+  "Too many attempts — please request a new code";
 
 function generateCode(): string {
   return crypto.randomInt(100000, 1000000).toString();
@@ -56,10 +60,25 @@ export async function issueAndSendVerificationOtp(
   }
 }
 
+/** Constant-time comparison of two sha256 hex digests. */
+function hashesMatch(storedHash: string, code: string): boolean {
+  const a = Buffer.from(storedHash, "hex");
+  const b = Buffer.from(hashCode(code), "hex");
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 /**
  * Verifies a 6-digit OTP code submitted by a user.
  * Capped at MAX_ATTEMPTS (5) wrong attempts per code.
  * On success, marks the code used and sets emailVerified = true (via "OTP").
+ *
+ * Concurrency: the attempt is reserved with a conditional `updateMany`
+ * BEFORE the code is compared, and the success path claims the row the same
+ * way (`usedAt: null -> now`). A read-then-increment cap lets a burst of
+ * parallel guesses all read the same low count and all be compared — a
+ * 6-digit code has only a million values, so the cap is the real defence.
+ * Here the database admits exactly MAX_ATTEMPTS comparisons per code, and
+ * only one request can consume a correct code.
  */
 export async function verifyEmailOtp(
   platform: Platform,
@@ -82,29 +101,48 @@ export async function verifyEmailOtp(
   });
 
   if (!otp) {
-    throw new ValidationError({
-      code: "No active verification code found — please request a new code",
-    });
+    throw new ValidationError({ code: NO_ACTIVE_CODE_MESSAGE });
   }
 
   if (otp.attempts >= MAX_ATTEMPTS) {
+    throw new ValidationError({ code: TOO_MANY_ATTEMPTS_MESSAGE });
+  }
+
+  const reserved = await prisma.emailVerificationOtp.updateMany({
+    where: {
+      id: otp.id,
+      usedAt: null,
+      expiresAt: { gt: new Date() },
+      attempts: { lt: MAX_ATTEMPTS },
+    },
+    data: { attempts: { increment: 1 } },
+  });
+  if (reserved.count === 0) {
+    // Lost a race: the cap was reached, or the code was used or expired,
+    // between the read above and this write.
+    const fresh = await prisma.emailVerificationOtp.findUnique({
+      where: { id: otp.id },
+    });
     throw new ValidationError({
-      code: "Too many attempts — please request a new code",
+      code:
+        fresh && !fresh.usedAt && fresh.attempts >= MAX_ATTEMPTS
+          ? TOO_MANY_ATTEMPTS_MESSAGE
+          : NO_ACTIVE_CODE_MESSAGE,
     });
   }
 
-  if (otp.codeHash !== hashCode(cleanCode)) {
-    await prisma.emailVerificationOtp.update({
-      where: { id: otp.id },
-      data: { attempts: { increment: 1 } },
-    });
+  if (!hashesMatch(otp.codeHash, cleanCode)) {
     throw new ValidationError({ code: "Incorrect code" });
   }
 
-  await prisma.emailVerificationOtp.update({
-    where: { id: otp.id },
+  const claimed = await prisma.emailVerificationOtp.updateMany({
+    where: { id: otp.id, usedAt: null },
     data: { usedAt: new Date() },
   });
+  if (claimed.count === 0) {
+    // A simultaneous request with the same (correct) code consumed it first.
+    throw new ValidationError({ code: NO_ACTIVE_CODE_MESSAGE });
+  }
 
   await markEmailVerified(platform, userId, "OTP");
 

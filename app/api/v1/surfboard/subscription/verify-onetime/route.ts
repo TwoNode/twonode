@@ -8,7 +8,7 @@ import { Platform, SurfboardRole } from "@/utils/platform";
 
 const schema = z.object({
   reference: z.string().min(1),
-  planId: z.string().min(1),
+  planId: z.enum(["monthly", "quarterly", "annually"]),
 });
 
 export const POST = withAuth<SurfboardRole>(
@@ -23,7 +23,7 @@ export const POST = withAuth<SurfboardRole>(
     const data = await verifyOneTimeSubscription(
       ctx.session.sub,
       reference,
-      planId as any
+      planId
     );
     return NextResponse.json({ success: true, data });
   },
