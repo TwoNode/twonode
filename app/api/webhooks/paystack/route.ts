@@ -620,7 +620,11 @@ async function onSubscriptionCreate(data: SubscriptionData) {
     },
   });
 
-  // History
+  // History: a lifecycle record ("Paystack created this subscription"), not
+  // a payment. Its eventType is deliberately NOT one of PAYMENT_EVENT_TYPES
+  // ("subscription.create" / "subscription.success"), which mark rows keyed
+  // by a transaction reference and written by applyPaymentPeriod; otherwise
+  // this row, keyed by the SUB_ code, reads as a second payment.
   await prisma.subscriptionHistory.create({
     data: {
       userId,
@@ -630,7 +634,7 @@ async function onSubscriptionCreate(data: SubscriptionData) {
       amount: sub.amount,
       interval: sub.interval,
       status: sub.status,
-      eventType: "subscription.create",
+      eventType: "subscription.synced",
       startDate: sub.currentStart,
       endDate: sub.currentEnd,
       lastPaymentDate: now,
