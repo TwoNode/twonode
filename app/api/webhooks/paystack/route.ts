@@ -280,7 +280,76 @@ function detectPlatform(event: string, data: any): Platform {
 }
 
 // ─────────────────────────── Ledger (DB idempotency) ───────────────────────────
-async function beginEvent(args: {
+/**
+ * A `pending` row older than this was abandoned by an invocation that never
+ * reported back (crash, platform timeout, lost DB connection mid-handler). It
+ * is deliberately longer than the platform's maximum function duration, so a
+ * slow-but-alive handler is never run twice; Paystack's later retries (its
+ * schedule continues for ~72 h) then pick the event up.
+ */
+export const STALE_PENDING_MS = 5 * 60 * 1000;
+
+/**
+ * Called when a delivery's signature is already in the ledger. Paystack
+ * retries a delivery that didn't get a 2xx by re-sending the SAME payload —
+ * so the same signature. Treating every repeat as a duplicate (what this
+ * used to do) meant that a transient failure while handling the first
+ * delivery (DB blip, timeout) was permanent: the retry was acknowledged as a
+ * duplicate and the event, e.g. a paid subscription, was never applied.
+ *
+ * Only an event that did NOT complete is re-run:
+ *   - `error`   — the handler threw; Paystack is retrying precisely because
+ *                 we answered 500.
+ *   - `pending` for longer than STALE_PENDING_MS — the invocation died
+ *                 without recording an outcome.
+ * `ok` rows, and `pending` rows that are still plausibly being worked on by
+ * a concurrent invocation, remain duplicates. The claim is a conditional
+ * update, so when several redeliveries race exactly one of them wins it.
+ * Handlers must therefore be idempotent (they were already required to be:
+ * the ledger never guaranteed exactly-once, only at-most-once).
+ *
+ * Returns the ledger id to process under, or null for a true duplicate.
+ */
+async function claimRedelivery(signature: string): Promise<string | null> {
+  const existing = await prisma.webhookEvent.findUnique({
+    where: { signature },
+    select: { id: true, status: true },
+  });
+  if (!existing) return null;
+
+  const now = new Date();
+  if (existing.status === "error") {
+    const claimed = await prisma.webhookEvent.updateMany({
+      where: { id: existing.id, status: "error" },
+      // receivedAt doubles as the lease clock for the stale-`pending` rule
+      // below, so a re-run starts a fresh lease.
+      data: {
+        status: "pending",
+        error: null,
+        processedAt: null,
+        receivedAt: now,
+      },
+    });
+    return claimed.count === 1 ? existing.id : null;
+  }
+
+  if (existing.status === "pending") {
+    const claimed = await prisma.webhookEvent.updateMany({
+      where: {
+        id: existing.id,
+        status: "pending",
+        receivedAt: { lt: new Date(now.getTime() - STALE_PENDING_MS) },
+      },
+      data: { receivedAt: now },
+    });
+    return claimed.count === 1 ? existing.id : null;
+  }
+
+  return null;
+}
+
+/** Resolves to the ledger id to process under, or null when this delivery is a true duplicate (already handled, or being handled right now). */
+export async function beginEvent(args: {
   signature: string;
   event: string;
   raw: string;
@@ -322,11 +391,11 @@ async function beginEvent(args: {
         });
         return rec.id as string;
       }
-      if (e?.code === "P2002") return null;
+      if (e?.code === "P2002") return claimRedelivery(args.signature);
       throw e;
     }
   } catch (e: any) {
-    if (e?.code === "P2002") return null;
+    if (e?.code === "P2002") return claimRedelivery(args.signature);
     throw e;
   }
 }
@@ -1072,8 +1141,14 @@ async function onCertificatePaymentSuccess(data: ChargeSuccessData) {
       `❌ Error processing certificate payment for ${reference}:`,
       error
     );
-    // Don't throw - let the webhook complete successfully even if update fails
-    // The payment was successful, we just couldn't update the database
+    // Rethrow so the route answers 500, records the event as `error`, and
+    // Paystack redelivers. This used to swallow the error ("the payment was
+    // successful, we just couldn't update the database") — but a swallowed
+    // failure is acknowledged as success and never retried, which left a paid
+    // batch unmarked until someone noticed. Safe to re-run: the handler
+    // is idempotent (a batch already LASG_PAID returns early above), and the
+    // ledger now re-runs `error` events (see claimRedelivery).
+    throw error;
   }
 }
 
