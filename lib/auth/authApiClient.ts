@@ -105,7 +105,6 @@ export function verifyEmail(input: {
 export function verifyEmailOtp(input: {
   platform: Platform;
   code: string;
-  userId?: string;
 }): Promise<ApiResult<{ message: string }>> {
   return jsonFetch("/api/v1/auth/verify-email-otp", input);
 }

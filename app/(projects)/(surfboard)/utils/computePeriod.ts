@@ -1,9 +1,48 @@
+export type SubscriptionInterval = "monthly" | "quarterly" | "annually";
+
+const MONTHS_PER_INTERVAL: Record<SubscriptionInterval, number> = {
+  monthly: 1,
+  quarterly: 3,
+  annually: 12,
+};
+
+/**
+ * Calendar-month addition that clamps to the last day of a shorter month
+ * (31 Jan + 1 month = 28 Feb, not 3 Mar). Works on the Date's local
+ * (server-zone) fields, the same frame computePeriodPerTimestamp stores its
+ * results in — so it must only ever be fed dates produced there, never a raw
+ * Paystack instant.
+ *
+ * The day is pinned to the 1st BEFORE the month is changed: calling
+ * `setMonth` on the 31st first overflows into the following month (Jan 31 →
+ * "Feb 31" → 3 Mar) and the clamp afterwards has nothing left to clamp. (This
+ * function used to do exactly that, so periods starting on the 29th–31st ran
+ * up to three days long.)
+ */
+export const addCalendarMonths = (date: Date, months: number) => {
+  const result = new Date(date);
+  const day = result.getDate();
+  result.setDate(1);
+  result.setMonth(result.getMonth() + months);
+  const daysInTargetMonth = new Date(
+    result.getFullYear(),
+    result.getMonth() + 1,
+    0
+  ).getDate();
+  result.setDate(Math.min(day, daysInTargetMonth));
+  return result;
+};
+
 /**
  * Computes subscription period and next charge date based on interval.
  * Uses rolling intervals relative to the payment time.
+ *
+ * This is the period for a payment made when nothing is running. A payment
+ * made while paid time remains must not use it directly (it would throw the
+ * remaining time away) — use computeExtendedPeriod.
  */
 export const computePeriodPerTimestamp = (
-  interval: "monthly" | "quarterly" | "annually",
+  interval: SubscriptionInterval,
   referenceDate?: Date
 ) => {
   const timeZone = "Africa/Lagos";
@@ -41,38 +80,83 @@ export const computePeriodPerTimestamp = (
   };
 
   const currentStart = toLagosDate(now);
-  let monthsToAdd = 0;
+  const monthsToAdd = MONTHS_PER_INTERVAL[interval];
 
-  switch (interval) {
-    case "monthly":
-      monthsToAdd = 1;
-      break;
-    case "quarterly":
-      monthsToAdd = 3;
-      break;
-    case "annually":
-      monthsToAdd = 12;
-      break;
-  }
-
-  // Helper to safely add months
-  const addMonths = (date: Date, months: number) => {
-    const newDate = new Date(date);
-    const targetMonth = newDate.getMonth() + months;
-    const endYear = newDate.getFullYear() + Math.floor(targetMonth / 12);
-    const endMonth = targetMonth % 12;
-
-    const daysInTargetMonth = new Date(endYear, endMonth + 1, 0).getDate();
-    newDate.setFullYear(endYear);
-    newDate.setMonth(endMonth);
-    newDate.setDate(Math.min(newDate.getDate(), daysInTargetMonth));
-    return newDate;
-  };
-
-  const nextCharge = addMonths(currentStart, monthsToAdd);
+  const nextCharge = addCalendarMonths(currentStart, monthsToAdd);
   const currentEnd = new Date(nextCharge.getTime() - 1000); // 1 sec before nextCharge
 
   return { currentStart, currentEnd, nextCharge };
+};
+
+/** Statuses under which an unexpired `currentEnd` is paid-for coverage (anything else, e.g. "expired", is not credit to carry over). */
+const COVERAGE_STATUSES = new Set(["active", "past_due", "canceled"]);
+
+export type ExistingPeriod = {
+  status?: string | null;
+  currentStart?: Date | null;
+  currentEnd?: Date | null;
+};
+
+/**
+ * The period a payment buys, given what the account already has.
+ *
+ * - Nothing running (no subscription, an ended period, or a status that isn't
+ *   coverage): a fresh period from the payment date — exactly
+ *   computePeriodPerTimestamp.
+ * - Paid time still remaining when the payment lands: the new period starts
+ *   the instant the current one ends, so no paid days are lost. Whoever pays
+ *   (the user early, an association for them, a card renewal landing after an
+ *   admin granted credit), purchases ADD.
+ *
+ * `currentStart`/`currentEnd` describe the whole continuous coverage;
+ * `windowStart`..`currentEnd` is just the stretch THIS payment bought (what
+ * the history ledger records). `extended` tells which case applied.
+ *
+ * Month-end note: the new period is `addCalendarMonths(windowStart, n)`, so an
+ * anniversary on the 29th–31st clamps (31 Jan → 28 Feb) and the chained anchor
+ * stays on the clamped day afterwards (28 Mar, 28 Apr…), up to three days
+ * earlier than the original date; it does not compound beyond that.
+ */
+export const computeExtendedPeriod = (
+  interval: SubscriptionInterval,
+  paidDate: Date,
+  existing?: ExistingPeriod | null
+) => {
+  const fresh = computePeriodPerTimestamp(interval, paidDate);
+  const existingEnd = existing?.currentEnd
+    ? new Date(existing.currentEnd)
+    : null;
+
+  // Compared in the stored (Lagos wall-clock) frame: fresh.currentStart IS the
+  // payment instant in that frame, existingEnd was stored in it.
+  const covered =
+    existingEnd !== null &&
+    !Number.isNaN(existingEnd.getTime()) &&
+    COVERAGE_STATUSES.has(existing?.status ?? "") &&
+    existingEnd.getTime() > fresh.currentStart.getTime();
+
+  if (!covered || existingEnd === null) {
+    return {
+      currentStart: fresh.currentStart,
+      currentEnd: fresh.currentEnd,
+      nextCharge: fresh.nextCharge,
+      windowStart: fresh.currentStart,
+      extended: false as const,
+    };
+  }
+
+  const windowStart = new Date(existingEnd.getTime() + 1000);
+  const nextCharge = addCalendarMonths(
+    windowStart,
+    MONTHS_PER_INTERVAL[interval]
+  );
+  return {
+    currentStart: existing?.currentStart ?? fresh.currentStart,
+    currentEnd: new Date(nextCharge.getTime() - 1000), // 1 sec before nextCharge
+    nextCharge,
+    windowStart,
+    extended: true as const,
+  };
 };
 
 /**

@@ -7,13 +7,16 @@ import {
   updateOneTimeTransactionStatus,
 } from "@/reva/services/propertyRequestService";
 import { notifyPaymentReceived as notifyRevaPaymentReceived } from "@/reva/services/notificationService";
-import { computePeriodPerTimestamp } from "@/app/(projects)/(surfboard)/utils/computePeriod";
 import { verifyPayment as verifyGBCTicketPayment } from "@/gbc/services/ticketService";
-import { createOrUpdateSubscription } from "@/surfboard/services/subscriptionService";
 import {
-  SUBSCRIPTION_PLANS,
-  type PlanId,
-} from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
+  applyOneTimeSubscriptionPayment,
+  applyPaymentPeriod,
+} from "@/surfboard/services/subscriptionService";
+import type { PlanId } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
+import {
+  findOneTimePaymentProblem,
+  userIdFromOneTimeReference,
+} from "@/surfboard/services/oneTimePayment";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -80,6 +83,16 @@ export type ChargeSuccessData = {
     }>;
   };
 };
+
+/**
+ * Thrown by a handler when an event is well-formed and authentic (the
+ * signature checked out) but must NOT be applied — e.g. a one-time
+ * subscription payment that doesn't cover the plan it claims. Unlike any other
+ * error it is NOT retried: the route records the event as `rejected` (with the
+ * reason, so it can be queried) and answers 200, because Paystack redelivering
+ * the same payload would only be rejected again.
+ */
+export class WebhookRejection extends Error {}
 
 // ─────────────────────────── Route ───────────────────────────
 export async function POST(req: NextRequest) {
@@ -162,6 +175,11 @@ export async function POST(req: NextRequest) {
     }
     await completeEvent(ledgerId, "ok");
   } catch (err: any) {
+    if (err instanceof WebhookRejection) {
+      console.error("[paystack-webhook] REJECTED", err.message);
+      await completeEvent(ledgerId, "rejected", err.message);
+      return NextResponse.json({ ok: true, rejected: true });
+    }
     console.error("[paystack-webhook] error", err);
     await failEvent(ledgerId, String(err?.message || err));
     return NextResponse.json({ error: "Handler error" }, { status: 500 });
@@ -262,7 +280,76 @@ function detectPlatform(event: string, data: any): Platform {
 }
 
 // ─────────────────────────── Ledger (DB idempotency) ───────────────────────────
-async function beginEvent(args: {
+/**
+ * A `pending` row older than this was abandoned by an invocation that never
+ * reported back (crash, platform timeout, lost DB connection mid-handler). It
+ * is deliberately longer than the platform's maximum function duration, so a
+ * slow-but-alive handler is never run twice; Paystack's later retries (its
+ * schedule continues for ~72 h) then pick the event up.
+ */
+export const STALE_PENDING_MS = 5 * 60 * 1000;
+
+/**
+ * Called when a delivery's signature is already in the ledger. Paystack
+ * retries a delivery that didn't get a 2xx by re-sending the SAME payload —
+ * so the same signature. Treating every repeat as a duplicate (what this
+ * used to do) meant that a transient failure while handling the first
+ * delivery (DB blip, timeout) was permanent: the retry was acknowledged as a
+ * duplicate and the event, e.g. a paid subscription, was never applied.
+ *
+ * Only an event that did NOT complete is re-run:
+ *   - `error`   — the handler threw; Paystack is retrying precisely because
+ *                 we answered 500.
+ *   - `pending` for longer than STALE_PENDING_MS — the invocation died
+ *                 without recording an outcome.
+ * `ok` rows, and `pending` rows that are still plausibly being worked on by
+ * a concurrent invocation, remain duplicates. The claim is a conditional
+ * update, so when several redeliveries race exactly one of them wins it.
+ * Handlers must therefore be idempotent (they were already required to be:
+ * the ledger never guaranteed exactly-once, only at-most-once).
+ *
+ * Returns the ledger id to process under, or null for a true duplicate.
+ */
+async function claimRedelivery(signature: string): Promise<string | null> {
+  const existing = await prisma.webhookEvent.findUnique({
+    where: { signature },
+    select: { id: true, status: true },
+  });
+  if (!existing) return null;
+
+  const now = new Date();
+  if (existing.status === "error") {
+    const claimed = await prisma.webhookEvent.updateMany({
+      where: { id: existing.id, status: "error" },
+      // receivedAt doubles as the lease clock for the stale-`pending` rule
+      // below, so a re-run starts a fresh lease.
+      data: {
+        status: "pending",
+        error: null,
+        processedAt: null,
+        receivedAt: now,
+      },
+    });
+    return claimed.count === 1 ? existing.id : null;
+  }
+
+  if (existing.status === "pending") {
+    const claimed = await prisma.webhookEvent.updateMany({
+      where: {
+        id: existing.id,
+        status: "pending",
+        receivedAt: { lt: new Date(now.getTime() - STALE_PENDING_MS) },
+      },
+      data: { receivedAt: now },
+    });
+    return claimed.count === 1 ? existing.id : null;
+  }
+
+  return null;
+}
+
+/** Resolves to the ledger id to process under, or null when this delivery is a true duplicate (already handled, or being handled right now). */
+export async function beginEvent(args: {
   signature: string;
   event: string;
   raw: string;
@@ -304,20 +391,20 @@ async function beginEvent(args: {
         });
         return rec.id as string;
       }
-      if (e?.code === "P2002") return null;
+      if (e?.code === "P2002") return claimRedelivery(args.signature);
       throw e;
     }
   } catch (e: any) {
-    if (e?.code === "P2002") return null;
+    if (e?.code === "P2002") return claimRedelivery(args.signature);
     throw e;
   }
 }
 
-async function completeEvent(id: string, status: string) {
+async function completeEvent(id: string, status: string, error?: string) {
   if (prisma?.webhookEvent && id !== "noop") {
     await prisma.webhookEvent.update({
       where: { id },
-      data: { status, processedAt: new Date() },
+      data: { status, processedAt: new Date(), ...(error ? { error } : {}) },
     });
   }
 }
@@ -472,6 +559,15 @@ async function findSurfboardUserIdFromEvent(data: any): Promise<string | null> {
 }
 
 // ---- Subscription: create ----
+// Syncs Paystack's identity/billing fields (subscription code, email token,
+// customer, plan, next charge date) onto the row. It deliberately does NOT
+// touch the paid period: time is bought by a payment, and a payment is
+// credited exactly once, through applyPaymentPeriod, keyed by its reference
+// (the client's verify call and the charge.success webhook). This event carries
+// no transaction reference, so crediting from here as well would double-count
+// the same payment now that periods add up instead of replacing each other.
+// A row that doesn't exist yet is created with an empty period (ending now);
+// the payment's own credit extends it.
 async function onSubscriptionCreate(data: SubscriptionData) {
   if (!prisma) return;
   const userId = await findSurfboardUserIdFromEvent(data);
@@ -490,55 +586,40 @@ async function onSubscriptionCreate(data: SubscriptionData) {
   const nextDate = data.next_payment_date
     ? new Date(data.next_payment_date)
     : null;
-
-  // Calculate period
   const now = new Date();
-  const { currentStart, currentEnd, nextCharge } = computePeriodPerTimestamp(
-    (interval || "monthly") as any,
-    now
-  );
 
-  // Upsert main subscription
+  const fields = {
+    provider: "paystack",
+    email: data.customer?.email ?? undefined,
+    customerCode: data.customer?.customer_code ?? undefined,
+    customerId: data.customer?.id ? String(data.customer.id) : undefined,
+    emailToken: data.email_token ?? undefined,
+    subCode: data.subscription_code ?? undefined,
+    planCode: planCode ?? "",
+    planName: planName ?? "",
+    interval: interval ?? "monthly",
+    amount: typeof amountKobo === "number" ? amountKobo : 0,
+    status: data.status ?? "active",
+    authorization: data.authorization?.authorization_code ?? undefined,
+    nextPaymentDate: nextDate ?? undefined,
+    cancelledAt: null,
+    platform: "surfboard",
+  };
+
   const sub = await prisma.subscription.upsert({
     where: { userId },
-    update: {
-      provider: "paystack",
-      email: data.customer?.email ?? undefined,
-      customerCode: data.customer?.customer_code ?? undefined,
-      customerId: data.customer?.id ? String(data.customer.id) : undefined,
-      emailToken: data.email_token ?? undefined,
-      subCode: data.subscription_code ?? undefined,
-      planCode: planCode ?? "",
-      planName: planName ?? "",
-      interval: interval ?? "monthly",
-      amount: typeof amountKobo === "number" ? amountKobo : 0,
-      status: data.status ?? "active",
-      authorization: data.authorization?.authorization_code ?? undefined,
-      nextPaymentDate: nextDate ?? nextCharge,
-      currentStart,
-      currentEnd,
-      cancelledAt: null,
-      platform: "surfboard",
-    },
+    update: fields,
     create: {
       userId,
-      provider: "paystack",
-      email: data.customer?.email ?? null,
-      customerCode: data.customer?.customer_code ?? null,
-      customerId: data.customer?.id ? String(data.customer.id) : null,
-      emailToken: data.email_token ?? null,
-      subCode: data.subscription_code ?? null,
-      planCode: planCode ?? "",
-      planName: planName ?? "",
-      interval: interval ?? "monthly",
-      amount: typeof amountKobo === "number" ? amountKobo : 0,
+      ...fields,
+      email: fields.email ?? null,
+      customerCode: fields.customerCode ?? null,
+      customerId: fields.customerId ?? null,
+      emailToken: fields.emailToken ?? null,
+      subCode: fields.subCode ?? null,
       currency: "NGN",
-      status: data.status ?? "active",
-      authorization: data.authorization?.authorization_code ?? undefined,
-      nextPaymentDate: nextDate ?? nextCharge,
-      currentStart,
-      currentEnd,
-      platform: "surfboard",
+      currentStart: now,
+      currentEnd: now,
     },
   });
 
@@ -553,8 +634,8 @@ async function onSubscriptionCreate(data: SubscriptionData) {
       interval: sub.interval,
       status: sub.status,
       eventType: "subscription.create",
-      startDate: currentStart,
-      endDate: currentEnd,
+      startDate: sub.currentStart,
+      endDate: sub.currentEnd,
       lastPaymentDate: now,
     },
   });
@@ -664,53 +745,71 @@ async function onInvoicePaymentFailed(data: InvoiceData) {
 // ---- Recurring charge success (renewal) ----
 // ---- One-time (non-recurring) subscription payment ----
 // Defense-in-depth backstop alongside the client-driven verifyOneTimeSubscription
-// call (app/api/v1/surfboard/subscription/verify-onetime/route.ts) — mirrors
-// onSubscriptionChargeSuccess below but reads planId from metadata (there's
-// no plan_object/subscription on a no-`plan` charge) and goes through the
-// upsert-safe createOrUpdateSubscription rather than a raw update, since this
+// call (app/api/v1/surfboard/subscription/verify-onetime/route.ts) — this
 // webhook can in principle arrive before the client's own verify call does.
+//
+// The checkout is popup-driven, so `metadata` (including `plan_id`) and the
+// reference are chosen by the browser; only the reference, amount and currency
+// Paystack reports are trustworthy. The account is therefore taken from the
+// reference this server issued (not from the customer's email, which the payer
+// types), and the payment must cover the plan it claims — the same checks, in
+// the same module, that the verify call applies. A payment that doesn't pass
+// is rejected, not retried (see WebhookRejection).
 async function onOneTimeSubscriptionChargeSuccess(data: ChargeSuccessData) {
   if (!prisma) return;
 
-  const userId = await findSurfboardUserIdFromEvent(data);
+  const reference = data.reference ?? "";
+  const userId = userIdFromOneTimeReference(reference);
   if (!userId) {
-    console.warn(
-      "⚠️ charge.success (one-time subscription): SurfboardUser not found"
+    throw new WebhookRejection(
+      `one-time subscription charge with a reference not issued by this app (${reference || "none"})`
     );
-    return;
   }
 
-  const meta = data.metadata ?? {};
-  const planId = meta.plan_id as PlanId | undefined;
-  if (!planId || !SUBSCRIPTION_PLANS[planId]) {
-    console.warn(
-      `⚠️ charge.success (one-time subscription): missing/invalid plan_id in metadata (${planId})`
-    );
-    return;
-  }
-
-  const customerId = data.customer?.id;
-  const customerCode = data.customer?.customer_code;
-  const authorization = data.authorization?.authorization_code ?? "";
-  const paidAt = data.paid_at;
-
-  await createOrUpdateSubscription({
-    userId,
-    reference: data.reference || `REF-${Date.now()}`,
-    subCode: "",
-    emailToken: "",
+  const planId = data.metadata?.plan_id;
+  const problem = findOneTimePaymentProblem({
     planId,
-    customerCode: customerCode ?? "",
-    customerId: customerId ? String(customerId) : "",
-    authorization,
-    status: "active",
-    paidAt,
-    skipHistory: false,
-    provider: "paystack_onetime",
+    userId,
+    reference,
+    transaction: data,
+  });
+  if (problem) {
+    throw new WebhookRejection(
+      `one-time subscription payment ${reference} rejected: ${problem.code} — ${problem.message} (paid ${data.amount} ${data.currency}, claimed plan ${String(planId)})`
+    );
+  }
+
+  const user = await prisma.surfboardUser.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+  if (!user) {
+    throw new WebhookRejection(
+      `one-time subscription payment ${reference}: no Surfboard user ${userId}`
+    );
+  }
+
+  const result = await applyOneTimeSubscriptionPayment({
+    userId,
+    reference,
+    // Validated by findOneTimePaymentProblem above (own-key plan id).
+    planId: planId as PlanId,
+    customerCode: data.customer?.customer_code ?? "",
+    customerId: data.customer?.id ? String(data.customer.id) : "",
+    authorization: data.authorization?.authorization_code ?? "",
+    paidAt: data.paid_at,
   });
 
+  if (result.status === "used_by_another_account") {
+    throw new WebhookRejection(
+      `one-time subscription payment ${reference} was already applied to a different account than ${userId}`
+    );
+  }
+
   console.log(
-    `✅ charge.success (one-time subscription): ${data.reference} for user ${userId}`
+    result.status === "already_applied"
+      ? `ℹ️ charge.success (one-time subscription): ${reference} already applied (idempotent)`
+      : `✅ charge.success (one-time subscription): ${reference} for user ${userId}`
   );
 }
 
@@ -746,51 +845,47 @@ async function onSubscriptionChargeSuccess(data: ChargeSuccessData) {
   }
   const amountKobo = data.amount ?? planAmount ?? 0;
   const paidAt = data.paid_at ? new Date(data.paid_at) : new Date();
+  const reference = data.reference || `REF-${Date.now()}`;
 
-  // Get next payment date from subscription object or calculate it
+  // Get next payment date from subscription object, else the end of the
+  // period this payment buys.
   const nextDateStr: string | undefined = data?.subscription?.next_payment_date;
-  const { currentStart, currentEnd, nextCharge } = computePeriodPerTimestamp(
-    (interval || "monthly") as any,
-    paidAt
-  );
-  const nextDate = nextDateStr ? new Date(nextDateStr) : nextCharge;
 
-  // Update subscription
-  const sub = await prisma.subscription.update({
-    where: { userId },
-    data: {
+  // Credits the payment exactly once and ADDS to any paid time that remains
+  // (see applyPaymentPeriod). A row that doesn't exist yet is created, so a
+  // first charge arriving before the client's verify call isn't lost.
+  const result = await applyPaymentPeriod({
+    userId,
+    reference,
+    eventType: "subscription.success",
+    paidAt,
+    periodInterval: (interval || "monthly") as
+      "monthly" | "quarterly" | "annually",
+    row: {
+      provider: "paystack",
       status: "active",
       planCode: planCode ?? undefined,
       planName: planName ?? undefined,
       interval: interval ?? undefined,
-      amount: typeof amountKobo === "number" ? amountKobo : undefined,
+      amountKobo: typeof amountKobo === "number" ? amountKobo : undefined,
       authorization: data.authorization?.authorization_code ?? undefined,
-      nextPaymentDate: nextDate,
-      currentStart: currentStart,
-      currentEnd: currentEnd,
-      cancelledAt: null,
+      customerCode: data.customer?.customer_code ?? undefined,
+      customerId: data.customer?.id ? String(data.customer.id) : undefined,
+      nextPaymentDate: nextDateStr ? new Date(nextDateStr) : undefined,
     },
   });
 
-  // Create history entry
-  await prisma.subscriptionHistory.create({
-    data: {
-      userId,
-      reference: data.reference || `REF-${Date.now()}`,
-      planCode: sub.planCode,
-      planName: sub.planName,
-      amount: amountKobo,
-      interval: sub.interval,
-      status: "active",
-      eventType: "subscription.success",
-      startDate: currentStart,
-      endDate: currentEnd,
-      lastPaymentDate: paidAt,
-    },
-  });
+  if (result.status === "used_by_another_account") {
+    console.error(
+      `⚠️ charge.success: payment ${reference} was already applied to a different account than ${userId} — not applied again`
+    );
+    return;
+  }
 
   console.log(
-    `✅ charge.success (renewal): ${data.reference} for user ${userId}`
+    result.status === "already_applied"
+      ? `ℹ️ charge.success (renewal): ${reference} already applied (idempotent)`
+      : `✅ charge.success (renewal): ${reference} for user ${userId}`
   );
 }
 
@@ -1046,8 +1141,14 @@ async function onCertificatePaymentSuccess(data: ChargeSuccessData) {
       `❌ Error processing certificate payment for ${reference}:`,
       error
     );
-    // Don't throw - let the webhook complete successfully even if update fails
-    // The payment was successful, we just couldn't update the database
+    // Rethrow so the route answers 500, records the event as `error`, and
+    // Paystack redelivers. This used to swallow the error ("the payment was
+    // successful, we just couldn't update the database") — but a swallowed
+    // failure is acknowledged as success and never retried, which left a paid
+    // batch unmarked until someone noticed. Safe to re-run: the handler
+    // is idempotent (a batch already LASG_PAID returns early above), and the
+    // ledger now re-runs `error` events (see claimRedelivery).
+    throw error;
   }
 }
 
