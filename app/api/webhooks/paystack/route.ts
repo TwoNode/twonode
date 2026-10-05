@@ -1,4 +1,5 @@
 // File: app/api/webhooks/paystack/route.ts
+import { getPaystackSecret } from "@/lib/paystackMode";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import * as mailer from "@/utils/email";
@@ -97,7 +98,7 @@ export class WebhookRejection extends Error {}
 // ─────────────────────────── Route ───────────────────────────
 export async function POST(req: NextRequest) {
   console.log("Starting webhook processing");
-  const secret = process.env.PAYSTACK_SECRET_KEY;
+  const secret = getPaystackSecret();
   if (!secret) return NextResponse.json({ error: "___NS__" }, { status: 400 });
 
   const raw = await req.text();

@@ -9,6 +9,7 @@ import {
 } from "@/app/(projects)/(surfboard)/utils/computePeriod";
 import { getOrCreatePaystackPlan } from "@/surfboard/services/paystackSubscriptionService";
 import { ApiError, SubscriptionRequiredError } from "@/lib/api/errors";
+import { isPaystackLive } from "@/lib/paystackMode";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/subscriptionActions.ts.
@@ -281,7 +282,7 @@ async function applyPlanPayment({
   const selectedPlan = SUBSCRIPTION_PLANS[planId];
   if (!selectedPlan) throw new Error("Invalid subscription plan");
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
   const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
 
   return applyPaymentPeriod({

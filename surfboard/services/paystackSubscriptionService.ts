@@ -16,6 +16,7 @@ import {
   isPlanId,
 } from "@/surfboard/services/oneTimePayment";
 import { ApiError, NotFoundError, ValidationError } from "@/lib/api/errors";
+import { isPaystackLive } from "@/lib/paystackMode";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/paystackActions.ts (the
@@ -49,7 +50,7 @@ export async function initiateSubscription(
     throw new ValidationError({ planId: "Invalid subscription plan" });
   const selectedPlan = SUBSCRIPTION_PLANS[planId];
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
   await logPaystackEnvironment(isLive);
 
   const reference = `SURFBOARD_SUB_${isLive ? "live" : "test"}_${Date.now()}_${userId}`;
@@ -138,7 +139,7 @@ export async function initiateOneTimeSubscription(
     throw new ValidationError({ planId: "Invalid subscription plan" });
   const selectedPlan = SUBSCRIPTION_PLANS[planId];
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
   await logPaystackEnvironment(isLive);
 
   // The trailing user id is what binds the reference to this account when the
@@ -239,7 +240,7 @@ export async function getOrCreatePaystackPlan(
 }
 
 export async function verifySubscription(userId: string, reference: string) {
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
   const paystack = await createPaystackInstance(isLive);
 
   const verification: any = await paystack.transaction.verify({ reference });
@@ -333,7 +334,7 @@ export async function verifyOneTimeSubscription(
   const early = findOneTimeReferenceProblem({ planId, userId, reference });
   if (early) throw new ApiError(403, early.code, early.message);
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
   const paystack = await createPaystackInstance(isLive);
 
   const verification: any = await paystack.transaction.verify({ reference });
