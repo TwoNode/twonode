@@ -17,6 +17,7 @@ import type { Feature, FeatureCollection, Polygon, Point } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Plan, PillarData, PLAN_TYPES } from "../../types/surfboardTypes";
+import { resolveCsvState } from "@/app/(projects)/(surfboard)/utils/csvState";
 import proj4 from "proj4";
 import { surfboardApi } from "@/surfboard/apiClient";
 import {
@@ -854,10 +855,11 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({
 
           if (pillars.length < 3) continue;
 
-          const state =
-            stateIndex !== -1
-              ? lines[0]?.split(",")[stateIndex]?.trim() || null
-              : null;
+          // A CSV without a state is drawn as Lagos so the map correction
+          // applies to it too (see utils/csvState.ts).
+          const state = resolveCsvState(
+            stateIndex !== -1 ? lines[0]?.split(",")[stateIndex] : null
+          );
 
           // Check for duplicates
           const signature = generatePlanSignature(pillars);
