@@ -60,7 +60,7 @@ _(The maintainer verified this against the databases; it is recorded here becaus
 - **Two env files, two databases.** Next.js reads `.env.local` over `.env`; the Prisma CLI (via `prisma.config.ts` → `dotenv/config`) reads **only `.env`**. If `.env.local` points the running app at a remote database (e.g. `test_db`) while `.env` points at a local one, `npx prisma migrate …` will run against the local database while the app talks to the remote one — check which `DATABASE_URL` each tool sees before running anything destructive.
 - `prisma migrate dev --create-only` can fail on the shadow database (extensions/history drift); hand-written SQL migrations have been the pattern. Review the SQL, then apply with `migrate deploy`.
 - `npm run build-dev` runs `prisma db push` — fine for a scratch database, never against `main`/`prod` databases (it bypasses migration history).
-- `npm run prisma:check` still points at a `prisma/schema.prisma` that no longer exists (the schema is the `prisma/schema/` folder); use `npx prisma validate` or `npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema --script` instead.
+- `npm run prisma:check` diffs the database (`DATABASE_URL`) against the `prisma/schema/` folder and prints the SQL that would bring the database in line. Empty output, or only `SET DEFAULT concat(...)` lines for the `dbgenerated` defaults (Prisma always lists those), means no drift. It only reads the database. (It used to point at a `prisma/schema.prisma` that no longer exists.)
 
 ## Runtime configuration worth knowing
 

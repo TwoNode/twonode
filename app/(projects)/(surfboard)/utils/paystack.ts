@@ -1,3 +1,4 @@
+import { getPaystackSecret } from "@/lib/paystackMode";
 import axios, { AxiosError } from "axios";
 
 export type PaystackEnv = {
@@ -105,10 +106,7 @@ export const paystack = {
 };
 
 export function getEnv(): PaystackEnv {
-  const secretKey =
-    process.env.PAYSTACK_SECRET_KEY ||
-    process.env.NEXT_PUBLIC_PAYSTACK_SECRET_KEY ||
-    "";
+  const secretKey = getPaystackSecret();
   if (!secretKey) throw new Error("Missing PAYSTACK_SECRET_KEY");
   return { secretKey };
 }

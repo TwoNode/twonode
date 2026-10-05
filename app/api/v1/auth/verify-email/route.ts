@@ -7,7 +7,11 @@ import { validateCSRF } from "@/lib/auth/csrf";
 import { validateBody } from "@/lib/api/validate";
 import { ValidationError, handleApiError } from "@/lib/api/errors";
 import { markEmailVerified, findUserById } from "@/lib/auth/userLookup";
-import { getServerSession, issueSession } from "@/lib/auth/session";
+import {
+  getServerSession,
+  issueSession,
+  currentRefreshLifetimeSeconds,
+} from "@/lib/auth/session";
 
 const verifySchema = z.object({
   platform: z.nativeEnum(Platform),
@@ -67,7 +71,7 @@ export async function POST(req: NextRequest) {
           user.id,
           user.role,
           platform,
-          30 * 24 * 60 * 60,
+          await currentRefreshLifetimeSeconds(platform),
           user
         );
       }

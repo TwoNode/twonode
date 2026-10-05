@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { verifyToken, signAccessToken, JWTPayload } from "@/lib/auth/jwt";
 import {
   getAccessTokenCookie,
+  getRefreshTokenCookie,
   setAuthCookies,
   setAccessTokenCookie,
   clearAuthCookies,
@@ -138,6 +139,28 @@ export async function issueSession(
     rawRefreshToken,
     refreshMaxAgeSeconds
   );
+}
+
+/**
+ * Lifetime (seconds) to give a session that is being RE-issued for someone
+ * who is already signed in, such as after verifying their email. It carries
+ * the presented refresh token's remaining time instead of a fixed 30 days, so
+ * a login made without "remember me" (1 day) is not silently stretched to 30.
+ * Falls back to the 30-day default when there is no live refresh token.
+ */
+export async function currentRefreshLifetimeSeconds(
+  platform: Platform
+): Promise<number> {
+  const DEFAULT_SECONDS = 30 * 24 * 60 * 60;
+  const raw = await getRefreshTokenCookie(platform);
+  if (!raw) return DEFAULT_SECONDS;
+
+  const tokenHash = crypto.createHash("sha256").update(raw).digest("hex");
+  const row = await prisma.refreshToken.findUnique({ where: { tokenHash } });
+  if (!row) return DEFAULT_SECONDS;
+
+  const remaining = Math.floor((row.expiresAt.getTime() - Date.now()) / 1000);
+  return remaining > 0 ? Math.min(remaining, DEFAULT_SECONDS) : DEFAULT_SECONDS;
 }
 
 export type RefreshResult =

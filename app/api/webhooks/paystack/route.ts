@@ -1,4 +1,5 @@
 // File: app/api/webhooks/paystack/route.ts
+import { getPaystackSecret } from "@/lib/paystackMode";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import * as mailer from "@/utils/email";
@@ -97,7 +98,7 @@ export class WebhookRejection extends Error {}
 // ─────────────────────────── Route ───────────────────────────
 export async function POST(req: NextRequest) {
   console.log("Starting webhook processing");
-  const secret = process.env.PAYSTACK_SECRET_KEY;
+  const secret = getPaystackSecret();
   if (!secret) return NextResponse.json({ error: "___NS__" }, { status: 400 });
 
   const raw = await req.text();
@@ -259,8 +260,8 @@ function detectPlatform(event: string, data: any): Platform {
 
     // If it has subscription markers but NO metadata, we check if it's a known Surfboard plan
     if (hasSubMarkers) {
-      const { planCode } = extractPlan(data);
-      const isSurfPlan = isSurfboardPlan(planCode);
+      const { planCode, planName } = extractPlan(data);
+      const isSurfPlan = isSurfboardPlan(planCode, planName);
       if (isSurfPlan) return "surfboard";
     }
 
@@ -538,18 +539,13 @@ async function findSurfboardUserIdFromEvent(data: any): Promise<string | null> {
   // 3) user by email - Only if we have some confidence it's Surfboard
   const meta = normalizeMetadata(data.metadata || data.customer?.metadata);
   const reference = String(data.reference || meta.reference || "");
-  let platform = String(meta.platform || "").toLowerCase();
-
-  // Fallback to custom_fields
-  if (!platform && meta.custom_fields) {
-    platform = getField(meta.custom_fields, "platform")?.toLowerCase() || "";
-  }
+  const platform = metadataPlatform(meta);
 
   const isSurfboardLikely =
     platform === "surfboard" ||
     reference.startsWith("SURFBOARD_SUB_") ||
     reference.startsWith("SURF_") ||
-    isSurfboardPlan(extractPlan(data).planCode);
+    isSurfboardPlan(extractPlan(data).planCode, extractPlan(data).planName);
 
   if (email && isSurfboardLikely) {
     const user = await prisma.surfboardUser.findUnique({ where: { email } });
@@ -836,8 +832,11 @@ async function onSubscriptionChargeSuccess(data: ChargeSuccessData) {
     amount: planAmount,
   } = extractPlan(data);
 
-  const meta = data.metadata ?? {};
-  if (meta.platform !== "surfboard" && !isSurfboardPlan(planCode)) {
+  const meta = normalizeMetadata(data.metadata);
+  if (
+    metadataPlatform(meta) !== "surfboard" &&
+    !isSurfboardPlan(planCode, planName)
+  ) {
     console.log(
       `⏭️ charge.success: Skipping as it doesn't match a Surfboard plan or platform (${planCode})`
     );
@@ -1207,7 +1206,12 @@ function getField(
 /**
  * Checks if a charge.success event is for a Certificate of Deposit payment
  */
-function isSurfboardPlan(planCode?: string): boolean {
+function isSurfboardPlan(planCode?: string, planName?: string): boolean {
+  // Plan NAMES (SURF_MONTHLY / SURF_QUARTERLY / SURF_YEARLY) are the same in
+  // live and test mode, unlike plan CODES, which differ per Paystack mode. The
+  // env-var codes below only match the mode they were copied from, so a
+  // test-mode deployment must not depend on them.
+  if (planName?.startsWith("SURF_")) return true;
   if (!planCode) return false;
   const surfMonthly = process.env.SURF_MONTHLY;
   const surfQuarterly = process.env.SURF_QUARTERLY;
@@ -1226,6 +1230,21 @@ function isSurfboardPlan(planCode?: string): boolean {
   if (planCode.includes("SURF_")) return true;
 
   return false;
+}
+
+/**
+ * The platform a charge was tagged with. Paystack puts our metadata under
+ * `custom_fields` for checkout-created transactions (the top-level
+ * `metadata.platform` is only set by some of our own server-side calls), so
+ * both places are read.
+ */
+function metadataPlatform(meta: Record<string, any>): string {
+  const direct = typeof meta?.platform === "string" ? meta.platform : "";
+  return (
+    direct ||
+    getField(meta?.custom_fields, "platform") ||
+    ""
+  ).toLowerCase();
 }
 
 function isOneTimeSubscriptionPayment(data: ChargeSuccessData): boolean {

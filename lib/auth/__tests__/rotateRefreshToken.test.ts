@@ -10,6 +10,7 @@ const mockPrisma = vi.hoisted(() => ({
 }));
 const mockCookies = vi.hoisted(() => ({
   getAccessTokenCookie: vi.fn(),
+  getRefreshTokenCookie: vi.fn(),
   setAuthCookies: vi.fn(),
   setAccessTokenCookie: vi.fn(),
   clearAuthCookies: vi.fn(),
@@ -30,7 +31,8 @@ vi.mock("@/utils/encryptedCookies", () => ({
   getUserActiveSubscription: vi.fn(),
 }));
 
-const { rotateRefreshToken } = await import("@/lib/auth/session");
+const { rotateRefreshToken, currentRefreshLifetimeSeconds } =
+  await import("@/lib/auth/session");
 const { findUserById } = await import("@/lib/auth/userLookup");
 const { Platform } = await import("@/utils/platform");
 
@@ -204,5 +206,57 @@ describe("rotateRefreshToken", () => {
       expect(mockPrisma.refreshToken.updateMany).not.toHaveBeenCalled();
       expect(mockCookies.clearAuthCookies).toHaveBeenCalledWith("surfboard");
     });
+  });
+});
+
+describe("currentRefreshLifetimeSeconds", () => {
+  const THIRTY_DAYS = 30 * 24 * 60 * 60;
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("keeps a short (no remember-me) session short instead of stretching it to 30 days", async () => {
+    mockCookies.getRefreshTokenCookie.mockResolvedValue("raw-token");
+    mockPrisma.refreshToken.findUnique.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 3_600_000),
+    });
+
+    const seconds = await currentRefreshLifetimeSeconds(Platform.SURFBOARD);
+
+    expect(mockPrisma.refreshToken.findUnique).toHaveBeenCalledWith({
+      where: { tokenHash: sha256("raw-token") },
+    });
+    expect(seconds).toBeGreaterThan(3_500);
+    expect(seconds).toBeLessThanOrEqual(3_600);
+  });
+
+  it("never exceeds 30 days", async () => {
+    mockCookies.getRefreshTokenCookie.mockResolvedValue("raw-token");
+    mockPrisma.refreshToken.findUnique.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 90 * 86_400_000),
+    });
+    expect(await currentRefreshLifetimeSeconds(Platform.SURFBOARD)).toBe(
+      THIRTY_DAYS
+    );
+  });
+
+  it("falls back to 30 days with no cookie, no row, or an expired row", async () => {
+    mockCookies.getRefreshTokenCookie.mockResolvedValue(undefined);
+    expect(await currentRefreshLifetimeSeconds(Platform.SURFBOARD)).toBe(
+      THIRTY_DAYS
+    );
+
+    mockCookies.getRefreshTokenCookie.mockResolvedValue("raw-token");
+    mockPrisma.refreshToken.findUnique.mockResolvedValue(null);
+    expect(await currentRefreshLifetimeSeconds(Platform.SURFBOARD)).toBe(
+      THIRTY_DAYS
+    );
+
+    mockPrisma.refreshToken.findUnique.mockResolvedValue({
+      expiresAt: new Date(Date.now() - 1_000),
+    });
+    expect(await currentRefreshLifetimeSeconds(Platform.SURFBOARD)).toBe(
+      THIRTY_DAYS
+    );
   });
 });
