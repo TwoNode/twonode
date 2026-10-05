@@ -161,7 +161,7 @@ export function RegisterVerifyLinkCard({
           <Button
             type="submit"
             disabled={status === "submitting" || !password}
-            className="w-full px-6 py-3 h-auto text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
+            className="w-full px-6 py-3 h-auto text-white dark:text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
             style={{ background: `linear-gradient(90deg, ${dark}, ${accent})` }}
           >
             {status === "submitting" ? (

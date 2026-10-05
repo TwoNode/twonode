@@ -152,7 +152,7 @@ export function AcceptInviteCard({
           </p>
           <Link href={loginPath}>
             <Button
-              className="px-6 py-3 h-auto text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
+              className="px-6 py-3 h-auto text-white dark:text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
               style={gradient}
             >
               Continue to sign in
@@ -260,7 +260,7 @@ export function AcceptInviteCard({
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full px-6 py-3 h-auto text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
+              className="w-full px-6 py-3 h-auto text-white dark:text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
               style={gradient}
             >
               {isSubmitting ? (
