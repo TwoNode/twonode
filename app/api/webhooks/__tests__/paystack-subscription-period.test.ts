@@ -249,3 +249,68 @@ describe("subscription.create — identity sync only", () => {
     expect(mockPrisma.subscription.upsert).not.toHaveBeenCalled();
   });
 });
+
+describe("a first charge in Paystack TEST mode (staging)", () => {
+  // Real shape: the plan CODE differs from live (no "SURF_" in it and not in
+  // the env vars), the platform is only inside metadata.custom_fields, and the
+  // customer has no subscription row yet. Only the plan NAME and the
+  // custom_fields identify it as Surfboard. It used to be skipped silently
+  // (status "ok", nothing credited).
+  const testModePlan = {
+    plan_code: "PLN_j6fww9gsqn7f6us",
+    name: "SURF_MONTHLY",
+    interval: "monthly",
+    amount: 1_670_000,
+  };
+  const customFields = [
+    { variable_name: "platform", value: "surfboard" },
+    { variable_name: "reference", value: "SURFBOARD_SUB_test_1_u9" },
+  ];
+
+  beforeEach(() => {
+    mockPrisma.subscription.findFirst.mockResolvedValue(null);
+    mockPrisma.surfboardUser.findUnique.mockResolvedValue({ id: "u9" });
+  });
+
+  it("credits charge.success for a new subscriber identified only by custom_fields and plan name", async () => {
+    await deliver(
+      renewal({
+        reference: "SURFBOARD_SUB_test_1_u9",
+        plan: testModePlan,
+        subscription: undefined,
+        metadata: { custom_fields: customFields },
+      })
+    );
+
+    expect(mockApply).toHaveBeenCalledTimes(1);
+    expect(mockApply.mock.calls[0][0]).toMatchObject({
+      userId: "u9",
+      reference: "SURFBOARD_SUB_test_1_u9",
+      periodInterval: "monthly",
+    });
+  });
+
+  it("recognises the subscriber on subscription.create by plan name alone", async () => {
+    await deliver(created({ plan: testModePlan }));
+
+    expect(mockPrisma.surfboardUser.findUnique).toHaveBeenCalledWith({
+      where: { email: "s@example.com" },
+    });
+    expect(mockPrisma.subscription.upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("still ignores a charge that is not a Surfboard plan", async () => {
+    await deliver(
+      renewal({
+        reference: "OTHER_1",
+        plan: {
+          plan_code: "PLN_other",
+          name: "SOMETHING_ELSE",
+          interval: "monthly",
+        },
+        metadata: { custom_fields: [] },
+      })
+    );
+    expect(mockApply).not.toHaveBeenCalled();
+  });
+});
