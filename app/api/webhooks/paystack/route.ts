@@ -7,9 +7,11 @@ import {
   updateOneTimeTransactionStatus,
 } from "@/reva/services/propertyRequestService";
 import { notifyPaymentReceived as notifyRevaPaymentReceived } from "@/reva/services/notificationService";
-import { computePeriodPerTimestamp } from "@/app/(projects)/(surfboard)/utils/computePeriod";
 import { verifyPayment as verifyGBCTicketPayment } from "@/gbc/services/ticketService";
-import { applyOneTimeSubscriptionPayment } from "@/surfboard/services/subscriptionService";
+import {
+  applyOneTimeSubscriptionPayment,
+  applyPaymentPeriod,
+} from "@/surfboard/services/subscriptionService";
 import type { PlanId } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
 import {
   findOneTimePaymentProblem,
@@ -488,6 +490,15 @@ async function findSurfboardUserIdFromEvent(data: any): Promise<string | null> {
 }
 
 // ---- Subscription: create ----
+// Syncs Paystack's identity/billing fields (subscription code, email token,
+// customer, plan, next charge date) onto the row. It deliberately does NOT
+// touch the paid period: time is bought by a payment, and a payment is
+// credited exactly once, through applyPaymentPeriod, keyed by its reference
+// (the client's verify call and the charge.success webhook). This event carries
+// no transaction reference, so crediting from here as well would double-count
+// the same payment now that periods add up instead of replacing each other.
+// A row that doesn't exist yet is created with an empty period (ending now);
+// the payment's own credit extends it.
 async function onSubscriptionCreate(data: SubscriptionData) {
   if (!prisma) return;
   const userId = await findSurfboardUserIdFromEvent(data);
@@ -506,55 +517,40 @@ async function onSubscriptionCreate(data: SubscriptionData) {
   const nextDate = data.next_payment_date
     ? new Date(data.next_payment_date)
     : null;
-
-  // Calculate period
   const now = new Date();
-  const { currentStart, currentEnd, nextCharge } = computePeriodPerTimestamp(
-    (interval || "monthly") as any,
-    now
-  );
 
-  // Upsert main subscription
+  const fields = {
+    provider: "paystack",
+    email: data.customer?.email ?? undefined,
+    customerCode: data.customer?.customer_code ?? undefined,
+    customerId: data.customer?.id ? String(data.customer.id) : undefined,
+    emailToken: data.email_token ?? undefined,
+    subCode: data.subscription_code ?? undefined,
+    planCode: planCode ?? "",
+    planName: planName ?? "",
+    interval: interval ?? "monthly",
+    amount: typeof amountKobo === "number" ? amountKobo : 0,
+    status: data.status ?? "active",
+    authorization: data.authorization?.authorization_code ?? undefined,
+    nextPaymentDate: nextDate ?? undefined,
+    cancelledAt: null,
+    platform: "surfboard",
+  };
+
   const sub = await prisma.subscription.upsert({
     where: { userId },
-    update: {
-      provider: "paystack",
-      email: data.customer?.email ?? undefined,
-      customerCode: data.customer?.customer_code ?? undefined,
-      customerId: data.customer?.id ? String(data.customer.id) : undefined,
-      emailToken: data.email_token ?? undefined,
-      subCode: data.subscription_code ?? undefined,
-      planCode: planCode ?? "",
-      planName: planName ?? "",
-      interval: interval ?? "monthly",
-      amount: typeof amountKobo === "number" ? amountKobo : 0,
-      status: data.status ?? "active",
-      authorization: data.authorization?.authorization_code ?? undefined,
-      nextPaymentDate: nextDate ?? nextCharge,
-      currentStart,
-      currentEnd,
-      cancelledAt: null,
-      platform: "surfboard",
-    },
+    update: fields,
     create: {
       userId,
-      provider: "paystack",
-      email: data.customer?.email ?? null,
-      customerCode: data.customer?.customer_code ?? null,
-      customerId: data.customer?.id ? String(data.customer.id) : null,
-      emailToken: data.email_token ?? null,
-      subCode: data.subscription_code ?? null,
-      planCode: planCode ?? "",
-      planName: planName ?? "",
-      interval: interval ?? "monthly",
-      amount: typeof amountKobo === "number" ? amountKobo : 0,
+      ...fields,
+      email: fields.email ?? null,
+      customerCode: fields.customerCode ?? null,
+      customerId: fields.customerId ?? null,
+      emailToken: fields.emailToken ?? null,
+      subCode: fields.subCode ?? null,
       currency: "NGN",
-      status: data.status ?? "active",
-      authorization: data.authorization?.authorization_code ?? undefined,
-      nextPaymentDate: nextDate ?? nextCharge,
-      currentStart,
-      currentEnd,
-      platform: "surfboard",
+      currentStart: now,
+      currentEnd: now,
     },
   });
 
@@ -569,8 +565,8 @@ async function onSubscriptionCreate(data: SubscriptionData) {
       interval: sub.interval,
       status: sub.status,
       eventType: "subscription.create",
-      startDate: currentStart,
-      endDate: currentEnd,
+      startDate: sub.currentStart,
+      endDate: sub.currentEnd,
       lastPaymentDate: now,
     },
   });
@@ -780,51 +776,47 @@ async function onSubscriptionChargeSuccess(data: ChargeSuccessData) {
   }
   const amountKobo = data.amount ?? planAmount ?? 0;
   const paidAt = data.paid_at ? new Date(data.paid_at) : new Date();
+  const reference = data.reference || `REF-${Date.now()}`;
 
-  // Get next payment date from subscription object or calculate it
+  // Get next payment date from subscription object, else the end of the
+  // period this payment buys.
   const nextDateStr: string | undefined = data?.subscription?.next_payment_date;
-  const { currentStart, currentEnd, nextCharge } = computePeriodPerTimestamp(
-    (interval || "monthly") as any,
-    paidAt
-  );
-  const nextDate = nextDateStr ? new Date(nextDateStr) : nextCharge;
 
-  // Update subscription
-  const sub = await prisma.subscription.update({
-    where: { userId },
-    data: {
+  // Credits the payment exactly once and ADDS to any paid time that remains
+  // (see applyPaymentPeriod). A row that doesn't exist yet is created, so a
+  // first charge arriving before the client's verify call isn't lost.
+  const result = await applyPaymentPeriod({
+    userId,
+    reference,
+    eventType: "subscription.success",
+    paidAt,
+    periodInterval: (interval || "monthly") as
+      "monthly" | "quarterly" | "annually",
+    row: {
+      provider: "paystack",
       status: "active",
       planCode: planCode ?? undefined,
       planName: planName ?? undefined,
       interval: interval ?? undefined,
-      amount: typeof amountKobo === "number" ? amountKobo : undefined,
+      amountKobo: typeof amountKobo === "number" ? amountKobo : undefined,
       authorization: data.authorization?.authorization_code ?? undefined,
-      nextPaymentDate: nextDate,
-      currentStart: currentStart,
-      currentEnd: currentEnd,
-      cancelledAt: null,
+      customerCode: data.customer?.customer_code ?? undefined,
+      customerId: data.customer?.id ? String(data.customer.id) : undefined,
+      nextPaymentDate: nextDateStr ? new Date(nextDateStr) : undefined,
     },
   });
 
-  // Create history entry
-  await prisma.subscriptionHistory.create({
-    data: {
-      userId,
-      reference: data.reference || `REF-${Date.now()}`,
-      planCode: sub.planCode,
-      planName: sub.planName,
-      amount: amountKobo,
-      interval: sub.interval,
-      status: "active",
-      eventType: "subscription.success",
-      startDate: currentStart,
-      endDate: currentEnd,
-      lastPaymentDate: paidAt,
-    },
-  });
+  if (result.status === "used_by_another_account") {
+    console.error(
+      `⚠️ charge.success: payment ${reference} was already applied to a different account than ${userId} — not applied again`
+    );
+    return;
+  }
 
   console.log(
-    `✅ charge.success (renewal): ${data.reference} for user ${userId}`
+    result.status === "already_applied"
+      ? `ℹ️ charge.success (renewal): ${reference} already applied (idempotent)`
+      : `✅ charge.success (renewal): ${reference} for user ${userId}`
   );
 }
 
