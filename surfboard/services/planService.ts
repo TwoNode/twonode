@@ -34,6 +34,7 @@ import { paginatedResult } from "@/lib/api/pagination";
 import { PROVISIONAL_TYPES } from "@/surfboard/services/analyticsService";
 import { emailInUse } from "@/lib/auth/userLookup";
 import { sendPlanShareInviteEmail } from "@/utils/email";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/surfboardActions.ts —
@@ -343,9 +344,12 @@ function withMinAlpha(
 }
 
 export async function getBaseUrl(): Promise<string> {
-  if (process.env.BASE_URL) return process.env.BASE_URL;
-  if (process.env.NODE_ENV === "production")
-    return "https://www.twonodetechnologies.com";
+  if (
+    process.env.BASE_URL ||
+    process.env.VERCEL_ENV === "preview" ||
+    process.env.NODE_ENV === "production"
+  )
+    return getSiteUrl();
 
   try {
     const headersList = await headers();
@@ -1550,8 +1554,7 @@ export async function invitePlanShareByEmail(
     });
   });
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com";
+  const siteUrl = getSiteUrl();
   const signupUrl = `${siteUrl}/api/auth/register?post_login_redirect_url=${encodeURIComponent("/api/auth/success/surfboard")}&login_hint=${encodeURIComponent(normalizedEmail)}`;
   // sendMail swallows its own errors and returns {success:false} rather
   // than throwing, so this was previously never checked — the invite row
