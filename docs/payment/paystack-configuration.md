@@ -58,10 +58,27 @@ NODE_ENV=development
 
 ### Environment Detection
 
-The `isLive` field is automatically set based on the `NODE_ENV` environment variable:
+`isLive` comes from `isPaystackLive()` in `lib/paystackMode.ts`. Every Vercel deployment, previews included, runs with `NODE_ENV=production`, so `NODE_ENV` alone made staging use the live keys. The order is now:
 
-- `NODE_ENV=production` → `isLive=true`
-- `NODE_ENV=development` → `isLive=false`
+1. `PAYSTACK_MODE=live|test` forces a mode.
+2. A Vercel **preview** deployment (staging, branch URLs) is **test**.
+3. Otherwise `NODE_ENV=production` is **live**, and anything else (local dev) is **test**.
+
+`getPaystackSecret()` in the same file picks the secret for the mode. It is used for the Surfboard API client and for checking webhook signatures (Paystack signs an event with the key of the mode that produced it). In test mode `PAYSTACK_TEST_SECRET` wins; in live mode `PAYSTACK_SECRET_KEY` / `PAYSTACK_LIVE_SECRET`.
+
+### Setting up a test-mode staging on Vercel
+
+Vercel → Project → Settings → Environment Variables, scope **Preview** only (never change Production):
+
+| Variable                          | Value                                              |
+| --------------------------------- | -------------------------------------------------- |
+| `PAYSTACK_TEST_SECRET`            | the Paystack **test** secret key (`sk_test_…`)     |
+| `PAYSTACK_TEST_PUBLIC_KEY`        | the test public key (`pk_test_…`)                  |
+| `PAYSTACK_SECRET_KEY`             | same test secret (used by older code paths)        |
+| `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` | the test public key (read by the browser at build) |
+| `BASE_URL`                        | the staging URL (used for emails and callbacks)    |
+
+Then redeploy: `NEXT_PUBLIC_*` values are baked in at build time. In the Paystack dashboard, switch to **Test mode**, and set the test webhook URL to `<staging URL>/api/webhooks/paystack?x-vercel-protection-bypass=<bypass secret>`. Paystack cannot send headers, and Vercel's deployment protection otherwise answers its requests with 401. References then read `SURFBOARD_SUB_test_…`.
 
 ### Paystack Key Selection
 
