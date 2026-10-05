@@ -14,6 +14,7 @@ const mockPending = vi.hoisted(() => ({
 }));
 const mockSession = vi.hoisted(() => ({
   issueSession: vi.fn(),
+  currentRefreshLifetimeSeconds: vi.fn(async () => 3600),
   getServerSession: vi.fn(),
   revokeUserSession: vi.fn(),
 }));
