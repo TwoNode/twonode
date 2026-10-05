@@ -87,4 +87,13 @@ Rows already stored as `error` are only re-run if Paystack sends them again; the
 | Webhook without a valid signature                                                  | 401                                                                                                     |
 | Password-reset email link                                                          | points at the staging URL, not the live site (#265)                                                     |
 
-Not yet exercised: a real recurring subscription (first charge with the tab closed), a real one-time payment, and an early repeat purchase adding to the remaining days. These need Paystack test keys on staging.
+### Clean account, first ever subscription (2026-10-05, test mode)
+
+A brand-new account (signed up with a disposable mailbox through `send-otp` and `register`, email verified by OTP, no Paystack customer, no history) subscribed to the monthly plan with the browser's verify call blocked, as if the tab had been closed:
+
+- Both `charge.success` and `subscription.create` arrived within half a second, and both were recorded `ok`. They arrived in **either order** across runs (`subscription.create` first in one run, `charge.success` first in the next); the result is the same.
+- The account ended `active` for exactly one period (one month from payment), with `subCode` and `customerCode` filled in from `subscription.create`.
+- The payment is one `subscription.success` history row keyed by the transaction reference, in kobo.
+- `subscription.create` also writes its own history row, a lifecycle record (`eventType` `subscription.synced`, `reference` = the `SUB_…` code, same amount and window as the payment). It does not credit time, and the payment ledger keys on the transaction reference, so it cannot double-credit. Payment rows are exactly those with `eventType` `subscription.create` or `subscription.success` (the verify path writes its payment as `subscription.create`); every other `eventType` is a lifecycle row. Rows written before this change (2026-10-05) have `eventType` `subscription.create` with a `SUB_…` reference: exclude references starting with `SUB_` when summing historical payments.
+
+Exercised since, in Paystack test mode: a real one-time payment, an early repeat purchase (5 Nov to 5 Dec, remaining days carried over, replay credited nothing), and a recurring first charge with the browser's verify call blocked, for an existing and for a brand-new account. See [`../development-history/progress.md`](../development-history/progress.md).

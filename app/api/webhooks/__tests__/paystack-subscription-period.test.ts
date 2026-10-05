@@ -231,15 +231,22 @@ describe("subscription.create — identity sync only", () => {
     expect(mockApply).not.toHaveBeenCalled();
   });
 
-  it("records the event in the history log", async () => {
+  it("records a lifecycle row that is not mistakable for a payment", async () => {
     await deliver(created());
     expect(mockPrisma.subscriptionHistory.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         userId: "u1",
         reference: "SUB_abc",
-        eventType: "subscription.create",
+        eventType: "subscription.synced",
       }),
     });
+    // Payment rows are the ones the payment ledger looks up by reference;
+    // this must not be one of those event types.
+    const { eventType } =
+      mockPrisma.subscriptionHistory.create.mock.calls[0][0].data;
+    expect(["subscription.create", "subscription.success"]).not.toContain(
+      eventType
+    );
   });
 
   it("does nothing when the account can't be identified", async () => {
