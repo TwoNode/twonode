@@ -177,4 +177,45 @@ describe("initiateOneTimeSubscription", () => {
       initiateOneTimeSubscription(USER, "a@b.co", "constructor" as any)
     ).rejects.toMatchObject({ status: 400 });
   });
+
+  it("does not return other customers' subscriptions from the Paystack plan", async () => {
+    (mockPaystack as any).plan = {
+      list: vi.fn().mockResolvedValue({
+        data: [
+          {
+            id: 9,
+            name: "SURF_MONTHLY",
+            plan_code: "PLN_9",
+            amount: 1670000,
+            currency: "NGN",
+            interval: "monthly",
+            is_deleted: false,
+            is_archived: false,
+            subscriptions: [
+              {
+                subscription_code: "SUB_other",
+                email_token: "secret-token",
+                authorization: 123,
+                customer: 55,
+              },
+            ],
+            total_subscriptions_revenue: 999,
+          },
+        ],
+      }),
+    };
+
+    const out = await initiateOneTimeSubscription(USER, "a@b.co", "monthly");
+
+    expect(out.plan).toEqual({
+      id: 9,
+      name: "SURF_MONTHLY",
+      plan_code: "PLN_9",
+      amount: 1670000,
+      interval: "monthly",
+      currency: "NGN",
+      description: undefined,
+    });
+    expect(JSON.stringify(out)).not.toMatch(/SUB_other|secret-token/);
+  });
 });

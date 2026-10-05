@@ -5,7 +5,11 @@ import { validateCSRF } from "@/lib/auth/csrf";
 import { validateBody } from "@/lib/api/validate";
 import { consumeRateLimit, getClientIp } from "@/lib/auth/rateLimit";
 import { UnauthenticatedError, handleApiError } from "@/lib/api/errors";
-import { getServerSession, issueSession } from "@/lib/auth/session";
+import {
+  getServerSession,
+  issueSession,
+  currentRefreshLifetimeSeconds,
+} from "@/lib/auth/session";
 import { findUserById } from "@/lib/auth/userLookup";
 import { verifyEmailOtp } from "@/lib/auth/emailVerificationOtp";
 
@@ -58,7 +62,13 @@ export async function POST(req: NextRequest) {
     // Re-issue session with updated emailVerified: true and mustVerifyNow: false claims
     const user = await findUserById(platform, userId);
     if (user) {
-      await issueSession(user.id, user.role, platform, 30 * 24 * 60 * 60, user);
+      await issueSession(
+        user.id,
+        user.role,
+        platform,
+        await currentRefreshLifetimeSeconds(platform),
+        user
+      );
     }
 
     return NextResponse.json({

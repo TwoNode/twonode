@@ -274,7 +274,7 @@ lib/                # ONLY infrastructure with no single product owner
 components/
   ui/                  # shadcn primitives only (button, dialog, popover, ...) — genuinely generic, stays shared
   admin-panel/          # DashboardShell + shared chrome (navbar, user-nav) — §4.8, consumed by all 3 products' registries
-  Navbar/, headers/       # public marketing-site chrome (the twonodes.com root site, not any one product)
+  Navbar/, headers/       # public marketing-site chrome (the twonodetechnologies.com root site, not any one product)
 
 prisma/schema/surfboard.prisma, reva.prisma, gbc.prisma, core.prisma   # §4.3
 ```

@@ -21,6 +21,7 @@ import { notifyPaymentReceived } from "@/reva/services/notificationService";
 import { writeAudit } from "@/lib/audit";
 import { Platform } from "@/utils/platform";
 import { findUnpaidProblem, nairaToKobo } from "@/lib/paystackVerification";
+import { isPaystackLive } from "@/lib/paystackMode";
 
 /**
  * Migrated from revaActions.ts's Paystack-integrated submission/verification
@@ -54,7 +55,7 @@ export async function saveFormDataAndInitiatePaystack(formData: FormData) {
   const documentsUrls = await uploadFormFiles(formData, "files");
   const siteImages = await uploadFormFiles(formData, "site_images");
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
 
   const property = await saveToOneTimeProperty({
     email,
@@ -113,7 +114,7 @@ export async function authSaveFormDataAndInitiatePaystack(
   const documentsUrls = await uploadFormFiles(formData, "files");
   const siteImages = await uploadFormFiles(formData, "site_images");
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
 
   const property = await saveToPropertyTable({
     user: { connect: { id: user.id } },

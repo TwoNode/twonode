@@ -16,6 +16,7 @@ import {
   isPlanId,
 } from "@/surfboard/services/oneTimePayment";
 import { ApiError, NotFoundError, ValidationError } from "@/lib/api/errors";
+import { isPaystackLive } from "@/lib/paystackMode";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/paystackActions.ts (the
@@ -40,6 +41,31 @@ export type Plan = {
   updatedAt: string;
 };
 
+/**
+ * The plan fields the browser needs. Paystack's plan object also lists every
+ * subscription on the plan (other customers' subscription codes, email
+ * tokens and authorization ids), which must never reach a client.
+ */
+export function toPublicPlan(plan: {
+  id: number;
+  name: string;
+  plan_code: string;
+  amount: number;
+  interval: string;
+  currency: string;
+  description?: string;
+}) {
+  return {
+    id: plan.id,
+    name: plan.name,
+    plan_code: plan.plan_code,
+    amount: plan.amount,
+    interval: plan.interval,
+    currency: plan.currency,
+    description: plan.description,
+  };
+}
+
 export async function initiateSubscription(
   userId: string,
   email: string,
@@ -49,7 +75,7 @@ export async function initiateSubscription(
     throw new ValidationError({ planId: "Invalid subscription plan" });
   const selectedPlan = SUBSCRIPTION_PLANS[planId];
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
   await logPaystackEnvironment(isLive);
 
   const reference = `SURFBOARD_SUB_${isLive ? "live" : "test"}_${Date.now()}_${userId}`;
@@ -82,7 +108,7 @@ export async function initiateSubscription(
     // produced a 100x-inflated charge (₦50,000 -> ₦5,000,000) — reproduced
     // live in production. selectedPlan.amount is the real naira price.
     amount: selectedPlan.amount,
-    plan,
+    plan: toPublicPlan(plan),
     currency: "NGN",
     userId,
     metadata: {
@@ -138,7 +164,7 @@ export async function initiateOneTimeSubscription(
     throw new ValidationError({ planId: "Invalid subscription plan" });
   const selectedPlan = SUBSCRIPTION_PLANS[planId];
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
   await logPaystackEnvironment(isLive);
 
   // The trailing user id is what binds the reference to this account when the
@@ -154,7 +180,7 @@ export async function initiateOneTimeSubscription(
     email,
     // See initiateSubscription's identical comment — same 100x-inflation bug.
     amount: selectedPlan.amount,
-    plan,
+    plan: toPublicPlan(plan),
     currency: "NGN",
     userId,
     metadata: {
@@ -239,7 +265,7 @@ export async function getOrCreatePaystackPlan(
 }
 
 export async function verifySubscription(userId: string, reference: string) {
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
   const paystack = await createPaystackInstance(isLive);
 
   const verification: any = await paystack.transaction.verify({ reference });
@@ -333,7 +359,7 @@ export async function verifyOneTimeSubscription(
   const early = findOneTimeReferenceProblem({ planId, userId, reference });
   if (early) throw new ApiError(403, early.code, early.message);
 
-  const isLive = process.env.NODE_ENV === "production";
+  const isLive = isPaystackLive();
   const paystack = await createPaystackInstance(isLive);
 
   const verification: any = await paystack.transaction.verify({ reference });
