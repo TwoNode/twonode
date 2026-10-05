@@ -36,7 +36,8 @@ _(Paths current as of the 2026-08 architecture rebuild — see `docs/development
   - Handles plan selection and triggers the `PaystackPop` inline checkout.
   - On success, redirects or calls `verifySubscription`.
 - **`surfboard/services/paystackSubscriptionService.ts`**: Paystack-facing logic.
-  - `initiateSubscription`: Initializes the transaction with `metadata.platform = "surfboard"`.
+  - `initiateSubscription`: Builds the checkout parameters (reference, plan, `metadata.platform = "surfboard"`). It does **not** call Paystack's `transaction.initialize` — the client popup registers the transaction (see `subscription-payments-flow.md` §2.B).
+  - `initiateOneTimeSubscription` / `verifyOneTimeSubscription`: the no-auto-renew variant (`provider: "paystack_onetime"`, no Paystack subscription object).
   - `verifySubscription`: Finalizes the transaction and updates the local DB.
   - `disableSubscription`: Cancels auto-renewal via Paystack.
   - `getOrCreatePaystackPlan`: Resolves/creates the Paystack-side plan record.
@@ -68,14 +69,16 @@ _(Paths current as of the 2026-08 architecture rebuild — see `docs/development
 
 ### `Subscription` Table
 
-| Field             | Purpose                                                                     |
-| :---------------- | :-------------------------------------------------------------------------- |
-| `userId`          | Links to `SurfboardUser`.                                                   |
-| `subCode`         | The Paystack Subscription ID (e.g., `SUB_xxx`). Required for cancellations. |
-| `planCode`        | The Paystack Plan ID (e.g., `PLN_xxx`).                                     |
-| `status`          | The current local state (`active`, `canceled`, etc.).                       |
-| `currentEnd`      | The end date of the current paid period.                                    |
-| `nextPaymentDate` | When Paystack is scheduled to charge next.                                  |
+| Field              | Purpose                                                                                                                           |
+| :----------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| `userId`           | Links to `SurfboardUser`.                                                                                                         |
+| `subCode`          | The Paystack Subscription ID (e.g., `SUB_xxx`). Required for cancellations.                                                       |
+| `planCode`         | The Paystack Plan ID (e.g., `PLN_xxx`).                                                                                           |
+| `status`           | The current local state (`active`, `canceled`, etc.).                                                                             |
+| `currentEnd`       | The end date of the current paid period.                                                                                          |
+| `nextPaymentDate`  | When Paystack is scheduled to charge next.                                                                                        |
+| `provider`         | `"paystack"` (recurring) or `"paystack_onetime"` (no auto-renew, nothing to cancel).                                              |
+| `userId` is unique | **One `Subscription` row per user** — a new payment overwrites the previous period (see `subscription-payments-flow.md` §2.C #3). |
 
 ### `SubscriptionHistory` Table
 
@@ -134,7 +137,7 @@ Sent every time a recurring payment succeeds.
 
 ### The 1-Day Grace Period
 
-`surfboard/services/subscriptionService.ts`'s internal `isSubActiveOrGrace()` (`GRACE_PERIOD_MS = 24 * 60 * 60 * 1000`) allows users to access the platform for **24 hours** after their `currentEnd` date. This prevents immediate lockout due to minor payment delays or time-zone differences. (The pre-rebuild source had a same-purpose `isUserSubscribed()` in `subscriptionActions.ts` — grep-confirmed dead with zero consumers during the Phase 2 migration, so it wasn't carried over; this is the function that actually runs today.)
+`surfboard/services/subscriptionService.ts`'s internal `isSubActiveOrGrace()` (`GRACE_PERIOD_MS = 24 * 60 * 60 * 1000`) allows users to access the platform for **24 hours** after their `currentEnd` date. This prevents immediate lockout due to minor payment delays or time-zone differences. It governs the **API** gate; `proxy.ts`'s page gate is stricter (see `subscription-payments-flow.md` §2.C #5). (The pre-rebuild source had a same-purpose `isUserSubscribed()` in `subscriptionActions.ts` — grep-confirmed dead with zero consumers during the Phase 2 migration, so it wasn't carried over; this is the function that actually runs today.)
 
 ### Platform Detection Logic (Hardened)
 
@@ -165,7 +168,9 @@ Time is added only on top of a period that is **still running and in a coverage 
 
 ### Idempotency
 
-We use the `WebhookEvent` table to log every incoming Paystack signature. If the same signature is sent twice, the system skips processing the second time (`ledgerId === null`).
+We use the `WebhookEvent` table to log every incoming Paystack signature (unique `signature`). If the same signature is sent twice, the system skips processing the second time (`ledgerId === null`).
+
+**Caveat:** the ledger row is inserted _before_ the handler runs, so a handler that throws still leaves the signature recorded — Paystack's retry of the same payload is then treated as a duplicate and acknowledged without being processed. See `subscription-payments-flow.md` §2.C #2.
 
 ---
 

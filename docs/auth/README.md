@@ -5,7 +5,7 @@ Documentation for how login, sessions, and role-based access work across REVA, S
 ## Directory
 
 - [**Non-Technical Overview**](./non-technical.md) — for stakeholders, admins, and anyone who wants the plain-language version: how users log in, what roles exist, what's secure about it.
-- [**Technical Guide**](./technical.md) — the real implementation: the native email+password/JWT system that's the primary path today, the still-live Kinde OAuth system running alongside it, session cookies, middleware, and the permission model. Includes a currently-open bug (§9.3) worth reading before touching admin-dashboard nav code.
+- [**Technical Guide**](./technical.md) — the real implementation: the native email+password/JWT system that's the primary path today, the still-live Kinde OAuth system running alongside it, session cookies, middleware, and the permission model. Covers OTP/link-first registration (§1.7), email-verification enforcement (§1.8, including known gaps), admin invitations (§1.2) and the dual-system architecture (§9).
 - [**Kinde Management API**](./kinde-management-api.md) — _retired._ Documents a Kinde-API-based admin user-management client that was deleted during the rebuild (its job is now done by `reva/services/adminUserService.ts` against the app's own database). Kept as a reference in case Kinde-API-based user management is needed again.
 
 ## Core Philosophy
@@ -14,3 +14,4 @@ Documentation for how login, sessions, and role-based access work across REVA, S
 2. **Platform Partitioning**: identity can be shared, but permissions are partitioned by platform — a user can hold different roles, or no role at all, on REVA vs. Surfboard vs. GBC.
 3. **Encrypted/Signed Sessions**: both systems avoid expensive per-request database lookups by carrying signed or encrypted session state in cookies.
 4. **Dynamic Redirection**: users land on the dashboard that matches their role and platform automatically.
+5. **Verified identities**: self-service accounts are created only after the email is confirmed (OTP or link); enforcing confirmation on _existing_ accounts is a per-platform superadmin setting, off by default, with a grace period. Google sign-ins count as verified.

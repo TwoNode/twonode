@@ -10,7 +10,7 @@ The user shared a product brief ("Surfboard Mobile App Brief") proposing a nativ
 
 ## What's already there
 
-Surfboard's Prisma schema (`prisma/schema/surfboard.prisma`) and its ~120 routes under `app/api/v1/surfboard/*` already cover the brief's feature areas:
+Surfboard's Prisma schema (`prisma/schema/surfboard.prisma`) and its ~130 routes (129 as of 2026-10-04, see the generated [`route-inventory.md`](../development-history/route-inventory.md)) under `app/api/v1/surfboard/*` already cover the brief's feature areas:
 
 | Brief area                                           | Backed by                                                                                                                                                                                                                                                                        |
 | :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,7 +28,7 @@ This is a wide, mature API surface — the MDA (government reviewer) side of the
 
 ## The one real gap: authentication
 
-Verified in `lib/auth/jwt.ts`, `lib/auth/cookies.ts`, `lib/auth/session.ts`, and `lib/api/withAuth.ts` (the wrapper every one of the ~120 routes above is built on):
+Verified in `lib/auth/jwt.ts`, `lib/auth/cookies.ts`, `lib/auth/session.ts`, and `lib/api/withAuth.ts` (the wrapper every one of the ~130 routes above is built on):
 
 - Access tokens are short-lived (15 min) JWTs, refreshed via a rotating refresh-token pair with reuse detection (`rotateRefreshToken` in `lib/auth/session.ts`).
 - Both tokens are set as `httpOnly`, `sameSite: "lax"` cookies (`lib/auth/cookies.ts`) — never returned in a response body.

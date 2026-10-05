@@ -22,7 +22,8 @@
     "prisma:studio": "npx prisma studio",
     "prisma:accept-data-loss": "npx prisma db push --accept-data-loss",
     "prisma:create-only": "npx prisma migrate dev --create-only",
-    "prisma:check": "npx prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datasource prisma/schema.prisma --script"
+    "prisma:check": "npx prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datasource prisma/schema.prisma --script",
+    "docs:routes": "node scripts/docs/generate-route-inventory.mjs"
   },
   "dependencies": {
     "@arcgis/core": "^4.33.9",

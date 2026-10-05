@@ -9,59 +9,64 @@ plus the marketing-site sections colocated under `app/(main)/`.
 Standard [shadcn/ui](https://ui.shadcn.com/) primitives, one file per
 component. Not product-specific.
 
-| File                   | Description                                          |
-| ---------------------- | ---------------------------------------------------- |
-| `accordion.tsx`        | Accordion / collapsible sections                     |
-| `alert-dialog.tsx`     | Confirmation dialog (used for deletes, logout, etc.) |
-| `alert.tsx`            | Inline alert banner                                  |
-| `avatar.tsx`           | Avatar image/fallback                                |
-| `badge.tsx`            | Small status/label badge                             |
-| `button.tsx`           | Button primitive                                     |
-| `calendar.tsx`         | Date-picker calendar                                 |
-| `card.tsx`             | Card container                                       |
-| `carousel.tsx`         | Carousel/slider                                      |
-| `checkbox.tsx`         | Checkbox input                                       |
-| `collapsible.tsx`      | Collapsible content region                           |
-| `command.tsx`          | Command palette / searchable list                    |
-| `dialog.tsx`           | Modal dialog                                         |
-| `drawer.tsx`           | Slide-out drawer                                     |
-| `dropdown-menu.tsx`    | Dropdown menu                                        |
-| `file-upload.tsx`      | File upload control                                  |
-| `form.tsx`             | Form field wrappers (react-hook-form integration)    |
-| `input.tsx`            | Text input                                           |
-| `label.tsx`            | Form label                                           |
-| `loading-examples.tsx` | Reference/demo of loading-state patterns             |
-| `loading-spinner.tsx`  | Loading spinner                                      |
-| `password-input.tsx`   | Password input with show/hide toggle                 |
-| `phone-input.tsx`      | Phone number input                                   |
-| `popover.tsx`          | Popover (used by the notification bell dropdown)     |
-| `progress.tsx`         | Progress bar                                         |
-| `scroll-area.tsx`      | Custom scrollbar container                           |
-| `select.tsx`           | Select/dropdown input                                |
-| `separator.tsx`        | Visual divider                                       |
-| `sheet.tsx`            | Slide-in panel                                       |
-| `skeleton.tsx`         | Loading skeleton placeholder                         |
-| `switch.tsx`           | Toggle switch                                        |
-| `table.tsx`            | Table primitives                                     |
-| `tabs.tsx`             | Tabs                                                 |
-| `textarea.tsx`         | Multi-line text input                                |
-| `toaster.tsx`          | Toast notification container                         |
-| `toast.tsx`            | Toast notification primitive                         |
-| `tooltip.tsx`          | Tooltip                                              |
-| `visually-hidden.tsx`  | Visually-hidden (screen-reader-only) wrapper         |
+| File                           | Description                                                                                                                                                          |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `accordion.tsx`                | Accordion / collapsible sections                                                                                                                                     |
+| `alert-dialog.tsx`             | Confirmation dialog (used for deletes, logout, etc.)                                                                                                                 |
+| `alert.tsx`                    | Inline alert banner                                                                                                                                                  |
+| `avatar.tsx`                   | Avatar image/fallback                                                                                                                                                |
+| `badge.tsx`                    | Small status/label badge                                                                                                                                             |
+| `button.tsx`                   | Button primitive                                                                                                                                                     |
+| `calendar.tsx`                 | Date-picker calendar                                                                                                                                                 |
+| `card.tsx`                     | Card container                                                                                                                                                       |
+| `carousel.tsx`                 | Carousel/slider                                                                                                                                                      |
+| `checkbox.tsx`                 | Checkbox input                                                                                                                                                       |
+| `collapsible.tsx`              | Collapsible content region                                                                                                                                           |
+| `command.tsx`                  | Command palette / searchable list                                                                                                                                    |
+| `dialog.tsx`                   | Modal dialog                                                                                                                                                         |
+| `drawer.tsx`                   | Slide-out drawer                                                                                                                                                     |
+| `dropdown-menu.tsx`            | Dropdown menu                                                                                                                                                        |
+| `file-upload.tsx`              | File upload control                                                                                                                                                  |
+| `form.tsx`                     | Form field wrappers (react-hook-form integration)                                                                                                                    |
+| `input.tsx`                    | Text input                                                                                                                                                           |
+| `label.tsx`                    | Form label                                                                                                                                                           |
+| `loading-examples.tsx`         | Reference/demo of loading-state patterns                                                                                                                             |
+| `loading-spinner.tsx`          | Loading spinner                                                                                                                                                      |
+| `pagination.tsx`               | Shared Prev/Next + windowed page-number (ellipses) + page-size control for every paginated admin list; pairs with `hooks/useServerList.ts`                           |
+| `password-input.tsx`           | Password input with show/hide toggle                                                                                                                                 |
+| `phone-input.tsx`              | Phone number input                                                                                                                                                   |
+| `popover.tsx`                  | Popover (used by the notification bell dropdown)                                                                                                                     |
+| `progress.tsx`                 | Progress bar                                                                                                                                                         |
+| `scroll-area.tsx`              | Custom scrollbar container                                                                                                                                           |
+| `search-params-pagination.tsx` | `SearchParamsPagination` — the same control for server-`searchParams`-driven pages: pushes a new URL (re-running the server component) instead of calling `setState` |
+| `select.tsx`                   | Select/dropdown input                                                                                                                                                |
+| `separator.tsx`                | Visual divider                                                                                                                                                       |
+| `sheet.tsx`                    | Slide-in panel                                                                                                                                                       |
+| `skeleton.tsx`                 | Loading skeleton placeholder                                                                                                                                         |
+| `switch.tsx`                   | Toggle switch                                                                                                                                                        |
+| `table.tsx`                    | Table primitives                                                                                                                                                     |
+| `tabs.tsx`                     | Tabs                                                                                                                                                                 |
+| `textarea.tsx`                 | Multi-line text input                                                                                                                                                |
+| `toaster.tsx`                  | Toast notification container                                                                                                                                         |
+| `toast.tsx`                    | Toast notification primitive                                                                                                                                         |
+| `tooltip.tsx`                  | Tooltip                                                                                                                                                              |
+| `view-toggle.tsx`              | `ViewToggle` / `ViewMode` (`"list" \| "grid"`) — one shared list/grid switcher for admin listing pages; persist the choice with `hooks/useViewMode.ts`               |
+| `visually-hidden.tsx`          | Visually-hidden (screen-reader-only) wrapper                                                                                                                         |
 
 ## `components/dashboard/` — shared dashboard system
 
 Used by every product's dashboard shell (GBC/REVA/Surfboard).
 
-| File                  | Description                                                                                                                                                                                             |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DashboardBadge.tsx`  | Shared status-badge look (tone system)                                                                                                                                                                  |
-| `DashboardHero.tsx`   | Gradient greeting banner at the top of a dashboard page. Optional `secondaryCta`, rendered to the left of `cta` in a lighter outline style (e.g. Surfboard dashboard's "My Batches" next to "New Plan") |
-| `DashboardSearch.tsx` | Debounced topbar search with live results dropdown                                                                                                                                                      |
-| `DateRangeFilter.tsx` | Two-input date-range filter (used by Surfboard's dashboard analytics)                                                                                                                                   |
-| `StatCard.tsx`        | Tone-tinted stat tile with icon and optional breakdown line                                                                                                                                             |
-| `ThemeToggle.tsx`     | Light/dark theme toggle button                                                                                                                                                                          |
+| File                        | Description                                                                                                                                                                                                                                                                                                                         |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DashboardBadge.tsx`        | Shared status-badge look (tone system)                                                                                                                                                                                                                                                                                              |
+| `DashboardHero.tsx`         | Gradient greeting banner at the top of a dashboard page. Optional `secondaryCta`, rendered to the left of `cta` in a lighter outline style (e.g. Surfboard dashboard's "My Batches" next to "New Plan")                                                                                                                             |
+| `DashboardSearch.tsx`       | Debounced topbar search with live results dropdown                                                                                                                                                                                                                                                                                  |
+| `DateRangeFilter.tsx`       | Two-input date-range filter (used by Surfboard's dashboard analytics)                                                                                                                                                                                                                                                               |
+| `StatCard.tsx`              | Tone-tinted stat tile with icon and optional breakdown line                                                                                                                                                                                                                                                                         |
+| `ThemeToggle.tsx`           | Light/dark theme toggle button                                                                                                                                                                                                                                                                                                      |
+| `UserAccountMenu.tsx`       | Account menu (name, email, role badge, Profile/Settings links, Sign out) generalised from GBC's `GBCUserMenu` for Surfboard's facilitator navbar and admin/MDA `DashboardShell`. Provider-agnostic: takes an `onLogout` callback because native-JWT sessions must sign out via `/api/auth/logout_redirect`, not Kinde's hosted flow |
+| `VerificationNagBanner.tsx` | Banner for grandfathered, still-in-grace, unverified users (`platform`, `verifyHref`), showing the days left from `/api/v1/auth/me`'s `verificationGraceEndsAt`. Mounted in the Surfboard/REVA user layouts and the GBC admin layout. See `auth/technical.md` §1.8                                                                  |
 
 ## `components/sidebars/` — shared sidebar system
 
@@ -100,6 +105,8 @@ Used by every product's dashboard shell (GBC/REVA/Surfboard).
 | `PlatformNetworkGraphic.tsx` | The connected-logo graphic on `AuthSplitLayout`'s branded panel. `variant="default"` (TwoNode hub + Surfboard/REVA/GBC/open-slot satellites) vs `variant="mda"` (a single TwoNode↔MDA connection, offset in x so the line reads as a real diagonal, not stacked dead-vertical)                                                                                                                                                    |
 | `ResetPasswordCard.tsx`      | Password reset form card                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `VerifyEmailCard.tsx`        | Email verification status card                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `RegisterVerifyLinkCard.tsx` | Landing page for the **registration** link email (`pid` + `token` in the URL; the user re-enters their password so a resubmitted victim address can't be turned into an attacker-controlled account). Distinct from `VerifyEmailCard`, which confirms an already-created account                                                                                                                                                  |
+| `VerifyEmailGate.tsx`        | The blocking "confirm your email" screen `proxy.ts` redirects a gated session to (`/{platform}/verify-email`): OTP entry or a check-your-email state per the platform's `method`, plus Resend. The verify endpoints re-issue the session, so on success it routes to `dashboardHref`                                                                                                                                              |
 
 ## `components/Navbar/` — corporate site navbar
 
@@ -135,6 +142,7 @@ Used by every product's dashboard shell (GBC/REVA/Surfboard).
 | `SetCookieFromClient.tsx`  | Client-side cookie setter                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `ToasterComponent.tsx`     | Mounts `sonner`'s `<Toaster>` once in the root layout — the only toast container in the app. All products (GBC, Surfboard, REVA) call `toast` from `sonner`; there is no per-product provider                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `YouTubeEmbed.tsx`         | YouTube video embed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `WhatsAppButton.tsx`       | Floating WhatsApp support bubble (company support line, path-aware prefilled message for GBC/REVA/Surfboard). Hidden on any path containing `-restricted` or `-mda`; mounted in `app/(main)/layout.tsx` and `app/(projects)/layout.tsx`                                                                                                                                                                                                                                                                                                                                                                        |
 
 ## Corporate/marketing site sections (`components/` root)
 

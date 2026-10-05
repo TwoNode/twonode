@@ -30,13 +30,13 @@ A single person can hold different roles on different platforms:
 
 ## 4. Registration Types
 
-| Platform                                                                            | Signup Type      | How it Works                                                                                                              |
-| :---------------------------------------------------------------------------------- | :--------------- | :------------------------------------------------------------------------------------------------------------------------ |
-| **REVA (user side)**                                                                | **Self-service** | Register with email/password, or sign in with Google — either way, the account exists instantly.                          |
-| **Surfboard (user side)**                                                           | **Self-service** | Same as above — ready to submit plans right away.                                                                         |
-| **GBC (public side)**                                                               | **Self-service** | Same as above — ready to manage tickets.                                                                                  |
-| **Surfboard-MDA**                                                                   | **Admin-only**   | A staff member's account must be created by an administrator first; there is no public registration form for this portal. |
-| **Restricted/Admin Panels** (Surfboard-restricted, REVA-restricted, GBC-restricted) | **Admin-only**   | Dedicated admin accounts must be pre-configured by an existing administrator.                                             |
+| Platform                                                                            | Signup Type      | How it Works                                                                                                                                                                                        |
+| :---------------------------------------------------------------------------------- | :--------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **REVA (user side)**                                                                | **Self-service** | Register with email/password and confirm the address with a one-time code or link we email — the account is created only once that is confirmed. Or sign in with Google, which counts as confirmed. |
+| **Surfboard (user side)**                                                           | **Self-service** | Same as above — ready to submit plans right away.                                                                                                                                                   |
+| **GBC (public side)**                                                               | **Self-service** | Same as above — ready to manage tickets.                                                                                                                                                            |
+| **Surfboard-MDA**                                                                   | **Invitation**   | A superadmin invites the staff member by email; they set their own password from the link. There is no public registration form for this portal.                                                    |
+| **Restricted/Admin Panels** (Surfboard-restricted, REVA-restricted, GBC-restricted) | **Invitation**   | Same: a superadmin sends an invitation (valid for 7 days) and the person creates their account from the emailed link.                                                                               |
 
 ## 5. Multi-Platform Support (Use everything at once)
 
@@ -53,9 +53,20 @@ If someone belongs to more than one platform (say, both REVA and Surfboard), the
 - **Rate limiting**: Repeated failed login attempts from the same source are throttled, to slow down password-guessing.
 - **Partitioned access**: An admin on REVA cannot see GBC data just because they're an admin somewhere — each platform's admin privilege is granted separately.
 
-## 7. A Known Rough Edge (as of 2026-09-04)
+## 7. Email Confirmation
 
-Admin and MDA staff accounts that sign in with **email & password** currently see an **empty navigation menu** on their dashboard sidebar (the page itself still loads correctly). This happens because the sidebar's menu-building logic was wired to the older Google-sign-in session only. Anyone hitting this today should sign in with **"Continue with Google"** instead until it's fixed. The technical detail is in [`technical.md` §9.3](./technical.md#93-a-known-gap-dashboardshells-sidebar-nav-only-sees-kinde-sourced-roles).
+Every account should prove it owns its email address. Each platform's superadmin controls this separately:
+
+- **Off by default.** Nothing changes for anyone until a superadmin switches it on for a platform (Surfboard and GBC have a setting for this; REVA does not have a settings screen yet, so it stays off there).
+- **Code or link.** The superadmin chooses whether people confirm with a six-digit code (valid 10 minutes) or an emailed link (valid 1 hour).
+- **New accounts** created after enforcement starts must confirm before they can use the product. They land on a "confirm your email" screen with a Resend button.
+- **Existing accounts** are not locked out at once. They keep working, see a banner counting down the days, and are blocked only when the grace period (30 days by default, adjustable) ends.
+- **Google sign-in** counts as confirmed, and is marked as such so an administrator can tell it apart from our own confirmation.
+
+## 8. Password Reset and Staff Invitations
+
+- **Forgot password**: an emailed single-use link, valid for 1 hour. The page never reveals whether an email has an account. Using the link signs the person out everywhere else.
+- **Staff invitations**: an invited person has no account until they follow the link and choose a password, so a mistyped address never leaves a live account behind. Following the link also confirms the email.
 
 ---
 
