@@ -97,3 +97,17 @@ A brand-new account (signed up with a disposable mailbox through `send-otp` and 
 - `subscription.create` also writes its own history row, a lifecycle record (`eventType` `subscription.synced`, `reference` = the `SUB_…` code, same amount and window as the payment). It does not credit time, and the payment ledger keys on the transaction reference, so it cannot double-credit. Payment rows are exactly those with `eventType` `subscription.create` or `subscription.success` (the verify path writes its payment as `subscription.create`); every other `eventType` is a lifecycle row. Rows written before this change (2026-10-05) have `eventType` `subscription.create` with a `SUB_…` reference: exclude references starting with `SUB_` when summing historical payments.
 
 Exercised since, in Paystack test mode: a real one-time payment, an early repeat purchase (5 Nov to 5 Dec, remaining days carried over, replay credited nothing), and a recurring first charge with the browser's verify call blocked, for an existing and for a brand-new account. See [`../development-history/progress.md`](../development-history/progress.md).
+
+## 8. Checking history amounts (units)
+
+Plan prices in kobo are 1,670,000 (monthly), 5,000,000 (quarterly) and 20,000,000 (annual). Before #263 the verify path wrote `plan.amount * 100` into `SubscriptionHistory.amount`. In the staging database (64 rows; it holds live-domain Paystack events) every row holds one of those three values, so nothing was found to be 100×. To check another database (read-only):
+
+```sql
+select "eventType", amount, count(*)
+from "SubscriptionHistory"
+where amount not in (1670000, 5000000, 20000000)
+group by 1, 2
+order by 3 desc;
+```
+
+Rows with `amount` 167,000,000 / 500,000,000 / 2,000,000,000 would be the 100× ones (divide by 100); any other value deserves a look before a fix. Do the same for `"Subscription".amount`.
