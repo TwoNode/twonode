@@ -17,8 +17,11 @@ vi.mock("@/lib/prisma", () => ({ default: {} }));
 vi.mock("@/utils/paystackConfig", () => mockConfig);
 vi.mock("@/surfboard/services/subscriptionService", () => mockSubs);
 
-const { verifyOneTimeSubscription, initiateOneTimeSubscription } =
-  await import("@/surfboard/services/paystackSubscriptionService");
+const {
+  verifyOneTimeSubscription,
+  initiateOneTimeSubscription,
+  verifySubscription,
+} = await import("@/surfboard/services/paystackSubscriptionService");
 const { userIdFromOneTimeReference } =
   await import("@/surfboard/services/oneTimePayment");
 
@@ -176,5 +179,35 @@ describe("initiateOneTimeSubscription", () => {
     await expect(
       initiateOneTimeSubscription(USER, "a@b.co", "constructor" as any)
     ).rejects.toMatchObject({ status: 400 });
+  });
+});
+
+describe("verifySubscription (recurring) — reference ownership", () => {
+  it("refuses a reference issued to another account without calling Paystack", async () => {
+    mockPaystack.transaction.verify.mockClear();
+
+    for (const reference of [
+      "SURFBOARD_SUB_live_1700000000000_someone-else",
+      "SURFBOARD_ONETIME_SUB_live_1700000000000_user-1",
+      "abc",
+      "",
+    ]) {
+      await expect(verifySubscription(USER, reference)).rejects.toMatchObject({
+        status: 403,
+        code: "REFERENCE_NOT_ISSUED_TO_USER",
+      });
+    }
+    expect(mockPaystack.transaction.verify).not.toHaveBeenCalled();
+  });
+
+  it("goes on to verify with Paystack for the account's own reference", async () => {
+    mockPaystack.transaction.verify.mockResolvedValue({
+      data: { status: "abandoned", gateway_response: "not paid" },
+    });
+
+    await expect(
+      verifySubscription(USER, `SURFBOARD_SUB_test_1700000000000_${USER}`)
+    ).rejects.toThrow("not paid");
+    expect(mockPaystack.transaction.verify).toHaveBeenCalledTimes(1);
   });
 });

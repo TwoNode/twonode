@@ -39,6 +39,18 @@ export function userIdFromOneTimeReference(
   return ONE_TIME_REFERENCE.exec(reference)?.[1] ?? null;
 }
 
+// Recurring-subscription checkout: `SURFBOARD_SUB_<live|test>_<epoch ms>_<userId>`,
+// built server-side by initiateSubscription.
+const SUBSCRIPTION_REFERENCE = /^SURFBOARD_SUB_(?:live|test)_\d+_(.+)$/;
+
+/** The account a recurring-subscription reference was issued to, or null if it isn't one of ours. */
+export function userIdFromSubscriptionReference(
+  reference: string | null | undefined
+): string | null {
+  if (typeof reference !== "string") return null;
+  return SUBSCRIPTION_REFERENCE.exec(reference)?.[1] ?? null;
+}
+
 /**
  * A real plan id. `planId in SUBSCRIPTION_PLANS` / a truthiness check on
  * `SUBSCRIPTION_PLANS[planId]` is not enough: inherited keys such as
