@@ -124,6 +124,33 @@ beforeEach(() => {
 });
 
 describe("charge.success — a renewal (or first charge)", () => {
+  it("credits a renewal shaped as Paystack documents it: bare reference, plan object, no subscription object, no metadata", async () => {
+    // Paystack sends charge.success on the renewal date with the plan but no
+    // `subscription` block (that arrives on invoice.update), and the reference
+    // is Paystack's own, not ours. The user is found by customer code.
+    const payload = renewal({
+      reference: "p9k2x7f1a3",
+      subscription: undefined,
+      metadata: undefined,
+    });
+    mockPrisma.subscription.findFirst.mockImplementation(
+      async ({ where }: any) =>
+        where.customerCode === "CUS_5" ? { userId: "u1" } : null
+    );
+
+    const res = await deliver(payload);
+
+    expect(res.status).toBe(200);
+    expect(mockApply).toHaveBeenCalledTimes(1);
+    const args = mockApply.mock.calls[0][0];
+    expect(args).toMatchObject({
+      userId: "u1",
+      reference: "p9k2x7f1a3",
+      periodInterval: "monthly",
+    });
+    expect(args.row.nextPaymentDate).toBeUndefined();
+  });
+
   it("credits the payment through applyPaymentPeriod, keyed by its reference", async () => {
     const res = await deliver(renewal());
 

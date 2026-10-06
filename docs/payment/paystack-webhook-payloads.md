@@ -49,7 +49,18 @@ That is everything `onSubscriptionChargeSuccess` reads (`extractPlan`, `referenc
 
 ### Auto-renewal charges
 
-Only one `charge.success` in the ledger has a Paystack-generated reference (a bare hex string, platform `unknown`). The data does not cover renewal payloads well. Renewals show up mostly through the `invoice.*` events below. Treat the renewal shape as unverified until a renewal is captured.
+No real renewal has reached this endpoint yet (the one Paystack-generated reference in the ledger is not a subscription renewal), so what follows comes from Paystack's documentation and third-party write-ups, not from captured traffic. Paystack's own pages (`paystack.com/docs`) refused automated fetching (HTTP 403), so the sequence was confirmed from Paystack's published Subscriptions page as quoted in search results and from the `PaystackHQ/documentation` repository.
+
+Documented sequence for a renewal:
+
+1. `invoice.create`, **3 days before** the next payment date: a charge attempt will be made. Informational here.
+2. `charge.success` **on the payment date**, if the charge worked. It is an ordinary `charge.success` with Paystack's own reference (not our `SURFBOARD_SUB_…` prefix) and the `plan` object. Paystack's examples do not show a `subscription` block on it.
+3. `invoice.update`, after the attempt, with the final invoice status (`paid`), `paid_at`, `period_start`/`period_end` and `transaction.reference`. Check `paid`, since the event can fire for other reasons.
+4. If the charge fails, `invoice.payment_failed` replaces step 2. Paystack does not retry subscription charges.
+
+What the handler needs from the renewal `charge.success` is present in that shape: `data.plan` (to recognise a Surfboard plan), `customer.customer_code` (to find the account, since the reference has no prefix and `metadata` is absent), `reference`, `paid_at` and `amount`. `nextPaymentDate` is only set when a `subscription` block is present; otherwise the handler uses the end of the period the payment buys. `onSubscriptionChargeSuccess` is covered by a test with exactly this shape (`app/api/webhooks/__tests__/paystack-subscription-period.test.ts`).
+
+**Still unverified:** the actual bytes of a live renewal. Two things to look for the first time one arrives: the user is found by `customerCode` (so the first charge must have stored it, which `charge.success` and `subscription.create` both do), and `amount` is kobo.
 
 ### Other references seen on the same event
 

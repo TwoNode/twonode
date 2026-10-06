@@ -70,6 +70,102 @@ export async function getRevaPriceForLocation(
   return { lga: String(attributes.LGA ?? "UNKNOWN").toUpperCase(), price };
 }
 
+const GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
+
+/**
+ * The browser posts both an address and map coordinates, and the price comes
+ * from the coordinates. Nothing tied the two together, so a payer could drop
+ * the pin in a cheaper LGA while naming the real property in the address. The
+ * server therefore geocodes the address itself and requires it to fall in a
+ * location with the same price as the pin.
+ *
+ * Needs `GOOGLE_MAPS_SERVER_API_KEY`: a key without an HTTP-referrer
+ * restriction (the NEXT_PUBLIC browser key is referrer-restricted and Google
+ * rejects it from a server). If it is unset the check is skipped with a
+ * warning, so deploying this code cannot by itself block payments.
+ */
+export async function assertAddressMatchesPrice(
+  address: unknown,
+  pinPrice: RevaPrice,
+  fetchImpl: typeof fetch = fetch
+): Promise<void> {
+  const key = process.env.GOOGLE_MAPS_SERVER_API_KEY;
+  if (!key) {
+    console.warn(
+      "[reva-pricing] GOOGLE_MAPS_SERVER_API_KEY is not set; address was not verified against the map location"
+    );
+    return;
+  }
+
+  const text = typeof address === "string" ? address.trim() : "";
+  if (!text) {
+    throw new ValidationError({ address: "An address is required" });
+  }
+
+  let body: any;
+  try {
+    const params = new URLSearchParams({
+      address: text,
+      components: "country:NG",
+      key,
+    });
+    const res = await fetchImpl(`${GEOCODE_URL}?${params}`, {
+      signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
+    });
+    if (!res.ok) throw new Error(`Geocoder answered ${res.status}`);
+    body = await res.json();
+  } catch (err) {
+    console.error("[reva-pricing] address geocoding failed", err);
+    throw new ApiError(
+      503,
+      "ADDRESS_LOOKUP_UNAVAILABLE",
+      "Could not verify the address. Please try again."
+    );
+  }
+
+  if (body?.status === "ZERO_RESULTS") {
+    throw new ValidationError({
+      address: "We could not find this address. Please check it and try again.",
+    });
+  }
+  const point = body?.results?.[0]?.geometry?.location;
+  if (body?.status !== "OK" || !point) {
+    // REQUEST_DENIED, OVER_QUERY_LIMIT, ...: our configuration, not the payer's input.
+    console.error(
+      "[reva-pricing] geocoder status",
+      body?.status,
+      body?.error_message
+    );
+    throw new ApiError(
+      503,
+      "ADDRESS_LOOKUP_UNAVAILABLE",
+      "Could not verify the address. Please try again."
+    );
+  }
+
+  let addressPrice: RevaPrice;
+  try {
+    addressPrice = await getRevaPriceForLocation(
+      point.lat,
+      point.lng,
+      fetchImpl
+    );
+  } catch (err) {
+    // Outside the priced Lagos LGAs (a ValidationError) is a mismatch; an
+    // unreachable layer (503) stays a 503.
+    if (err instanceof ApiError && err.status === 503) throw err;
+    addressPrice = { lga: "UNKNOWN", price: NaN };
+  }
+
+  if (addressPrice.price !== pinPrice.price) {
+    throw new ApiError(
+      422,
+      "ADDRESS_LOCATION_MISMATCH",
+      "The address does not match the location pinned on the map. Please pin the property's location and use its address."
+    );
+  }
+}
+
 /**
  * The price to charge for a request at `location`, from the server's own
  * lookup. `postedTotalCost` is what the browser displayed to the payer; if it
@@ -79,6 +175,7 @@ export async function getRevaPriceForLocation(
 export async function resolveRevaPrice(
   location: { lat?: unknown; lng?: unknown } | null | undefined,
   postedTotalCost: number,
+  address?: unknown,
   fetchImpl?: typeof fetch
 ): Promise<RevaPrice> {
   const server = await getRevaPriceForLocation(
@@ -96,5 +193,6 @@ export async function resolveRevaPrice(
       "The price for this location is different from the one shown. Please refresh the page and try again."
     );
   }
+  await assertAddressMatchesPrice(address, server, fetchImpl);
   return server;
 }
