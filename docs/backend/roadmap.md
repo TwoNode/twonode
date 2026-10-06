@@ -4,11 +4,11 @@
 
 ## 1. The order
 
-| Stage              | Backend                                               | When                                                   | Why this order                                                                                                                                                                                 |
-| :----------------- | :---------------------------------------------------- | :----------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **0 (now)**        | The existing **Next.js** API (`/api/v1/*`)            | Mobile MVP and the foreseeable future                  | It already covers about 90% of what the app needs ([evaluation §2](./surfboard-mobile-app-evaluation.md)). The one real blocker is cookie-only auth, which is days of work, not a new backend. |
-| **1 (later)**      | **NestJS** service beside Next.js, one area at a time | When a trigger in §4 is hit                            | Same language, same Prisma schema, same services: the cheapest way to get a standalone, documented API with queues and long-running jobs.                                                      |
-| **2 (much later)** | **Go**, area by area, behind the same contract        | Only if NestJS becomes the limit, or the team wants it | A rewrite with no code reuse. Worth it only for measurable performance or cost reasons.                                                                                                        |
+| Stage              | Backend                                               | When                                                   | Why this order                                                                                                                                                                                         |
+| :----------------- | :---------------------------------------------------- | :----------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **0 (now)**        | The existing **Next.js** API (`/api/v1/*`)            | Mobile MVP and the foreseeable future                  | It already covers about 90% of what the app needs ([evaluation §2](../mobile/surfboard-mobile-app-evaluation.md)). The one real blocker is cookie-only auth, which is days of work, not a new backend. |
+| **1 (later)**      | **NestJS** service beside Next.js, one area at a time | When a trigger in §4 is hit                            | Same language, same Prisma schema, same services: the cheapest way to get a standalone, documented API with queues and long-running jobs.                                                              |
+| **2 (much later)** | **Go**, area by area, behind the same contract        | Only if NestJS becomes the limit, or the team wants it | A rewrite with no code reuse. Worth it only for measurable performance or cost reasons.                                                                                                                |
 
 The web front end stays on Next.js throughout. Only the API moves.
 
@@ -19,7 +19,7 @@ These apply from stage 0, so a later stage is a swap of the implementation and n
 1. **The HTTP contract is the product.** The mobile app and the web talk to `/api/v1/*`. Whatever answers (Next.js, NestJS, Go) must return the same JSON, status codes and error codes (`{ success, data | error }`, codes such as `EMAIL_VERIFICATION_REQUIRED`, `SUBSCRIPTION_REQUIRED`, `PRICE_MISMATCH`).
 2. **Write the contract down.** Produce an OpenAPI spec for the routes the mobile app uses, first for Surfboard. Generate the mobile client from it. The spec is also the test oracle in §3.
 3. **Never put business rules in the transport layer.** Rules live in the service layer (`surfboard/services`, `reva/services`, `gbc/services`, documented in [`../functions/`](../functions/)). Route handlers only authenticate, validate and call a service. This is the rule that lets NestJS reuse services and lets Go port them one by one.
-4. **No cookies-only features.** Mobile needs bearer tokens, so anything that assumes a browser cookie, a `Referer`, or a Next.js server action is a stage-0 problem ([evaluation §3](./surfboard-mobile-app-evaluation.md)).
+4. **No cookies-only features.** Mobile needs bearer tokens, so anything that assumes a browser cookie, a `Referer`, or a Next.js server action is a stage-0 problem ([evaluation §3](../mobile/surfboard-mobile-app-evaluation.md)).
 5. **One database, owned by one migration tool at a time.** Until Go, Prisma owns the schema (`0_init` is the baseline). Do not let two services run migrations. Before any Go service writes to the database, decide whether migrations stay with Prisma or move to a neutral tool (plain SQL with goose or Atlas); do that as its own change, not inside a rewrite.
 6. **Idempotency and money stay server-side.** Payments are keyed by Paystack reference, prices are computed on the server, and webhooks are verified by signature and recorded in a ledger. These rules move with the code unchanged. A new backend must pass the same tests before it handles any payment route.
 
@@ -61,7 +61,7 @@ Go moves area by area. Heavy, isolated services (geospatial processing, PDF gene
 
 ## 5. Stage 0 work that supports every later stage
 
-These are the pre-work items from [the mobile evaluation §5.1](./surfboard-mobile-app-evaluation.md), listed here because each one protects the roadmap:
+These are the pre-work items from [the mobile evaluation §5.1](../mobile/surfboard-mobile-app-evaluation.md), listed here because each one protects the roadmap:
 
 1. **Bearer-token auth for native clients** (login, refresh, logout endpoints; bearer branch in the session code; CSRF handling for non-browser clients; device sessions). Any later backend must implement the same token format and refresh rules.
 2. **OpenAPI spec for the mobile-facing routes** (§2.2).
@@ -96,8 +96,8 @@ These are the pre-work items from [the mobile evaluation §5.1](./surfboard-mobi
 
 ## 9. Related documents
 
-- [`surfboard-mobile-app-evaluation.md`](./surfboard-mobile-app-evaluation.md): what the mobile app needs and what the backend already has.
-- [`surfboard-mobile-feasibility.md`](./surfboard-mobile-feasibility.md): the original backend-readiness analysis.
+- [`surfboard-mobile-app-evaluation.md`](../mobile/surfboard-mobile-app-evaluation.md): what the mobile app needs and what the backend already has.
+- [`surfboard-mobile-feasibility.md`](../mobile/surfboard-mobile-feasibility.md): the original backend-readiness analysis.
 - [`../auth/`](../auth/): the session and token system any new backend must match.
 - [`../payment/`](../payment/): the payment and webhook rules that move unchanged.
 - [`../functions/`](../functions/): the service layer that stage 1 reuses and stage 2 ports.

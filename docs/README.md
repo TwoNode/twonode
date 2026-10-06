@@ -16,6 +16,7 @@
 | [`reva/`](./reva/)                     | Property due-diligence requests: user flow, user stories, notifications.                                                                         |
 | [`integrations/`](./integrations/)     | Third-party systems under evaluation — currently the NIPOST National Digital Postcode API.                                                       |
 | [`gbc/`](./gbc/)                       | Event ticketing — auth notes; see `development-history/phases/phase-4-gbc.md` for the fuller picture.                                            |
+| [`backend/`](./backend/)               | Plans for the backend itself: the order of Next.js, NestJS and Go, with the gates and the safe way to move between them.                         |
 | [`mobile/`](./mobile/)                 | Feasibility findings and an evaluated plan for taking a product mobile — starting with the Surfboard Mobile App brief.                           |
 | [`pages/`](./pages/index.md)           | Every page route, one file per platform (`gbc.md`/`reva.md`/`surfboard.md`) plus `main-site.md` for the shared corporate site.                   |
 | [`components/`](./components/index.md) | Every component, one file per platform plus `shared.md`.                                                                                         |
