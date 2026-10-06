@@ -537,6 +537,11 @@ export async function getTicketAvailability() {
 }
 
 export async function getTicketByNumber(ticketNumber: string) {
+  // An undefined/empty value must never reach Prisma: `where: { ticketNumber:
+  // undefined }` matches every row, so findFirst would return someone else's ticket.
+  if (typeof ticketNumber !== "string" || !ticketNumber.trim()) {
+    throw new NotFoundError("Ticket");
+  }
   const ticket = await prisma.gBCTicket.findFirst({
     where: { ticketNumber },
     include: { editionRef: true },
