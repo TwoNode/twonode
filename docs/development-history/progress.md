@@ -1,6 +1,6 @@
 # Twonodes Architecture Rebuild — Progress Tracker
 
-Last Updated: 2026-10-04
+Last Updated: 2026-10-06
 
 See also: `docs/development-history/route-inventory.md` — the full list of every route (pages + API) across all three products, kept current as each phase renames/adds/retires routes.
 
@@ -160,6 +160,8 @@ Everything below is merged to `dev` unless noted; commit/PR numbers are from `gi
 - **Staging in Paystack test mode** ([#271](https://github.com/roji-tech/twonodes/pull/271), 2026-10-05): a Vercel preview now uses the test keys (`isPaystackLive()`), so staging no longer charges real cards. Setup is in `payment/paystack-configuration.md`.
 - **Webhook recognition in test mode** ([#278](https://github.com/roji-tech/twonodes/pull/278)): found by paying on staging — a first recurring charge's `subscription.create` and `charge.success` were marked `ok` but credited nothing, because the handlers matched live-only plan codes from env vars and read only `metadata.platform` (Paystack puts it in `custom_fields`). Plan names and `custom_fields` are now used.
 - **Verified on staging with real test-mode popups (2026-10-05):** a one-time payment (account active, one kobo-denominated history row, browser verify and webhook credit it once); an early repeat one-time payment (period end moved 5 Nov → 5 Dec: remaining days carried over; replaying the reference added nothing). A recurring first charge with the browser's verify call blocked (as if the tab closed): the `charge.success` webhook alone made the account active for one period and wrote one `subscription.success` history row, after #278. `Subscription.subCode` stays empty until a `subscription.create` event arrives; Paystack did not send one for this customer, who already had a subscription on that plan.
+- **REVA address checked server-side** (2026-10-06): the price comes from the pinned coordinates, so a payer could pin a cheaper LGA while naming the real property in the address. `assertAddressMatchesPrice` now geocodes the posted address with Google and requires the same price as the pin. **Inactive until `GOOGLE_MAPS_SERVER_API_KEY` is set** (an unrestricted server key with the Geocoding API enabled; the `NEXT_PUBLIC` key is referrer-restricted and Google rejects it from a server). It skips with a warning when unset, so deploying changes nothing by itself.
+- **Renewal webhook shape researched** (2026-10-06): sequence and fields documented in `docs/payment/paystack-webhook-payloads.md` §2, and a test added for a renewal shaped as Paystack documents it (bare reference, plan object, no `subscription` block, no metadata). Still unverified against live traffic: Paystack's own pages refused automated fetching.
 
 ---
 

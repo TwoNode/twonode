@@ -55,7 +55,8 @@ export async function saveFormDataAndInitiatePaystack(formData: FormData) {
   // browser's `totalCost` is only compared with it (see resolveRevaPrice).
   const { price: totalCost, lga } = await resolveRevaPrice(
     location,
-    parseFloat(formData.get("totalCost") as string)
+    parseFloat(formData.get("totalCost") as string),
+    address
   );
 
   const documentsUrls = await uploadFormFiles(formData, "files");
@@ -119,7 +120,8 @@ export async function authSaveFormDataAndInitiatePaystack(
   // browser's `totalCost` is only compared with it (see resolveRevaPrice).
   const { price: totalCost, lga } = await resolveRevaPrice(
     location,
-    parseFloat(formData.get("totalCost") as string)
+    parseFloat(formData.get("totalCost") as string),
+    address
   );
 
   const documentsUrls = await uploadFormFiles(formData, "files");
