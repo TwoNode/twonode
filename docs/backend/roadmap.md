@@ -1,4 +1,4 @@
-# Backend roadmap for the mobile app: Next.js now, NestJS later, Go much later
+# Backend roadmap: Next.js now, NestJS later, Go much later
 
 > **Status: future plan, not a commitment.** No mobile code and no NestJS or Go code exists. This records the intended order so decisions made today don't block it. Nothing here has dates; each stage starts only when its entry conditions are met (see the gates).
 
@@ -10,7 +10,7 @@
 | **1 (later)**      | **NestJS** service beside Next.js, one area at a time | When a trigger in §4 is hit                            | Same language, same Prisma schema, same services: the cheapest way to get a standalone, documented API with queues and long-running jobs.                                                              |
 | **2 (much later)** | **Go**, area by area, behind the same contract        | Only if NestJS becomes the limit, or the team wants it | A rewrite with no code reuse. Worth it only for measurable performance or cost reasons.                                                                                                                |
 
-The web front end stays on Next.js throughout. Only the API moves.
+The web front end stays on Next.js throughout. Only the API moves. The mobile app is the first reason to plan this; what the app needs at each stage is in [`../mobile/roadmap.md`](../mobile/roadmap.md).
 
 ## 2. Principles that make every later move cheap
 
@@ -61,13 +61,13 @@ Go moves area by area. Heavy, isolated services (geospatial processing, PDF gene
 
 ## 5. Stage 0 work that supports every later stage
 
-These are the pre-work items from [the mobile evaluation §5.1](../mobile/surfboard-mobile-app-evaluation.md), listed here because each one protects the roadmap:
+The mobile-specific pre-work (bearer-token auth, device sessions, search and map gaps) is in [`../mobile/roadmap.md`](../mobile/roadmap.md). The backend-wide items are:
 
-1. **Bearer-token auth for native clients** (login, refresh, logout endpoints; bearer branch in the session code; CSRF handling for non-browser clients; device sessions). Any later backend must implement the same token format and refresh rules.
-2. **OpenAPI spec for the mobile-facing routes** (§2.2).
-3. **Shared packages:** extract the Prisma client, shared types and a geo utility (`EPSG:26331/26332`) out of the Next.js app, so a second service and the mobile app can import them.
-4. **Move PDF generation behind a service function** with a clean input and output, so it can later run as a job in NestJS or Go without touching the page code.
-5. **Make routes thin** wherever business logic still sits in a route handler (§2.3).
+1. **OpenAPI spec** for the mobile-facing routes first (§2.2), then the rest.
+2. **Shared packages:** extract the Prisma client, shared types and a geo utility (`EPSG:26331/26332`) out of the Next.js app, so a second service and the mobile app can import them.
+3. **Move PDF generation behind a service function** with a clean input and output, so it can later run as a job in NestJS or Go without touching the page code.
+4. **Make routes thin** wherever business logic still sits in a route handler (§2.3).
+5. **Native-client auth is a backend contract.** Whatever the mobile work adds (token format, refresh rules, device sessions), a later backend must implement the same, so write it down in [`../auth/`](../auth/) when it is built.
 
 ## 6. NestJS notes (stage 1)
 
@@ -96,8 +96,9 @@ These are the pre-work items from [the mobile evaluation §5.1](../mobile/surfbo
 
 ## 9. Related documents
 
-- [`surfboard-mobile-app-evaluation.md`](../mobile/surfboard-mobile-app-evaluation.md): what the mobile app needs and what the backend already has.
-- [`surfboard-mobile-feasibility.md`](../mobile/surfboard-mobile-feasibility.md): the original backend-readiness analysis.
+- [`../mobile/roadmap.md`](../mobile/roadmap.md): what the mobile app needs from the backend at each stage.
+- [`../mobile/surfboard-mobile-app-evaluation.md`](../mobile/surfboard-mobile-app-evaluation.md): what the mobile app needs and what the backend already has.
+- [`../mobile/surfboard-mobile-feasibility.md`](../mobile/surfboard-mobile-feasibility.md): the original backend-readiness analysis.
 - [`../auth/`](../auth/): the session and token system any new backend must match.
 - [`../payment/`](../payment/): the payment and webhook rules that move unchanged.
 - [`../functions/`](../functions/): the service layer that stage 1 reuses and stage 2 ports.
