@@ -8,18 +8,20 @@
 
 ## Per-topic
 
-| Folder                                 | Covers                                                                                                                                           |
-| :------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`auth/`](./auth/)                     | Login, sessions, and roles across all three products — the native email+password system and the still-live parallel Kinde OAuth path.            |
-| [`payment/`](./payment/)               | Paystack subscriptions, Certificate of Deposit payments, Remita verification.                                                                    |
-| [`surfboard/`](./surfboard/)           | Survey plan lodging + the MDA government approval workflow: user flow, technical flow, QR Earnings, and the association-subscription evaluation. |
-| [`reva/`](./reva/)                     | Property due-diligence requests: user flow, user stories, notifications.                                                                         |
-| [`integrations/`](./integrations/)     | Third-party systems under evaluation — currently the NIPOST National Digital Postcode API.                                                       |
-| [`gbc/`](./gbc/)                       | Event ticketing — auth notes; see `development-history/phases/phase-4-gbc.md` for the fuller picture.                                            |
-| [`mobile/`](./mobile/)                 | Feasibility findings and an evaluated plan for taking a product mobile — starting with the Surfboard Mobile App brief.                           |
-| [`pages/`](./pages/index.md)           | Every page route, one file per platform (`gbc.md`/`reva.md`/`surfboard.md`) plus `main-site.md` for the shared corporate site.                   |
-| [`components/`](./components/index.md) | Every component, one file per platform plus `shared.md`.                                                                                         |
-| [`functions/`](./functions/index.md)   | Every service/util/hook/lib file, one file per platform plus `shared.md`.                                                                        |
+| Folder                                 | Covers                                                                                                                                                        |
+| :------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`auth/`](./auth/)                     | Login, sessions, and roles across all three products — the native email+password system and the still-live parallel Kinde OAuth path.                         |
+| [`payment/`](./payment/)               | Paystack subscriptions, Certificate of Deposit payments, Remita verification.                                                                                 |
+| [`surfboard/`](./surfboard/)           | Survey plan lodging + the MDA government approval workflow: user flow, technical flow, QR Earnings, and the association-subscription evaluation.              |
+| [`reva/`](./reva/)                     | Property due-diligence requests: user flow, user stories, notifications.                                                                                      |
+| [`integrations/`](./integrations/)     | Third-party systems under evaluation — currently the NIPOST National Digital Postcode API.                                                                    |
+| [`gbc/`](./gbc/)                       | Event ticketing — auth notes; see `development-history/phases/phase-4-gbc.md` for the fuller picture.                                                         |
+| [`backend/`](./backend/)               | Plans for the backend itself: the order of Next.js, NestJS and Go, with the gates and the safe way to move between them.                                      |
+| [`future-plans.md`](./future-plans.md) | Every plan and proposal that is not built yet (backend roadmap, mobile app, association subscription, postcode API), with dependencies and a suggested order. |
+| [`mobile/`](./mobile/)                 | Feasibility findings and an evaluated plan for taking a product mobile — starting with the Surfboard Mobile App brief.                                        |
+| [`pages/`](./pages/index.md)           | Every page route, one file per platform (`gbc.md`/`reva.md`/`surfboard.md`) plus `main-site.md` for the shared corporate site.                                |
+| [`components/`](./components/index.md) | Every component, one file per platform plus `shared.md`.                                                                                                      |
+| [`functions/`](./functions/index.md)   | Every service/util/hook/lib file, one file per platform plus `shared.md`.                                                                                     |
 
 ## Reading a document that predates the rebuild
 
