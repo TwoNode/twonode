@@ -21,6 +21,58 @@ interface CertificateClientProps {
   qrCodeDataUrl: string;
 }
 
+// Mirrors gbc/pdf-worker/certificate.render.cjs (the PDF). Every measurement
+// there is in A4-landscape points (842 x 595); `pt()` converts one to a share
+// of the card's width, so the page scales exactly like the PDF does. Change
+// the two together.
+const BG_DARK = "#160E22";
+const INK = "#F7F4FB";
+const PURPLE = "#C4B5FD";
+const GOLD = "#C9A24B";
+const MUTED = "#B4A9C4";
+
+const pt = (n: number) => `${((n / 842) * 100).toFixed(4)}cqw`;
+
+function nameFontSize(name: string) {
+  const length = (name || "").length;
+  if (length > 34) return 22;
+  if (length > 24) return 28;
+  return 34;
+}
+
+function CableMotif({ corner }: { corner: "topRight" | "bottomLeft" }) {
+  const isTopRight = corner === "topRight";
+  return (
+    <svg
+      viewBox="0 0 220 160"
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        top: isTopRight ? 0 : undefined,
+        bottom: isTopRight ? undefined : 0,
+        right: isTopRight ? 0 : undefined,
+        left: isTopRight ? undefined : 0,
+        width: pt(220),
+        height: pt(160),
+        opacity: 0.35,
+        pointerEvents: "none",
+      }}
+    >
+      {Array.from({ length: 9 }).map((_, i) => (
+        <line
+          key={i}
+          x1={isTopRight ? 220 : 0}
+          y1={0}
+          x2={isTopRight ? 220 - i * 24 : i * 24}
+          y2={160}
+          stroke={GOLD}
+          strokeWidth={0.6}
+        />
+      ))}
+    </svg>
+  );
+}
+
 export default function CertificateClient({
   ticket,
   verificationUrl,
@@ -49,98 +101,248 @@ export default function CertificateClient({
         </a>
       </div>
 
-      <div className="relative w-full aspect-[1.414] bg-[#FBF8F2] shadow-2xl overflow-hidden print:shadow-none print:w-[297mm] print:h-[210mm] print:m-0">
-        {/* Cable-motif corners — placeholder for the bridge-photo background */}
-        <svg
-          className="absolute top-0 right-0 w-40 h-32 sm:w-56 sm:h-44 opacity-30 pointer-events-none"
-          viewBox="0 0 220 160"
-        >
-          {Array.from({ length: 9 }).map((_, i) => (
-            <line
-              key={i}
-              x1={220}
-              y1={0}
-              x2={220 - i * 24}
-              y2={160}
-              stroke="#C9A24B"
-              strokeWidth={0.8}
-            />
-          ))}
-        </svg>
-        <svg
-          className="absolute bottom-0 left-0 w-40 h-32 sm:w-56 sm:h-44 opacity-30 pointer-events-none"
-          viewBox="0 0 220 160"
-        >
-          {Array.from({ length: 9 }).map((_, i) => (
-            <line
-              key={i}
-              x1={0}
-              y1={0}
-              x2={i * 24}
-              y2={160}
-              stroke="#C9A24B"
-              strokeWidth={0.8}
-            />
-          ))}
-        </svg>
+      <div
+        className="relative w-full overflow-hidden shadow-2xl print:shadow-none print:w-[297mm] print:h-[210mm] print:m-0"
+        style={{
+          aspectRatio: "842 / 595",
+          backgroundColor: BG_DARK,
+          containerType: "inline-size",
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/gbc/gbcCertificateBg.jpeg"
+          alt=""
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            opacity: 0.22,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundColor: "#000",
+            opacity: 0.4,
+          }}
+        />
+        <CableMotif corner="topRight" />
+        <CableMotif corner="bottomLeft" />
+        <div
+          style={{
+            position: "absolute",
+            inset: pt(22),
+            border: `${pt(1.25)} solid ${GOLD}`,
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            inset: pt(27),
+            border: `${pt(0.5)} solid #6D5490`,
+            pointerEvents: "none",
+          }}
+        />
 
-        <div className="absolute inset-3 sm:inset-5 border border-[#C9A24B] pointer-events-none" />
-        <div className="absolute inset-4 sm:inset-6 border border-[#5B21B6]/60 pointer-events-none" />
-
-        <div className="relative h-full flex flex-col p-8 sm:p-14">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm sm:text-base font-extrabold tracking-wide text-[#1A1024]">
-                {edition.name.toUpperCase()}
-              </p>
-              <p className="text-[10px] sm:text-xs font-medium text-[#6B6472] tracking-wide mt-0.5">
-                GEOSPATIAL BUILDERS COURSE · TWONODE TECHNOLOGIES
-              </p>
-            </div>
-            <p className="text-[10px] sm:text-xs font-semibold text-[#6B6472] tracking-wide">
+        <div
+          style={{
+            position: "absolute",
+            top: pt(48),
+            left: pt(64),
+            right: pt(64),
+            bottom: pt(40),
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/gbc2/gbc2LightLogo.png"
+              alt="GBC 2.0"
+              style={{ width: pt(90), height: pt(22.1), objectFit: "contain" }}
+            />
+            <p
+              style={{
+                fontSize: pt(8),
+                fontWeight: 600,
+                color: MUTED,
+                letterSpacing: pt(1),
+                textAlign: "right",
+              }}
+            >
               CERTIFICATE {ticket.ticketNumber}
             </p>
           </div>
 
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
-            <p className="text-[10px] sm:text-xs font-semibold text-[#C9A24B] tracking-[0.2em] mb-3 sm:mb-4">
+          <div
+            style={{
+              flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+            }}
+          >
+            <p
+              style={{
+                fontSize: pt(10),
+                fontWeight: 600,
+                color: GOLD,
+                letterSpacing: pt(3),
+                marginBottom: pt(18),
+              }}
+            >
               CERTIFICATE OF ATTENDANCE
             </p>
-            <p className="text-xs sm:text-sm font-medium text-[#6B6472] mb-2">
+            <p
+              style={{
+                fontSize: pt(11),
+                fontWeight: 500,
+                color: MUTED,
+                marginBottom: pt(10),
+              }}
+            >
               This certifies that
             </p>
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-[#1A1024] mb-4 sm:mb-6 border-b border-[#C9A24B] pb-3 px-8 sm:px-16">
+            <h2
+              style={{
+                fontSize: pt(nameFontSize(ticket.name)),
+                fontWeight: 800,
+                color: INK,
+                marginBottom: pt(16),
+                paddingBottom: pt(12),
+                paddingInline: pt(28),
+                borderBottom: `${pt(1)} solid ${GOLD}`,
+                lineHeight: 1.2,
+              }}
+            >
               {ticket.name}
             </h2>
-            <p className="text-[#1A1024] text-sm sm:text-base max-w-2xl leading-relaxed font-medium">
+            <p
+              style={{
+                fontSize: pt(11),
+                fontWeight: 500,
+                color: INK,
+                lineHeight: 1.6,
+                maxWidth: pt(420),
+              }}
+            >
               participated in{" "}
-              <span className="font-bold text-[#5B21B6]">{edition.name}</span>,
-              held {dateRange} at {edition.venue}, under the theme &ldquo;
-              {edition.theme}&rdquo; — {edition.subTheme}.
+              <span style={{ fontWeight: 700, color: GOLD }}>
+                {edition.name}
+              </span>
+              {`, held ${dateRange} at ${edition.venue}, under the theme \u201C${edition.theme}: ${edition.subTheme}.\u201D`}
             </p>
           </div>
 
-          <div className="flex justify-between items-end">
-            <div className="flex items-center gap-2 sm:gap-3">
+          <div style={{ display: "flex", alignItems: "flex-end" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                width: pt(260),
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={qrCodeDataUrl}
                 alt="Verification QR code"
-                className="w-10 h-10 sm:w-14 sm:h-14"
+                style={{
+                  width: pt(46),
+                  height: pt(46),
+                  marginRight: pt(10),
+                  flexShrink: 0,
+                }}
               />
-              <div className="text-left">
-                <p className="text-[9px] sm:text-[10px] font-semibold text-[#6B6472] tracking-wide">
+              <div style={{ width: pt(204) }}>
+                <p
+                  style={{
+                    fontSize: pt(8),
+                    fontWeight: 600,
+                    color: MUTED,
+                    letterSpacing: pt(0.5),
+                    marginBottom: pt(2),
+                  }}
+                >
                   SCAN TO VERIFY
                 </p>
-                <p className="text-[9px] sm:text-[10px] font-medium text-[#5B21B6] break-all">
+                <p
+                  style={{
+                    fontSize: pt(8),
+                    fontWeight: 500,
+                    color: PURPLE,
+                    wordBreak: "break-all",
+                  }}
+                >
                   {verificationUrl.replace(/^https?:\/\//, "")}
                 </p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-xs sm:text-sm font-bold text-[#1A1024]">
+
+            <div
+              style={{
+                flexGrow: 1,
+                flexBasis: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/signatures/olamide_signature_white.png"
+                alt=""
+                style={{
+                  width: pt(100),
+                  height: pt(32),
+                  marginBottom: pt(-6),
+                  objectFit: "contain",
+                }}
+              />
+              <div
+                style={{
+                  width: pt(140),
+                  borderBottom: `${pt(0.75)} solid ${MUTED}`,
+                  marginBottom: pt(5),
+                }}
+              />
+              <p
+                style={{
+                  fontSize: pt(8),
+                  fontWeight: 600,
+                  color: MUTED,
+                  letterSpacing: pt(0.5),
+                }}
+              >
+                AUTHORIZED SIGNATURE
+              </p>
+            </div>
+
+            <div style={{ width: pt(230), textAlign: "right" }}>
+              <p
+                style={{
+                  fontSize: pt(10),
+                  fontWeight: 700,
+                  color: INK,
+                  marginBottom: pt(2),
+                }}
+              >
                 TwoNode Technologies
               </p>
-              <p className="text-[9px] sm:text-[10px] font-medium text-[#6B6472]">
+              <p style={{ fontSize: pt(8), fontWeight: 500, color: MUTED }}>
                 {format(attendedDate, "MMMM d, yyyy")}
               </p>
             </div>
