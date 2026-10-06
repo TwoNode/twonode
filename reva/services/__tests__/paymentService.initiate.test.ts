@@ -85,7 +85,8 @@ describe.each([
 
     expect(mocks.resolveRevaPrice).toHaveBeenCalledWith(
       { lat: 6.6018, lng: 3.3515 },
-      1
+      1,
+      "1 Test Rd" // the address is verified against the pin server-side
     );
     expect((mocks as any)[saver].mock.calls[0][0]).toMatchObject({
       totalCost: 50000,
