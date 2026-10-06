@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import SurfboardPlanForm from "@/app/(projects)/(surfboard)/components/SurfboardPlanForm";
@@ -10,8 +10,10 @@ import { SurfboardPlanDTO } from "@/app/(projects)/(surfboard)/types/surfboardTy
 export default function UpdateSurfPlanPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  // `params` is a Promise in Next 16; read it with `use`, not `params.id`.
+  const { id } = use(params);
   const router = useRouter();
   const [plan, setPlan] = useState<SurfboardPlanDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +21,7 @@ export default function UpdateSurfPlanPage({
   useEffect(() => {
     const fetchPlan = async () => {
       try {
-        const res = await surfboardApi.plans.get(params.id);
+        const res = await surfboardApi.plans.get(id);
         if (res.success && res.data) {
           setPlan(res.data as any);
         } else {
@@ -36,7 +38,7 @@ export default function UpdateSurfPlanPage({
     };
 
     fetchPlan();
-  }, [params.id, router]);
+  }, [id, router]);
 
   const handleSubmit = async (updatedPlan: SurfboardPlanDTO) => {
     try {
