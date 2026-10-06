@@ -1,9 +1,21 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   assertAddressMatchesPrice,
   getRevaPriceForLocation,
   resolveRevaPrice,
 } from "@/reva/services/pricingService";
+
+// The address check turns on when GOOGLE_MAPS_SERVER_API_KEY is set, which a
+// developer's own .env may do. Tests start from "unset" and opt in per test.
+let savedKey: string | undefined;
+beforeEach(() => {
+  savedKey = process.env.GOOGLE_MAPS_SERVER_API_KEY;
+  delete process.env.GOOGLE_MAPS_SERVER_API_KEY;
+});
+afterEach(() => {
+  if (savedKey === undefined) delete process.env.GOOGLE_MAPS_SERVER_API_KEY;
+  else process.env.GOOGLE_MAPS_SERVER_API_KEY = savedKey;
+});
 
 const arcgis = (features: unknown[], ok = true) =>
   vi.fn(async () => ({
