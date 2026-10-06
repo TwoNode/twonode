@@ -18,7 +18,6 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Plan, PillarData, PLAN_TYPES } from "../../types/surfboardTypes";
 import { resolveCsvState } from "@/app/(projects)/(surfboard)/utils/csvState";
-import { shiftGeometryForDisplay } from "@/app/(projects)/(surfboard)/utils/geometryShift";
 import proj4 from "proj4";
 import { surfboardApi } from "@/surfboard/apiClient";
 import {
@@ -1310,14 +1309,9 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({
           typeof plan.geometry === "object" &&
           "type" in plan.geometry
         ) {
-          // No pillars to shift, so shift the stored outline by the same metres.
           polygonFeatures.push({
             type: "Feature",
-            geometry: shiftGeometryForDisplay(
-              plan.geometry as Polygon,
-              stateName,
-              shifts
-            ),
+            geometry: plan.geometry as Polygon,
             properties: { ...plan, color },
           });
         }
