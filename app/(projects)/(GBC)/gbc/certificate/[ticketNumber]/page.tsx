@@ -27,7 +27,7 @@ export default async function CertificatePage({ params }: PageProps) {
   const qrCodeDataUrl = await generateVerificationQRDataURL(verificationUrl);
 
   return (
-    <div className="min-h-screen bg-[#FBF8F2] flex items-center justify-center p-4 sm:p-8">
+    <div className="min-h-screen bg-[#0B0613] flex items-center justify-center p-4 sm:p-8">
       <CertificateClient
         ticket={ticket}
         verificationUrl={verificationUrl}
