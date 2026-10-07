@@ -38,5 +38,6 @@ Everything here is a **plan or a proposal, not built and not committed.** This p
 
 ## Related
 
+- Decisions that shape these plans: [`decisions/`](./decisions/) (for example the backend order, [0007](./decisions/0007-backend-order-nextjs-nestjs-go.md), and the proposed certificate access design, [0008](./decisions/0008-gbc-certificate-access.md)).
 - The rebuild and history of the current system: [`development-history/`](./development-history/).
 - The routes that exist today: [`development-history/route-inventory.md`](./development-history/route-inventory.md).
