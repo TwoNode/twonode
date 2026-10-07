@@ -1,6 +1,8 @@
-# Decision records (ADRs)
+# Architecture Decision Records (ADRs)
 
-Short records of technical and product decisions: what was decided, why, and what it costs. They stop old debates from restarting and tell a new developer why something is the way it is.
+An **Architecture Decision Record (ADR)** is a short, simple document that records one important technical or product choice made during a project: the decision, the reasons behind it, and its consequences. Each one has a title, a status (proposed, accepted, rejected or superseded), the context that drove the choice, the decision itself, and its consequences. When a decision changes, the old record is kept and a new one replaces (supersedes) it, so the project's reasoning keeps an unbroken history.
+
+They stop old debates from restarting and tell a new developer why something is the way it is.
 
 **Other documents:** [`../development-history/progress.md`](../development-history/progress.md) is the log of what happened. [`../future-plans.md`](../future-plans.md) lists plans that are not built. A decision record holds the reasoning behind a choice, and plans and the log link to it.
 
