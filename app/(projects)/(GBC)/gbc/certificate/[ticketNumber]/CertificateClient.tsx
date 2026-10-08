@@ -2,6 +2,7 @@
 
 import { Download } from "lucide-react";
 import { format } from "date-fns";
+import { fitName } from "@/gbc/utils/certificateName";
 
 interface CertificateClientProps {
   ticket: {
@@ -32,13 +33,6 @@ const GOLD = "#C9A24B";
 const MUTED = "#B4A9C4";
 
 const pt = (n: number) => `${((n / 842) * 100).toFixed(4)}cqw`;
-
-function nameFontSize(name: string) {
-  const length = (name || "").length;
-  if (length > 34) return 22;
-  if (length > 24) return 28;
-  return 34;
-}
 
 function CableMotif({ corner }: { corner: "topRight" | "bottomLeft" }) {
   const isTopRight = corner === "topRight";
@@ -79,6 +73,7 @@ export default function CertificateClient({
   qrCodeDataUrl,
 }: CertificateClientProps) {
   const edition = ticket.editionRef;
+  const nameFit = fitName(ticket.name);
   const attendedDate = ticket.checkedInAt
     ? new Date(ticket.checkedInAt)
     : new Date(edition.endDate);
@@ -219,17 +214,18 @@ export default function CertificateClient({
             </p>
             <h2
               style={{
-                fontSize: pt(nameFontSize(ticket.name)),
+                fontSize: pt(nameFit.size),
                 fontWeight: 800,
                 color: INK,
                 marginBottom: pt(16),
                 paddingBottom: pt(12),
                 paddingInline: pt(28),
                 borderBottom: `${pt(1)} solid ${GOLD}`,
-                lineHeight: 1.2,
+                lineHeight: 1.15,
+                whiteSpace: "pre-line",
               }}
             >
-              {ticket.name}
+              {nameFit.lines.join("\n")}
             </h2>
             <p
               style={{

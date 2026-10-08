@@ -221,17 +221,57 @@ const styles = StyleSheet.create({
   issuerDate: { fontSize: 8, fontWeight: 500, color: MUTED },
 });
 
-// The name box has no fixed width (it's centered in a flex column, sized to
-// the page's content area), so react-pdf wraps a long name onto a second
-// line rather than clip it — that's fine at the default size, but a genuinely
-// long full name (with honorifics, hyphenation, etc.) at 34px bold reads as
-// cramped against the certificate's fixed vertical layout. Shrinking the
-// font for longer names keeps it to roughly one comfortable line instead.
-function nameFontSize(name) {
-  const length = (name || "").length;
-  if (length > 34) return 22;
-  if (length > 24) return 28;
-  return 34;
+// Fits the holder's name on the page using the real glyph widths of the name
+// font (name-widths.json, measured from BricolageGrotesque-ExtraBold). Long
+// names drop in size, then split over two lines at the most even word break.
+// This is a CommonJS copy of gbc/utils/certificateName.ts, which the web page
+// uses with the same table; change them together.
+const NAME_WIDTHS = require("./name-widths.json");
+const NAME_MAX_WIDTH_PT = 640;
+const NAME_MAX_SIZE = 34;
+const NAME_TWO_LINE_MAX_SIZE = 28;
+const NAME_MIN_ONE_LINE_SIZE = 22;
+const NAME_MIN_SIZE = 12;
+
+function nameWidthEm(text) {
+  let total = 0;
+  for (const ch of text)
+    total += NAME_WIDTHS.widths[ch] ?? NAME_WIDTHS.fallback;
+  return total;
+}
+const floorHalf = (n) => Math.floor(n * 2) / 2;
+
+function fitName(rawName) {
+  // Collapse whitespace and close up stray spaces inside brackets, so a break
+  // can never leave a lone "(" at the end of a line.
+  const name = String(rawName || "")
+    .replace(/\s+/g, " ")
+    .replace(/\(\s+/g, "(")
+    .replace(/\s+\)/g, ")")
+    .trim();
+  const em = nameWidthEm(name);
+  if (!em) return { size: NAME_MAX_SIZE, lines: [name] };
+  const oneLine = NAME_MAX_WIDTH_PT / em;
+  if (oneLine >= NAME_MIN_ONE_LINE_SIZE) {
+    return { size: floorHalf(Math.min(NAME_MAX_SIZE, oneLine)), lines: [name] };
+  }
+  const words = name.split(" ");
+  let best = null;
+  for (let i = 1; i < words.length; i++) {
+    const lines = [words.slice(0, i).join(" "), words.slice(i).join(" ")];
+    const widest = Math.max(...lines.map(nameWidthEm));
+    if (!best || widest < best.widest) best = { lines, widest };
+  }
+  if (best) {
+    const size = NAME_MAX_WIDTH_PT / best.widest;
+    return {
+      size: floorHalf(
+        Math.max(NAME_MIN_SIZE, Math.min(NAME_TWO_LINE_MAX_SIZE, size))
+      ),
+      lines: best.lines,
+    };
+  }
+  return { size: floorHalf(Math.max(NAME_MIN_SIZE, oneLine)), lines: [name] };
 }
 
 function cableMotif(corner) {
@@ -312,11 +352,14 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
         { style: styles.presentedTo },
         "This certifies that"
       ),
-      React.createElement(
-        Text,
-        { style: [styles.name, { fontSize: nameFontSize(ticket.name) }] },
-        ticket.name
-      ),
+      (() => {
+        const fit = fitName(ticket.name);
+        return React.createElement(
+          Text,
+          { style: [styles.name, { fontSize: fit.size, lineHeight: 1.15 }] },
+          fit.lines.join("\n")
+        );
+      })(),
       React.createElement(
         Text,
         { style: styles.body },
