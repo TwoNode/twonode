@@ -19,6 +19,8 @@ They stop old debates from restarting and tell a new developer why something is 
 
 ## Template
 
+See [`template.md`](./template.md) for the complete rules and starter template.
+
 ```markdown
 # NNNN. Title: the choice, in a few words
 
