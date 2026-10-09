@@ -1,13 +1,13 @@
 # TASK-0004: Twonode Landing Page & /v2 Redesign (Design Selection & Implementation)
 
-- **Status:** Pending
+- **Status:** In Progress
 - **Priority:** High
 - **Assignee:** roji-tech / AI
 - **Target Branch / PR:** `feat/landing-v2-redesign` / TBD
 - **Created:** 2026-10-09 11:25:00 UTC
-- **Started:** Pending
-- **Ended:** Pending
-- **Duration:** Pending
+- **Started:** 2026-10-09 15:55:00 UTC
+- **Ended:** In Progress
+- **Duration:** In Progress
 
 > **How to tick:** change `[ ]` to `[x]`. The table shows the characters, not a clickable box.
 
@@ -15,7 +15,7 @@
 
 ## 1. Objective
 
-Review and evaluate 22 comparison artboard frames from [`out/TwoNode_V2_Design_Canvas.html`](../../out/TwoNode_V2_Design_Canvas.html), select the winning design direction for the TwoNode corporate web presence, and implement high-craft, production-ready Next.js components for `/v2` (with path to root `/` cutover).
+Review and evaluate candidate artboard frames from [`out/TwoNode_V2_Design_Canvas.html`](../../out/TwoNode_V2_Design_Canvas.html), select the winning design direction for the TwoNode corporate web presence, and implement high-craft, production-ready Next.js components for `/v2` (with path to root `/` cutover).
 
 ---
 
@@ -23,25 +23,8 @@ Review and evaluate 22 comparison artboard frames from [`out/TwoNode_V2_Design_C
 
 ### Module A: Design Review & Aesthetic Selection
 
-- [ ] **Design canvas evaluation:** Review candidate design directions in [`out/TwoNode_V2_Design_Canvas.html`](../../out/TwoNode_V2_Design_Canvas.html) against TwoNode's brand thesis ("We build for industries. We connect every actor in the ecosystem."):
-  - `01. Obsidian Slate Studio` (Recommended Dark Studio &bull; Plus Jakarta Sans + Newsreader, cyan glow)
-  - `02. Swiss Alabaster Monograph` (Light Architectural &bull; Plus Jakarta Sans, warm stone)
-  - `03. Cadastral Blueprint` (Deep Navy HUD &bull; Space Grotesk, laser grid, coordinates engine)
-  - `04. Monocle Edition` (Intellectual Editorial &bull; Playfair Display, forest green & parchment)
-  - `05. Minimal Indigo` (Linear-Style SaaS Precision &bull; Inter, purple accents)
-  - `06. Cyber-Brutalist Ledger` (Raw Monospace &bull; JetBrains Mono, acid lime, terminal telemetry)
-  - `07. Neo Aurora` (Tier-1 Tech &bull; Stripe-style kinetic mesh, Plus Jakarta Sans)
-  - `08. Bauhaus Modernist` (Structural Grid &bull; Space Grotesk, bold Swiss architecture)
-  - `09. Tri-Partite Ecosystem Hub` (Interactive Flywheel &bull; Surfboard + GBC + REVA node mapping)
-  - `13. Contour` (Survey Topography &bull; Manrope + Fraunces, ink green + safety orange)
-  - `14. Dispatch` (Long-Form Chapter Rail &bull; Bricolage Grotesque + Newsreader, electric cobalt)
-  - `15. Registry` (Official Record &bull; Manrope + IBM Plex Mono, verification stamps, ledger rows)
-  - `16. Spectrum` (Product Bento &bull; Bricolage Grotesque, category color chips)
-  - `18. Nodes` (Brand Network Graph &bull; Sora + DM Sans, animated pulse nodes)
-  - `19. Deck` (Keynote Slides &bull; Archivo, high-impact expanded type)
-  - `20. Showcase` (Product-Led Mockups &bull; Figtree, real UI preview windows & tickets)
-  _(Waiting on: roji-tech / Design Selection Decision)_
-- [ ] **Mobile layout selection:** Determine mobile responsive archetype (e.g. Frame 17 `Contour Mobile`, Frame 10 `Mobile Dark`, or Frame 11 `Mobile Light`). _(Waiting on: roji-tech)_
+- [x] **Design canvas evaluation & winner selection:** Selected **`18. Nodes`** (Brand Network Graph &bull; Sora + DM Sans + JetBrains Mono, doubled-down kinetic motion design). Pruned all other 20 exploratory concepts from `out/TwoNode_V2_Design_Canvas.html` (2026-10-09).
+- [x] **Mobile layout selection:** Built dedicated `Nodes Mobile (390px)` artboard with vertical traverse timeline, compact radial graph, and touch interactions in `out/TwoNode_V2_Design_Canvas.html` (2026-10-09).
 - [ ] **Route & cutover strategy:** Decide rollout path: refine staging preview at `/v2` first vs direct cutover to root `/`. _(Waiting on: roji-tech)_
 
 ### Module B: Typography, Design Tokens & Core Styling
