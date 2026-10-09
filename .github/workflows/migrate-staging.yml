@@ -1,8 +1,8 @@
-name: Deploy migrations to staging (test_db)
+name: Deploy migrations to staging (twonode_staging)
 
 # main is the staging branch — every push that touches prisma/migrations
-# applies pending migrations to test_db automatically. Low risk: test_db is
-# a disposable clone, never the database real users hit.
+# applies pending migrations to twonode_staging automatically. Low risk: twonode_staging is
+# a staging database, never the database real users hit.
 on:
   push:
     branches: [main]

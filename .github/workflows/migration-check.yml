@@ -2,7 +2,7 @@ name: Check migrations against staging
 
 # Read-only safety net: on any PR into dev, main or prod that touches
 # migrations or the schema, verify the migration history actually applies
-# cleanly to test_db (catches drift/conflicts before merge, before the
+# cleanly to twonode_staging (catches drift/conflicts before merge, before the
 # staging auto-deploy or a manual prod run ever sees it). Never writes to
 # any database. dev is included because it's now where feature branches
 # land first (main is updated from dev, not directly).
@@ -41,9 +41,9 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
 
-      - name: Diff staging (test_db) against this branch's schema
+      - name: Diff staging (twonode_staging) against this branch's schema
         run: |
-          echo "Pending schema diff for test_db (informational — does not fail the build):"
+          echo "Pending schema diff for twonode_staging (informational — does not fail the build):"
           npx prisma migrate diff \
             --from-url "$DATABASE_URL" \
             --to-schema-datamodel prisma/schema \
