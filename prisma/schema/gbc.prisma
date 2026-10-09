@@ -161,6 +161,15 @@ model GBCTicket {
   checkedInAt          DateTime?
   checkedInBy          String?
   certificateSentCount Int              @default(0)
+  certificatePublicId  String?          @unique @db.VarChar(36)
+  certificateIssued    Boolean          @default(false)
+  certificateIssuedAt  DateTime?
+  certificateEventName String?
+  certificateTheme     String?
+  certificateSubTheme  String?
+  certificateVenue     String?
+  certificateStartDate DateTime?
+  certificateEndDate   DateTime?
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
 
@@ -463,3 +472,19 @@ model GBCAuditLog {
   @@index([createdAt])
   @@map("gbc_audit_logs")
 }
+
+model GBCCertificateOtp {
+  id          String    @id @default(cuid())
+  email       String
+  codeHmac    String
+  nonceHash   String
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([email, usedAt, expiresAt])
+  @@map("gbc_certificate_otps")
+}
+

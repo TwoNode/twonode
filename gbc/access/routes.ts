@@ -258,6 +258,14 @@ export const GBC_ROUTES: GBCRouteEntry[] = [
     group: "guest",
     showInNav: false,
   },
+  {
+    path: "/gbc/verify",
+    label: "Verify Certificate",
+    icon: FileCheck2,
+    roles: PUBLIC,
+    group: "guest",
+    showInNav: false,
+  },
   // The repurposed My Ticket entry point (step 12) — reference+email is the auth, not a role.
   {
     path: "/gbc/login",
