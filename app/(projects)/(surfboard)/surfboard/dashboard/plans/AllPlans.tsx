@@ -1803,13 +1803,21 @@ export default function AllPlans() {
                               </span>
                               <span>•</span>
                               {plan.redCopyFileUrl ? (
-                                <span
-                                  className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"
-                                  title="Record copy uploaded"
+                                <a
+                                  href={surfboardApi.files.getViewUrl(
+                                    plan.redCopyFileUrl
+                                  )}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:underline cursor-pointer"
+                                  title="View uploaded Record Copy PDF"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
                                   <CheckCircle className="w-3 h-3" />
-                                  <span className="text-xs">Record Copy</span>
-                                </span>
+                                  <span className="text-xs">
+                                    Record Copy (View PDF)
+                                  </span>
+                                </a>
                               ) : (
                                 <span
                                   className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400"
@@ -1938,6 +1946,21 @@ export default function AllPlans() {
                                 <Eye className="w-4 h-4 mr-2" />
                                 View Details
                               </DropdownMenuItem>
+                              {plan.redCopyFileUrl && (
+                                <DropdownMenuItem asChild>
+                                  <a
+                                    href={surfboardApi.files.getViewUrl(
+                                      plan.redCopyFileUrl
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center cursor-pointer text-rose-600 dark:text-rose-400"
+                                  >
+                                    <FileText className="w-4 h-4 mr-2 text-rose-600" />
+                                    View Record Copy
+                                  </a>
+                                </DropdownMenuItem>
+                              )}
                               {scope !== "sharedWithMe" && (
                                 <>
                                   <DropdownMenuItem
@@ -2214,10 +2237,18 @@ export default function AllPlans() {
                     {/* Record Copy Status */}
                     <div className="flex items-center gap-2 text-xs">
                       {plan.redCopyFileUrl ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-full">
+                        <a
+                          href={surfboardApi.files.getViewUrl(
+                            plan.redCopyFileUrl
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-full hover:underline cursor-pointer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <CheckCircle className="w-3 h-3" />
-                          <span>Record Copy Uploaded</span>
-                        </span>
+                          <span>Record Copy (View PDF)</span>
+                        </a>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-full">
                           <Clock className="w-3 h-3" />

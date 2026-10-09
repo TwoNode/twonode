@@ -651,3 +651,69 @@ export async function sendGBCCertificateEmail(
     };
   }
 }
+
+export async function sendGBCCertificateOtpEmail({
+  to,
+  name,
+  code,
+}: {
+  to: string;
+  name?: string;
+  code: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const siteUrl = getSiteUrl();
+    const html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1A1024; margin: 0; padding: 0; background-color: #f4f4f4; }
+          .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .header { background: #1A1024; color: white; padding: 24px 20px; text-align: center; border-bottom: 3px solid #C9A24B; }
+          .header h1 { margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; }
+          .content { padding: 32px 24px; text-align: center; }
+          .code-box { background: #F3E8FF; border: 1px dashed #7C3AED; color: #5B21B6; font-size: 32px; font-weight: 800; letter-spacing: 6px; padding: 16px; margin: 24px 0; border-radius: 6px; }
+          .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 13px; border-top: 1px solid #e5e7eb; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Certificate Download Verification</h1>
+          </div>
+          <div class="content">
+            <p style="font-size: 16px; text-align: left;">Hello${name ? ` <strong>${name}</strong>` : ""},</p>
+            <p style="text-align: left; color: #374151;">Use the verification code below to download your Geospatial Builders Conference (GBC) certificate:</p>
+            <div class="code-box">${code}</div>
+            <p style="font-size: 14px; color: #6b7280; text-align: left;">This code expires in <strong>10 minutes</strong> and can only be used once.</p>
+            <p style="font-size: 13px; color: #9ca3af; text-align: left; margin-top: 24px;">
+              Enter it on <a href="${siteUrl}" style="color: #5B21B6;">${siteUrl.replace(/^https?:\/\//, "")}</a>. We will never ask you for this code by phone, chat, or email. If you did not request this, you can safely ignore this email.
+            </p>
+          </div>
+          <div class="footer">
+            <p>TwoNode Technologies &middot; GBC</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await transporter.sendMail({
+      from: `"GBC Certificates · TwoNode Technologies" <${FROM_EMAIL}>`,
+      to,
+      subject: `Your GBC Certificate Verification Code: ${code}`,
+      html,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send certificate OTP email:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
