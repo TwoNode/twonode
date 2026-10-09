@@ -32,7 +32,7 @@ Track open integrations, deferred configurations, and operational housekeeping i
 
 ### Module C: Infrastructure, DevOps & Security
 
-- [x] **Update DEPLOYMENT.md database mapping:** Updated `docs/DEPLOYMENT.md` and migration workflow files using environment placeholders (`<prod-db>`, `<staging-db>`, `<local-db>`) and clarified that historical test snapshots are superseded. (2026-10-09) _(Assignee: AI & roji-tech)_
+- [x] **Update DEPLOYMENT.md database mapping:** Updated `docs/DEPLOYMENT.md` and migration workflow files using environment placeholders (`<prod-db>`, `<staging-db>`, `<local-db>`) in [PR #315](https://github.com/TwoNode/twonode/pull/315) (2026-10-09). _(Assignee: AI & roji-tech)_
 - [ ] **Rotate staging database password:** Staging database password was pasted in chat earlier. Rotate in Neon console and Vercel staging environment variables. _(Assignee: roji-tech)_
 - [ ] **Complete Kinde configuration on staging:** Staging Kinde credentials and callback URLs are pending configuration. _(Assignee: roji-tech)_
 - [ ] **Web map tile licensing decision:** Surfboard map requests Google tiles. Decide on commercial licensing or alternative tile provider. _(Assignee: roji-tech)_
