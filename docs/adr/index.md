@@ -62,3 +62,4 @@ What gets better, what gets worse or harder, and what this commits us to later.
 | [0009](./0009-gbc-edition-2-is-the-april-2026-event.md)            | GBC edition 2.0 is the April 30, 2026 event                                          | Accepted |
 | [0010](./0010-guarded-production-data-changes.md)                  | Production data changes are guarded, backed up and explicitly approved               | Accepted |
 | [0011](./0011-branches-and-environments.md)                        | Branches and environments: dev integrates, main is staging, prod is live             | Accepted |
+| [0012](./0012-multi-provider-storage-and-surveyor-file-privacy.md)  | Multi-provider storage architecture and surveyor file privacy                        | Accepted |

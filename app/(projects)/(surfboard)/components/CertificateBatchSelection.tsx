@@ -635,7 +635,11 @@ export function BatchSubmissionModal({
                         <div className="flex items-center gap-1.5 text-xs text-blue-600">
                           <button
                             onClick={() => {
-                              setViewingPdfUrl(plan.redCopyFileUrl || null);
+                              setViewingPdfUrl(
+                                plan.redCopyFileUrl
+                                  ? surfboardApi.files.getViewUrl(plan.redCopyFileUrl)
+                                  : null
+                              );
                               setViewingPdfPlanNumber(plan.planNumber);
                             }}
                             className="flex items-center gap-1 hover:text-blue-800 transition-colors cursor-pointer"
@@ -911,7 +915,17 @@ export function BatchSubmissionModal({
               />
             )}
           </div>
-          <DialogFooter className="pt-2">
+          <DialogFooter className="pt-2 flex items-center justify-between sm:justify-between w-full">
+            {viewingPdfUrl && (
+              <a
+                href={viewingPdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+              >
+                Open in new tab ↗
+              </a>
+            )}
             <Button onClick={() => setViewingPdfUrl(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>

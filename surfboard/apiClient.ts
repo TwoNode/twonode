@@ -1339,6 +1339,19 @@ export const surfboardApi = {
       );
       if (!result.success) throw new Error(result.error);
     },
+
+    /** Returns the authenticated view/download URL that handles signed URLs under the hood. */
+    getViewUrl: (urlOrKey: string) =>
+      `${BASE}/files/view?url=${encodeURIComponent(urlOrKey)}`,
+
+    /** Fetches the signed URL as JSON payload instead of redirect. */
+    getSignedUrl: async (urlOrKey: string, expiresIn = 300) => {
+      const result = await jsonFetch<{ url: string }>(
+        `${BASE}/files/view?url=${encodeURIComponent(urlOrKey)}&format=json&expiresIn=${expiresIn}`
+      );
+      if (!result.success) throw new Error(result.error);
+      return result.data.url;
+    },
   },
 
   notifications: {
