@@ -1,6 +1,6 @@
 # Current Tasks (Live Dashboard)
 
-State as of 2026-10-09 10:45 UTC: PR #312 merged into main. PR #313 opened (main→prod) for long-name fix and ADRs (awaiting user merge). PR #314 merged into dev. DEPLOYMENT.md database mapping updated to twonode_staging. Odd issue dates corrected on staging and prod RDS.
+State as of 2026-10-09 11:00 UTC: PR #312 merged into main. PR #313 opened (main→prod) for long-name fix and ADRs (awaiting user merge). PR #314 merged into dev. DEPLOYMENT.md database mapping sanitized with environment placeholders. Odd issue dates corrected on staging and prod RDS.
 
 ---
 
