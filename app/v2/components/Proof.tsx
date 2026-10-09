@@ -19,26 +19,30 @@ const PROOF = [
 /** Evidence as a plain list, not a logo wall or awards grid — "show what we've done rather than telling people we're excellent." */
 export function Proof() {
   return (
-    <section className="border-t" style={{ borderColor: "var(--v2-border)" }}>
-      <div className="mx-auto max-w-6xl px-6 py-24 sm:px-8">
-        <h2 className="font-[family-name:var(--font-display)] text-3xl font-medium sm:text-4xl">
+    <section className="border-b border-[#e6e4f0] dark:border-[#29273c]">
+      <div className="mx-auto max-w-6xl px-6 py-20 sm:px-8 sm:py-28">
+        <p className="font-[family-name:var(--font-mono)] text-xs font-semibold uppercase tracking-[0.2em] text-[#767490] dark:text-[#827e9f]">
+          Field Traction & Proof
+        </p>
+        <h2 className="mt-3 font-[family-name:var(--font-sora)] text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#11101e] dark:text-white">
           We&apos;ve been building.
         </h2>
-        <dl
-          className="mt-12 divide-y"
-          style={{ borderColor: "var(--v2-border)" }}
-        >
+
+        <div className="mt-12 rounded-3xl border border-[#e6e4f0] dark:border-[#29273c] bg-white dark:bg-[#161524] overflow-hidden shadow-xs divide-y divide-[#e6e4f0] dark:divide-[#29273c]">
           {PROOF.map((p) => (
             <div
               key={p.label}
-              className="grid gap-2 border-t py-6 sm:grid-cols-[220px_1fr]"
-              style={{ borderColor: "var(--v2-border)" }}
+              className="grid gap-2 p-6 sm:p-8 sm:grid-cols-[260px_1fr] items-baseline transition-colors hover:bg-[#faf9f6]/50 dark:hover:bg-white/5"
             >
-              <dt className="font-medium">{p.label}</dt>
-              <dd className="text-sm opacity-75">{p.detail}</dd>
+              <dt className="font-[family-name:var(--font-sora)] text-lg sm:text-xl font-bold text-[#11101e] dark:text-white">
+                {p.label}
+              </dt>
+              <dd className="font-[family-name:var(--font-sans)] text-sm sm:text-base leading-relaxed text-[#48455e] dark:text-[#b8b5d0]">
+                {p.detail}
+              </dd>
             </div>
           ))}
-        </dl>
+        </div>
       </div>
     </section>
   );

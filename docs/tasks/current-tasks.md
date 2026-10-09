@@ -6,9 +6,9 @@ State as of 2026-10-09 11:05 UTC: PR #313 merged into prod (long-name fix and AD
 
 ## Active Session Batch
 
-**Next Action:** Twonode Landing Page /v2 Redesign Implementation ([TASK-0004](./0004-twonode-v2-landing-redesign.md))  
+**Next Action:** Open operations & integrations awaiting user action ([Active Backlog](./0003-active-backlog.md))  
 **Active Branch:** `dev`  
-**Status:** `In Progress`
+**Status:** `Completed`
 
 ### Promotion & Staging Verification Checklist
 
@@ -21,6 +21,7 @@ State as of 2026-10-09 11:05 UTC: PR #313 merged into prod (long-name fix and AD
 - [x] Verify certificate verification page (`/gbc/verify/[publicId]`) and OTP download on staging (2026-10-10)
 - [x] **Red Copy PDF Access & Availability:** Ensure survey plan red copy PDF is accessible, previewable, and downloadable in CoD and plan views. Scoped in [TASK-0005](./0005-surfboard-cod-red-copy-and-file-privacy.md). (2026-10-09, PR #316 / commit `4a84af6c`)
 - [x] **Surveyor Upload File Privacy (Private S3 & Presigned URLs):** Replace raw public S3 URLs with private storage and authenticated presigned GET URLs for surveyor uploads. Multi-provider storage adapters for S3, R2, Cloudinary, Vercel Blob, ImageKit, and Local. Scoped in [TASK-0005](./0005-surfboard-cod-red-copy-and-file-privacy.md), [ADR-0012](../adr/0012-multi-provider-storage-and-surveyor-file-privacy.md). (2026-10-09, PR #316 / commit `4a84af6c`)
+- [x] **Twonode Landing Page /v2 Redesign:** Implement "18. Nodes" design direction with kinetic SVG graph, mobile responsive drawer (390px), and upgraded 4-column Obsidian footer. Scoped in [TASK-0004](./0004-twonode-v2-landing-redesign.md). (2026-10-10)
 
 ---
 
@@ -43,7 +44,7 @@ State as of 2026-10-09 11:05 UTC: PR #313 merged into prod (long-name fix and AD
 | [0001](./0001-initial-corrections-oct-05-07.md)            | **Initial Corrections & Production Audit**          | 2026-10-05 – 2026-10-07 | Maps, Database, Certificates           | `Completed`   |
 | [0002](./0002-certificate-handoff-and-access-oct-08-09.md) | **Certificate Handoff, Data Fix & Access Security** | 2026-10-08 – 2026-10-09 | Certificates, Security, Database, ADRs | `Completed`   |
 | [0003](./0003-active-backlog.md)                           | **Active Backlog & Upcoming Integrations**          | Active Backlog          | Payments, REVA, DevOps, Auth           | `Pending`     |
-| [0004](./0004-twonode-v2-landing-redesign.md)              | **Twonode Landing Page /v2 Redesign (Nodes)**       | Active Sprint           | Landing Page, V2, UI/UX, Design Tokens | `In Progress` |
+| [0004](./0004-twonode-v2-landing-redesign.md)              | **Twonode Landing Page /v2 Redesign (Nodes)**       | Active Sprint           | Landing Page, V2, UI/UX, Design Tokens | `Completed`   |
 | [0005](./0005-surfboard-cod-red-copy-and-file-privacy.md)  | **Surfboard CoD Red Copy & Surveyor File Privacy**   | Active Sprint           | Surfboard, CoD, S3 Security, Storage   | `Completed`   |
 
 
