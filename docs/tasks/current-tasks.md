@@ -24,6 +24,7 @@ State as of 2026-10-09 11:05 UTC: PR #313 merged into prod (long-name fix and AD
 
 ## Open Tasks Waiting on Action
 
+- **Twonode Landing Page /v2 Design Selection:** Review candidate visual directions in `out/TwoNode_V2_Design_Canvas.html` and select preferred design aesthetic (e.g. 01 Obsidian Slate, 13 Contour, 14 Dispatch, 15 Registry, 16 Spectrum, 18 Nodes, 20 Showcase) to begin implementation. Tracked in [TASK-0004](./0004-twonode-v2-landing-redesign.md). _(Waiting on: roji-tech / Design Selection Decision)_
 - **GOOGLE_MAPS_SERVER_API_KEY:** Waiting on Google Cloud project owner to enable billing before setting in Vercel. _(Waiting on: roji-tech / Cloud Admin)_
 - **Paystack Renewal Webhook:** Waiting on live renewal event payload log to verify payload schema. _(Waiting on: roji-tech)_
 - **Activate GBC 3.0 on Prod:** Edition 2.0 is past; admin dashboard activation needed when ready. _(Waiting on: roji-tech / Admin)_
@@ -41,4 +42,6 @@ State as of 2026-10-09 11:05 UTC: PR #313 merged into prod (long-name fix and AD
 | [0001](./0001-initial-corrections-oct-05-07.md)            | **Initial Corrections & Production Audit**          | 2026-10-05 – 2026-10-07 | Maps, Database, Certificates           | `Completed` |
 | [0002](./0002-certificate-handoff-and-access-oct-08-09.md) | **Certificate Handoff, Data Fix & Access Security** | 2026-10-08 – 2026-10-09 | Certificates, Security, Database, ADRs | `Completed` |
 | [0003](./0003-active-backlog.md)                           | **Active Backlog & Upcoming Integrations**          | Active Backlog          | Payments, REVA, DevOps, Auth           | `Pending`   |
+| [0004](./0004-twonode-v2-landing-redesign.md)              | **Twonode Landing Page /v2 Redesign & Selection**    | Active Sprint           | Landing Page, V2, UI/UX, Design Tokens | `Pending`   |
+
 

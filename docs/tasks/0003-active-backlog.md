@@ -38,6 +38,10 @@ Track open integrations, deferred configurations, and operational housekeeping i
 - [ ] **Web map tile licensing decision:** Surfboard map requests Google tiles. Decide on commercial licensing or alternative tile provider. _(Assignee: roji-tech)_
 - [ ] **Clean up disposable staging test accounts:** Decide whether to keep or prune test accounts created during staging verification on `twonode_staging`. _(Assignee: roji-tech)_
 
+### Module D: Corporate Site & /v2 Redesign
+
+- [ ] **Twonode landing page /v2 design selection & implementation:** Evaluate 22 comparison artboards in `out/TwoNode_V2_Design_Canvas.html`, choose visual direction, and implement production components. Fully scoped in [TASK-0004](./0004-twonode-v2-landing-redesign.md). _(Assignee: roji-tech / AI)_
+
 ---
 
 ## 3. Unified Verification Gates
