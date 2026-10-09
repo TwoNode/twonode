@@ -1,6 +1,6 @@
 # Current Tasks (Live Dashboard)
 
-State as of 2026-10-09 10:18 UTC: PR #312 merged into main. PR #313 opened (main→prod) for long-name fix and ADRs (awaiting user merge). PR #314 opened (feat/gbc-certificate-access→dev) for ADR-0008 certificate access security overhaul. Odd issue dates corrected on staging and prod RDS.
+State as of 2026-10-09 11:00 UTC: PR #312 merged into main. PR #313 opened (main→prod) for long-name fix and ADRs (awaiting user merge). PR #314 merged into dev. DEPLOYMENT.md database mapping sanitized with environment placeholders. Odd issue dates corrected on staging and prod RDS.
 
 ---
 
@@ -11,6 +11,7 @@ State as of 2026-10-09 10:18 UTC: PR #312 merged into main. PR #313 opened (main
 **Started:** 2026-10-08 08:00:00 UTC | **Status:** `In Progress`
 
 ### Active Working Checklist
+
 - [x] Odd issue dates corrected on staging and prod RDS (Nov 30, 2025 and Jul 9, 2026 → Apr 30, 2026)
 - [x] PR #312 merged to `main` (long name font scaling + ADRs)
 - [x] PR #313 opened `main` → `prod` (Release: long names fix + ADRs)

@@ -33,13 +33,19 @@ PR #166) — worth checking first if a deploy starts failing at the
 
 ## Database migrations
 
-Three Postgres databases back the three environments (`prod` → `twonode_db`, `main` → `test_db`, `dev`/local → `dev_db`). Schema lives in `prisma/schema/*.prisma` (one file per product plus `core`/`gis`, wired up by `prisma.config.ts`) and migrations in `prisma/migrations/`.
+Three Postgres databases back the environments:
 
-| Workflow                                   | Trigger                                                                | Does                                                                                                                                                                                                        |
-| :----------------------------------------- | :--------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.github/workflows/migration-check.yml`    | PR into `dev`, `main` or `prod` touching `prisma/**`                   | **Read-only.** `prisma validate`, then prints the diff between `test_db` and the branch's schema. Never writes.                                                                                             |
-| `.github/workflows/migrate-staging.yml`    | push to `main` touching `prisma/migrations/**` or `prisma/schema/**`   | `prisma migrate deploy` against `test_db` (`STAGING_DATABASE_URL`), then `migrate status`.                                                                                                                  |
-| `.github/workflows/migrate-production.yml` | **Manual only** (`workflow_dispatch`), typed confirmation `twonode_db` | `migrate status` → `migrate deploy` → `migrate status` against `twonode_db`. Scoped to the `Production` GitHub Environment (restricted to the `prod` branch; `PROD_DATABASE_URL` is readable nowhere else). |
+- **Production (`prod`)**: `<prod-db>` (live production database serving real traffic, configured via `PROD_DATABASE_URL`).
+- **Staging (`main`)**: `<staging-db>` (staging database backing the preview deployment, configured via `STAGING_DATABASE_URL`). _Note: Historical test databases from earlier development phases are superseded and detached from the active pipeline._
+- **Local/Integration (`dev`)**: `<local-db>` (local development database instance, configured via `DATABASE_URL`).
+
+Schema lives in `prisma/schema/*.prisma` (one file per product plus `core`/`gis`, wired up by `prisma.config.ts`) and migrations in `prisma/migrations/`.
+
+| Workflow                                   | Trigger                                                               | Does                                                                                                                                                                                                       |
+| :----------------------------------------- | :-------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.github/workflows/migration-check.yml`    | PR into `dev`, `main` or `prod` touching `prisma/**`                  | **Read-only.** `prisma validate`, then prints the diff between staging (`<staging-db>` via `STAGING_DATABASE_URL`) and the branch's schema. Never writes.                                                  |
+| `.github/workflows/migrate-staging.yml`    | push to `main` touching `prisma/migrations/**` or `prisma/schema/**`  | `prisma migrate deploy` against staging (`<staging-db>` via `STAGING_DATABASE_URL`), then `migrate status`.                                                                                                |
+| `.github/workflows/migrate-production.yml` | **Manual only** (`workflow_dispatch`), typed confirmation `<prod-db>` | `migrate status` → `migrate deploy` → `migrate status` against `<prod-db>`. Scoped to the `Production` GitHub Environment (restricted to the `prod` branch; `PROD_DATABASE_URL` is readable nowhere else). |
 
 Nothing touches production automatically: verify the migration on staging, merge to `prod`, then run `gh workflow run migrate-production.yml --ref prod` (or use the Actions tab).
 
@@ -57,7 +63,7 @@ _(The maintainer verified this against the databases; it is recorded here becaus
 
 ### Local development gotchas
 
-- **Two env files, two databases.** Next.js reads `.env.local` over `.env`; the Prisma CLI (via `prisma.config.ts` → `dotenv/config`) reads **only `.env`**. If `.env.local` points the running app at a remote database (e.g. `test_db`) while `.env` points at a local one, `npx prisma migrate …` will run against the local database while the app talks to the remote one — check which `DATABASE_URL` each tool sees before running anything destructive.
+- **Two env files, two databases.** Next.js reads `.env.local` over `.env`; the Prisma CLI (via `prisma.config.ts` → `dotenv/config`) reads **only `.env`**. If `.env.local` points the running app at a remote database (e.g. `<staging-db>`) while `.env` points at a local one, `npx prisma migrate …` will run against the local database while the app talks to the remote one — check which `DATABASE_URL` each tool sees before running anything destructive.
 - `prisma migrate dev --create-only` can fail on the shadow database (extensions/history drift); hand-written SQL migrations have been the pattern. Review the SQL, then apply with `migrate deploy`.
 - `npm run build-dev` runs `prisma db push` — fine for a scratch database, never against `main`/`prod` databases (it bypasses migration history).
 - `npm run prisma:check` diffs the database (`DATABASE_URL`) against the `prisma/schema/` folder and prints the SQL that would bring the database in line. Empty output, or only `SET DEFAULT concat(...)` lines for the `dbgenerated` defaults (Prisma always lists those), means no drift. It only reads the database. (It used to point at a `prisma/schema.prisma` that no longer exists.)
