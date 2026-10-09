@@ -43,7 +43,7 @@ Execute comprehensive certificate handoff, resolve long attendee name clipping v
 - [x] **OTP request & verification API routes:** Built `/api/v1/gbc/certificates/request-code`, `/api/v1/gbc/certificates/verify-code`, and `/api/v1/gbc/certificates/download`. Protected `/api/v1/gbc/tickets/[ticketNumber]/certificate-pdf` against unauthenticated direct access.
 - [x] **Verification page OTP modal flow:** Updated `CertificateClient.tsx` with "Are you the holder? Request certificate copy" modal supporting the 2-step OTP verification flow.
 - [x] **Unit & integration test suite:** Automated vitest coverage for OTP lifecycle, token signatures, anti-enumeration, and browser binding (855 tests passing platform-wide).
-- [ ] **Open PR into `dev`:** Push branch `feat/gbc-certificate-access` and open PR to `dev`.
+- [x] **Open PR into `dev`:** Pushed branch `feat/gbc-certificate-access` and opened [PR #314](https://github.com/TwoNode/twonode/pull/314) into `dev` (2026-10-09 10:17 UTC).
 
 ---
 
@@ -61,6 +61,7 @@ Execute comprehensive certificate handoff, resolve long attendee name clipping v
 
 - **PR #310 / PR #312:** Long names scaling merged to dev & main
 - **PR #311 / PR #312:** ADR documentation merged to dev & main
-- **PR #313:** Open release PR `main` → `prod`
+- **PR #313:** Open release PR `main` → `prod` (Release: long names fix + ADRs)
+- **PR #314:** Open feature PR `feat/gbc-certificate-access` → `dev` (ADR-0008 certificate access security overhaul)
 - **Branch `feat/gbc-certificate-access`:** Complete ADR-0008 security implementation
 - **Backups:** `out/staging-odd-dates-backup.csv`, `out/prod-odd-dates-backup.csv`

@@ -1,6 +1,6 @@
 # Current Tasks (Live Dashboard)
 
-State as of 2026-10-09 10:25 UTC: PR #312 merged into main. PR #313 opened (main→prod) for long-name fix and ADRs (awaiting user merge). Odd issue dates corrected on staging and prod RDS. ADR-0008 certificate access change in progress on `feat/gbc-certificate-access`.
+State as of 2026-10-09 10:18 UTC: PR #312 merged into main. PR #313 opened (main→prod) for long-name fix and ADRs (awaiting user merge). PR #314 opened (feat/gbc-certificate-access→dev) for ADR-0008 certificate access security overhaul. Odd issue dates corrected on staging and prod RDS.
 
 ---
 
@@ -11,7 +11,6 @@ State as of 2026-10-09 10:25 UTC: PR #312 merged into main. PR #313 opened (main
 **Started:** 2026-10-08 08:00:00 UTC | **Status:** `In Progress`
 
 ### Active Working Checklist
-
 - [x] Odd issue dates corrected on staging and prod RDS (Nov 30, 2025 and Jul 9, 2026 → Apr 30, 2026)
 - [x] PR #312 merged to `main` (long name font scaling + ADRs)
 - [x] PR #313 opened `main` → `prod` (Release: long names fix + ADRs)
@@ -22,7 +21,7 @@ State as of 2026-10-09 10:25 UTC: PR #312 merged into main. PR #313 opened (main
 - [x] "Are you the holder? Request certificate copy" OTP modal added to `CertificateClient.tsx`
 - [x] Write unit & integration tests (`vitest run`) for OTP service and routes
 - [x] Quality gates check (`npx tsc --noEmit` clean, `vitest` 855 passed, `prettier` clean)
-- [ ] Commit with attribution footer and open PR to `dev`
+- [x] Commit with attribution footer and open [PR #314](https://github.com/TwoNode/twonode/pull/314) to `dev`
 
 ---
 
