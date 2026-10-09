@@ -19,6 +19,8 @@ State as of 2026-10-09 11:05 UTC: PR #313 merged into prod (long-name fix and AD
 - [ ] Merge promotion PR into `main`
 - [ ] Run `npx prisma migrate deploy` on staging database (`twonode_staging`)
 - [ ] Verify certificate verification page (`/gbc/verify/[publicId]`) and OTP download on staging
+- [ ] **Red Copy PDF Access & Availability:** Ensure survey plan red copy PDF is accessible, previewable, and downloadable in CoD and plan views. Scoped in [TASK-0005](./0005-surfboard-cod-red-copy-and-file-privacy.md). _(Assignee: AI & roji-tech)_
+- [ ] **Surveyor Upload File Privacy (Private S3 & Presigned URLs):** Replace raw public S3 URLs with private storage and authenticated presigned GET URLs for surveyor uploads. Scoped in [TASK-0005](./0005-surfboard-cod-red-copy-and-file-privacy.md). _(Assignee: AI & roji-tech)_
 
 ---
 
@@ -42,5 +44,6 @@ State as of 2026-10-09 11:05 UTC: PR #313 merged into prod (long-name fix and AD
 | [0002](./0002-certificate-handoff-and-access-oct-08-09.md) | **Certificate Handoff, Data Fix & Access Security** | 2026-10-08 – 2026-10-09 | Certificates, Security, Database, ADRs | `Completed`   |
 | [0003](./0003-active-backlog.md)                           | **Active Backlog & Upcoming Integrations**          | Active Backlog          | Payments, REVA, DevOps, Auth           | `Pending`     |
 | [0004](./0004-twonode-v2-landing-redesign.md)              | **Twonode Landing Page /v2 Redesign (Nodes)**       | Active Sprint           | Landing Page, V2, UI/UX, Design Tokens | `In Progress` |
+| [0005](./0005-surfboard-cod-red-copy-and-file-privacy.md)  | **Surfboard CoD Red Copy & Surveyor File Privacy**   | Active Sprint           | Surfboard, CoD, S3 Security, Storage   | `In Progress` |
 
 
