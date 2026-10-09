@@ -1,13 +1,13 @@
 # TASK-0002: Session Batch — 2026-10-08 to 2026-10-09 (Certificate Handoff, Data Correction, ADRs & Access Security)
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Priority:** Critical
 - **Assignee:** roji-tech / AI
-- **Target Branch / PR:** `dev`, `main`, `prod` / PR #310, PR #311, PR #312, PR #313, `feat/gbc-certificate-access`
+- **Target Branch / PR:** `dev`, `main`, `prod` / PR #310, PR #311, PR #312, PR #313, PR #314
 - **Created:** 2026-10-08 08:00:00 UTC
 - **Started:** 2026-10-08 08:00:00 UTC
-- **Ended:** In Progress
-- **Duration:** In Progress
+- **Ended:** 2026-10-09 11:04:00 UTC
+- **Duration:** 1 day 3 hrs 4 mins
 
 > **How to tick:** change `[ ]` to `[x]`. The table shows the characters, not a clickable box.
 
@@ -25,7 +25,7 @@ Execute comprehensive certificate handoff, resolve long attendee name clipping v
 
 - [x] **Certificate work handoff pack:** Documented all pending certificate fixes, edge cases, and architectural roadmap in `out/certificate-handoff.md`.
 - [x] **Long names run off the certificate (#310):** Handled names up to 67 characters with dynamic canvas font scaling for 1-line and 2-line layouts. Merged to `dev` in #310, merged to `main` in #312 (2026-10-09 05:42 UTC), release PR #313 opened to `prod`. Live preview verified.
-- [ ] **Release #310 long name fix to production:** PR #313 awaiting merge to `prod`.
+- [x] **Release #310 long name fix to production:** PR #313 merged into `prod` (2026-10-09 11:04 UTC). Long-name font scaling and ADRs 0001–0011 are live on production.
 
 ### Module B: Database Data Integrity & Audits
 
