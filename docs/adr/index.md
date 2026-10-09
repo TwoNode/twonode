@@ -8,20 +8,27 @@ They stop old debates from restarting and tell a new developer why something is 
 
 ## Rules
 
-1. **One decision per file**, named `NNNN-short-title.md`, numbered in order. Keep each to about half a page.
+1. **One decision per file**, named `NNNN-short-title.md`, numbered in order. Keep each to about one page.
 2. **Never rewrite an accepted record.** If the decision changes, write a new record that supersedes it, set the old record's status to `Superseded by NNNN`, and link both ways. Typo and link fixes are fine.
 3. **Write one only for a choice someone might reverse by mistake,** or that cost real effort to learn. Not every change needs one.
 4. **Status** is one of: `Proposed`, `Accepted`, `Rejected`, `Superseded by NNNN`.
-5. Link the pull requests and the files the decision lives in. Do not put secrets, passwords or connection strings in a record.
+5. **Say what enforces it.** A test, a CI gate, or database constraint written out.
+6. **Write the downsides and the alternatives.** Consequences must list what gets harder; alternatives state what was considered and why it was rejected.
+7. **Land it with the change.** An ADR transitions from `Proposed` to `Accepted` in the PR that delivers the implementation.
+8. **Treat an accepted ADR as a constraint.** Code that enforces or depends on a decision cites it in a comment (`ADR-0008`). Link PRs and files; never put secrets in a record.
 
 ## Template
+
+See [`template.md`](./template.md) for the complete rules and starter template.
 
 ```markdown
 # NNNN. Title: the choice, in a few words
 
 - **Status:** Proposed | Accepted | Rejected | Superseded by NNNN
 - **Date:** YYYY-MM-DD
+- **Decided by:** Person or role
 - **Related:** PR links, files, other records
+- **Enforced by:** Test suite, CI gate, or database constraint
 
 ## Context
 
@@ -31,7 +38,11 @@ The problem and the forces behind it.
 
 What we chose, stated plainly.
 
-## Consequences
+## Alternatives considered and rejected
+
+What else was considered and why it was not chosen.
+
+## Consequences & Downsides
 
 What gets better, what gets worse or harder, and what this commits us to later.
 ```
