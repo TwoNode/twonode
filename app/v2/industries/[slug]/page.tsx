@@ -39,7 +39,7 @@ export default async function IndustryPage({
       <p className="mt-6 text-sm uppercase tracking-[0.2em] opacity-60">
         {industry.positioning}
       </p>
-      <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl font-medium sm:text-5xl">
+      <h1 className="mt-3 font-(family-name:--font-display) text-4xl font-medium sm:text-5xl">
         {industry.name}
       </h1>
       <p className="mt-8 text-lg leading-relaxed opacity-80">
@@ -63,7 +63,7 @@ export default async function IndustryPage({
               />
               {p.name}
             </span>
-            <h2 className="mt-4 font-[family-name:var(--font-display)] text-2xl font-medium italic">
+            <h2 className="mt-4 font-(family-name:--font-display) text-2xl font-medium italic">
               {p.tagline}
             </h2>
             <p className="mt-3 leading-relaxed opacity-80">{p.description}</p>

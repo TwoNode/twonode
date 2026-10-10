@@ -13,20 +13,20 @@ export function FooterV2() {
     <footer className="relative bg-[#0f0e1a] text-white pt-20 pb-12 overflow-hidden border-t border-white/10">
       {/* Top glowing hairline gradient */}
       <div
-        className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-[#ff4d6d]/50 via-60% via-[#6a4cff]/50 to-transparent"
+        className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-[#ff4d6d]/50 via-60% to-transparent"
         aria-hidden="true"
       />
 
       <div className="mx-auto max-w-6xl px-6 sm:px-8">
         {/* Top Ribbon: Editorial Quote + Live Status Pill */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-12 border-b border-white/10 mb-14">
-          <p className="font-[family-name:var(--font-display)] text-xl sm:text-2xl lg:text-3xl italic text-[#ddd9ee] max-w-2xl leading-snug">
+          <p className="font-(family-name:--font-display) text-xl sm:text-2xl lg:text-3xl italic text-[#ddd9ee] max-w-2xl leading-snug">
             &ldquo;Understand the industry. Build what it needs. Connect the
             people within it.&rdquo;
           </p>
 
           <div className="flex items-center gap-3">
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/5 px-4 py-2 font-[family-name:var(--font-mono)] text-xs text-[#a8a4c4]">
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/5 px-4 py-2 font-mono text-xs text-[#a8a4c4]">
               <span
                 className="h-2 w-2 rounded-full bg-[#0fb5a6] shadow-[0_0_8px_#0fb5a6]"
                 style={{ animation: "ndp 1.8s infinite" }}
@@ -58,7 +58,7 @@ export function FooterV2() {
               ecosystems need to move forward.
             </p>
 
-            <div className="mt-6 space-y-1 font-[family-name:var(--font-mono)] text-xs text-[#797592]">
+            <div className="mt-6 space-y-1 font-mono text-xs text-[#797592]">
               <p>TwoNode Technologies Ltd.</p>
               <p>RC NO.: 7742902</p>
               <p>Lagos &bull; Abuja, Nigeria</p>
@@ -67,7 +67,7 @@ export function FooterV2() {
 
           {/* Column 2: Industries & Platforms */}
           <div>
-            <h4 className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.14em] text-[#ff4d6d] mb-5">
+            <h4 className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-[#ff4d6d] mb-5">
               Industries & Work
             </h4>
             <ul className="space-y-3 text-sm text-[#b9b5d2]">
@@ -77,7 +77,7 @@ export function FooterV2() {
                   className="inline-flex items-center gap-2 hover:text-white transition-colors"
                 >
                   <span>Surveying & Geospatial</span>
-                  <span className="font-[family-name:var(--font-mono)] text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#0fb5a6]/20 text-[#2dd4bf]">
+                  <span className="font-mono text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#0fb5a6]/20 text-[#2dd4bf]">
                     Active
                   </span>
                 </Link>
@@ -104,7 +104,7 @@ export function FooterV2() {
                   className="inline-flex items-center gap-2 hover:text-white transition-colors"
                 >
                   <span>Real Estate</span>
-                  <span className="font-[family-name:var(--font-mono)] text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#ff4d6d]/20 text-[#ff859d]">
+                  <span className="font-mono text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#ff4d6d]/20 text-[#ff859d]">
                     Next
                   </span>
                 </Link>
@@ -122,7 +122,7 @@ export function FooterV2() {
 
           {/* Column 3: Company & Perspectives */}
           <div>
-            <h4 className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.14em] text-[#ff4d6d] mb-5">
+            <h4 className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-[#ff4d6d] mb-5">
               Perspective
             </h4>
             <ul className="space-y-3 text-sm text-[#b9b5d2]">
@@ -151,7 +151,7 @@ export function FooterV2() {
 
           {/* Column 4: Ecosystem & Direct Contact */}
           <div>
-            <h4 className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.14em] text-[#ff4d6d] mb-5">
+            <h4 className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-[#ff4d6d] mb-5">
               Connect
             </h4>
             <p className="text-sm text-[#9f9bb8] leading-relaxed mb-4">
@@ -166,7 +166,7 @@ export function FooterV2() {
             <div className="pt-2">
               <a
                 href="mailto:info@twonodetechnologies.com"
-                className="font-[family-name:var(--font-mono)] text-xs text-[#ff4d6d] hover:underline"
+                className="font-mono text-xs text-[#ff4d6d] hover:underline"
               >
                 info@twonodetechnologies.com
               </a>
