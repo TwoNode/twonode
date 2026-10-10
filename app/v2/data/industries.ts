@@ -5,6 +5,8 @@ export interface IndustryProduct {
   /** Tailwind text/bg color token, e.g. "blue-600" — mirrors that product's own brand color. */
   accent: string;
   href: string;
+  /** Official brand logo path in /public */
+  logo: string;
 }
 
 export interface Industry {
@@ -41,6 +43,7 @@ export const industries: Industry[] = [
           "Surfboard is where survey plans get stored, accessed, verified and connected — turning a paper trail into a record every party in the chain can trust, from the surveyor who drew it to the ministry that approves it.",
         accent: "blue-600",
         href: "/surfboard",
+        logo: "/surfboard/surf_logo.svg",
       },
       {
         name: "GBC",
@@ -50,6 +53,7 @@ export const industries: Industry[] = [
           "Surfboard solves the record. GBC solves the room — the Geospatial Builders Conference is where surveyors, regulators and institutions in this industry actually talk to each other, not just to us.",
         accent: "purple-600",
         href: "/gbc",
+        logo: "/gbc2/gbc2DarkLogo.png",
       },
     ],
     otherEcosystemWork:
@@ -70,6 +74,7 @@ export const industries: Industry[] = [
           "REVA is TwoNode's first product inside real estate: due diligence that pulls together the record a buyer actually needs, instead of leaving them to chase it across offices.",
         accent: "green-600",
         href: "/reva",
+        logo: "/reva/revaLogo.png",
       },
     ],
     status: "next",
