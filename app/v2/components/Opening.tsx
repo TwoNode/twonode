@@ -10,9 +10,7 @@ export function Opening() {
           </p>
           <h1 className="mt-4 font-(family-name:--font-sora) text-4xl font-extrabold tracking-tight text-[#11101e] dark:text-white sm:text-5xl lg:text-6xl leading-[1.12]">
             Every industry has its own{" "}
-            <span className="font-(family-name:--font-display) italic font-normal text-[#ff4d6d]">
-              way of working.
-            </span>
+            <span className="text-[#ff4d6d]">way of working.</span>
           </h1>
 
           <div className="mt-8 space-y-1.5 font-sans text-lg text-[#48455e] dark:text-[#b8b5d0] sm:text-xl font-medium leading-relaxed">

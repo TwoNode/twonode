@@ -46,7 +46,7 @@ export function Industries() {
                   <h3 className="mt-6 font-(family-name:--font-sora) text-2xl sm:text-3xl font-bold tracking-tight text-[#11101e] dark:text-white transition-colors group-hover:text-[#ff4d6d]">
                     {industry.name}
                   </h3>
-                  <p className="mt-1 font-(family-name:--font-display) text-lg italic text-[#767490] dark:text-[#a8a4c4]">
+                  <p className="mt-1 font-sans text-base text-[#767490] dark:text-[#a8a4c4]">
                     {industry.positioning}
                   </p>
 
