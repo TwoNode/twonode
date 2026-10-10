@@ -31,24 +31,12 @@ export function Industries() {
                 className="group relative flex flex-col justify-between rounded-3xl border border-[#e6e4f0] dark:border-[#29273c] bg-white dark:bg-[#161524] p-8 sm:p-10 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-[#ff4d6d]/40"
               >
                 <div>
-                  {/* Status Beacon Badge */}
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold tracking-wider uppercase font-mono ${
-                        isActive
-                          ? "bg-[#0fb5a6]/10 text-[#0fb5a6]"
-                          : "bg-[#ff4d6d]/10 text-[#ff4d6d]"
-                      }`}
-                    >
-                      <span
-                        className={`h-2 w-2 rounded-full ${
-                          isActive ? "bg-[#0fb5a6]" : "bg-[#ff4d6d]"
-                        }`}
-                        style={{ animation: "ndp 2s infinite" }}
-                      />
-                      {isActive ? "Active Ecosystem" : "Next Frontier"}
+                  {/* Clean Editorial Metadata Header */}
+                  <div className="flex items-center justify-between pb-3 border-b border-[#e6e4f0]/60 dark:border-[#29273c]/60">
+                    <span className="font-mono text-[11px] font-semibold tracking-[0.2em] uppercase text-[#767490] dark:text-[#827e9f]">
+                      {isActive ? "Active" : "Next"}
                     </span>
-                    <span className="font-mono text-xs text-[#767490] dark:text-[#827e9f]">
+                    <span className="font-mono text-[11px] tracking-wider text-[#767490] dark:text-[#827e9f]">
                       {industry.products.length}{" "}
                       {industry.products.length === 1 ? "Product" : "Products"}
                     </span>

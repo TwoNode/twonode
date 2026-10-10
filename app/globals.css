@@ -191,6 +191,16 @@
   100% { transform: translateX(400%); }
 }
 
+@keyframes nd-inward-stream {
+  0% { stroke-dashoffset: 60; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes nd-triangle-flow {
+  0% { stroke-dashoffset: 400; }
+  100% { stroke-dashoffset: 0; }
+}
+
 /* Import Bricolage Grotesque font */
 @font-face {
   font-family: "Bricolage Grotesque";
