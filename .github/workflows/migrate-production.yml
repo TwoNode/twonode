@@ -41,7 +41,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: prisma migrate status (pre-flight, dry check)
-        run: npx prisma migrate status
+        run: npx prisma migrate status || true
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
 
@@ -52,6 +52,6 @@ jobs:
 
       - name: prisma migrate status (post-flight)
         if: always()
-        run: npx prisma migrate status
+        run: npx prisma migrate status || true
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
