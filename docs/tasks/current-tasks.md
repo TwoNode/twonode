@@ -1,6 +1,6 @@
 # Current Tasks (Live Dashboard)
 
-State as of 2026-10-10 17:20 UTC: PR #323 merged into prod (streamlined Industries UI/UX, canvas sync, and dev history). All features live on prod branch. 867/867 tests passing.
+State as of 2026-10-10 19:36 UTC: PR #332 & PR #333 merged into prod (V2 interactive motion storytelling, triad canvas, motion triangle, behind the build, and editorial polish). All features live on prod branch. 867/867 tests passing.
 
 ---
 
@@ -8,7 +8,7 @@ State as of 2026-10-10 17:20 UTC: PR #323 merged into prod (streamlined Industri
 
 **Batch Reference:** [TASK-0006](./0006-v2-motion-design-and-editorial-polish.md)  
 **Active Branch:** `dev`  
-**Status:** `In Progress`
+**Status:** `Completed`
 
 ### Session Checklist
 
@@ -19,7 +19,7 @@ State as of 2026-10-10 17:20 UTC: PR #323 merged into prod (streamlined Industri
 - [x] **"What We Believe" Kinetic Motion Triangle (`WhatWeBelieve.tsx`):** Remove integrity banner; introduce circulating motion triangle connecting *Understand deeply → Build simply → Connect the pieces*. (Done 2026-10-10)
 - [x] **"Behind the Build" Section Title (`InsideTwoNode.tsx` & `insights/page.tsx`):** Change to "Behind the Build". (Done 2026-10-10)
 - [x] **Design Canvas Sync (`TwoNode_V2_Design_Canvas.html`):** Update desktop and mobile artboards. (Done 2026-10-10)
-- [ ] **Quality Gate & Release Promotion:** Verify 867/867 tests, commit on `dev`, merge `dev` → `main` → `prod`.
+- [x] **Quality Gate & Release Promotion:** Verify 867/867 tests, commit on `dev`, merge `dev` → `main` → `prod` (PR #332 & #333). (Done 2026-10-10)
 
 ---
 
