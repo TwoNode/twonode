@@ -60,6 +60,7 @@ interface PlanWithPillars extends Omit<Plan, "pillars"> {
   isOwner?: boolean;
   centroid?: [number, number] | null;
   redCopyStatus?: string | null;
+  redCopyFileUrl?: string | null;
 }
 
 // Helper to check if plan is locked (submitted for certificate processing)
@@ -78,7 +79,7 @@ export interface User {
 
 interface FileCardProps {
   filePath: string;
-  type: "pdf" | "cad" | "cert";
+  type: "pdf" | "cad" | "cert" | "redcopy";
   onDelete?: () => Promise<void>;
   showDelete?: boolean;
 }
@@ -93,6 +94,7 @@ const FileCard = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const fileName = filePath.split("/").pop() || "";
   const isDwg = fileName.toLowerCase().endsWith(".dwg");
+  const authenticatedUrl = surfboardApi.files.getViewUrl(filePath);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -115,6 +117,8 @@ const FileCard = ({
     switch (type) {
       case "pdf":
         return <FileText className="h-5 w-5 text-red-500 mr-2" />;
+      case "redcopy":
+        return <FileText className="h-5 w-5 text-rose-600 mr-2" />;
       case "cad":
         return <FileType2 className="h-5 w-5 text-blue-500 mr-2" />;
       case "cert":
@@ -157,20 +161,24 @@ const FileCard = ({
       </div>
 
       <div className="mt-2 space-x-2">
-        {type === "pdf" || type === "cert" ? (
+        {type === "pdf" || type === "cert" || type === "redcopy" ? (
           <a
-            href={filePath}
+            href={authenticatedUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-blue-600 hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
-            {type === "pdf" ? "View PDF" : "View Certificate"}
+            {type === "pdf"
+              ? "View PDF"
+              : type === "redcopy"
+              ? "View Record Copy"
+              : "View Certificate"}
           </a>
         ) : (
           <>
             <a
-              href={filePath}
+              href={authenticatedUrl}
               download
               className="text-sm text-blue-600 hover:underline"
               onClick={(e) => e.stopPropagation()}
@@ -179,7 +187,7 @@ const FileCard = ({
             </a>
             {!isDwg && (
               <a
-                href={filePath}
+                href={authenticatedUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-blue-600 hover:underline"
@@ -1596,6 +1604,23 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       showDelete={plan.isOwner}
                     />
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Red Copy (Record Copy) for CoD */}
+            {plan.redCopyFileUrl && (
+              <div>
+                <h4 className="font-medium mb-2 flex items-center gap-2 text-rose-700 dark:text-rose-400">
+                  <span className="w-2 h-2 rounded-full bg-rose-600"></span>
+                  Record Copy (Red Copy)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <FileCard
+                    filePath={plan.redCopyFileUrl}
+                    type="redcopy"
+                    showDelete={false}
+                  />
                 </div>
               </div>
             )}

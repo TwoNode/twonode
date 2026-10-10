@@ -122,22 +122,73 @@
    of their colors should dominate it). Product accents are read directly off
    the [data-product="…"] tokens above wherever /v2 links out to a specific
    product. Scoped under [data-site="v2"] set on app/v2/layout.tsx's root. */
+/* /v2 marketing site — "18. Nodes" design system tokens & kinetic motions */
 [data-site="v2"] {
-  --v2-bg: #faf8f4;
-  --v2-fg: #17140f;
-  --v2-muted: #6b6355;
-  --v2-surface: #f2efe8;
-  --v2-border: #e4ded1;
-  --v2-accent: #b45309;
+  --n-bg: #faf9f6;
+  --n-paper: #ffffff;
+  --n-ink: #11101e;
+  --n-ink-2: #48455e;
+  --n-mute: #767490;
+  --n-line: #e6e4f0;
+  --n-line-bright: #d4d0e6;
+  --n-coral: #ff4d6d;
+  --n-coral-glow: rgba(255, 77, 109, 0.35);
+  --n-violet: #6a4cff;
+  --n-teal: #0fb5a6;
+
+  --v2-bg: var(--n-bg);
+  --v2-fg: var(--n-ink);
+  --v2-muted: var(--n-mute);
+  --v2-surface: var(--n-paper);
+  --v2-border: var(--n-line);
+  --v2-accent: var(--n-coral);
 }
 
 [data-site="v2"].dark {
-  --v2-bg: #14120e;
-  --v2-fg: #f5f1e8;
-  --v2-muted: #a79c87;
-  --v2-surface: #1d1a14;
-  --v2-border: #34301fdb;
-  --v2-accent: #f0b25c;
+  --n-bg: #0f0e18;
+  --n-paper: #161524;
+  --n-ink: #f5f4fb;
+  --n-ink-2: #b8b5d0;
+  --n-mute: #827e9f;
+  --n-line: #29273c;
+  --n-line-bright: #3c3957;
+  --n-coral: #ff5b78;
+  --n-coral-glow: rgba(255, 91, 120, 0.45);
+  --n-violet: #7e63ff;
+  --n-teal: #14d6c4;
+
+  --v2-bg: var(--n-bg);
+  --v2-fg: var(--n-ink);
+  --v2-muted: var(--n-mute);
+  --v2-surface: var(--n-paper);
+  --v2-border: var(--n-line);
+  --v2-accent: var(--n-coral);
+}
+
+/* Kinetic motion keyframes for V2 Nodes */
+@keyframes ndp {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.2); opacity: 0.18; }
+}
+
+@keyframes nd-orbit-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes nd-packet-drift {
+  0% { stroke-dashoffset: 240; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes nd-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes nd-shimmer-beam {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
 }
 
 /* Import Bricolage Grotesque font */

@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Upload, FileText, CheckCircle, AlertCircle, X } from "lucide-react";
+import { Upload, FileText, CheckCircle, AlertCircle, X, Eye } from "lucide-react";
 import { surfboardApi } from "@/surfboard/apiClient";
 
 interface Plan {
@@ -20,6 +20,7 @@ interface Plan {
   planNumber: string;
   surveyTitle: string;
   redCopyFileUrl?: string;
+  pdfFilePaths?: string[];
 }
 
 interface RecordCopyUploadModalProps {
@@ -41,6 +42,44 @@ export function RecordCopyUploadModal({
     Record<string, { uploading: boolean; url?: string; error?: string }>
   >({});
   const [files, setFiles] = useState<Record<string, File>>({});
+
+  const handleUsePlanPdf = async (planId: string, pdfUrl: string) => {
+    const plan = selectedPlans.find((p) => p.id === planId);
+    if (!plan) return;
+
+    setUploadStatus((prev) => ({
+      ...prev,
+      [planId]: { uploading: true },
+    }));
+
+    try {
+      const updateResult = await surfboardApi.plans.updateRecordCopy(
+        planId,
+        pdfUrl
+      );
+      if (!updateResult.success) {
+        throw new Error(updateResult.error || "Failed to link record copy");
+      }
+      setUploadStatus((prev) => ({
+        ...prev,
+        [planId]: { uploading: false, url: pdfUrl },
+      }));
+      toast.success(`Record copy linked for ${plan.planNumber}`);
+    } catch (error: any) {
+      setUploadStatus((prev) => ({
+        ...prev,
+        [planId]: {
+          uploading: false,
+          error: error instanceof Error ? error.message : "Failed to link PDF",
+        },
+      }));
+      toast.error(
+        `Failed to link plan PDF: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  };
 
   const handleFileSelect = (planId: string, file: File | null) => {
     if (file) {
@@ -263,12 +302,45 @@ export function RecordCopyUploadModal({
 
                   {/* Upload Section */}
                   {hasExistingFile || hasUploadedFile ? (
-                    <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 p-2 rounded">
-                      <CheckCircle className="w-4 h-4" />
-                      <span>Record copy already uploaded</span>
+                    <div className="flex items-center justify-between bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/30 p-2.5 rounded">
+                      <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
+                        <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                        <span>Record copy attached</span>
+                      </div>
+                      <a
+                        href={surfboardApi.files.getViewUrl(
+                          hasExistingFile || hasUploadedFile!
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> View PDF
+                      </a>
                     </div>
                   ) : (
                     <div className="space-y-2">
+                      {plan.pdfFilePaths && plan.pdfFilePaths.length > 0 && (
+                        <div className="flex items-center justify-between text-xs bg-blue-50/50 dark:bg-white/5 border border-dashed border-blue-200 dark:border-white/10 rounded p-2">
+                          <div className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+                            <FileText className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Uploaded Survey Plan PDF available</span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() =>
+                              handleUsePlanPdf(plan.id, plan.pdfFilePaths![0])
+                            }
+                            disabled={status?.uploading}
+                          >
+                            Use as Record Copy
+                          </Button>
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-2">
                         <input
                           type="file"
@@ -296,7 +368,7 @@ export function RecordCopyUploadModal({
                       {status?.uploading && (
                         <div className="flex items-center gap-2 text-sm text-blue-700">
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700" />
-                          <span>Uploading...</span>
+                          <span>Processing...</span>
                         </div>
                       )}
 

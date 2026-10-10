@@ -2,6 +2,7 @@ import { getTicketByNumber } from "@/gbc/services/ticketService";
 import { getCertificateVerificationUrl } from "@/gbc/services/certificatePdfService";
 import { generateVerificationQRDataURL } from "@/gbc/utils/qr_code";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import CertificateClient from "./CertificateClient";
 
 interface PageProps {
@@ -12,14 +13,23 @@ interface PageProps {
 
 export const dynamic = "force-dynamic";
 
+// ADR-0008: No-index tag so search engines do not scrape attendee names
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
 export default async function CertificatePage({ params }: PageProps) {
-  // `params` is a Promise in Next 16. Reading it synchronously gave
-  // `undefined`, which Prisma treats as "no filter", so every certificate URL
-  // showed the first ticket in the table.
   const { ticketNumber } = await params;
   const ticket = await getTicketByNumber(ticketNumber).catch(() => null);
 
-  if (!ticket) {
+  const isIssued =
+    ticket &&
+    (ticket.certificateIssued || (ticket.certificateSentCount ?? 0) > 0);
+
+  if (!ticket || !isIssued) {
     notFound();
   }
 

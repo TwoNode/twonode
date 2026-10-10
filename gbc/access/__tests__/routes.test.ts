@@ -86,6 +86,8 @@ describe("canAccessRoute — guest-facing (public)", () => {
     expect(canAccessRoute("/gbc/login", null)).toBe(true);
     expect(canAccessRoute("/gbc/tickets", undefined)).toBe(true);
     expect(canAccessRoute("/gbc/editions", GBCRole.USER)).toBe(true);
+    expect(canAccessRoute("/gbc/certificate", null)).toBe(true);
+    expect(canAccessRoute("/gbc/verify/abc-123", null)).toBe(true);
   });
 
   it("the My Ticket lookup page resolves even with query-string-bearing sub-navigation", () => {

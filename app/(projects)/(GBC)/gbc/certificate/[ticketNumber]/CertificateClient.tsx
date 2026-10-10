@@ -1,6 +1,15 @@
 "use client";
 
-import { Download } from "lucide-react";
+import { useState } from "react";
+import {
+  Download,
+  ShieldCheck,
+  Mail,
+  KeyRound,
+  X,
+  Loader2,
+  CheckCircle,
+} from "lucide-react";
 import { format } from "date-fns";
 import { fitName } from "@/gbc/utils/certificateName";
 
@@ -9,6 +18,12 @@ interface CertificateClientProps {
     ticketNumber: string;
     name: string;
     checkedInAt: string | Date | null;
+    certificateEventName?: string | null;
+    certificateTheme?: string | null;
+    certificateSubTheme?: string | null;
+    certificateVenue?: string | null;
+    certificateStartDate?: string | Date | null;
+    certificateEndDate?: string | Date | null;
     editionRef: {
       name: string;
       theme: string;
@@ -72,7 +87,16 @@ export default function CertificateClient({
   verificationUrl,
   qrCodeDataUrl,
 }: CertificateClientProps) {
-  const edition = ticket.editionRef;
+  // ADR-0008: Read frozen edition fields if present, else fall back to editionRef
+  const edition = {
+    name: ticket.certificateEventName || ticket.editionRef.name,
+    theme: ticket.certificateTheme || ticket.editionRef.theme,
+    subTheme: ticket.certificateSubTheme || ticket.editionRef.subTheme,
+    venue: ticket.certificateVenue || ticket.editionRef.venue,
+    startDate: ticket.certificateStartDate || ticket.editionRef.startDate,
+    endDate: ticket.certificateEndDate || ticket.editionRef.endDate,
+  };
+
   const nameFit = fitName(ticket.name);
   const attendedDate = ticket.checkedInAt
     ? new Date(ticket.checkedInAt)
@@ -83,19 +107,96 @@ export default function CertificateClient({
       ? format(new Date(edition.startDate), "MMMM d, yyyy")
       : `${format(new Date(edition.startDate), "MMMM d")}–${format(new Date(edition.endDate), "d, yyyy")}`;
 
+  // Download OTP modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [step, setStep] = useState<"email" | "code" | "success">("email");
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+
+  const handleRequestCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setInfoMessage(null);
+
+    try {
+      const res = await fetch("/api/v1/gbc/certificates/request-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to request code");
+      }
+
+      setInfoMessage(data.message);
+      setStep("code");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to request code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/v1/gbc/certificates/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(
+          data.error || data.message || "Invalid verification code"
+        );
+      }
+
+      setStep("success");
+      // Trigger download using the short-lived token
+      const downloadUrl = `/api/v1/gbc/certificates/download?token=${encodeURIComponent(data.data.token)}&ticketNumber=${encodeURIComponent(ticket.ticketNumber)}`;
+      window.location.href = downloadUrl;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to verify code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
-      <div className="flex gap-4 mb-8 print:hidden">
-        <a
-          href={`/api/v1/gbc/tickets/${ticket.ticketNumber}/certificate-pdf`}
-          download
-          className="flex items-center gap-2 px-6 py-3 bg-[#5B21B6] text-white rounded-lg font-medium hover:bg-[#4c1d95] transition-colors shadow-sm"
+      {/* Top Banner: Verification badge and Holder Download button */}
+      <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 print:hidden px-2">
+        <div className="flex items-center gap-2.5 px-4 py-2 bg-[#1C122C] border border-[#3B2556] rounded-full text-sm font-medium text-[#D8B4FE] shadow-sm">
+          <ShieldCheck className="w-5 h-5 text-[#C9A24B]" />
+          <span>Verified Certificate of Attendance</span>
+        </div>
+
+        <button
+          onClick={() => {
+            setIsModalOpen(true);
+            setStep("email");
+            setError(null);
+            setInfoMessage(null);
+          }}
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#5B21B6] text-white rounded-lg font-medium hover:bg-[#4c1d95] transition-colors shadow-sm text-sm"
         >
-          <Download className="w-5 h-5" />
-          Download PDF
-        </a>
+          <Download className="w-4 h-4" />
+          Are you the holder? Request certificate copy
+        </button>
       </div>
 
+      {/* Main Certificate Display Canvas */}
       <div
         className="relative w-full overflow-hidden shadow-2xl print:shadow-none print:w-[297mm] print:h-[210mm] print:m-0"
         style={{
@@ -345,6 +446,146 @@ export default function CertificateClient({
           </div>
         </div>
       </div>
+
+      {/* Download OTP Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="relative w-full max-w-md bg-[#160E22] border border-[#3B2556] rounded-xl shadow-2xl p-6 text-white">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-[#5B21B6]/30 border border-[#7C3AED]/40 rounded-lg text-[#C4B5FD]">
+                <Mail className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-white">
+                  Download Certificate
+                </h3>
+                <p className="text-xs text-[#B4A9C4]">
+                  Certificate for {ticket.ticketNumber}
+                </p>
+              </div>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-900/30 border border-red-700/50 rounded-lg text-red-200 text-xs">
+                {error}
+              </div>
+            )}
+
+            {infoMessage && (
+              <div className="mb-4 p-3 bg-purple-900/30 border border-purple-700/50 rounded-lg text-purple-200 text-xs">
+                {infoMessage}
+              </div>
+            )}
+
+            {step === "email" && (
+              <form onSubmit={handleRequestCode} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-[#B4A9C4] mb-1.5">
+                    Ticket Email Address
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter the email associated with your ticket"
+                    className="w-full px-3.5 py-2.5 bg-[#0B0613] border border-[#3B2556] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#7C3AED]"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1.5">
+                    For privacy, a 6-digit code will be emailed only if an
+                    issued certificate exists for this address.
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#5B21B6] hover:bg-[#4c1d95] text-white rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Send Verification Code"
+                  )}
+                </button>
+              </form>
+            )}
+
+            {step === "code" && (
+              <form onSubmit={handleVerifyCode} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-[#B4A9C4] mb-1.5">
+                    Enter 6-Digit Code
+                  </label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      required
+                      maxLength={6}
+                      pattern="[0-9]{6}"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      placeholder="123456"
+                      className="w-full pl-10 pr-3.5 py-2.5 bg-[#0B0613] border border-[#3B2556] rounded-lg text-sm text-white tracking-widest placeholder-gray-600 focus:outline-none focus:border-[#7C3AED]"
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-1.5">
+                    Code expires in 10 minutes and is single-use.
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep("email");
+                      setError(null);
+                    }}
+                    className="px-3 py-2.5 bg-transparent border border-[#3B2556] hover:bg-white/5 text-gray-300 rounded-lg text-xs"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading || code.length !== 6}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#5B21B6] hover:bg-[#4c1d95] text-white rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Verify & Download PDF"
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {step === "success" && (
+              <div className="text-center py-4 space-y-3">
+                <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto" />
+                <h4 className="font-semibold text-white">Code Verified!</h4>
+                <p className="text-xs text-gray-300">
+                  Your certificate PDF download has started.
+                </p>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 bg-[#5B21B6] text-white rounded-lg text-xs mt-2"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         @media print {

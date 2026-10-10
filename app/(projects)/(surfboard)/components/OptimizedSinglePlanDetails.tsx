@@ -14,6 +14,7 @@ import {
   File,
 } from "lucide-react";
 import MaplibreMap from "./maps/MaplibreMap";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 interface OptimizedSinglePlanDetailsProps {
   planData: any; // The pre-loaded plan data
@@ -24,7 +25,7 @@ interface OptimizedSinglePlanDetailsProps {
 
 interface FileCardProps {
   filePath: string;
-  type: "pdf" | "cad" | "cert";
+  type: "pdf" | "cad" | "cert" | "redcopy";
   showDelete?: boolean;
 }
 
@@ -37,6 +38,8 @@ const FileCard: React.FC<FileCardProps> = ({
     switch (type) {
       case "pdf":
         return <FileText className="h-5 w-5 text-red-500 mr-2" />;
+      case "redcopy":
+        return <FileText className="h-5 w-5 text-rose-600 mr-2" />;
       case "cad":
         return <FileType2 className="h-5 w-5 text-blue-500 mr-2" />;
       case "cert":
@@ -50,6 +53,7 @@ const FileCard: React.FC<FileCardProps> = ({
 
   const fileName = filePath.split("/").pop() || "";
   const isDwg = fileName.toLowerCase().endsWith(".dwg");
+  const authenticatedUrl = surfboardApi.files.getViewUrl(filePath);
 
   return (
     <div className="border rounded-md p-3 hover:bg-gray-50">
@@ -63,20 +67,24 @@ const FileCard: React.FC<FileCardProps> = ({
       </div>
 
       <div className="mt-2 space-x-2">
-        {type === "pdf" || type === "cert" ? (
+        {type === "pdf" || type === "cert" || type === "redcopy" ? (
           <a
-            href={filePath}
+            href={authenticatedUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-blue-600 hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
-            {type === "pdf" ? "View PDF" : "View Certificate"}
+            {type === "redcopy"
+              ? "View Record Copy (PDF)"
+              : type === "pdf"
+                ? "View PDF"
+                : "View Certificate"}
           </a>
         ) : (
           <>
             <a
-              href={filePath}
+              href={authenticatedUrl}
               download
               className="text-sm text-blue-600 hover:underline"
               onClick={(e) => e.stopPropagation()}
@@ -85,7 +93,7 @@ const FileCard: React.FC<FileCardProps> = ({
             </a>
             {!isDwg && (
               <a
-                href={filePath}
+                href={authenticatedUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-blue-600 hover:underline"
@@ -645,7 +653,8 @@ export default function OptimizedSinglePlanDetails({
       {/* Files Section */}
       {(planData.pdfFilePaths?.length > 0 ||
         planData.cadFilePaths?.length > 0 ||
-        planData.certificateFilePaths?.length > 0) && (
+        planData.certificateFilePaths?.length > 0 ||
+        planData.redCopyFileUrl) && (
         <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm mb-6">
           <div className="bg-linear-to-r from-amber-50 to-orange-50 dark:from-surface dark:to-surface px-6 py-4 border-b border-gray-100 dark:border-white/10">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -690,6 +699,19 @@ export default function OptimizedSinglePlanDetails({
                       <FileCard key={idx} filePath={path} type="cert" />
                     )
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Record Copy for CoD */}
+            {planData.redCopyFileUrl && (
+              <div>
+                <h4 className="text-sm font-semibold text-rose-700 dark:text-rose-400 mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-rose-600"></span>
+                  Record Copy (Red Copy)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <FileCard filePath={planData.redCopyFileUrl} type="redcopy" />
                 </div>
               </div>
             )}

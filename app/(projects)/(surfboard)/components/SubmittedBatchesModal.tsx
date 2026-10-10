@@ -48,6 +48,7 @@ import {
   Download,
   Search,
   History,
+  Eye,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -89,6 +90,7 @@ interface Batch {
     chartingStatus: string | null;
     recordsIStatus: string | null;
     surconStatus: string | null;
+    redCopyFileUrl?: string | null;
   }>;
   submitter: {
     id: string;
@@ -760,7 +762,21 @@ export function SubmittedBatchesModal({
                                     {plan.surveyTitle}
                                   </p>
                                 </div>
-                                <div className="flex gap-2 shrink-0">
+                                <div className="flex gap-2 shrink-0 items-center flex-wrap">
+                                  {plan.redCopyFileUrl && (
+                                    <a
+                                      href={surfboardApi.files.getViewUrl(
+                                        plan.redCopyFileUrl
+                                      )}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-xs text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 border border-rose-200 dark:border-rose-500/20 px-2 py-1 rounded-md font-medium transition-colors"
+                                      title="View submitted Record Copy PDF"
+                                    >
+                                      <Eye className="w-3.5 h-3.5 text-rose-600" />
+                                      <span>Red Copy</span>
+                                    </a>
+                                  )}
                                   <Badge
                                     variant="outline"
                                     className="text-xs font-semibold bg-linear-to-br from-gray-50 to-gray-100 border-gray-300 dark:border-white/15 hover:from-gray-100 hover:to-gray-200 transition-all duration-200"
