@@ -1,13 +1,13 @@
 # TASK-0006: V2 Motion Design Storytelling, Interactive Trinity & Editorial Polish
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Priority:** High
 - **Assignee:** roji-tech / AI
-- **Target Branch / PR:** `dev` → `main` → `prod`
+- **Target Branch / PR:** `dev` → `main` → `prod` (PR #332 & PR #333)
 - **Created:** 2026-10-10 19:15:00 UTC
 - **Started:** 2026-10-10 19:15:00 UTC
-- **Ended:** In Progress
-- **Duration:** In Progress
+- **Ended:** 2026-10-10 19:36:00 UTC
+- **Duration:** 21m
 
 > **How to tick:** change `[ ]` to `[x]`. The table shows the characters, not a clickable box.
 
@@ -86,11 +86,11 @@ Transform the TwoNode `/v2` landing page into a world-class, visually intuitive 
 - [x] **Mobile Frame Sync:** Update mobile artboard `frame-nodes-mobile` with touch-friendly representations. (Done 2026-10-10)
 
 ### Module H: Quality Gates & Promotion Sequence (`dev` → `main` → `prod`)
-- [ ] **Vitest Quality Gate:** Run `npm run test` to verify 100% pass rate (867/867 tests).
-- [ ] **Commit & Push to `dev`:** Commit on local `dev` and push to `origin/dev`.
-- [ ] **Staging PR (`dev` → `main`):** Open PR via `gh pr create` and merge without branch deletion.
-- [ ] **Production Release PR (`main` → `prod`):** Open release PR and merge into `prod`.
-- [ ] **Local Alignment:** Pull and align local `dev`, `main`, and `prod`.
+- [x] **Vitest Quality Gate:** Run `npm run test` to verify 100% pass rate (867/867 tests). (Done 2026-10-10)
+- [x] **Commit & Push to `dev`:** Commit on local `dev` and push to `origin/dev`. (Done 2026-10-10)
+- [x] **Staging PR (`dev` → `main`):** Open PR via `gh pr create` and merge without branch deletion (PR #332). (Done 2026-10-10)
+- [x] **Production Release PR (`main` → `prod`):** Open release PR and merge into `prod` (PR #333). (Done 2026-10-10)
+- [x] **Local Alignment:** Pull and align local `dev`, `main`, and `prod`. (Done 2026-10-10)
 
 ---
 
