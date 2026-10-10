@@ -19,7 +19,7 @@ export function HowWeBuild() {
       className="border-b border-[#e6e4f0] dark:border-[#29273c] bg-white dark:bg-[#161524]"
     >
       <div className="mx-auto max-w-4xl px-6 py-20 sm:px-8 sm:py-28">
-        <p className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl lg:text-4xl leading-relaxed tracking-tight text-[#48455e] dark:text-[#b8b5d0]">
+        <p className="font-(family-name:--font-sora) text-2xl sm:text-3xl lg:text-4xl leading-relaxed tracking-tight text-[#48455e] dark:text-[#b8b5d0]">
           <span className="font-extrabold text-[#11101e] dark:text-white">
             {STEPS[0]}{" "}
           </span>
