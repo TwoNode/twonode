@@ -4,33 +4,22 @@ State as of 2026-10-10 17:20 UTC: PR #323 merged into prod (streamlined Industri
 
 ---
 
-## Active Session Batch
+## Active Session Batch: TASK-0006 — V2 Motion Design Storytelling, Interactive Trinity & Editorial Polish
 
-**Next Action:** Trigger Vercel deployment on prod and address open backlog items ([Active Backlog](./0003-active-backlog.md))  
+**Batch Reference:** [TASK-0006](./0006-v2-motion-design-and-editorial-polish.md)  
 **Active Branch:** `dev`  
-**Status:** `Completed`
+**Status:** `In Progress`
 
-### Promotion & Staging Verification Checklist
+### Session Checklist
 
-- [x] PR #313 merged into `prod` (Long attendee name fix #310 & ADRs 0001–0011 live on production)
-- [x] PR #314 merged into `dev` (ADR-0008 Certificate access security overhaul)
-- [x] PR #315 merged into `dev` (Sanitized database mapping in DEPLOYMENT.md and CI workflows)
-- [x] Open promotion PR `dev` → `main` (Staging release) — PR #316 merged (2026-10-10)
-- [x] Merge promotion PR into `main` (PR #316 merged to `main`, 2026-10-10)
-- [x] Run `npx prisma migrate deploy` on staging database (`twonode_staging`) via CI workflow `Deploy migrations to staging` (#38002510334, 2026-10-10)
-- [x] Verify certificate verification page (`/gbc/verify/[publicId]`) and OTP download on staging (2026-10-10)
-- [x] **Red Copy PDF Access & Availability:** Ensure survey plan red copy PDF is accessible, previewable, and downloadable in CoD and plan views. Scoped in [TASK-0005](./0005-surfboard-cod-red-copy-and-file-privacy.md). (2026-10-09, PR #316 / commit `4a84af6c`)
-- [x] **Surveyor Upload File Privacy (Private S3 & Presigned URLs):** Replace raw public S3 URLs with private storage and authenticated presigned GET URLs for surveyor uploads. Multi-provider storage adapters for S3, R2, Cloudinary, Vercel Blob, ImageKit, and Local. Scoped in [TASK-0005](./0005-surfboard-cod-red-copy-and-file-privacy.md), [ADR-0012](../adr/0012-multi-provider-storage-and-surveyor-file-privacy.md). (2026-10-09, PR #316 / commit `4a84af6c`)
-- [x] **Twonode Landing Page /v2 Redesign:** Implement "18. Nodes" design direction with kinetic SVG graph, mobile responsive drawer (390px), streamlined UI/UX friendly industry capsules, and upgraded 4-column Obsidian footer. Scoped in [TASK-0004](./0004-twonode-v2-landing-redesign.md). (2026-10-10)
-- [x] **Comprehensive .env.example & Expanded Storage Adapters:** Created `.env.example` documenting all 8 storage backends (S3, R2, MinIO, Supabase Storage, Cloudinary, Vercel Blob, ImageKit, Local) and all runtime/auth/payment/notification envs; implemented MinIO and Supabase adapters in `lib/storage/` with tests. (2026-10-10)
-- [x] **Production Release (PR #318 & PR #321):** Promoted all features (GBC certificate security, multi-provider storage, /v2 redesign, MinIO & Supabase adapters, and .env.example) to `prod`. (2026-10-10)
-- [x] **Production Database Migration:** Applied `20261009100000_gbc_certificate_access` to `twonode_db` via manual workflow dispatch `migrate-production.yml` (#38034359383). (2026-10-10)
-- [x] **Streamline Industries UI/UX & Canvas Sync:** Streamlined `Industries.tsx` with authentic product pills and updated `TwoNode_V2_Design_Canvas.html`; promoted to `main` via PR #322. (2026-10-10)
-- [x] **Release PR #323 (main to prod):** Promoted streamlined Industries UI/UX, canvas sync, and Phases 12–14 development history to prod (PR #323, 2026-10-10)
-- [x] **Repository Root Housekeeping:** Removed obsolete scratch Remita JSON/HTML test files, root query session SQL files, and empty env.sample. (2026-10-10)
-- [x] **Authentic Logos on /v2 & Canvas Sync:** Replaced synthetic mark placeholders with official TwoNode vector logo (/logo.svg) across NavV2 and FooterV2; integrated product logos for Surfboard, GBC, and REVA in Industries capsules; synchronized TwoNode_V2_Design_Canvas.html. (2026-10-10)
-- [x] **Streamline Opening Hero Copy on /v2:** Replaced the longer opening headline with concise 'Every industry has its own way of working' headline and streamlined narrative lines per screenshot; synchronized canvas. (2026-10-10)
-- [ ] **Trigger Vercel Production Deployment:** Trigger or unpause redeploy on Vercel (`twonodetech` project, `prod` branch) to serve the latest build at `https://www.twonodetechnologies.com/v2`.
+- [x] **De-AI Industry Status Badges (`Industries.tsx`):** Replace synthetic neon pills with quiet editorial typography (`Active` and `Next`). (Done 2026-10-10)
+- [x] **Hero Motion Design Storytelling (`HeroNetworkGraph.tsx` & `Opening.tsx`):** Align graph to the 6 pillars (`People`, `Information`, `Problems`, `Systems`, `Relationships`, `Opportunities`) with "Understand → Build" kinetic cycle. (Done 2026-10-10)
+- [x] **"How We Build" Kinetic Motion Pipeline (`HowWeBuild.tsx`):** Replace 50-word dense paragraph with 4-beat visual motion journey (Field Work → People & Workflows → The Gap → Build). (Done 2026-10-10)
+- [x] **"The Bigger Idea" Interactive Motion Canvas — 1, 2, or All 3 (`BiggerIdea.tsx`):** Interactive triad canvas (Software + Workflow + The Room → All Three convergence). (Done 2026-10-10)
+- [x] **"What We Believe" Kinetic Motion Triangle (`WhatWeBelieve.tsx`):** Remove integrity banner; introduce circulating motion triangle connecting *Understand deeply → Build simply → Connect the pieces*. (Done 2026-10-10)
+- [x] **"Behind the Build" Section Title (`InsideTwoNode.tsx` & `insights/page.tsx`):** Change to "Behind the Build". (Done 2026-10-10)
+- [x] **Design Canvas Sync (`TwoNode_V2_Design_Canvas.html`):** Update desktop and mobile artboards. (Done 2026-10-10)
+- [ ] **Quality Gate & Release Promotion:** Verify 867/867 tests, commit on `dev`, merge `dev` → `main` → `prod`.
 
 ---
 
@@ -56,5 +45,7 @@ State as of 2026-10-10 17:20 UTC: PR #323 merged into prod (streamlined Industri
 | [0003](./0003-active-backlog.md)                           | **Active Backlog & Upcoming Integrations**          | Active Backlog          | Payments, REVA, DevOps, Auth           | `Pending`     |
 | [0004](./0004-twonode-v2-landing-redesign.md)              | **Twonode Landing Page /v2 Redesign (Nodes)**       | Active Sprint           | Landing Page, V2, UI/UX, Design Tokens | `Completed`   |
 | [0005](./0005-surfboard-cod-red-copy-and-file-privacy.md)  | **Surfboard CoD Red Copy & Surveyor File Privacy**   | Active Sprint           | Surfboard, CoD, S3 Security, Storage   | `Completed`   |
+| [0006](./0006-v2-motion-design-and-editorial-polish.md)    | **V2 Motion Design Storytelling & Polish**          | Active Sprint           | Motion Design, V2, UI/UX, Editorial    | `In Progress` |
+
 
 
