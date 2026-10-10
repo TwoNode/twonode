@@ -40,7 +40,7 @@ Track open integrations, deferred configurations, and operational housekeeping i
 
 ### Module D: Corporate Site & /v2 Redesign
 
-- [ ] **Twonode landing page /v2 design selection & implementation:** Evaluate 22 comparison artboards in `out/TwoNode_V2_Design_Canvas.html`, choose visual direction, and implement production components. Fully scoped in [TASK-0004](./0004-twonode-v2-landing-redesign.md). _(Assignee: roji-tech / AI)_
+- [x] **Twonode landing page /v2 design selection & implementation:** Evaluated artboards, selected "18. Nodes" with kinetic motion & mobile layout, and implemented production Next.js components on `/v2`. Completed in [TASK-0004](./0004-twonode-v2-landing-redesign.md) (2026-10-10). _(Assignee: roji-tech / AI)_
 
 ---
 
