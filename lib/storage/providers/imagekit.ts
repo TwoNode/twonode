@@ -12,10 +12,10 @@ export class ImageKitStorageAdapter implements StorageAdapter {
   private urlEndpoint: string;
 
   constructor() {
-    this.urlEndpoint = process.env.IMAGEKIT_URL_ENDPOINT || "";
+    this.urlEndpoint = process.env.IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/dummy";
     this.ik = new ImageKit({
-      publicKey: process.env.IMAGEKIT_PUBLIC_KEY || "",
-      privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
+      publicKey: process.env.IMAGEKIT_PUBLIC_KEY || "dummy_public_key",
+      privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "dummy_private_key",
       urlEndpoint: this.urlEndpoint,
     });
   }

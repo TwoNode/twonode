@@ -4,6 +4,8 @@ export type StorageProviderName =
   | "s3"
   | "cloudflare"
   | "r2"
+  | "minio"
+  | "supabase"
   | "cloudinary"
   | "vercel-blob"
   | "imagekit"

@@ -19,9 +19,11 @@
 
 1. **Pluggable Multi-Provider Storage Adapter (`lib/storage/`):**
    - Implemented a unified `StorageAdapter` interface covering: `upload`, `getPresignedUploadUrl`, `getDownloadUrl` (signed private URL generation), and `delete`.
-   - Built 6 interchangeable provider adapters:
+   - Built 8 interchangeable provider adapters:
      - `s3`: AWS S3 via `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner`.
      - `r2` / `cloudflare`: Cloudflare R2 (S3-compatible API with zero egress fees).
+     - `minio`: MinIO self-hosted S3-compatible object storage.
+     - `supabase`: Supabase Storage S3-compatible protocol.
      - `cloudinary`: Cloudinary private asset delivery with signed expiration URLs.
      - `vercel-blob`: Vercel Blob storage (`@vercel/blob`) with tokenized access.
      - `imagekit`: ImageKit media storage with signed private delivery URLs.

@@ -22,6 +22,7 @@ State as of 2026-10-09 11:05 UTC: PR #313 merged into prod (long-name fix and AD
 - [x] **Red Copy PDF Access & Availability:** Ensure survey plan red copy PDF is accessible, previewable, and downloadable in CoD and plan views. Scoped in [TASK-0005](./0005-surfboard-cod-red-copy-and-file-privacy.md). (2026-10-09, PR #316 / commit `4a84af6c`)
 - [x] **Surveyor Upload File Privacy (Private S3 & Presigned URLs):** Replace raw public S3 URLs with private storage and authenticated presigned GET URLs for surveyor uploads. Multi-provider storage adapters for S3, R2, Cloudinary, Vercel Blob, ImageKit, and Local. Scoped in [TASK-0005](./0005-surfboard-cod-red-copy-and-file-privacy.md), [ADR-0012](../adr/0012-multi-provider-storage-and-surveyor-file-privacy.md). (2026-10-09, PR #316 / commit `4a84af6c`)
 - [x] **Twonode Landing Page /v2 Redesign:** Implement "18. Nodes" design direction with kinetic SVG graph, mobile responsive drawer (390px), and upgraded 4-column Obsidian footer. Scoped in [TASK-0004](./0004-twonode-v2-landing-redesign.md). (2026-10-10)
+- [x] **Comprehensive .env.example & Expanded Storage Adapters:** Created `.env.example` documenting all 8 storage backends (S3, R2, MinIO, Supabase Storage, Cloudinary, Vercel Blob, ImageKit, Local) and all runtime/auth/payment/notification envs; implemented MinIO and Supabase adapters in `lib/storage/` with tests. (2026-10-10)
 
 ---
 
