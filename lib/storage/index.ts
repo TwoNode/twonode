@@ -8,6 +8,8 @@ import {
 } from "./types";
 import { S3StorageAdapter } from "./providers/s3";
 import { CloudflareR2StorageAdapter } from "./providers/cloudflare-r2";
+import { MinioStorageAdapter } from "./providers/minio";
+import { SupabaseStorageAdapter } from "./providers/supabase";
 import { CloudinaryStorageAdapter } from "./providers/cloudinary";
 import { VercelBlobStorageAdapter } from "./providers/vercel-blob";
 import { ImageKitStorageAdapter } from "./providers/imagekit";
@@ -40,6 +42,12 @@ export function getStorageProvider(
     case "cloudflare":
     case "r2":
       adapter = new CloudflareR2StorageAdapter();
+      break;
+    case "minio":
+      adapter = new MinioStorageAdapter();
+      break;
+    case "supabase":
+      adapter = new SupabaseStorageAdapter();
       break;
     case "cloudinary":
       adapter = new CloudinaryStorageAdapter();

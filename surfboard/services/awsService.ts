@@ -8,6 +8,8 @@ import { getStorageProvider, extractKeyFromUrl } from "@/lib/storage/index";
  * to the pluggable storage provider configured via `STORAGE_PROVIDER` or `SURFBOARD_STORAGE_PROVIDER`:
  * - 's3' (AWS S3)
  * - 'cloudflare' / 'r2' (Cloudflare R2)
+ * - 'minio' (MinIO S3-compatible self-hosted storage)
+ * - 'supabase' (Supabase Storage S3-compatible API)
  * - 'cloudinary'
  * - 'vercel-blob'
  * - 'imagekit'
