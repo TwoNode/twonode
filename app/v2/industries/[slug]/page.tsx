@@ -54,8 +54,13 @@ export default async function IndustryPage({
             style={{ borderColor: "var(--v2-border)" }}
           >
             <span
-              className={`inline-block rounded-full border px-3 py-1 text-xs font-medium ${ACCENT_CLASSES[p.accent] ?? ""}`}
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${ACCENT_CLASSES[p.accent] ?? ""}`}
             >
+              <img
+                src={p.logo}
+                alt={p.name}
+                className="h-3.5 w-auto max-w-7 object-contain"
+              />
               {p.name}
             </span>
             <h2 className="mt-4 font-[family-name:var(--font-display)] text-2xl font-medium italic">

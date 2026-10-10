@@ -66,24 +66,20 @@ export function Industries() {
                     {industry.context}
                   </p>
 
-                  {/* Clean Product Badges (Authentic v2 style, UI/UX friendly, no heavy card nesting) */}
+                  {/* Clean Product Badges with Authentic Brand Logos */}
                   <div className="mt-6 flex flex-wrap gap-2.5">
                     {industry.products.map((p) => (
                       <span
                         key={p.name}
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1 text-xs font-bold font-(family-name:--font-sora) ${
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold font-(family-name:--font-sora) ${
                           ACCENT_CLASSES[p.accent] ||
                           "text-[#767490] border-[#e6e4f0]"
                         }`}
                       >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            p.name === "Surfboard"
-                              ? "bg-blue-600"
-                              : p.name === "GBC"
-                              ? "bg-purple-600"
-                              : "bg-emerald-600"
-                          }`}
+                        <img
+                          src={p.logo}
+                          alt={p.name}
+                          className="h-3.5 w-auto max-w-[28px] object-contain"
                         />
                         {p.name}
                       </span>
