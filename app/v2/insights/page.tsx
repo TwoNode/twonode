@@ -10,8 +10,8 @@ export default function InsightsPage() {
       <p className="text-sm uppercase tracking-[0.2em] opacity-60">
         Inside TwoNode
       </p>
-      <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl font-medium sm:text-5xl">
-        Things we&apos;re thinking about.
+      <h1 className="mt-3 font-(family-name:--font-display) text-4xl font-medium sm:text-5xl">
+        Behind the Build.
       </h1>
       <p className="mt-6 max-w-xl leading-relaxed opacity-75">
         Industry observations, product stories, and lessons from building —
@@ -41,7 +41,7 @@ export default function InsightsPage() {
                 })}
               </time>
             </div>
-            <h2 className="mt-3 font-[family-name:var(--font-display)] text-2xl font-medium group-hover:opacity-70">
+            <h2 className="mt-3 font-(family-name:--font-display) text-2xl font-medium group-hover:opacity-70">
               {post.title}
             </h2>
             <p className="mt-2 leading-relaxed opacity-75">{post.excerpt}</p>
