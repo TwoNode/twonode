@@ -42,17 +42,14 @@ export function FooterV2() {
           <div>
             <Link
               href="/v2"
-              className="group inline-flex items-center gap-3 font-[family-name:var(--font-sora)] text-2xl font-bold tracking-tight text-white"
+              className="inline-flex items-center transition-opacity hover:opacity-90"
+              aria-label="TwoNode Technologies"
             >
-              <div className="relative h-6 w-9 shrink-0" aria-hidden="true">
-                <span
-                  className="absolute left-0.5 top-1 h-3.5 w-3.5 rounded-full bg-[#ff4d6d] shadow-[0_0_10px_rgba(255,77,109,0.6)]"
-                  style={{ animation: "ndp 2.4s infinite" }}
-                />
-                <span className="absolute left-2.5 right-2.5 top-2.5 h-[3px] bg-white transition-transform group-hover:scale-x-110" />
-                <span className="absolute right-0.5 top-1 h-3.5 w-3.5 rounded-full border-[3px] border-white bg-transparent" />
-              </div>
-              <span>TwoNode</span>
+              <img
+                src="/logo.svg"
+                alt="TwoNode Technologies"
+                className="h-9 w-auto brightness-0 invert"
+              />
             </Link>
 
             <p className="mt-4 text-sm leading-relaxed text-[#9f9bb8] max-w-xs">

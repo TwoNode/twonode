@@ -22,20 +22,17 @@ export function NavV2() {
       }}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 sm:px-8">
-        {/* Brand Mark with Kinetic Connected Two-Node Icon */}
+        {/* Brand Logo (Official TwoNode Vector) */}
         <Link
           href="/v2"
-          className="group flex items-center gap-3 font-[family-name:var(--font-sora)] text-xl font-bold tracking-tight text-[#11101e] dark:text-white"
+          className="flex items-center transition-opacity hover:opacity-90"
+          aria-label="TwoNode Technologies"
         >
-          <div className="relative h-6 w-9 shrink-0" aria-hidden="true">
-            <span
-              className="absolute left-0.5 top-1 h-3.5 w-3.5 rounded-full bg-[#ff4d6d] shadow-[0_0_10px_rgba(255,77,109,0.6)]"
-              style={{ animation: "ndp 2.4s infinite" }}
-            />
-            <span className="absolute left-2.5 right-2.5 top-2.5 h-[3px] bg-[#11101e] dark:bg-white transition-transform group-hover:scale-x-110" />
-            <span className="absolute right-0.5 top-1 h-3.5 w-3.5 rounded-full border-[3px] border-[#11101e] dark:border-white bg-transparent" />
-          </div>
-          <span>TwoNode</span>
+          <img
+            src="/logo.svg"
+            alt="TwoNode Technologies"
+            className="h-8 w-auto dark:brightness-0 dark:invert"
+          />
         </Link>
 
         {/* Desktop Navigation Links */}
