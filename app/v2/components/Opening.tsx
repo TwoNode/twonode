@@ -13,12 +13,12 @@ export function Opening() {
             <span className="text-[#ff4d6d]">way of working.</span>
           </h1>
 
-          <div className="mt-8 space-y-1.5 font-sans text-lg text-[#48455e] dark:text-[#b8b5d0] sm:text-xl font-medium leading-relaxed">
+          <div className="mt-6 space-y-0.5 font-sans text-lg text-[#48455e] dark:text-[#b8b5d0] sm:text-xl font-medium leading-[1.35]">
             <p>Its own people. Its own information.</p>
             <p>Its own problems, systems, relationships, and opportunities.</p>
           </div>
 
-          <div className="mt-8 font-sans text-lg text-[#11101e] dark:text-white leading-relaxed">
+          <div className="mt-6 font-sans text-lg text-[#11101e] dark:text-white leading-[1.35]">
             <p className="text-[#767490] dark:text-[#827e9f]">We spend time understanding these things.</p>
             <strong className="block mt-1 font-(family-name:--font-sora) font-extrabold text-2xl text-[#ff4d6d]">
               Then we build.
