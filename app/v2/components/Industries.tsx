@@ -79,7 +79,7 @@ export function Industries() {
                         <img
                           src={p.logo}
                           alt={p.name}
-                          className="h-3.5 w-auto max-w-[28px] object-contain"
+                          className="h-3.5 w-auto max-w-7 object-contain"
                         />
                         {p.name}
                       </span>
