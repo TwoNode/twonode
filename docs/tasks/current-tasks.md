@@ -1,6 +1,6 @@
 # Current Tasks (Live Dashboard)
 
-State as of 2026-10-09 11:05 UTC: PR #313 merged into prod (long-name fix and ADRs live on production). PR #314 (certificate access security overhaul) and PR #315 (database mapping sanitization) merged into dev. No open PRs.
+State as of 2026-10-10 08:30 UTC: Production release complete. PR #318 and PR #321 merged into prod. Migration 20261009100000_gbc_certificate_access applied to twonode_db (Run #38034359383). .env.example created with S3, R2, MinIO, Supabase, Cloudinary, Vercel Blob, ImageKit, and Local. 867/867 tests passing.
 
 ---
 
@@ -23,6 +23,8 @@ State as of 2026-10-09 11:05 UTC: PR #313 merged into prod (long-name fix and AD
 - [x] **Surveyor Upload File Privacy (Private S3 & Presigned URLs):** Replace raw public S3 URLs with private storage and authenticated presigned GET URLs for surveyor uploads. Multi-provider storage adapters for S3, R2, Cloudinary, Vercel Blob, ImageKit, and Local. Scoped in [TASK-0005](./0005-surfboard-cod-red-copy-and-file-privacy.md), [ADR-0012](../adr/0012-multi-provider-storage-and-surveyor-file-privacy.md). (2026-10-09, PR #316 / commit `4a84af6c`)
 - [x] **Twonode Landing Page /v2 Redesign:** Implement "18. Nodes" design direction with kinetic SVG graph, mobile responsive drawer (390px), and upgraded 4-column Obsidian footer. Scoped in [TASK-0004](./0004-twonode-v2-landing-redesign.md). (2026-10-10)
 - [x] **Comprehensive .env.example & Expanded Storage Adapters:** Created `.env.example` documenting all 8 storage backends (S3, R2, MinIO, Supabase Storage, Cloudinary, Vercel Blob, ImageKit, Local) and all runtime/auth/payment/notification envs; implemented MinIO and Supabase adapters in `lib/storage/` with tests. (2026-10-10)
+- [x] **Production Release (PR #318 & PR #321):** Promoted all features (GBC certificate security, multi-provider storage, /v2 redesign, MinIO & Supabase adapters, and .env.example) to `prod`. (2026-10-10)
+- [x] **Production Database Migration:** Applied `20261009100000_gbc_certificate_access` to `twonode_db` via manual workflow dispatch `migrate-production.yml` (#38034359383). (2026-10-10)
 
 ---
 
