@@ -52,7 +52,7 @@ Newest first. Status: Open, Fix in PR, Fixed, Won't fix. Source `R1` = review of
 | I-010 | P1 | Access control | `files/view` ownership: self-attached file URLs grant signed links; `contains` match; empty key | Yes | Fix in PR #343 | R1 |
 | I-009 | P1 | File storage | `expiresIn` taken from the query string with no cap | Yes | Fix in PR #343 | R1 |
 | I-008 | P1 | Secrets and config | OTP signing key falls back to auth secrets and a constant | Yes | Fix in PR #342 (needs `CERTIFICATE_OTP_SECRET` in Vercel) | R1 |
-| I-007 | P1 | Data integrity | 3 tickets sent before the change have no `certificateIssued`, `certificatePublicId` or frozen fields | Yes | Open (guarded backfill waits for go) | R1 |
+| I-007 | P1 | Data integrity | 3 tickets sent before the change have no `certificateIssued`, `certificatePublicId` or frozen fields | No | Fixed 2026-10-11: no backfill; the 3 were test sends, sent count reset to 0 (backup `out/backup-gbc-sentcount-2026-10-11.csv`), public pages now 404 | R1 |
 | I-006 | P1 | Certificates and PDF | PDF read the live edition, not the frozen fields | Yes | Fix in PR #342 | R1 |
 | I-005 | P1 | Data exposure | QR code and emails used the guessable `/gbc/certificate/<ticketNumber>` link | Yes | Fix in PR #342 | R1 |
 | I-004 | P0 | File storage | `reva-store` bucket objects readable anonymously (213 red copies, 2,063 plans with PDFs) | Yes | Open (needs AWS admin) | R1 |
