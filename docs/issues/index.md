@@ -55,7 +55,7 @@ Newest first. Status: Open, Fix in PR, Fixed, Won't fix. Source `R1` = review of
 | I-007 | P1 | Data integrity | 3 tickets sent before the change have no `certificateIssued`, `certificatePublicId` or frozen fields | No | Fixed 2026-10-11: no backfill; the 3 were test sends, sent count reset to 0 (backup `out/backup-gbc-sentcount-2026-10-11.csv`), public pages now 404 | R1 |
 | I-006 | P1 | Certificates and PDF | PDF read the live edition, not the frozen fields | Yes | Fix in PR #342 | R1 |
 | I-005 | P1 | Data exposure | QR code and emails used the guessable `/gbc/certificate/<ticketNumber>` link | Yes | Fix in PR #342 | R1 |
-| I-004 | P0 | File storage | `reva-store` bucket objects readable anonymously (213 red copies, 2,063 plans with PDFs) | Yes | Open (needs AWS admin) | R1 |
+| I-004 | P0 | File storage | `reva-store` bucket objects readable anonymously (213 red copies, 2,063 plans with PDFs) | Yes | Open (needs AWS admin). Do NOT make the whole bucket private: GBC public images share it, see below | R1 |
 | I-003 | P0 | Data exposure | Certificate pages sent the whole ticket row (email, phone, payment data, publicId) to the browser | Yes | Fix in PR #341 | R1 |
 | I-002 | P3 | Docs drift | ADR-0012 and TASK-0005 say file privacy is complete while the bucket is public | n/a | Open (new ADR once bucket is private) | R1 |
 | I-001 | P2 | Testing gaps | Certificate routes (`request-code`, `verify-code`, `download`) read but never run end to end; public pages not browser-checked | n/a | Open | R1 |
@@ -70,3 +70,18 @@ Possible problems worth a look in a later pass. Move one into the register once 
 - Staging: leftover test accounts, un-rotated database password, Kinde not fully configured.
 - The /v2 landing pages: only commit messages and tests were reviewed, not the rendered pages.
 - Vercel environment values and the S3 bucket policy were not checked.
+
+## Bucket privacy plan (I-004), searched 2026-10-11
+
+Counts are stored URLs that point at the bucket (read-only query). Key prefix is the top folder.
+
+| Stored in | Count | Prefix | Browser uses the raw URL? | Needs to stay public? |
+|---|---|---|---|---|
+| `SurfboardPlan` red copies / PDFs / CAD / certificates | 213 / 2,063 / 2,066 / 810 | `surfboard/` | No, signed links via the gateway | No: make private |
+| `surfboard_plan_viewer_attachments.url`, `CertificateOfDepositBatch.lasgReceiptUrl` | 1 / 8 | `surfboard/` | Via gateway | No: make private |
+| `SurfboardUser.logo` | 22 | `surfboard/` | Unchecked | Check where it is shown |
+| `gbc_tickets.qrCode` | 155 | `GBC2/` | Yes: `<img src>` and a link on the ticket pages | Yes, unless ticket pages sign it |
+| `gbc_gallery`, `gbc_speakers.photo`, `gbc_sponsors.logo` | 30 / 10 / 6 | `GBC2/` | Yes: public GBC website | Yes |
+| REVA `Property.site_images` / `documentsUrls`, `OneTimeUserProperty` | 24 / 12, 2 / 7 | unchecked | Unchecked | Check |
+
+Consequence: block public access on the whole bucket and the GBC website images and ticket QR codes break. Safer order: (1) a bucket policy that allows public read only on `GBC2/*` and denies the rest, or move GBC public assets to their own bucket or CloudFront; (2) check `SurfboardUser.logo` and the REVA property files; (3) then close `surfboard/*` and re-test with an anonymous request. GBC ticket QR codes encode the ticket number only, so a public `GBC2/qrcodes/` prefix is a lower risk than surveyor files.
