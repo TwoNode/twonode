@@ -3,13 +3,18 @@ import { withAuth } from "@/lib/api/withAuth";
 import { getPresignedDownloadUrl, extractS3KeyFromUrl } from "@/surfboard/services/awsService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 import prisma from "@/lib/prisma";
+import {
+  clampExpiresIn,
+  isSafeStorageKey,
+  keyBelongsToAllowedUser,
+} from "@/surfboard/utils/fileAccess";
 
 export const GET = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx) => {
     const searchParams = req.nextUrl.searchParams;
     const target = searchParams.get("url") || searchParams.get("key");
     const format = searchParams.get("format");
-    const expiresIn = Number(searchParams.get("expiresIn")) || 300;
+    const expiresIn = clampExpiresIn(searchParams.get("expiresIn"));
 
     if (!target) {
       return NextResponse.json(
@@ -19,6 +24,12 @@ export const GET = withAuth<SurfboardRole>(
     }
 
     const key = extractS3KeyFromUrl(target);
+    if (!isSafeStorageKey(key)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid file reference" },
+        { status: 400 }
+      );
+    }
     const userId = ctx.session.sub;
     const userRole = ctx.session.role;
 
@@ -50,7 +61,7 @@ export const GET = withAuth<SurfboardRole>(
             AND: [
               {
                 OR: [
-                  { redCopyFileUrl: { contains: key } },
+                  { redCopyFileUrl: { endsWith: key } },
                   { pdfFilePaths: { has: target } },
                   { cadFilePaths: { has: target } },
                   { certificateFilePaths: { has: target } },
@@ -58,7 +69,7 @@ export const GET = withAuth<SurfboardRole>(
               },
             ],
           },
-          select: { id: true },
+          select: { id: true, userId: true },
         });
 
         // 3. Check viewer attachments
@@ -68,12 +79,24 @@ export const GET = withAuth<SurfboardRole>(
               { viewerId: userId },
               { plan: { userId } },
             ],
-            url: { contains: key },
+            url: { endsWith: key },
           },
-          select: { id: true },
+          select: { id: true, viewerId: true, plan: { select: { userId: true } } },
         });
 
-        if (!matchingPlan && !matchingAttachment) {
+        // Plan file fields are user-editable, so the key must also sit in the
+        // owner's (or the attaching viewer's) own folder (ADR-0012).
+        const planOk =
+          !!matchingPlan &&
+          keyBelongsToAllowedUser(key, [matchingPlan.userId ?? ""]);
+        const attachmentOk =
+          !!matchingAttachment &&
+          keyBelongsToAllowedUser(key, [
+            matchingAttachment.viewerId,
+            matchingAttachment.plan.userId ?? "",
+          ]);
+
+        if (!planOk && !attachmentOk) {
           return NextResponse.json(
             { success: false, error: "Access denied to requested file" },
             { status: 403 }
