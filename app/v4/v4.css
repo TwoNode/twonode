@@ -4715,3 +4715,10 @@ button {
     white-space: nowrap;
   }
 }
+
+/* Count-up number inside .stat strong keeps the big-number style */
+.stat strong b {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
