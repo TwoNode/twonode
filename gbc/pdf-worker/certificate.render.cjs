@@ -308,7 +308,16 @@ function cableMotif(corner) {
 }
 
 function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
-  const edition = ticket.editionRef;
+  // ADR-0008: use the details frozen at issue time, else the live edition
+  const live = ticket.editionRef;
+  const edition = {
+    name: ticket.certificateEventName || live.name,
+    theme: ticket.certificateTheme || live.theme,
+    subTheme: ticket.certificateSubTheme || live.subTheme,
+    venue: ticket.certificateVenue || live.venue,
+    startDate: ticket.certificateStartDate || live.startDate,
+    endDate: ticket.certificateEndDate || live.endDate,
+  };
   const attendedDate = ticket.checkedInAt
     ? new Date(ticket.checkedInAt)
     : new Date(edition.endDate);
