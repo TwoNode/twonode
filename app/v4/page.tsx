@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SiteHeader } from "./components/SiteHeader";
 import { Footer } from "./components/Footer";
 import { MotionLayer } from "./components/MotionLayer";
+import { proof } from "./data/proof";
 
 export const metadata: Metadata = {
   title: "TwoNode Technologies — Build for the way industries work",
@@ -289,6 +290,7 @@ export default function V4HomePage() {
               <div className="work-card-copy">
                 <p className="eyebrow">
                   SURFBOARD
+                  <span className="status status-active">Active</span>
                   <span className="eyebrow-cat">
                     Surveying &amp; geospatial
                   </span>
@@ -328,7 +330,8 @@ export default function V4HomePage() {
               </div>
               <div className="work-card-copy">
                 <p className="eyebrow">
-                  REVA<span className="eyebrow-cat">Real estate</span>
+                  REVA<span className="status status-next">Next</span>
+                  <span className="eyebrow-cat">Real estate</span>
                 </p>
                 <h3>Make property information easier to understand.</h3>
                 <p>
@@ -368,6 +371,7 @@ export default function V4HomePage() {
               <div className="work-card-copy">
                 <p className="eyebrow">
                   GEOSPATIAL BUILDERS CONFERENCE
+                  <span className="status status-active">Active</span>
                   <span className="eyebrow-cat">Industry community</span>
                 </p>
                 <h3>Bring the industry into the room.</h3>
@@ -393,26 +397,26 @@ export default function V4HomePage() {
             <p className="eyebrow">THE NUMBERS SO FAR</p>
             <div className="proof-grid">
               <div className="stat">
-                <strong className="count" data-to="9567">
-                  9,567
+                <strong className="count" data-to={proof.plans}>
+                  {proof.plans.toLocaleString("en-US")}
                 </strong>
                 <span>survey plans</span>
               </div>
               <div className="stat">
-                <strong className="count" data-to="38431">
-                  38,431
+                <strong className="count" data-to={proof.beacons}>
+                  {proof.beacons.toLocaleString("en-US")}
                 </strong>
                 <span>survey beacons</span>
               </div>
               <div className="stat">
-                <strong className="count" data-to="4">
-                  4
+                <strong className="count" data-to={proof.regions}>
+                  {proof.regions}
                 </strong>
-                <span>states in Southwestern Nigeria</span>
+                <span>{proof.regionsLabel}</span>
               </div>
             </div>
             <p className="proof-foot">
-              <b>Lagos · Ondo · Ogun · Oyo</b> Since 2023.
+              <b>{proof.places.join(" · ")}</b> Since {proof.since}.
             </p>
           </div>
         </section>

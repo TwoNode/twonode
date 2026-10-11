@@ -8,7 +8,7 @@ State as of 2026-10-11: dev one trivial commit ahead of main and prod. PR #340 (
 
 **Batch Reference:** [TASK-0009](./0009-v4-edits.md)  
 **Active Branch:** `feat/v4-edits`  
-**Status:** `In Progress`. `/v3` is left as is. First pass in `/v4`: real logo, 12px text floor, 44px tap targets. Waiting on roji-tech: proof numbers, survey plan photo, phone number.
+**Status:** `In Progress`. `/v3` is left as is. In `/v4`: real logo, 12px text, 44px tap targets, hard-coded proof numbers, contact / insights / industry pages, Active/Next chips, new footer. Waiting on roji-tech: survey plan photo, phone number, real insight copy.
 
 - [x] **Create `/v4` and apply defect fixes (logo, text size, tap targets).** (Done 2026-10-11)
 - [ ] **Content decisions and remaining edits.** Listed in TASK-0009. _(Waiting on: roji-tech)_

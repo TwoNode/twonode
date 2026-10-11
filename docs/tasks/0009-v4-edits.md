@@ -27,13 +27,17 @@
 - [x] Real TwoNode logo (`/logo.svg`) instead of the prototype's placeholder mark, header and footer
 - [x] Text floor of 12px (was 9–11px) via an appended override block in `v4.css`: undersized text elements 21 → 0 after the second pass
 - [x] Touch targets of 44px for footer links, text links, story chapter index, brand and (on touch devices) nav and menu button
+- [x] **Proof numbers hard-coded** in `app/v4/data/proof.ts` as the prototype had them (9,567 plans, 38,431 beacons, 4 states, since 2023), at roji-tech's instruction. Not read from the database; prod showed 2,358 plans and 11,493 pillars on 2026-10-11 (noted in the file). (Done 2026-10-11)
+- [x] Pages added: `/v4/contact`, `/v4/insights`, `/v4/insights/[slug]`, `/v4/industries/[slug]` (data copied from `/v2`: `app/v4/data/`). Header gained "Insights"; "Let's talk" goes to `/v4/contact` off the home page.
+- [x] Active / Next chips on the three work cards, the footer and industry pages (Surfboard and GBC Active, REVA Next, as on `/v2`)
+- [x] Footer redesigned (navy, gradient edge, logo, tagline, call to action, social pills, four link columns, RC number and address, back to top); no "all systems active" claim
 
 ### Module B: Not done yet (needs a decision or more work)
 
-- [ ] **Proof numbers** (9,567 plans / 38,431 beacons / 4 states / since 2023) vs prod (2,369 plans, earliest 2025). _(Waiting on: roji-tech)_
 - [ ] **Survey plan photo** (real client plan; crop shows beacon labels). _(Waiting on: roji-tech)_
 - [ ] **Phone number** `+234 916 0002 740` vs live `/v2` `+234 706 9227 677`; social links. _(Waiting on: roji-tech)_
-- [ ] Contact page, industries and insights pages, Active/Next statuses (REVA presented as equal to Surfboard)
+- [ ] Insight articles still carry the `/v2` draft text ("Draft — to be replaced with the real write-up."); write the real copy before /v4 goes public _(Waiting on: roji-tech)_
+- [ ] `/v4` data files are copies of `/v2`'s; keep one source when `/v2` is retired
 - [ ] Hero first frame is mostly empty; tablet layout review; diagram text sizes inside the canvas
 - [ ] Type `motion.ts` (currently `@ts-nocheck`)
 
@@ -44,6 +48,7 @@
 - [x] `tsc --noEmit` clean
 - [x] No horizontal scroll at 390 / 768 / 1440; no page errors
 - [x] Undersized text re-measured in the browser
+- [x] Seven /v4 pages rendered at 1440 / 768 / 390: no page errors, no horizontal scroll
 - [ ] Visual review of /v4 by roji-tech
 
 ---

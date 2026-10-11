@@ -1,60 +1,133 @@
 import Link from "next/link";
 
+const SOCIALS = [
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/company/twonode-technologies-limited/about/",
+  },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/twonodetechnologies/",
+  },
+  { label: "X", href: "https://x.com/TwoNodeTech" },
+];
+
 export function Footer() {
   return (
-    <footer className="footer">
-      <div className="footer-top">
-        <Link
-          className="brand brand-footer"
-          href="/v4"
-          aria-label="TwoNode home"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className="brand-logo"
-            src="/logo.svg"
-            alt="TwoNode Technologies"
-            width={161}
-            height={40}
-          />
-        </Link>
-        <p>
-          Understand the industry.
-          <br />
-          Build what it needs.
-        </p>
-        <div className="footer-links">
-          <Link href="/v4/our-story">Our story</Link>
-          <Link href="/v4#work">Our work</Link>
-          <a href="mailto:info@twonodetechnologies.com">
-            info@twonodetechnologies.com
-          </a>
-          <a href="tel:+2349160002740">+234 916 0002 740</a>
-          <a
-            href="https://www.linkedin.com/company/twonode-technologies-limited/about/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            LinkedIn ↗
-          </a>
-          <a
-            href="https://www.instagram.com/twonodetechnologies/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Instagram ↗
-          </a>
-          <a href="https://x.com/TwoNodeTech" target="_blank" rel="noreferrer">
-            X ↗
-          </a>
+    <footer className="vf">
+      <div className="vf-inner">
+        <div className="vf-grid">
+          <div className="vf-brand">
+            <Link href="/v4" aria-label="TwoNode home">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className="vf-logo"
+                src="/logo.svg"
+                alt="TwoNode Technologies"
+                width={161}
+                height={40}
+              />
+            </Link>
+            <p className="vf-tagline">
+              Understand the industry.
+              <br />
+              Build what it needs.
+            </p>
+            <Link className="vf-cta" href="/v4/contact">
+              Let&apos;s talk <span>↗</span>
+            </Link>
+            <ul className="vf-socials" aria-label="Social links">
+              {SOCIALS.map((s) => (
+                <li key={s.label}>
+                  <a href={s.href} target="_blank" rel="noreferrer">
+                    {s.label} <span>↗</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <nav className="vf-col" aria-label="Industries">
+            <h2>Industries</h2>
+            <ul>
+              <li>
+                <Link href="/v4/industries/surveying-geospatial">
+                  Surveying &amp; geospatial
+                </Link>
+                <span className="status status-active">Active</span>
+              </li>
+              <li>
+                <Link href="/v4/industries/real-estate">Real estate</Link>
+                <span className="status status-next">Next</span>
+              </li>
+            </ul>
+          </nav>
+
+          <nav className="vf-col" aria-label="Products">
+            <h2>Products</h2>
+            <ul>
+              <li>
+                <a
+                  href="https://www.twonodetechnologies.com/surfboard"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Surfboard <span>↗</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.twonodetechnologies.com/reva"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  REVA <span>↗</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.twonodetechnologies.com/gbc"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  GBC <span>↗</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+
+          <nav className="vf-col" aria-label="Company">
+            <h2>Company</h2>
+            <ul>
+              <li>
+                <Link href="/v4/our-story">Our story</Link>
+              </li>
+              <li>
+                <Link href="/v4/insights">Insights</Link>
+              </li>
+              <li>
+                <Link href="/v4/contact">Contact</Link>
+              </li>
+            </ul>
+            <h2 className="vf-reach">Reach us</h2>
+            <ul>
+              <li>
+                <a href="mailto:info@twonodetechnologies.com">
+                  info@twonodetechnologies.com
+                </a>
+              </li>
+              <li>
+                <a href="tel:+2349160002740">+234 916 0002 740</a>
+              </li>
+            </ul>
+          </nav>
         </div>
-      </div>
-      <div className="footer-bottom">
-        <span>
-          © <span>{new Date().getFullYear()}</span> TwoNode Technologies
-        </span>
-        <span>Built around the way industries work.</span>
-        <a href="#top">Back to top ↑</a>
+
+        <div className="vf-bottom">
+          <span>© {new Date().getFullYear()} TwoNode Technologies Ltd.</span>
+          <span>RC NO.: 7742902 · Lagos · Abuja, Nigeria</span>
+          <a href="#top">Back to top ↑</a>
+        </div>
       </div>
     </footer>
   );
