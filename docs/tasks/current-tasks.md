@@ -4,10 +4,21 @@ State as of 2026-10-11: dev one trivial commit ahead of main and prod. PR #340 (
 
 ---
 
-## Active Session Batch: TASK-0008 — Port the static prototype to /v3
+## Active Session Batch: TASK-0009 — /v4: edits on a copy of the /v3 port
+
+**Batch Reference:** [TASK-0009](./0009-v4-edits.md)  
+**Active Branch:** `feat/v4-edits`  
+**Status:** `In Progress`. `/v3` is left as is. First pass in `/v4`: real logo, 12px text floor, 44px tap targets. Waiting on roji-tech: proof numbers, survey plan photo, phone number.
+
+- [x] **Create `/v4` and apply defect fixes (logo, text size, tap targets).** (Done 2026-10-11)
+- [ ] **Content decisions and remaining edits.** Listed in TASK-0009. _(Waiting on: roji-tech)_
+
+---
+
+## Previous Session Batch: TASK-0008 — Port the static prototype to /v3
 
 **Batch Reference:** [TASK-0008](./0008-v3-prototype-port.md)  
-**Active Branch:** `feat/v3-prototype-port`  
+**Active Branch:** `feat/v3-prototype-port` (merged)  
 **Status:** `In Progress`. Port done and verified on branch `feat/v3-prototype-port`, PR open. No edits to the design yet. Waiting on roji-tech: proof numbers, survey plan photo, phone number.
 
 - [x] **Port `out/twonode-website` to `/v3` and `/v3/our-story`, as is.** Same page heights as the prototype, under 1.3% pixel difference, tsc clean, 873/873 tests. (Done 2026-10-11)
@@ -71,6 +82,7 @@ State as of 2026-10-11: dev one trivial commit ahead of main and prod. PR #340 (
 | [0006](./0006-v2-motion-design-and-editorial-polish.md)    | **V2 Motion Design Storytelling & Polish**          | Active Sprint           | Motion Design, V2, UI/UX, Editorial    | `In Progress` |
 | [0007](./0007-project-review-findings-oct-11.md)           | **Project Review Findings (Certificate Leak, File Privacy)** | 2026-10-11 | Certificates, Security, Storage, CI | `In Progress` |
 | [0008](./0008-v3-prototype-port.md)                        | **Port the Static Prototype to /v3**                | 2026-10-11              | Landing Page, V3, Next.js              | `In Progress` |
+| [0009](./0009-v4-edits.md)                                  | **/v4: Edits on a Copy of the /v3 Port**            | 2026-10-11              | Landing Page, V4, Accessibility        | `In Progress` |
 
 
 
