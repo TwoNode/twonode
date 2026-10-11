@@ -33,7 +33,7 @@ Create `out/twonode-website` (the static prototype, gitignored) as Next.js route
 
 - [ ] **Proof numbers:** prototype says 9,567 plans, 38,431 beacons, 4 states, since 2023; prod shows 2,369 plans, earliest 2025, Lagos/Ogun/Ondo/Oyo plus one FCT. Pick a source. _(Waiting on: roji-tech)_
 - [ ] **Survey plan photo:** a real client's plan; crop shows beacon labels. Get permission or replace. _(Waiting on: roji-tech)_
-- [ ] **Phone number and social links:** prototype `+234 916 0002 740` vs live `/v2` `+234 706 9227 677`. _(Waiting on: roji-tech)_
+- [x] **Phone number:** `+234 916 0002 740` confirmed correct by roji-tech 2026-10-12; the old `+234 706 9227 677` was replaced on the live site (`/v2/contact` and the main-site footer). Social links still to confirm.
 - [ ] **Logo:** prototype uses an invented blue slash mark, not the TwoNode logo.
 - [ ] **Missing from the prototype:** contact page, industries and insights pages, Active/Next statuses.
 - [ ] **Accessibility and sizing** to fix when editing: text under 11px (21 elements), tap targets, tablet layout.
