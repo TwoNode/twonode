@@ -1,18 +1,24 @@
 import crypto from "crypto";
+import { after } from "next/server";
 import prisma from "@/lib/prisma";
 import { ValidationError, RateLimitError } from "@/lib/api/errors";
 import { sendGBCCertificateOtpEmail } from "@/gbc/utils/email";
 
 // ADR-0008: GBC certificate access: verify publicly, download with an emailed code
-// Keyed HMAC secret: uses CERTIFICATE_OTP_SECRET if set, falling back to existing auth secrets
+// Keyed HMAC secret. In production CERTIFICATE_OTP_SECRET is required: falling
+// back to an auth secret would let a leak of that secret forge download tokens,
+// and a constant in the source would make them forgeable by anyone.
 function getOtpSecret(): string {
-  const secret =
-    process.env.CERTIFICATE_OTP_SECRET ||
+  const dedicated = process.env.CERTIFICATE_OTP_SECRET;
+  if (dedicated) return dedicated;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("CERTIFICATE_OTP_SECRET is not set");
+  }
+  return (
     process.env.AUTH_SECRET ||
     process.env.NEXTAUTH_SECRET ||
-    process.env.KINDE_CLIENT_SECRET ||
-    "twonode-cert-otp-fallback-secret";
-  return secret;
+    "twonode-cert-otp-dev-only-secret"
+  );
 }
 
 const OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
@@ -170,12 +176,21 @@ export async function requestCertificateOtp({
     },
   });
 
-  // 6. Send email strictly to the stored address (never typed address)
-  await sendGBCCertificateOtpEmail({
-    to: ticket.email,
-    name: ticket.name,
-    code,
-  });
+  // 6. Send email strictly to the stored address (never typed address).
+  // Sent after the response so a slow mail call does not reveal that the
+  // address has an issued certificate (the "no ticket" branch returns fast).
+  const send = () =>
+    sendGBCCertificateOtpEmail({
+      to: ticket.email,
+      name: ticket.name,
+      code,
+    }).catch((err) => console.error("Certificate OTP email failed:", err));
+  try {
+    after(send);
+  } catch {
+    // Outside a request scope (tests, scripts): send inline.
+    await send();
+  }
 
   if (process.env.NODE_ENV !== "production") {
     console.log(`[dev] Certificate OTP for ${ticket.email}: ${code}`);

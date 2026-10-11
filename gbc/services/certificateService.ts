@@ -85,8 +85,10 @@ export async function sendBulkCertificates(
   for (const ticket of tickets) {
     // Freeze content and mark issued if not already done
     const publicId = ticket.certificatePublicId || crypto.randomUUID();
-    await prisma.gBCTicket.update({
+    // Use the updated row so the PDF and email see the new publicId
+    const issued = await prisma.gBCTicket.update({
       where: { id: ticket.id },
+      include: { editionRef: true },
       data: {
         certificateIssued: true,
         certificateIssuedAt: ticket.certificateIssuedAt || now,
@@ -106,7 +108,7 @@ export async function sendBulkCertificates(
       },
     });
 
-    const emailResult = await sendGBCCertificateEmail(ticket, emailBody);
+    const emailResult = await sendGBCCertificateEmail(issued, emailBody);
     if (emailResult.success) {
       await prisma.gBCTicket.update({
         where: { id: ticket.id },

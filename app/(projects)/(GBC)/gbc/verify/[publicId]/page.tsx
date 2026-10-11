@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { toCertificateView } from "@/gbc/utils/certificateView";
 import prisma from "@/lib/prisma";
 import { getSiteUrl } from "@/lib/siteUrl";
 import { generateVerificationQRDataURL } from "@/gbc/utils/qr_code";
@@ -40,7 +41,7 @@ export default async function CertificateVerifyPage({
   return (
     <div className="min-h-screen bg-[#0B0613] flex items-center justify-center p-4 sm:p-8">
       <CertificateClient
-        ticket={ticket}
+        ticket={toCertificateView(ticket)}
         verificationUrl={verificationUrl}
         qrCodeDataUrl={qrCodeDataUrl}
       />

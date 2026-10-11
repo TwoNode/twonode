@@ -59,6 +59,14 @@ describe("getCertificateVerificationUrl", () => {
   });
 });
 
+describe("getCertificateVerificationUrl with a publicId", () => {
+  it("points at the unguessable verify page", () => {
+    expect(getCertificateVerificationUrl("GBC2_ABC123", "pid-1")).toMatch(
+      /\/gbc\/verify\/pid-1$/
+    );
+  });
+});
+
 describe("generateCertificatePdfBuffer", () => {
   it("resolves with the worker's stdout buffer on success", async () => {
     const expectedBuffer = Buffer.from("%PDF-fake");

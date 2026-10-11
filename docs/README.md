@@ -4,6 +4,8 @@
 
 **[`DEPLOYMENT.md`](./DEPLOYMENT.md)** — the branch-to-environment mapping (`main` is staging, `prod` is live production — not what the names suggest) and what to check before merging into `prod`, plus database migrations (the `0_init` baseline and the staging/production workflows), cron and connection-pool settings.
 
+**[`issues/`](./issues/index.md)** — the issues register: known and suspected problems ranked P0–P3, a checklist of issue types to search for, and the template for a detailed entry. Add to it whenever a review finds something.
+
 **[`development-history/`](./development-history/)** — the 2026-08 architecture rebuild: why it happened, the phase-by-phase execution plan, and a completion report per phase covering exactly what was built, what was found along the way, and what's still open. This is the single most reliable source for "does X still work the way an older doc says it does" — every other document in this folder that describes current behavior was cross-checked against it. Also holds `route-inventory.md`, a list of every route in the app whose tables are **generated from the code** (`npm run docs:routes`; `npm run docs:routes -- --check` fails if it is stale), and `progress.md`, the rolling checklist.
 
 ## Per-topic

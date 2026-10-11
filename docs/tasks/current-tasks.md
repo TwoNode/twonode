@@ -1,10 +1,22 @@
 # Current Tasks (Live Dashboard)
 
-State as of 2026-10-10 19:36 UTC: PR #332 & PR #333 merged into prod (V2 interactive motion storytelling, triad canvas, motion triangle, behind the build, and editorial polish). All features live on prod branch. 867/867 tests passing.
+State as of 2026-10-11: dev one trivial commit ahead of main and prod. PR #340 (docs) open. A project review found two live P0 problems (certificate page data leak, public surveyor files); see TASK-0007. 867/867 tests passing.
 
 ---
 
-## Active Session Batch: TASK-0006 — V2 Motion Design Storytelling, Interactive Trinity & Editorial Polish
+## Active Session Batch: TASK-0007 — Project Review Findings (2026-10-11)
+
+**Batch Reference:** [TASK-0007](./0007-project-review-findings-oct-11.md)  
+**Active Branch:** `docs/review-findings-2026-10-11`  
+**Status:** `In Progress`. Fixes #341–#345 are merged to `dev`, not yet on `main`/`prod`. `CERTIFICATE_OTP_SECRET` is set. Waiting on roji-tech: go to promote, and the AWS admin for the bucket (see I-004 in the issues register).
+
+- [ ] **P0: public certificate page leaks attendee data (live on prod).** _(Waiting on: go to fix)_
+- [ ] **P0: surveyor files are still publicly readable in S3.** _(Waiting on: roji-tech / AWS admin)_
+- [ ] **P1 and P2 items:** QR/email links, PDF frozen fields, nobody can download yet, OTP secret, `expiresIn` cap, CI `|| true`, smaller items. Full list in TASK-0007.
+
+---
+
+## Previous Session Batch: TASK-0006 — V2 Motion Design Storytelling, Interactive Trinity & Editorial Polish
 
 **Batch Reference:** [TASK-0006](./0006-v2-motion-design-and-editorial-polish.md)  
 **Active Branch:** `dev`  
@@ -46,6 +58,7 @@ State as of 2026-10-10 19:36 UTC: PR #332 & PR #333 merged into prod (V2 interac
 | [0004](./0004-twonode-v2-landing-redesign.md)              | **Twonode Landing Page /v2 Redesign (Nodes)**       | Active Sprint           | Landing Page, V2, UI/UX, Design Tokens | `Completed`   |
 | [0005](./0005-surfboard-cod-red-copy-and-file-privacy.md)  | **Surfboard CoD Red Copy & Surveyor File Privacy**   | Active Sprint           | Surfboard, CoD, S3 Security, Storage   | `Completed`   |
 | [0006](./0006-v2-motion-design-and-editorial-polish.md)    | **V2 Motion Design Storytelling & Polish**          | Active Sprint           | Motion Design, V2, UI/UX, Editorial    | `In Progress` |
+| [0007](./0007-project-review-findings-oct-11.md)           | **Project Review Findings (Certificate Leak, File Privacy)** | 2026-10-11 | Certificates, Security, Storage, CI | `In Progress` |
 
 
 

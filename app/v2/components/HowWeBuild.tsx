@@ -13,7 +13,7 @@ interface Step {
 const BUILD_STEPS: Step[] = [
   {
     num: "01",
-    phase: "Field Work",
+    phase: "The work",
     action: "Go where the work is.",
     detail: "On-site desks, registry offices, field boundary stations.",
     accent: "#ff4d6d",
