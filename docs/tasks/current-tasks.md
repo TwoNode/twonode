@@ -8,7 +8,7 @@ State as of 2026-10-11: dev one trivial commit ahead of main and prod. PR #340 (
 
 **Batch Reference:** [TASK-0007](./0007-project-review-findings-oct-11.md)  
 **Active Branch:** `docs/review-findings-2026-10-11`  
-**Status:** `In Progress (running)`. Fixes are in open PRs #341, #342, #343, #344 (not merged). Waiting on roji-tech: review and merge, `CERTIFICATE_OTP_SECRET` in Vercel, go for the 3-ticket backfill, AWS admin for the bucket.
+**Status:** `In Progress`. Fixes #341–#345 are merged to `dev`, not yet on `main`/`prod`. `CERTIFICATE_OTP_SECRET` is set. Waiting on roji-tech: go to promote, and the AWS admin for the bucket (see I-004 in the issues register).
 
 - [ ] **P0: public certificate page leaks attendee data (live on prod).** _(Waiting on: go to fix)_
 - [ ] **P0: surveyor files are still publicly readable in S3.** _(Waiting on: roji-tech / AWS admin)_
