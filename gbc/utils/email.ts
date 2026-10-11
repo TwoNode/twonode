@@ -567,7 +567,10 @@ export async function sendGBCCertificateEmail(
   try {
     const { generateCertificatePdfBuffer, getCertificateVerificationUrl } =
       await import("@/gbc/services/certificatePdfService");
-    const certificateUrl = getCertificateVerificationUrl(ticket.ticketNumber);
+    const certificateUrl = getCertificateVerificationUrl(
+      ticket.ticketNumber,
+      ticket.certificatePublicId
+    );
     const pdfBuffer = await generateCertificatePdfBuffer(ticket);
 
     const html = `

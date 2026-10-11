@@ -48,8 +48,17 @@ void import("@react-pdf/renderer").catch(() => {
   // at runtime.
 });
 
-export function getCertificateVerificationUrl(ticketNumber: string): string {
-  return `${getSiteUrl()}/gbc/certificate/${ticketNumber}`;
+/**
+ * ADR-0008: the QR code and emails point at the unguessable verify page. The
+ * ticket-number URL is only a fallback for tickets that have no publicId yet.
+ */
+export function getCertificateVerificationUrl(
+  ticketNumber: string,
+  publicId?: string | null
+): string {
+  return publicId
+    ? `${getSiteUrl()}/gbc/verify/${publicId}`
+    : `${getSiteUrl()}/gbc/certificate/${ticketNumber}`;
 }
 
 /**
@@ -71,7 +80,10 @@ export function getCertificateVerificationUrl(ticketNumber: string): string {
 export async function generateCertificatePdfBuffer(
   ticket: GBCCertificateTicket
 ): Promise<Buffer> {
-  const verificationUrl = getCertificateVerificationUrl(ticket.ticketNumber);
+  const verificationUrl = getCertificateVerificationUrl(
+    ticket.ticketNumber,
+    ticket.certificatePublicId
+  );
   const qrCodeDataUrl = await generateVerificationQRDataURL(verificationUrl);
   const input = JSON.stringify({ ticket, verificationUrl, qrCodeDataUrl });
 
