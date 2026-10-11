@@ -113,7 +113,7 @@ export default function RootLayout({
           <div className="fixed top-0 right-0 left-0 z-30 w-full h-16.25 px-2.5 py-4 bg-sky-950 justify-center items-center gap-1 flex-col flex">
             <div className="text-center">
               <span className="text-white text-[10px] lg:text-[13px] font-normal leading-2 lg:leading-5">
-                Reach out on: Call - (+234) 706-9227-677 || Email:
+                Reach out on: Call - (+234) 916-0002-740 || Email:
                 info@twonodetechnologies.com{" "}
               </span>
               <Link

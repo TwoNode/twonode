@@ -39,10 +39,10 @@ export default function ContactPage() {
             Phone
           </h2>
           <a
-            href="tel:+2347069227677"
+            href="tel:+2349160002740"
             className="mt-2 block text-lg hover:opacity-70"
           >
-            (+234) 706-9227-677
+            (+234) 916-0002-740
           </a>
         </div>
       </div>
