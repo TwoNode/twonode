@@ -1,6 +1,6 @@
 # Current Tasks (Live Dashboard)
 
-State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate page leak fix and the `AWS_*` rename are live. PR #363 (certificate email redesign) is open against `dev`. Vercel env cleaned up (see TASK-0010). 882/882 tests passing.
+State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate page leak fix and the `AWS_*` rename are live. The certificate email redesign (#363, #365) and the docs updates (#364) reached `prod` on 2026-10-12 through #366 (`dev` → `main`) and #367 (`main` → `prod`); live checks passed. Vercel env cleaned up (see TASK-0010). 882/882 tests passing.
 
 ---
 
