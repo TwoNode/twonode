@@ -23,7 +23,7 @@ const { POST: postRequestCode } =
   await import("@/app/api/v1/gbc/certificates/request-code/route");
 const { POST: postVerifyCode } =
   await import("@/app/api/v1/gbc/certificates/verify-code/route");
-const { GET: getDownload } =
+const { POST: postDownload } =
   await import("@/app/api/v1/gbc/certificates/download/route");
 const { GET: getLegacyPdf } =
   await import("@/app/api/v1/gbc/tickets/[ticketNumber]/certificate-pdf/route");
@@ -106,6 +106,7 @@ describe("POST /api/v1/gbc/certificates/verify-code", () => {
         headers: {
           "content-type": "application/json",
           cookie: "cn=valid-browser-nonce",
+          "x-forwarded-for": "203.0.113.9",
         },
         body: JSON.stringify({ email: "user@example.com", code: "123456" }),
       }
@@ -117,16 +118,28 @@ describe("POST /api/v1/gbc/certificates/verify-code", () => {
     expect(body.success).toBe(true);
     expect(body.data.token).toBe("signed.download.token");
     expect(body.data.ticketNumbers).toEqual(["GBC2_TEST"]);
+    expect(
+      mockOtpService.verifyCertificateOtpAndIssueToken
+    ).toHaveBeenCalledWith(expect.objectContaining({ ip: "203.0.113.9" }));
   });
 });
 
-describe("GET /api/v1/gbc/certificates/download", () => {
+const postJson = (body: unknown) =>
+  new NextRequest("http://localhost:3000/api/v1/gbc/certificates/download", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+describe("POST /api/v1/gbc/certificates/download", () => {
   it("rejects without token or ticketNumber with 400", async () => {
-    const req = new NextRequest(
-      "http://localhost:3000/api/v1/gbc/certificates/download"
-    );
-    const res = await getDownload(req);
+    const res = await postDownload(postJson({}));
     expect(res.status).toBe(400);
+  });
+
+  it("no longer exists as a GET (token must not be in a URL)", async () => {
+    const mod = await import("@/app/api/v1/gbc/certificates/download/route");
+    expect((mod as Record<string, unknown>).GET).toBeUndefined();
   });
 
   it("rejects when token is not authorized for the requested ticket", async () => {
@@ -134,10 +147,9 @@ describe("GET /api/v1/gbc/certificates/download", () => {
       ticketNumbers: ["GBC2_OTHER"],
     });
 
-    const req = new NextRequest(
-      "http://localhost:3000/api/v1/gbc/certificates/download?token=valid.token&ticketNumber=GBC2_ATTACK"
+    const res = await postDownload(
+      postJson({ token: "valid.token", ticketNumber: "GBC2_ATTACK" })
     );
-    const res = await getDownload(req);
     expect(res.status).toBe(400);
   });
 
@@ -154,10 +166,9 @@ describe("GET /api/v1/gbc/certificates/download", () => {
       Buffer.from("%PDF-1.4 test")
     );
 
-    const req = new NextRequest(
-      "http://localhost:3000/api/v1/gbc/certificates/download?token=valid.token&ticketNumber=GBC2_VALID"
+    const res = await postDownload(
+      postJson({ token: "valid.token", ticketNumber: "GBC2_VALID" })
     );
-    const res = await getDownload(req);
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("application/pdf");
     expect(res.headers.get("content-disposition")).toContain(
@@ -167,40 +178,17 @@ describe("GET /api/v1/gbc/certificates/download", () => {
 });
 
 describe("GET /api/v1/gbc/tickets/[ticketNumber]/certificate-pdf", () => {
-  it("blocks direct public access without token with 403 Forbidden", async () => {
-    const req = new NextRequest(
-      "http://localhost:3000/api/v1/gbc/tickets/GBC2_DIRECT/certificate-pdf"
-    );
-    const res = await getLegacyPdf(req, {
-      params: Promise.resolve({ ticketNumber: "GBC2_DIRECT" }),
-    });
-
+  it("is retired: 403 without a token", async () => {
+    const res = await getLegacyPdf();
     expect(res.status).toBe(403);
     const body = await res.json();
     expect(body.error).toContain("Direct public download is retired");
   });
 
-  it("permits download when valid token is supplied", async () => {
-    mockOtpService.verifyDownloadToken.mockReturnValueOnce({
-      ticketNumbers: ["GBC2_DIRECT"],
-    });
-    mockTicketService.getTicketByNumber.mockResolvedValueOnce({
-      ticketNumber: "GBC2_DIRECT",
-      certificateIssued: true,
-      name: "Direct Holder",
-    });
-    mockPdfService.generateCertificatePdfBuffer.mockResolvedValueOnce(
-      Buffer.from("%PDF-1.4 test")
-    );
-
-    const req = new NextRequest(
-      "http://localhost:3000/api/v1/gbc/tickets/GBC2_DIRECT/certificate-pdf?token=valid.token"
-    );
-    const res = await getLegacyPdf(req, {
-      params: Promise.resolve({ ticketNumber: "GBC2_DIRECT" }),
-    });
-
-    expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/pdf");
+  it("is retired even when a token is supplied in the URL", async () => {
+    const res = await getLegacyPdf();
+    expect(res.status).toBe(403);
+    expect(mockOtpService.verifyDownloadToken).not.toHaveBeenCalled();
+    expect(mockPdfService.generateCertificatePdfBuffer).not.toHaveBeenCalled();
   });
 });

@@ -1,3 +1,4 @@
+import path from "path";
 import { Readable } from "stream";
 
 /**
@@ -31,6 +32,19 @@ export function buildStorageKey(input: {
   return `${prefix}/${uniqueSuffix}__${cleanName}`
     .replace(/\/+/g, "/")
     .replace(/^\/+/, "");
+}
+
+/**
+ * Resolves a storage key under a base folder and throws if the result would
+ * land outside it (for example a key containing "../").
+ */
+export function resolveWithin(baseDir: string, key: string): string {
+  const base = path.resolve(baseDir);
+  const target = path.resolve(base, key);
+  if (target !== base && !target.startsWith(base + path.sep)) {
+    throw new Error("Invalid storage key");
+  }
+  return target;
 }
 
 /**
