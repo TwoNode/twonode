@@ -1,6 +1,6 @@
 # TASK-0010: Session Batch — 2026-10-12 (Vercel env cleanup, staging promotion, /v4 responsive)
 
-- **Status:** In Progress (responsive PR #360 open; waiting on roji-tech for the prod promotion and the S3 bucket)
+- **Status:** In Progress (promoted to prod 2026-10-12; waiting on roji-tech for the `REVA_AWS_*` removal and the AWS admin for the S3 bucket)
 - **Priority:** High
 - **Assignee:** Maintainer / Agent
 - **Target Branch / PR:** `docs/env-cleanup-and-promotion` (this record), `feat/v4-responsive` (responsive work)
@@ -27,7 +27,7 @@ Tidy the Vercel environment variables, promote the review fixes to staging and t
 - [x] **`CRON_SECRET` set** for Production and Preview (separate random values, stored as secrets). Applies from the next deploy. (Done 2026-10-12)
 - [x] **Seven unused variables removed** from every environment, after backing up their values to a private local file: `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_LOGIN_URL`, `NOTIF_EMAIL`, `NOTIF_EMAIL_PASS`, `PAYSTACK_CALLBACK_URL`, `NEXT_PUBLIC_PAYSTACK_TEST_PUBLIC_KEY`. `KINDE_*` kept (the Kinde SDK reads them implicitly). (Done 2026-10-12)
 - [x] Local `.env`, `.env.staging`, `.env.local`: `REVA_AWS_*` renamed to `AWS_*` (values unchanged). (Done 2026-10-12)
-- [ ] **Remove `REVA_AWS_*` from Vercel** once the `AWS_*` code is deployed to prod and working. _(Waiting on: prod promotion)_
+- [ ] **Remove `REVA_AWS_*` from Vercel** once the `AWS_*` code is deployed to prod and working. _(Waiting on: roji-tech go to remove them; prod now runs on `AWS_*`)_
 - [ ] **`REDCOPY_WEBHOOK_SECRET`** not set anywhere; the webhook accepts anyone (issue I-018). Needs Red Copy to send the same value. _(Waiting on: roji-tech / Red Copy)_
 - [ ] **Make the cron route and the Red Copy webhook refuse requests when their secret is missing** (I-017, I-018). _(Waiting on: roji-tech go)_
 - [ ] **`GOOGLE_MAPS_SERVER_API_KEY`** still missing (Google billing). _(Waiting on: roji-tech / Cloud Admin)_
@@ -38,7 +38,7 @@ Tidy the Vercel environment variables, promote the review fixes to staging and t
 - [x] PRs #353, #355, #356, #357 merged to `dev`; `dev` → `main` PR #358 merged (staging). (Done 2026-10-12)
 - [x] **Staging smoke tests passed** (17 checks, using `vercel curl` because staging is behind Vercel login protection): home, /v4, /v4/contact, /v4/insights, /v4/industries/real-estate, /v2, /v2/contact (new phone number in the page), /gbc, /gbc/gallery, /reva, /surfboard all 200; certificate page for a bogus ticket 404; legacy certificate PDF route 403; certificate download GET 405 and POST with empty body 400; cron route without the secret 401; surveyor file gateway without login 401. (Done 2026-10-12)
 - [ ] **Not covered by the smoke tests:** a real S3 upload and a signed file link on staging (needs a login); the certificate download button in a browser against an issued ticket; page source of a real certificate page. _(Waiting on: someone with a staging login)_
-- [ ] **Promote `main` → `prod`.** _(Waiting on: roji-tech explicit go)_
+- [x] **Promote `main` → `prod`.** PR #362 merged on roji-tech's go; the production build finished Ready. (Done 2026-10-12)
 
 ### Module C: AWS S3 dashboard (needs the AWS admin; code cannot do this)
 
@@ -63,7 +63,7 @@ See issue I-004. Do not turn on Block Public Access for the whole bucket: the GB
 
 - [x] `tsc --noEmit` clean and 882/882 tests on `dev` before promotion
 - [x] Staging smoke tests (Module B)
-- [ ] Prod promotion verified after deploy
+- [x] Prod promotion verified after deploy: home, `/v4` and `/v2/contact` (new phone number) 200; bogus verify page and old certificate page 404; old certificate PDF route 403; download route without a token 400; cron route without the secret 401; file gateway without login 401. Not tested: a real certificate download and an S3 upload (need a login). (Done 2026-10-12)
 - [ ] Anonymous 403 on `surfboard/*` after the bucket change
 
 ---

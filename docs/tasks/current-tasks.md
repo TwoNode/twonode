@@ -1,6 +1,6 @@
 # Current Tasks (Live Dashboard)
 
-State as of 2026-10-12: `main` (staging) has everything on `dev` (PR #358) and passed the staging smoke tests; `prod` is still behind and still has the certificate page leak until promoted. Vercel env cleaned up (see TASK-0010). 882/882 tests passing.
+State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate page leak fix and the `AWS_*` rename are live. PR #363 (certificate email redesign) is open against `dev`. Vercel env cleaned up (see TASK-0010). 882/882 tests passing.
 
 ---
 
@@ -8,14 +8,14 @@ State as of 2026-10-12: `main` (staging) has everything on `dev` (PR #358) and p
 
 **Batch Reference:** [TASK-0010](./0010-env-cleanup-staging-promotion-v4-responsive.md)  
 **Active Branch:** `feat/v4-responsive` (PR #360)  
-**Status:** `In Progress`. Responsive PR #360 is open. Waiting on roji-tech: go to promote `main` → `prod`, the AWS admin for the S3 bucket policy, go to make the cron route and Red Copy webhook fail closed.
+**Status:** `In Progress`. Responsive PR #360 is open. Waiting on roji-tech: go to remove `REVA_AWS_*`, the AWS admin for the S3 bucket policy, go to make the cron route and Red Copy webhook fail closed.
 
 - [x] **Vercel env:** `AWS_*` added, `CRON_SECRET` set, seven unused variables removed with a backup. (Done 2026-10-12)
 - [x] **`dev` → `main` (PR #358) and staging smoke tests (17 checks) passed.** (Done 2026-10-12)
-- [ ] **Promote `main` → `prod`.** _(Waiting on: roji-tech go)_
+- [x] **Promote `main` → `prod`.** PR #362, prod build Ready, live smoke checks passed. (Done 2026-10-12)
 - [ ] **S3 bucket: policy limited to `GBC2/*`, ACL blocks on.** Needs the AWS admin. _(Waiting on: AWS admin)_
 - [ ] **Surveyor logo through the file gateway before `surfboard/*` goes private.** _(Waiting on: roji-tech go)_
-- [ ] **Remove `REVA_AWS_*` from Vercel after prod runs on `AWS_*`.**
+- [ ] **Remove `REVA_AWS_*` from Vercel.** Prod runs on `AWS_*` now. _(Waiting on: roji-tech go after seeing the exact list)_
 - [x] **/v4 mobile and tablet responsiveness** (PR #360, open for review). (Done 2026-10-12)
 
 ---
@@ -46,9 +46,9 @@ State as of 2026-10-12: `main` (staging) has everything on `dev` (PR #358) and p
 
 **Batch Reference:** [TASK-0007](./0007-project-review-findings-oct-11.md)  
 **Active Branch:** `docs/review-findings-2026-10-11`  
-**Status:** `In Progress`. Fixes #341–#345 are merged to `dev` and `main`, not yet on `prod`. `CERTIFICATE_OTP_SECRET` is set. Waiting on roji-tech: go to promote, and the AWS admin for the bucket (see I-004 in the issues register).
+**Status:** `In Progress`. Fixes #341–#345 are on `dev`, `main` and `prod` (promoted 2026-10-12, PR #362). `CERTIFICATE_OTP_SECRET` is set. Waiting on the AWS admin for the bucket (see I-004 in the issues register).
 
-- [x] **P0: public certificate page leaks attendee data.** Fixed in PR #341 (on `dev` and `main`). Still leaking on `prod` until promoted. _(Waiting on: roji-tech go to promote)_
+- [x] **P0: public certificate page leaks attendee data.** Fixed in PR #341; live on `prod` since 2026-10-12 (PR #362). A bogus certificate page returns 404.
 - [ ] **P0: surveyor files are still publicly readable in S3.** _(Waiting on: roji-tech / AWS admin)_
 - [x] **P1 items and the CI check:** QR/email links, PDF frozen fields, OTP secret, `expiresIn` cap, CI `|| true`, and the 3 test tickets: all done (PRs #342, #343). (Done 2026-10-11)
 - [x] **P2 smaller items** (timing, lockout, token in URL, client IP, local paths): PR #344 plus the hardening PR. Only the optional captcha remains. _(Waiting on: roji-tech decision)_
@@ -78,7 +78,7 @@ State as of 2026-10-12: `main` (staging) has everything on `dev` (PR #358) and p
 
 - **GOOGLE_MAPS_SERVER_API_KEY:** Waiting on Google Cloud project owner to enable billing before setting in Vercel. _(Waiting on: roji-tech / Cloud Admin)_
 - **Paystack Renewal Webhook:** Waiting on live renewal event payload log to verify payload schema. _(Waiting on: roji-tech)_
-- **Trigger Vercel Prod Deploy:** Promote `main` → `prod` (see TASK-0010); the certificate leak fix and the `AWS_*` rename are not on prod yet. _(Waiting on: roji-tech go)_
+- **Trigger Vercel Prod Deploy:** Done 2026-10-12 (PR #362, TASK-0010). Remaining: later `dev` work (/v4 responsive, certificate email) reaches prod through the next `dev` → `main` → `prod` promotion.
 - **Activate GBC 3.0 on Prod:** Edition 2.0 is past; admin dashboard activation needed when ready. _(Waiting on: roji-tech / Admin)_
 - **Staging Password Rotation:** Neon console password rotation needed. _(Waiting on: roji-tech)_
 - **Complete Kinde Configuration on Staging:** Kinde credentials and callback URLs pending. _(Waiting on: roji-tech)_

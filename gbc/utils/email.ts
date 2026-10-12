@@ -2,6 +2,7 @@
 import nodemailer from "nodemailer";
 import type { GBCCertificateTicket } from "@/gbc/components/certificates/types";
 import { getSiteUrl } from "@/lib/siteUrl";
+import { buildCertificateEmailHtml } from "@/gbc/utils/certificateEmailTemplate";
 
 // Create Zoho SMTP transporter - using same config as working email utility
 const transporter = nodemailer.createTransport({
@@ -573,63 +574,11 @@ export async function sendGBCCertificateEmail(
     );
     const pdfBuffer = await generateCertificatePdfBuffer(ticket);
 
-    const html = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1A1024; margin: 0; padding: 0; background-color: #f4f4f4; }
-          .container { max-width: 600px; margin: 20px auto; background: #FBF8F2; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-          .header { background: #1A1024; color: white; padding: 30px 20px; text-align: center; border-bottom: 3px solid #C9A24B; }
-          .header h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.3px; }
-          .header p { margin: 6px 0 0; font-size: 12px; color: #C9A24B; letter-spacing: 1px; }
-          .content { padding: 40px 30px; text-align: center; }
-          .message-box { background: #ffffff; border-left: 4px solid #5B21B6; padding: 20px; margin: 20px 0; border-radius: 4px; text-align: left; white-space: pre-wrap; word-wrap: break-word; color: #4b5563; }
-          .button { display: inline-block; background: #5B21B6; color: white; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; margin: 30px 0; font-size: 16px; }
-          .attach-note { font-size: 13px; color: #6B6472; }
-          .footer { background: #ffffff; padding: 30px; text-align: center; color: #6c757d; font-size: 14px; border-top: 1px solid #e5e5e5; }
-          .footer a { color: #5B21B6; text-decoration: none; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>${ticket.editionRef.name} — Certificate of Attendance</h1>
-            <p>GEOSPATIAL BUILDERS COURSE</p>
-          </div>
-          <div class="content">
-            <p style="font-size: 18px;">Dear <strong>${ticket.name}</strong>,</p>
-
-            <div class="message-box">
-              ${customMessage.replace(/\n/g, "<br>")}
-            </div>
-
-            <p class="attach-note">Your certificate is attached to this email as a PDF. You can also view and verify it online:</p>
-
-            <a href="${certificateUrl}" class="button" style="color: #ffffff;">View & Verify Certificate</a>
-
-            <p style="margin-top: 30px; text-align: left;">
-              Best regards,<br>
-              <strong>The GBC Team</strong><br>
-              TwoNode Technologies
-            </p>
-          </div>
-          <div class="footer">
-            <p>
-              <a href="https://www.twonodetechnologies.com">twonodetechnologies.com</a>
-              &nbsp;&middot;&nbsp;
-              <a href="mailto:info@twonodetechnologies.com">info@twonodetechnologies.com</a>
-            </p>
-            <p style="margin-top: 15px; font-size: 12px;">
-              #${ticket.editionRef.name.replace(/\s+/g, "")} | Theme: "${ticket.editionRef.theme}"
-            </p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    const html = buildCertificateEmailHtml({
+      ticket,
+      customMessage,
+      certificateUrl,
+    });
 
     await transporter.sendMail({
       from: `"${ticket.editionRef.name} · TwoNode Technologies" <${FROM_EMAIL}>`,
