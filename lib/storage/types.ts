@@ -66,7 +66,16 @@ export interface StorageAdapter {
   /**
    * Get a secure, signed temporary download/view URL with expiration.
    */
-  getDownloadUrl(keyOrUrl: string, expiresIn?: number): Promise<string>;
+  /**
+   * A short-lived signed link. `options.downloadName` asks the provider to
+   * make the browser download the file under that name instead of showing it
+   * (honoured by the S3 provider; others ignore it).
+   */
+  getDownloadUrl(
+    keyOrUrl: string,
+    expiresIn?: number,
+    options?: { downloadName?: string }
+  ): Promise<string>;
 
   /**
    * Delete an object from storage by key or canonical URL.

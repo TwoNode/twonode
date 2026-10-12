@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaLink } from "@/components/media";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -474,16 +475,14 @@ export default function AccountsAdminPage() {
                               LASG Payment Receipt
                             </p>
                             {batch.lasgReceiptUrl ? (
-                              <a
+                              <MediaLink
                                 href={surfboardApi.files.getViewUrl(batch.lasgReceiptUrl)}
-                                target="_blank"
-                                rel="noopener noreferrer"
                                 className="inline-flex items-center gap-2 text-violet-600 hover:text-violet-700 font-medium"
                               >
                                 <FileText className="w-4 h-4" />
                                 View LASG Receipt
                                 <ExternalLink className="w-3 h-3" />
-                              </a>
+                              </MediaLink>
                             ) : (
                               <span className="text-sm text-gray-400 dark:text-gray-500 italic">
                                 No LASG receipt
@@ -552,30 +551,26 @@ export default function AccountsAdminPage() {
                                     <div className="space-y-1">
                                       {plan.queryLasgReceiptUrls?.map(
                                         (url: string, idx: number) => (
-                                          <a
+                                          <MediaLink
                                             key={`lasg-${idx}`}
                                             href={surfboardApi.files.linkFor(url)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
                                             className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700"
                                           >
                                             <FileText className="w-3 h-3" />
                                             Query LASG {idx + 1}
-                                          </a>
+                                          </MediaLink>
                                         )
                                       )}
                                       {plan.queryRemitaReceiptUrls?.map(
                                         (url: string, idx: number) => (
-                                          <a
+                                          <MediaLink
                                             key={`remita-${idx}`}
                                             href={surfboardApi.files.linkFor(url)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
                                             className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700"
                                           >
                                             <FileText className="w-3 h-3" />
                                             Query Remita {idx + 1}
-                                          </a>
+                                          </MediaLink>
                                         )
                                       )}
                                       {!plan.queryLasgReceiptUrls?.length &&
@@ -712,15 +707,13 @@ export default function AccountsAdminPage() {
                       {/* Batch Receipts for History */}
                       <div className="flex flex-wrap gap-3">
                         {batch.lasgReceiptUrl && (
-                          <a
+                          <MediaLink
                             href={surfboardApi.files.getViewUrl(batch.lasgReceiptUrl)}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 bg-violet-50 px-2 py-1 rounded"
                           >
                             <FileText className="w-3 h-3" />
                             Batch LASG Receipt
-                          </a>
+                          </MediaLink>
                         )}
                         {batch.remitaReceiptUrl && (
                           <a
@@ -764,16 +757,14 @@ export default function AccountsAdminPage() {
                                 })) || []),
                               ])
                               .map((item, idx) => (
-                                <a
+                                <MediaLink
                                   key={idx}
                                   href={surfboardApi.files.linkFor(item.url)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 bg-violet-50 px-2 py-1 rounded"
                                 >
                                   <FileText className="w-3 h-3" />
                                   {item.label}
-                                </a>
+                                </MediaLink>
                               ))}
                           </div>
                         </div>

@@ -97,4 +97,20 @@ describe("GET /api/v1/surfboard/files/view", () => {
     const res = await get("surfboard/user-1/../user-2/a.pdf");
     expect(res.status).toBe(400);
   });
+
+  it("asks for a download name only when download=1", async () => {
+    await get("surfboard/user-1/pdf/a.pdf");
+    expect(mocks.sign.mock.calls[0][2]).toEqual({ downloadName: undefined });
+
+    mocks.sign.mockClear();
+    const res = await (
+      GET as unknown as (req: NextRequest) => Promise<Response>
+    )(
+      new NextRequest(
+        "http://localhost/api/v1/surfboard/files/view?url=surfboard%2Fuser-1%2Fpdf%2Fa.pdf&download=1&name=Plan.pdf"
+      )
+    );
+    expect(res.status).toBe(307);
+    expect(mocks.sign.mock.calls[0][2]).toEqual({ downloadName: "Plan.pdf" });
+  });
 });

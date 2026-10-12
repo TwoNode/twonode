@@ -13,7 +13,7 @@ import {
   StoragePresignedUploadResult,
   SurfboardFileType,
 } from "../types";
-import { buildStorageKey, extractKeyFromUrl, toBuffer } from "../utils";
+import { buildStorageKey, extractKeyFromUrl, toBuffer, attachmentDisposition } from "../utils";
 
 export class S3StorageAdapter implements StorageAdapter {
   name = "s3" as const;
@@ -107,13 +107,20 @@ export class S3StorageAdapter implements StorageAdapter {
     };
   }
 
-  async getDownloadUrl(keyOrUrl: string, expiresIn = 300): Promise<string> {
+  async getDownloadUrl(
+    keyOrUrl: string,
+    expiresIn = 300,
+    options?: { downloadName?: string }
+  ): Promise<string> {
     const key = extractKeyFromUrl(keyOrUrl);
     return getSignedUrl(
       this.client,
       new GetObjectCommand({
         Bucket: this.bucket,
         Key: key,
+        ResponseContentDisposition: options?.downloadName
+          ? attachmentDisposition(options.downloadName)
+          : undefined,
       }),
       { expiresIn }
     );

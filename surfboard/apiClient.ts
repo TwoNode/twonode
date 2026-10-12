@@ -1345,6 +1345,12 @@ export const surfboardApi = {
     getViewUrl: (urlOrKey: string) =>
       `${BASE}/files/view?url=${encodeURIComponent(urlOrKey)}`,
 
+    /** A link that saves the file (under `name`) instead of showing it; never leaves the page. */
+    getDownloadUrl: (urlOrKey: string, name?: string) =>
+      `${BASE}/files/view?url=${encodeURIComponent(urlOrKey)}&download=1${
+        name ? `&name=${encodeURIComponent(name)}` : ""
+      }`,
+
     /** The gateway link for our own files, the link unchanged for anything else (e.g. Remita receipts). */
     linkFor: (urlOrKey: string) =>
       isStorageFileRef(urlOrKey)

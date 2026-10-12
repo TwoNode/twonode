@@ -4,6 +4,7 @@
  * Uses Remita RRR for payment
  */
 
+import { useMediaViewer } from "@/components/media";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -125,8 +126,7 @@ export function BatchSubmissionModal({
     planNumber: string;
   }>({ isOpen: false, data: null, planNumber: "" });
 
-  const [viewingPdfUrl, setViewingPdfUrl] = useState<string | null>(null);
-  const [viewingPdfPlanNumber, setViewingPdfPlanNumber] = useState<string>("");
+  const mediaViewer = useMediaViewer();
   const [uploadingPlanId, setUploadingPlanId] = useState<string | null>(null);
 
   const handleVerifyPlan = async (plan: Plan) => {
@@ -635,12 +635,16 @@ export function BatchSubmissionModal({
                         <div className="flex items-center gap-1.5 text-xs text-blue-600">
                           <button
                             onClick={() => {
-                              setViewingPdfUrl(
-                                plan.redCopyFileUrl
-                                  ? surfboardApi.files.getViewUrl(plan.redCopyFileUrl)
-                                  : null
-                              );
-                              setViewingPdfPlanNumber(plan.planNumber);
+                              if (!plan.redCopyFileUrl) return;
+                              mediaViewer?.open([
+                                {
+                                  href: surfboardApi.files.getViewUrl(
+                                    plan.redCopyFileUrl
+                                  ),
+                                  name: `Record Copy - ${plan.planNumber}.pdf`,
+                                  kind: "pdf",
+                                },
+                              ]);
                             }}
                             className="flex items-center gap-1 hover:text-blue-800 transition-colors cursor-pointer"
                             title="View PDF record copy in popup"
@@ -897,39 +901,6 @@ export function BatchSubmissionModal({
         resultData={activeVerificationModal.data}
         planNumber={activeVerificationModal.planNumber}
       />
-
-      <Dialog
-        open={!!viewingPdfUrl}
-        onOpenChange={() => setViewingPdfUrl(null)}
-      >
-        <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-4">
-          <DialogHeader className="pb-2">
-            <DialogTitle>View Record Copy - {viewingPdfPlanNumber}</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 w-full h-full border rounded overflow-hidden bg-gray-100 dark:bg-white/10">
-            {viewingPdfUrl && (
-              <iframe
-                src={viewingPdfUrl}
-                className="w-full h-full"
-                title={`Record Copy PDF ${viewingPdfPlanNumber}`}
-              />
-            )}
-          </div>
-          <DialogFooter className="pt-2 flex items-center justify-between sm:justify-between w-full">
-            {viewingPdfUrl && (
-              <a
-                href={viewingPdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-              >
-                Open in new tab ↗
-              </a>
-            )}
-            <Button onClick={() => setViewingPdfUrl(null)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Dialog>
   );
 }
