@@ -5,7 +5,12 @@ import {
   StorageUploadInput,
   StorageUploadResult,
 } from "../types";
-import { buildStorageKey, extractKeyFromUrl, toBuffer } from "../utils";
+import {
+  buildStorageKey,
+  extractKeyFromUrl,
+  resolveWithin,
+  toBuffer,
+} from "../utils";
 
 export class LocalStorageAdapter implements StorageAdapter {
   name = "local" as const;
@@ -27,7 +32,7 @@ export class LocalStorageAdapter implements StorageAdapter {
       planNumber: input.planNumber,
     });
 
-    const targetPath = path.join(this.uploadDir, key);
+    const targetPath = resolveWithin(this.uploadDir, key);
     const targetDir = path.dirname(targetPath);
 
     await fs.mkdir(targetDir, { recursive: true });
@@ -48,13 +53,15 @@ export class LocalStorageAdapter implements StorageAdapter {
     if (keyOrUrl.startsWith("http://") || keyOrUrl.startsWith("https://")) {
       return keyOrUrl;
     }
+    resolveWithin(this.uploadDir, key); // refuse keys that climb out of the upload folder
     return `${this.baseUrl}/${key}`;
   }
 
   async delete(keyOrUrl: string): Promise<boolean> {
     const key = extractKeyFromUrl(keyOrUrl);
-    const targetPath = path.join(this.uploadDir, key);
+    let targetPath = key;
     try {
+      targetPath = resolveWithin(this.uploadDir, key);
       await fs.unlink(targetPath);
       return true;
     } catch (error: any) {
@@ -65,7 +72,9 @@ export class LocalStorageAdapter implements StorageAdapter {
     }
   }
 
-  async deleteMultiple(items: Array<{ key?: string; url?: string }>): Promise<boolean> {
+  async deleteMultiple(
+    items: Array<{ key?: string; url?: string }>
+  ): Promise<boolean> {
     for (const item of items) {
       const keyOrUrl = item.key || item.url;
       if (keyOrUrl) await this.delete(keyOrUrl);

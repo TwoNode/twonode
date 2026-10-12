@@ -1,18 +1,24 @@
 import crypto from "crypto";
+import { after } from "next/server";
 import prisma from "@/lib/prisma";
 import { ValidationError, RateLimitError } from "@/lib/api/errors";
 import { sendGBCCertificateOtpEmail } from "@/gbc/utils/email";
 
 // ADR-0008: GBC certificate access: verify publicly, download with an emailed code
-// Keyed HMAC secret: uses CERTIFICATE_OTP_SECRET if set, falling back to existing auth secrets
+// Keyed HMAC secret. In production CERTIFICATE_OTP_SECRET is required: falling
+// back to an auth secret would let a leak of that secret forge download tokens,
+// and a constant in the source would make them forgeable by anyone.
 function getOtpSecret(): string {
-  const secret =
-    process.env.CERTIFICATE_OTP_SECRET ||
+  const dedicated = process.env.CERTIFICATE_OTP_SECRET;
+  if (dedicated) return dedicated;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("CERTIFICATE_OTP_SECRET is not set");
+  }
+  return (
     process.env.AUTH_SECRET ||
     process.env.NEXTAUTH_SECRET ||
-    process.env.KINDE_CLIENT_SECRET ||
-    "twonode-cert-otp-fallback-secret";
-  return secret;
+    "twonode-cert-otp-dev-only-secret"
+  );
 }
 
 const OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
@@ -42,12 +48,24 @@ function computeSha256(val: string): string {
   return crypto.createHash("sha256").update(val).digest("hex");
 }
 
-/** Check if email is currently locked out due to repeated failed OTP attempts */
-async function isEmailLockedOut(normalizedEmail: string): Promise<boolean> {
+/**
+ * Failed attempts are tracked per email AND caller IP. A lockout that counted
+ * the email alone let anyone lock a holder out by failing on purpose; now an
+ * attacker only locks out their own IP. Guessing is still bounded by the
+ * per-code attempt limit and the per-email code request limit.
+ */
+const failKey = (normalizedEmail: string, ip: string) =>
+  `cert_fail:${normalizedEmail}:${ip}`;
+
+/** Check if this email + IP is currently locked out due to repeated failed OTP attempts */
+async function isEmailLockedOut(
+  normalizedEmail: string,
+  ip: string
+): Promise<boolean> {
   const since = new Date(Date.now() - LOCKOUT_WINDOW_MS);
   const count = await prisma.loginAttempt.count({
     where: {
-      identifier: `cert_fail:${normalizedEmail}`,
+      identifier: failKey(normalizedEmail, ip),
       createdAt: { gt: since },
     },
   });
@@ -55,11 +73,11 @@ async function isEmailLockedOut(normalizedEmail: string): Promise<boolean> {
 }
 
 /** Record a failed attempt for lockout tracking across all codes */
-async function recordFailedAttempt(normalizedEmail: string) {
+async function recordFailedAttempt(normalizedEmail: string, ip: string) {
   try {
     await prisma.loginAttempt.create({
       data: {
-        identifier: `cert_fail:${normalizedEmail}`,
+        identifier: failKey(normalizedEmail, ip),
       },
     });
   } catch (err) {
@@ -107,7 +125,7 @@ export async function requestCertificateOtp({
   }
 
   // 1. Check if email is locked out
-  if (await isEmailLockedOut(normalized)) {
+  if (await isEmailLockedOut(normalized, ip)) {
     return { ...GENERIC_OTP_RESPONSE, nonce };
   }
 
@@ -170,12 +188,21 @@ export async function requestCertificateOtp({
     },
   });
 
-  // 6. Send email strictly to the stored address (never typed address)
-  await sendGBCCertificateOtpEmail({
-    to: ticket.email,
-    name: ticket.name,
-    code,
-  });
+  // 6. Send email strictly to the stored address (never typed address).
+  // Sent after the response so a slow mail call does not reveal that the
+  // address has an issued certificate (the "no ticket" branch returns fast).
+  const send = () =>
+    sendGBCCertificateOtpEmail({
+      to: ticket.email,
+      name: ticket.name,
+      code,
+    }).catch((err) => console.error("Certificate OTP email failed:", err));
+  try {
+    after(send);
+  } catch {
+    // Outside a request scope (tests, scripts): send inline.
+    await send();
+  }
 
   if (process.env.NODE_ENV !== "production") {
     console.log(`[dev] Certificate OTP for ${ticket.email}: ${code}`);
@@ -192,10 +219,12 @@ export async function verifyCertificateOtpAndIssueToken({
   email,
   code,
   nonce,
+  ip,
 }: {
   email: string;
   code: string;
   nonce: string;
+  ip: string;
 }): Promise<{ token: string; ticketNumbers: string[] }> {
   const normalized = normalizeEmail(email);
   const cleanCode = (code || "").trim();
@@ -211,7 +240,7 @@ export async function verifyCertificateOtpAndIssueToken({
   }
 
   // 1. Check if email is locked out
-  if (await isEmailLockedOut(normalized)) {
+  if (await isEmailLockedOut(normalized, ip)) {
     throw new RateLimitError();
   }
 
@@ -226,7 +255,7 @@ export async function verifyCertificateOtpAndIssueToken({
   });
 
   if (!activeOtp) {
-    await recordFailedAttempt(normalized);
+    await recordFailedAttempt(normalized, ip);
     throw new ValidationError({
       code: "Invalid or expired code. Please request a new code.",
     });
@@ -235,7 +264,7 @@ export async function verifyCertificateOtpAndIssueToken({
   // 3. Check browser binding nonce
   const givenNonceHash = computeSha256(nonce);
   if (activeOtp.nonceHash !== givenNonceHash) {
-    await recordFailedAttempt(normalized);
+    await recordFailedAttempt(normalized, ip);
     throw new ValidationError({
       code: "Code is not valid for this browser session. Please request a new code.",
     });
@@ -253,7 +282,7 @@ export async function verifyCertificateOtpAndIssueToken({
   });
 
   if (reserved.count === 0) {
-    await recordFailedAttempt(normalized);
+    await recordFailedAttempt(normalized, ip);
     throw new ValidationError({
       code: "Too many attempts for this code. Please request a new code.",
     });
@@ -269,7 +298,7 @@ export async function verifyCertificateOtpAndIssueToken({
     crypto.timingSafeEqual(storedHmacBuf, givenHmacBuf);
 
   if (!match) {
-    await recordFailedAttempt(normalized);
+    await recordFailedAttempt(normalized, ip);
     throw new ValidationError({ code: "Incorrect code. Please try again." });
   }
 

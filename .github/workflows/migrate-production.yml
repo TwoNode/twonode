@@ -52,6 +52,6 @@ jobs:
 
       - name: prisma migrate status (post-flight)
         if: always()
-        run: npx prisma migrate status || true
+        run: npx prisma migrate status
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}

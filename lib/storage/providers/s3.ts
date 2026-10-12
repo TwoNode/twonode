@@ -22,29 +22,11 @@ export class S3StorageAdapter implements StorageAdapter {
   private region: string;
 
   constructor() {
-    this.region =
-      process.env.SURFBOARD_AWS_REGION ||
-      process.env.AWS_REGION ||
-      process.env.REVA_AWS_REGION ||
-      "us-east-1";
+    this.region = process.env.AWS_REGION || "us-east-1";
+    this.bucket = process.env.AWS_BUCKET_NAME || "";
 
-    this.bucket =
-      process.env.SURFBOARD_AWS_BUCKET_NAME ||
-      process.env.AWS_BUCKET_NAME ||
-      process.env.REVA_AWS_BUCKET_NAME ||
-      "";
-
-    const accessKeyId =
-      process.env.SURFBOARD_AWS_ACCESS_KEY_ID ||
-      process.env.AWS_ACCESS_KEY_ID ||
-      process.env.REVA_AWS_ACCESS_KEY_ID ||
-      "";
-
-    const secretAccessKey =
-      process.env.SURFBOARD_AWS_SECRET_ACCESS_KEY ||
-      process.env.AWS_SECRET_ACCESS_KEY ||
-      process.env.REVA_AWS_SECRET_ACCESS_KEY ||
-      "";
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID || "";
+    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || "";
 
     this.client = new S3Client({
       region: this.region,
