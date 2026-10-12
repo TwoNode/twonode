@@ -665,7 +665,7 @@ export function SubmittedBatchesModal({
                                 {batch.lasgReceiptUrl ? (
                                   <DropdownMenuItem asChild>
                                     <a
-                                      href={batch.lasgReceiptUrl}
+                                      href={surfboardApi.files.getViewUrl(batch.lasgReceiptUrl)}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                     >

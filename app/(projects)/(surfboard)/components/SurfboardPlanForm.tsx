@@ -181,8 +181,8 @@ const FileList = ({ files, onDelete, type }: FileListProps) => {
               <div className="flex items-center space-x-2 min-w-0">
                 {getFileIcon(fileName)}
                 {isUrl ? (
-                  <Link
-                    href={href || ""}
+                  <a
+                    href={href ? surfboardApi.files.getViewUrl(href) : ""}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:underline truncate max-w-xs"
@@ -190,7 +190,7 @@ const FileList = ({ files, onDelete, type }: FileListProps) => {
                     onClick={(e) => e.stopPropagation()}
                   >
                     {displayText}
-                  </Link>
+                  </a>
                 ) : (
                   <span
                     className="text-xs text-gray-700 truncate max-w-xs"

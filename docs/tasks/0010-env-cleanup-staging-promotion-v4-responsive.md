@@ -79,3 +79,5 @@ See issue I-004. Do not turn on Block Public Access for the whole bucket: the GB
 
 - Staging (`main`) is protected by Vercel Authentication. To test it from a terminal: `vercel curl <path> --deployment <staging url>` (needs `vercel login`). Plain `curl` gets a 302 to the Vercel login page.
 - `.env.example` and `SURFBOARD_ENV_TEMPLATE.env` now list only the plain `AWS_*` names.
+- [x] **Second promotion 2026-10-12:** certificate email redesign (#363, #365) and docs (#364) promoted `dev` → `main` → `prod` (#366, #367). Production build Ready; home, `/v4`, `/v4/contact`, `/v2/contact` 200; bogus verify and certificate pages 404; cron 401; file gateway 401; old certificate PDF route 403; download without a token 400. Not tested: a real certificate email send.
+- [ ] **Vercel "Git information retrieval failed" on two Preview builds** (feature-branch commits, not production). Cause not found; check Project Settings → Git (the repo remote still uses the old lowercase `twonode/twonode` URL). _(Waiting on: roji-tech, Vercel dashboard)_

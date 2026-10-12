@@ -1,6 +1,6 @@
 # Current Tasks (Live Dashboard)
 
-State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate page leak fix and the `AWS_*` rename are live. PR #363 (certificate email redesign) is open against `dev`. Vercel env cleaned up (see TASK-0010). 882/882 tests passing.
+State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate page leak fix and the `AWS_*` rename are live. The certificate email redesign (#363, #365) and the docs updates (#364) reached `prod` on 2026-10-12 through #366 (`dev` → `main`) and #367 (`main` → `prod`); live checks passed. Vercel env cleaned up (see TASK-0010). 882/882 tests passing.
 
 ---
 
@@ -17,6 +17,26 @@ State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate
 - [ ] **Surveyor logo through the file gateway before `surfboard/*` goes private.** _(Waiting on: roji-tech go)_
 - [ ] **Remove `REVA_AWS_*` from Vercel.** Prod runs on `AWS_*` now. _(Waiting on: roji-tech go after seeing the exact list)_
 - [x] **/v4 mobile and tablet responsiveness** (PR #360, open for review). (Done 2026-10-12)
+
+---
+
+## Planned Session Batch: TASK-0011 — S3 privacy and key layout
+
+**Batch Reference:** [TASK-0011](./0011-s3-privacy-and-key-layout.md)  
+**Status:** `Planned`. Plan and [ADR-0013](../adr/0013-bucket-key-layout-public-and-private-prefixes.md) (Proposed) written 2026-10-12. Waiting on roji-tech: go for Phase 1 (surveyor logo through the gateway, then policy v1), accept ADR-0013, and an identity or the AWS admin that can write the bucket policy.
+
+- [ ] **Phase 1:** `surfboard/` and `uploads/PrivateSurveyPlans/` private. _(Waiting on: roji-tech go)_
+- [ ] **Phase 2:** REVA files private with signed links.
+- [ ] **Phase 3:** GBC key layout `public/gbc/<edition>/…`, QR codes under `private/gbc/<edition>/qrcodes/`.
+- [ ] **Phase 5 (optional):** move the legacy files (copy, rewrite rows in a guarded transaction, delete after a grace period). Not needed for privacy.
+- [ ] **Phase 4:** cleanup of odd folders, junk and orphans (separate go each).
+
+---
+
+## Planned Session Batch: TASK-0012 — OSSG integration and the red copy flow
+
+**Batch Reference:** [TASK-0012](./0012-ossg-integration-and-red-copy.md)  
+**Status:** `Planned`, paused 2026-10-12. Resume from "Where we stopped" in the task file. Red copy private: decided 2026-10-12. Hash ledger, no QR, `.jpg`: decided 2026-10-12 (ADR-0014 Accepted). Waiting on roji-tech: the questions to OSSG.
 
 ---
 
