@@ -33,6 +33,13 @@ State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate
 
 ---
 
+## Planned Session Batch: TASK-0012 — OSSG integration and the red copy flow
+
+**Batch Reference:** [TASK-0012](./0012-ossg-integration-and-red-copy.md)  
+**Status:** `Planned`, paused 2026-10-12. Resume from "Where we stopped" in the task file. Waiting on roji-tech: yes to red copy private (ADR-0013) and the hash ledger (ADR-0014), and the questions to OSSG.
+
+---
+
 ## Previous Session Batch: TASK-0009 — /v4: edits on a copy of the /v3 port
 
 **Batch Reference:** [TASK-0009](./0009-v4-edits.md)  

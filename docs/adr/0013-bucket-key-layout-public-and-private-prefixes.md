@@ -25,6 +25,7 @@ Problems:
 2. **Public files go under `public/`.** GBC website images: `public/gbc/<edition>/{gallery,speakers,logos}/…`. `<edition>` is the per-edition settings key.
 3. **New private files go under `private/`; Surfboard keeps its own layout.** New REVA uploads use `private/reva/<requestId>/…` and GBC ticket QR codes use `private/gbc/<edition>/qrcodes/…`. Links are signed after checking the database that the caller may see that request (REVA) or ticket (GBC). `surfboard/<userId>/…` stays exactly as ADR-0012 defines it, because the file gateway's ownership check depends on that prefix; it is private by default like everything else not under `public/`.
 4. **Existing objects are not moved by default.** The database stores full URLs, so a move means rewriting rows and risking links already sent. Making them private needs only the policy change; signed links work from the stored key wherever it is. Moving is optional tidy-up, done per group with a copy first (TASK-0011 Phase 5).
+5. **Red copy files are private.** They are stamped cadastral plans (ADR-0012). New red copies use `surfboard/<userId>/redcopy/<plan number, normalised>.<ext>`. The OSSG flow sends file content, so no public link is needed; if a link is ever required it is a signed link that expires after a day or two. See [ADR-0014](./0014-ossg-submissions-recorded-in-a-hash-ledger.md).
 
 ## Consequences
 
