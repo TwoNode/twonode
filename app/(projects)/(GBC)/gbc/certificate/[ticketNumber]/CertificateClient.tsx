@@ -163,9 +163,28 @@ export default function CertificateClient({
       }
 
       setStep("success");
-      // Trigger download using the short-lived token
-      const downloadUrl = `/api/v1/gbc/certificates/download?token=${encodeURIComponent(data.data.token)}&ticketNumber=${encodeURIComponent(ticket.ticketNumber)}`;
-      window.location.href = downloadUrl;
+      // Download with the short-lived token in a POST body (never in the URL)
+      const pdfRes = await fetch("/api/v1/gbc/certificates/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: data.data.token,
+          ticketNumber: ticket.ticketNumber,
+        }),
+      });
+      if (!pdfRes.ok) {
+        throw new Error(
+          "Could not download the certificate. Please try again."
+        );
+      }
+      const blobUrl = URL.createObjectURL(await pdfRes.blob());
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `GBC-Certificate-${ticket.ticketNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(blobUrl);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to verify code");
     } finally {

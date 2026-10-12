@@ -1,6 +1,6 @@
 # Current Tasks (Live Dashboard)
 
-State as of 2026-10-11: dev one trivial commit ahead of main and prod. PR #340 (docs) open. A project review found two live P0 problems (certificate page data leak, public surveyor files); see TASK-0007. 867/867 tests passing.
+State as of 2026-10-12: the review fixes #341–#345 are on `dev` and `main` but NOT on `prod`. Open PRs: the P2 security hardening and the /v4 proof numbers (#353). 873+ tests passing. See TASK-0007 and TASK-0009.
 
 ---
 
@@ -30,11 +30,12 @@ State as of 2026-10-11: dev one trivial commit ahead of main and prod. PR #340 (
 
 **Batch Reference:** [TASK-0007](./0007-project-review-findings-oct-11.md)  
 **Active Branch:** `docs/review-findings-2026-10-11`  
-**Status:** `In Progress`. Fixes #341–#345 are merged to `dev`, not yet on `main`/`prod`. `CERTIFICATE_OTP_SECRET` is set. Waiting on roji-tech: go to promote, and the AWS admin for the bucket (see I-004 in the issues register).
+**Status:** `In Progress`. Fixes #341–#345 are merged to `dev` and `main`, not yet on `prod`. `CERTIFICATE_OTP_SECRET` is set. Waiting on roji-tech: go to promote, and the AWS admin for the bucket (see I-004 in the issues register).
 
-- [ ] **P0: public certificate page leaks attendee data (live on prod).** _(Waiting on: go to fix)_
+- [x] **P0: public certificate page leaks attendee data.** Fixed in PR #341 (on `dev` and `main`). Still leaking on `prod` until promoted. _(Waiting on: roji-tech go to promote)_
 - [ ] **P0: surveyor files are still publicly readable in S3.** _(Waiting on: roji-tech / AWS admin)_
-- [ ] **P1 and P2 items:** QR/email links, PDF frozen fields, nobody can download yet, OTP secret, `expiresIn` cap, CI `|| true`, smaller items. Full list in TASK-0007.
+- [x] **P1 items and the CI check:** QR/email links, PDF frozen fields, OTP secret, `expiresIn` cap, CI `|| true`, and the 3 test tickets: all done (PRs #342, #343). (Done 2026-10-11)
+- [x] **P2 smaller items** (timing, lockout, token in URL, client IP, local paths): PR #344 plus the hardening PR. Only the optional captcha remains. _(Waiting on: roji-tech decision)_
 
 ---
 
