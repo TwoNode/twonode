@@ -27,7 +27,7 @@
 - [x] Real TwoNode logo (`/logo.svg`) instead of the prototype's placeholder mark, header and footer
 - [x] Text floor of 12px (was 9–11px) via an appended override block in `v4.css`: undersized text elements 21 → 0 after the second pass
 - [x] Touch targets of 44px for footer links, text links, story chapter index, brand and (on touch devices) nav and menu button
-- [x] **Proof numbers hard-coded** in `app/v4/data/proof.ts` as the prototype had them (9,567 plans, 38,431 beacons, 4 states, since 2023), at roji-tech's instruction. Not read from the database; prod showed 2,358 plans and 11,493 pillars on 2026-10-11 (noted in the file). (Done 2026-10-11)
+- [x] **Proof numbers hard-coded** in `app/v4/data/proof.ts`. First as the prototype had them; then, on 2026-10-12, changed to figures from the live database (read-only count 2026-10-11) rounded down with a "+": 125+ registered surveyors (127 Surfboard USER accounts), 2,300+ plans (2,358), 11,000+ beacons (11,493); places Lagos, Ogun, Ondo, Oyo, FCT; since 2025. Not read from the database at runtime.
 - [x] Pages added: `/v4/contact`, `/v4/insights`, `/v4/insights/[slug]`, `/v4/industries/[slug]` (data copied from `/v2`: `app/v4/data/`). Header gained "Insights"; "Let's talk" goes to `/v4/contact` off the home page.
 - [x] Active / Next chips on the three work cards, the footer and industry pages (Surfboard and GBC Active, REVA Next, as on `/v2`)
 - [x] Footer redesigned (navy, gradient edge, logo, tagline, call to action, social pills, four link columns, RC number and address, back to top); no "all systems active" claim
@@ -35,7 +35,7 @@
 ### Module B: Not done yet (needs a decision or more work)
 
 - [ ] **Survey plan photo** (real client plan; crop shows beacon labels). _(Waiting on: roji-tech)_
-- [ ] **Phone number** `+234 916 0002 740` vs live `/v2` `+234 706 9227 677`; social links. _(Waiting on: roji-tech)_
+- [x] **Phone number** `+234 916 0002 740` confirmed correct; the old number replaced on the live site in PR #352. Social links still to confirm. _(Waiting on: roji-tech)_
 - [ ] Insight articles still carry the `/v2` draft text ("Draft — to be replaced with the real write-up."); write the real copy before /v4 goes public _(Waiting on: roji-tech)_
 - [ ] `/v4` data files are copies of `/v2`'s; keep one source when `/v2` is retired
 - [ ] Hero first frame is mostly empty; tablet layout review; diagram text sizes inside the canvas

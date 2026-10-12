@@ -1,26 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import {
   handleApiError,
   ValidationError,
   NotFoundError,
 } from "@/lib/api/errors";
+import { validateBody } from "@/lib/api/validate";
 import { verifyDownloadToken } from "@/gbc/services/certificateOtpService";
 import { getTicketByNumber } from "@/gbc/services/ticketService";
 import { generateCertificatePdfBuffer } from "@/gbc/services/certificatePdfService";
 
 export const runtime = "nodejs";
 
-// ADR-0008: Stream PDF buffer after verifying short-lived download token
-export async function GET(req: NextRequest) {
-  try {
-    const token = req.nextUrl.searchParams.get("token");
-    const ticketNumber = req.nextUrl.searchParams.get("ticketNumber");
+const bodySchema = z.object({
+  token: z.string().min(1),
+  ticketNumber: z.string().min(1),
+});
 
-    if (!token || !ticketNumber) {
-      throw new ValidationError({
-        download: "Both download token and ticketNumber are required",
-      });
-    }
+// ADR-0008: Stream PDF buffer after verifying short-lived download token.
+// POST with the token in the body, not GET with it in the URL: URLs end up in
+// server logs, browser history and Referer headers.
+export async function POST(req: NextRequest) {
+  try {
+    const { token, ticketNumber } = await validateBody(req, bodySchema);
 
     // 1. Verify signed token signature and expiry
     const { ticketNumbers } = verifyDownloadToken(token);

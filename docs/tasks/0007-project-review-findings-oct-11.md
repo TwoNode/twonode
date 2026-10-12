@@ -1,6 +1,6 @@
 # TASK-0007: Session Batch — 2026-10-11 (Project Review: Certificate Leak, File Privacy, Hardening)
 
-- **Status:** In Progress (PRs #341–#345 merged to dev; waiting to promote; bucket privacy still open)
+- **Status:** In Progress (all code fixes merged to dev and main except the P2 fix PR; waiting to promote to prod; bucket privacy still open)
 - **Priority:** Critical
 - **Assignee:** Maintainer / Agent
 - **Target Branch / PR:** `docs/review-findings-2026-10-11` / PR #340 (record only; fixes get their own branches)
@@ -29,17 +29,18 @@ Record the findings of the 2026-10-11 review of the work done by other AIs since
 - [x] **P1: OTP signing key falls back to other secrets and a hard-coded string.** `certificateOtpService.ts` uses `CERTIFICATE_OTP_SECRET`, else `AUTH_SECRET`, `NEXTAUTH_SECRET`, `KINDE_CLIENT_SECRET`, else a constant in the source. Set a dedicated `CERTIFICATE_OTP_SECRET` in Vercel and make the code fail closed in production when it is missing. Merged to dev 2026-10-11 (PR #342); secret set in Vercel by roji-tech; not yet on main/prod.
 - [x] **P1: signed file links can be made long-lived.** `files/view` takes `expiresIn` from the query string without a cap, so the "5-minute" link can be minted for days. Clamp it. Also review the ownership test (`contains: key` on the plan's URL fields, and trusting URL fields a user can set). Merged to dev 2026-10-11 (PR #343); not yet on main/prod.
 - [x] **P2: CI hides migration problems.** `migrate-production.yml` now ends both `prisma migrate status` steps with `|| true`. Keep it on the pre-flight step only; the post-flight check should fail the job. Merged to dev 2026-10-11 (PR #343); not yet on main/prod.
-- [ ] **P2: smaller items.** Existence timing difference in `requestCertificateOtp` (the email send is slower than the 120 ms delay); an attacker can lock out or flood a holder's email within the limits; the download token travels in the URL query; `getClientIp` trusts the first `x-forwarded-for` value (fine on Vercel, spoofable elsewhere); the local storage adapter joins keys without normalising (dev only). **(OTP timing: PR #344 open; the rest not started)**
+- [x] **P2: smaller items, fixed in this batch:** OTP email sent after the response (PR #344); lockout counted per email and IP; certificate download token moved from the URL to a POST body and the old GET route retired; `getClientIp` prefers platform headers; local storage adapter refuses keys that leave the upload folder (fix PR open, 2026-10-12).
+- [ ] **P2: still open (optional).** An attacker can still use up a holder's 5 code requests per hour and send them emails; a captcha (such as Cloudflare Turnstile) on the request form would stop it. Needs a new service and keys. _(Waiting on: roji-tech decision)_
 
 ---
 
 ## 3. Unified Verification Gates
 
-- [ ] `tsc --noEmit` clean
-- [ ] `vitest run` clean
-- [ ] Page source of `/gbc/certificate/<ticketNumber>` and `/gbc/verify/<publicId>` checked for leaked fields after the fix
+- [x] `tsc --noEmit` clean (each fix branch)
+- [x] `vitest run` clean (867 to 873+ passing across the fix branches)
+- [ ] (Check after promotion to prod) Page source of `/gbc/certificate/<ticketNumber>` and `/gbc/verify/<publicId>` checked for leaked fields after the fix
 - [ ] Anonymous request to a stored `reva-store` object returns 403 after the bucket change
-- [ ] Guarded data change verified (backup, exact row count, verification) for the 3 backfilled tickets
+- [x] Guarded data change verified: no backfill was needed; sent count reset to 0 for the 3 test tickets with a backup, an exact-3-rows guard and a check (2026-10-11)
 
 ---
 

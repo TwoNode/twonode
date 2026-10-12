@@ -38,6 +38,14 @@ export async function recordAttempt(identifier: string, userId?: string) {
 export function getClientIp(req: {
   headers: { get(name: string): string | null };
 }): string {
-  const raw = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
-  return raw.split(",")[0].trim();
+  // On Vercel the platform sets x-vercel-forwarded-for / x-real-ip itself and
+  // overwrites anything the caller sends, so prefer them. x-forwarded-for is the
+  // fallback; its first value is client-controlled anywhere that is not behind a
+  // proxy that rewrites it, so it must not be relied on outside Vercel.
+  const raw =
+    req.headers.get("x-vercel-forwarded-for") ??
+    req.headers.get("x-real-ip") ??
+    req.headers.get("x-forwarded-for") ??
+    "127.0.0.1";
+  return raw.split(",")[0].trim() || "127.0.0.1";
 }
