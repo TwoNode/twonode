@@ -20,6 +20,18 @@ State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate
 
 ---
 
+## Planned Session Batch: TASK-0011 — S3 privacy and key layout
+
+**Batch Reference:** [TASK-0011](./0011-s3-privacy-and-key-layout.md)  
+**Status:** `Planned`. Plan and [ADR-0013](../adr/0013-bucket-key-layout-public-and-private-prefixes.md) (Proposed) written 2026-10-12. Waiting on roji-tech: go for Phase 1 (surveyor logo through the gateway, then policy v1), accept ADR-0013, and an identity or the AWS admin that can write the bucket policy.
+
+- [ ] **Phase 1:** `surfboard/` and `uploads/PrivateSurveyPlans/` private. _(Waiting on: roji-tech go)_
+- [ ] **Phase 2:** REVA files private with signed links.
+- [ ] **Phase 3:** GBC key layout `public/gbc/<edition>/…`, QR codes private.
+- [ ] **Phase 4:** cleanup of odd folders, junk and orphans (separate go each).
+
+---
+
 ## Previous Session Batch: TASK-0009 — /v4: edits on a copy of the /v3 port
 
 **Batch Reference:** [TASK-0009](./0009-v4-edits.md)  

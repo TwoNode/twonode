@@ -43,6 +43,10 @@ Newest first. Status: Open, Fix in PR, Fixed, Won't fix. Source `R1` = review of
 
 | ID | P | Type | Issue | Live on prod | Status | Link |
 |---|---|---|---|---|---|---|
+| I-023 | P3 | File storage | 51 of 94 top-level `surfboard/` folders are not user IDs (numeric, 3-letter codes, test folders). The file gateway only allows keys under the caller's own `surfboard/<userId>/`, so files there are probably unreachable through it. Not tested | Yes | Open | TASK-0011 |
+| I-022 | P3 | File storage | `GBC2/` is hard-coded in `gbc/utils/aws-s3.ts` for every GBC upload; GBC 3.0 uploads would land under the 2.0 name | Yes | Open (ADR-0013 proposes `public/gbc/<edition>/…`) | TASK-0011 |
+| I-021 | P1 | File storage | `uploads/PrivateSurveyPlans/` (about 360 old survey plan scans) is publicly readable; no REVA record points at it | Yes | Open (private in policy v1) | TASK-0011 |
+| I-020 | P1 | Access control | REVA stores permanent public links for client documents, site photos and reports (`reva/uploads/`), so anyone with a link can bypass the OTP download | Yes | Open (needs signed links in the REVA pages first) | TASK-0011 |
 | I-019 | P2 | File storage | Surveyor logo (`SurfboardUser.logo`, 22 rows under `surfboard/`) is shown with a plain `<img src>` on the Surfboard settings page; it breaks once `surfboard/*` is private. Serve it through the file gateway first | Yes | Open | TASK-0010 |
 | I-018 | P1 | Access control | `/api/webhooks/redcopy` skips its secret check when `REDCOPY_WEBHOOK_SECRET` is unset, so anyone could post red copy status updates (`app/api/webhooks/redcopy/route.ts`). Fail closed when the secret is missing | Unknown (depends on Vercel) | Open (code still fails open) | review 2026-10-12 |
 | I-017 | P1 | Access control | `/api/cron/subscription-expiry-reminders` skips its check when `CRON_SECRET` is unset, so anyone could trigger reminder emails/SMS. Fail closed when the secret is missing | Unknown (depends on Vercel) | Open: `CRON_SECRET` set on Vercel Production and Preview 2026-10-12 (applies on next deploy); code still fails open if it is missing | review 2026-10-12 |
@@ -82,9 +86,9 @@ Counts are stored URLs that point at the bucket (read-only query). Key prefix is
 |---|---|---|---|---|
 | `SurfboardPlan` red copies / PDFs / CAD / certificates | 213 / 2,063 / 2,066 / 810 | `surfboard/` | No, signed links via the gateway | No: make private |
 | `surfboard_plan_viewer_attachments.url`, `CertificateOfDepositBatch.lasgReceiptUrl` | 1 / 8 | `surfboard/` | Via gateway | No: make private |
-| `SurfboardUser.logo` | 22 | `surfboard/` | Unchecked | Check where it is shown |
+| `SurfboardUser.logo` | 22 | `surfboard/` | Yes: plain `<img src>` on the settings page | Serve through the gateway first (I-019) |
 | `gbc_tickets.qrCode` | 155 | `GBC2/` | Yes: `<img src>` and a link on the ticket pages | Yes, unless ticket pages sign it |
 | `gbc_gallery`, `gbc_speakers.photo`, `gbc_sponsors.logo` | 30 / 10 / 6 | `GBC2/` | Yes: public GBC website | Yes |
-| REVA `Property.site_images` / `documentsUrls`, `OneTimeUserProperty` | 24 / 12, 2 / 7 | unchecked | Unchecked | Check |
+| REVA `Property.site_images` / `documentsUrls`, `OneTimeUserProperty`, reports | 26 + 2 / 10 + 8 + 4, 18 reports | `reva/uploads/` (4 documents under `uploads/`) | Yes: plain links in the REVA pages | No: make private after signed links (TASK-0011 Phase 2) |
 
 Consequence: block public access on the whole bucket and the GBC website images and ticket QR codes break. Safer order: (1) a bucket policy that allows public read only on `GBC2/*` and denies the rest, or move GBC public assets to their own bucket or CloudFront; (2) check `SurfboardUser.logo` and the REVA property files; (3) then close `surfboard/*` and re-test with an anonymous request. GBC ticket QR codes encode the ticket number only, so a public `GBC2/qrcodes/` prefix is a lower risk than surveyor files.
