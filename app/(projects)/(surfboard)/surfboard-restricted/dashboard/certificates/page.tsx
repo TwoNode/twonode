@@ -318,7 +318,7 @@ export default function CertificatesPage() {
                       </Link>
                       {batch.lasgReceiptUrl && (
                         <a
-                          href={batch.lasgReceiptUrl}
+                          href={surfboardApi.files.getViewUrl(batch.lasgReceiptUrl)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
@@ -466,7 +466,7 @@ export default function CertificatesPage() {
                           </Link>
                           {batch.lasgReceiptUrl && (
                             <a
-                              href={batch.lasgReceiptUrl}
+                              href={surfboardApi.files.getViewUrl(batch.lasgReceiptUrl)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"

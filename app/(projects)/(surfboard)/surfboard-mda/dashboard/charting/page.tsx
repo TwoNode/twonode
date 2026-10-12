@@ -611,7 +611,7 @@ export default function ChartingAdminPage() {
                 Record Copy
               </p>
               <a
-                href={plan.redCopyFileUrl}
+                href={surfboardApi.files.getViewUrl(plan.redCopyFileUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-violet-600 hover:text-violet-700"

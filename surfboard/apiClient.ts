@@ -1,3 +1,4 @@
+import { isStorageFileRef } from "@/surfboard/utils/fileAccess";
 import type {
   AdminInvitationRow,
   InviteAdminInput,
@@ -1343,6 +1344,12 @@ export const surfboardApi = {
     /** Returns the authenticated view/download URL that handles signed URLs under the hood. */
     getViewUrl: (urlOrKey: string) =>
       `${BASE}/files/view?url=${encodeURIComponent(urlOrKey)}`,
+
+    /** The gateway link for our own files, the link unchanged for anything else (e.g. Remita receipts). */
+    linkFor: (urlOrKey: string) =>
+      isStorageFileRef(urlOrKey)
+        ? `${BASE}/files/view?url=${encodeURIComponent(urlOrKey)}`
+        : urlOrKey,
 
     /** Fetches the signed URL as JSON payload instead of redirect. */
     getSignedUrl: async (urlOrKey: string, expiresIn = 300) => {

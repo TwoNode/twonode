@@ -507,7 +507,7 @@ export default function RecordsIAdminPage() {
                 )}
 
                 <a
-                  href={plan.redCopyFileUrl}
+                  href={surfboardApi.files.getViewUrl(plan.redCopyFileUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface rounded-lg border text-violet-600 hover:bg-violet-50 transition-colors"

@@ -600,7 +600,7 @@ export default function SettingsPage() {
                             <div className="relative group">
                               <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-white/10 shadow-md">
                                 <img
-                                  src={userData.logo}
+                                  src={surfboardApi.files.getViewUrl(userData.logo)}
                                   alt="Company Logo"
                                   className="w-full h-full object-cover"
                                 />
@@ -663,7 +663,7 @@ export default function SettingsPage() {
                             <div className="relative group">
                               <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-white/10 bg-white dark:bg-surface p-2 shadow-md">
                                 <img
-                                  src={userData.signature}
+                                  src={surfboardApi.files.getViewUrl(userData.signature)}
                                   alt="Signature"
                                   className="w-full h-full object-contain"
                                 />
