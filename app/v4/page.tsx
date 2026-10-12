@@ -396,24 +396,17 @@ export default function V4HomePage() {
           <div className="section-wrap proof-inner">
             <p className="eyebrow">THE NUMBERS SO FAR</p>
             <div className="proof-grid">
-              <div className="stat">
-                <strong className="count" data-to={proof.plans}>
-                  {proof.plans.toLocaleString("en-US")}
-                </strong>
-                <span>survey plans</span>
-              </div>
-              <div className="stat">
-                <strong className="count" data-to={proof.beacons}>
-                  {proof.beacons.toLocaleString("en-US")}
-                </strong>
-                <span>survey beacons</span>
-              </div>
-              <div className="stat">
-                <strong className="count" data-to={proof.regions}>
-                  {proof.regions}
-                </strong>
-                <span>{proof.regionsLabel}</span>
-              </div>
+              {proof.stats.map((stat) => (
+                <div className="stat" key={stat.label}>
+                  <strong>
+                    <b className="count" data-to={stat.value}>
+                      {stat.value.toLocaleString("en-US")}
+                    </b>
+                    +
+                  </strong>
+                  <span>{stat.label}</span>
+                </div>
+              ))}
             </div>
             <p className="proof-foot">
               <b>{proof.places.join(" · ")}</b> Since {proof.since}.

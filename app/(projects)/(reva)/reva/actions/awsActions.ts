@@ -11,10 +11,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Validate required environment variables
 const requiredEnvVars = [
-  "REVA_AWS_REGION",
-  "REVA_AWS_ACCESS_KEY_ID",
-  "REVA_AWS_SECRET_ACCESS_KEY",
-  "REVA_AWS_BUCKET_NAME",
+  "AWS_REGION",
+  "AWS_ACCESS_KEY_ID",
+  "AWS_SECRET_ACCESS_KEY",
+  "AWS_BUCKET_NAME",
 ] as const;
 
 // Check for missing environment variables
@@ -28,17 +28,17 @@ if (missingEnvVars.length > 0) {
 }
 
 const s3 = new S3Client({
-  region: process.env.REVA_AWS_REGION,
+  region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.REVA_AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.REVA_AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
-  endpoint: `https://s3.${process.env.REVA_AWS_REGION}.amazonaws.com`,
+  endpoint: `https://s3.${process.env.AWS_REGION}.amazonaws.com`,
   forcePathStyle: true,
 });
 
-const BUCKET_NAME = process.env.REVA_AWS_BUCKET_NAME!;
-const BUCKET_REGION = process.env.REVA_AWS_REGION!;
+const BUCKET_NAME = process.env.AWS_BUCKET_NAME!;
+const BUCKET_REGION = process.env.AWS_REGION!;
 const BUCKET_HOST = `${BUCKET_NAME}.s3.${BUCKET_REGION}.amazonaws.com/`;
 
 function extractS3KeyFromUrl(url: string): string {

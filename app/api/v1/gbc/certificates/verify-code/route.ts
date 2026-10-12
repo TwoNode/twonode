@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { handleApiError, ValidationError } from "@/lib/api/errors";
 import { validateBody } from "@/lib/api/validate";
+import { getClientIp } from "@/lib/auth/rateLimit";
 import { verifyCertificateOtpAndIssueToken } from "@/gbc/services/certificateOtpService";
 
 export const runtime = "nodejs";
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
       email,
       code,
       nonce,
+      ip: getClientIp(req),
     });
 
     return NextResponse.json({

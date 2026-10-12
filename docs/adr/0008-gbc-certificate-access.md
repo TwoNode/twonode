@@ -22,8 +22,8 @@ The certificate page and the PDF download were public and needed only a ticket n
    - A 6-digit one-time code is sent **only** to the email stored on the ticket (never to a typed address).
    - Response message and response time are uniform whether or not a certificate exists ("If an issued certificate exists for this email address, a 6-digit verification code has been sent.").
    - Codes are stored as keyed `HMAC-SHA256` (not plain SHA-256) and bound to the requesting browser via a secure `cn` nonce cookie.
-   - Capped at 5 wrong attempts per code (10-minute expiry, single use). 10 failed attempts across codes locks the email for 15 minutes.
-   - Upon successful verification, the server issues a short-lived download token (valid for 2 minutes) and streams the PDF directly with `Cache-Control: no-store`.
+   - Capped at 5 wrong attempts per code (10-minute expiry, single use). 10 failed attempts across codes lock that email **from that IP** for 15 minutes (counted per email and IP, so an attacker cannot lock a holder out by failing on purpose; guessing stays bounded by the per-code limit and the code request limit).
+   - Upon successful verification, the server issues a short-lived download token (valid for 2 minutes). The page sends it in a `POST /api/v1/gbc/certificates/download` body (never in a URL, so it stays out of logs, history and Referer headers) and the server streams the PDF directly with `Cache-Control: no-store`. The old `GET .../certificate-pdf` route is retired and always returns 403.
 3. **Explicit admin issuance & content freezing:**
    - Certificates are granted via admin action (`certificateIssued = true`, `certificateIssuedAt = NOW()`), not tied to check-in.
    - Edition details (name, theme, sub-theme, venue, start date, end date) are snapshotted onto the ticket at issue time.

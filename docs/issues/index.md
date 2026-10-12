@@ -43,22 +43,22 @@ Newest first. Status: Open, Fix in PR, Fixed, Won't fix. Source `R1` = review of
 
 | ID | P | Type | Issue | Live on prod | Status | Link |
 |---|---|---|---|---|---|---|
-| I-018 | P1 | Access control | `/api/webhooks/redcopy` skips its secret check when `REDCOPY_WEBHOOK_SECRET` is unset, so anyone could post red copy status updates (`app/api/webhooks/redcopy/route.ts`). Fail closed when the secret is missing | Unknown (depends on Vercel) | Open | review 2026-10-12 |
-| I-017 | P1 | Access control | `/api/cron/subscription-expiry-reminders` skips its check when `CRON_SECRET` is unset, so anyone could trigger reminder emails/SMS. Fail closed when the secret is missing | Unknown (depends on Vercel) | Open | review 2026-10-12 |
-| I-016 | P3 | Access control | `getClientIp` trusts the first `x-forwarded-for` value (fine on Vercel, spoofable elsewhere) | No | Open | R1 |
-| I-015 | P3 | File storage | Local storage adapter joins keys without normalising (dev only) | No | Open | R1 |
-| I-014 | P2 | Auth | Certificate download token travels in the URL query | Yes | Open | R1 |
-| I-013 | P2 | Access control | Attacker can lock out or flood a holder's email within the OTP limits | Yes | Open | R1 |
-| I-012 | P2 | Reliability | OTP "exists" vs "does not exist" timing difference | Yes | Fix in PR #344 | R1 |
-| I-011 | P2 | CI and deploy | Post-flight `prisma migrate status` ended in `\|\| true` | Yes | Fix in PR #343 | R1 |
-| I-010 | P1 | Access control | `files/view` ownership: self-attached file URLs grant signed links; `contains` match; empty key | Yes | Fix in PR #343 | R1 |
-| I-009 | P1 | File storage | `expiresIn` taken from the query string with no cap | Yes | Fix in PR #343 | R1 |
-| I-008 | P1 | Secrets and config | OTP signing key falls back to auth secrets and a constant | Yes | Fix in PR #342 (needs `CERTIFICATE_OTP_SECRET` in Vercel) | R1 |
+| I-018 | P1 | Access control | `/api/webhooks/redcopy` skips its secret check when `REDCOPY_WEBHOOK_SECRET` is unset, so anyone could post red copy status updates (`app/api/webhooks/redcopy/route.ts`). Fail closed when the secret is missing | Unknown (depends on Vercel) | Open (code still fails open) | review 2026-10-12 |
+| I-017 | P1 | Access control | `/api/cron/subscription-expiry-reminders` skips its check when `CRON_SECRET` is unset, so anyone could trigger reminder emails/SMS. Fail closed when the secret is missing | Unknown (depends on Vercel) | Open: `CRON_SECRET` set on Vercel Production and Preview 2026-10-12 (applies on next deploy); code still fails open if it is missing | review 2026-10-12 |
+| I-016 | P3 | Access control | `getClientIp` trusts the first `x-forwarded-for` value (fine on Vercel, spoofable elsewhere) | No | Fix in the P2 hardening PR (2026-10-12); captcha for request flooding is optional | R1 |
+| I-015 | P3 | File storage | Local storage adapter joins keys without normalising (dev only) | No | Fix in the P2 hardening PR (2026-10-12); captcha for request flooding is optional | R1 |
+| I-014 | P2 | Auth | Certificate download token travels in the URL query | Yes | Fix in the P2 hardening PR (2026-10-12); captcha for request flooding is optional | R1 |
+| I-013 | P2 | Access control | Attacker can lock out or flood a holder's email within the OTP limits | Yes | Fix in the P2 hardening PR (2026-10-12); captcha for request flooding is optional | R1 |
+| I-012 | P2 | Reliability | OTP "exists" vs "does not exist" timing difference | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
+| I-011 | P2 | CI and deploy | Post-flight `prisma migrate status` ended in `\|\| true` | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
+| I-010 | P1 | Access control | `files/view` ownership: self-attached file URLs grant signed links; `contains` match; empty key | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
+| I-009 | P1 | File storage | `expiresIn` taken from the query string with no cap | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
+| I-008 | P1 | Secrets and config | OTP signing key falls back to auth secrets and a constant | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
 | I-007 | P1 | Data integrity | 3 tickets sent before the change have no `certificateIssued`, `certificatePublicId` or frozen fields | No | Fixed 2026-10-11: no backfill; the 3 were test sends, sent count reset to 0 (backup `out/backup-gbc-sentcount-2026-10-11.csv`), public pages now 404 | R1 |
-| I-006 | P1 | Certificates and PDF | PDF read the live edition, not the frozen fields | Yes | Fix in PR #342 | R1 |
-| I-005 | P1 | Data exposure | QR code and emails used the guessable `/gbc/certificate/<ticketNumber>` link | Yes | Fix in PR #342 | R1 |
+| I-006 | P1 | Certificates and PDF | PDF read the live edition, not the frozen fields | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
+| I-005 | P1 | Data exposure | QR code and emails used the guessable `/gbc/certificate/<ticketNumber>` link | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
 | I-004 | P0 | File storage | `reva-store` bucket objects readable anonymously (213 red copies, 2,063 plans with PDFs) | Yes | Open (needs AWS admin). Do NOT make the whole bucket private: GBC public images share it, see below | R1 |
-| I-003 | P0 | Data exposure | Certificate pages sent the whole ticket row (email, phone, payment data, publicId) to the browser | Yes | Fix in PR #341 | R1 |
+| I-003 | P0 | Data exposure | Certificate pages sent the whole ticket row (email, phone, payment data, publicId) to the browser | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
 | I-002 | P3 | Docs drift | ADR-0012 and TASK-0005 say file privacy is complete while the bucket is public | n/a | Open (new ADR once bucket is private) | R1 |
 | I-001 | P2 | Testing gaps | Certificate routes (`request-code`, `verify-code`, `download`) read but never run end to end; public pages not browser-checked | n/a | Open | R1 |
 

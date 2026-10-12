@@ -161,6 +161,7 @@ describe("verifyCertificateOtpAndIssueToken", () => {
         email: "a@test.com",
         code: "123",
         nonce,
+        ip: "127.0.0.1",
       })
     ).rejects.toBeInstanceOf(ValidationError);
   });
@@ -170,6 +171,7 @@ describe("verifyCertificateOtpAndIssueToken", () => {
       verifyCertificateOtpAndIssueToken({
         email: "a@test.com",
         code: "123456",
+        ip: "127.0.0.1",
         nonce: "",
       })
     ).rejects.toBeInstanceOf(ValidationError);
@@ -182,8 +184,34 @@ describe("verifyCertificateOtpAndIssueToken", () => {
         email: "a@test.com",
         code: "123456",
         nonce,
+        ip: "127.0.0.1",
       })
     ).rejects.toBeInstanceOf(RateLimitError);
+  });
+
+  it("counts failures per email and IP, so one IP cannot lock out the holder", async () => {
+    mockPrisma.loginAttempt.count.mockResolvedValue(0);
+    mockPrisma.gBCCertificateOtp.findFirst.mockResolvedValue(null);
+
+    await expect(
+      verifyCertificateOtpAndIssueToken({
+        email: "a@test.com",
+        code: "123456",
+        nonce,
+        ip: "198.51.100.7",
+      })
+    ).rejects.toBeInstanceOf(ValidationError);
+
+    expect(mockPrisma.loginAttempt.count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          identifier: "cert_fail:a@test.com:198.51.100.7",
+        }),
+      })
+    );
+    expect(mockPrisma.loginAttempt.create).toHaveBeenCalledWith({
+      data: { identifier: "cert_fail:a@test.com:198.51.100.7" },
+    });
   });
 
   it("rejects when no active OTP exists", async () => {
@@ -195,11 +223,12 @@ describe("verifyCertificateOtpAndIssueToken", () => {
         email: "a@test.com",
         code: "123456",
         nonce,
+        ip: "127.0.0.1",
       })
     ).rejects.toBeInstanceOf(ValidationError);
 
     expect(mockPrisma.loginAttempt.create).toHaveBeenCalledWith({
-      data: { identifier: "cert_fail:a@test.com" },
+      data: { identifier: "cert_fail:a@test.com:127.0.0.1" },
     });
   });
 
@@ -218,6 +247,7 @@ describe("verifyCertificateOtpAndIssueToken", () => {
         email: "a@test.com",
         code: correctCode,
         nonce,
+        ip: "127.0.0.1",
       })
     ).rejects.toMatchObject({
       details: { code: expect.stringContaining("browser session") },
@@ -240,6 +270,7 @@ describe("verifyCertificateOtpAndIssueToken", () => {
         email: "a@test.com",
         code: correctCode,
         nonce,
+        ip: "127.0.0.1",
       })
     ).rejects.toMatchObject({
       details: { code: expect.stringContaining("Too many attempts") },
@@ -262,13 +293,14 @@ describe("verifyCertificateOtpAndIssueToken", () => {
         email: "a@test.com",
         code: "999999",
         nonce,
+        ip: "127.0.0.1",
       })
     ).rejects.toMatchObject({
       details: { code: expect.stringContaining("Incorrect code") },
     });
 
     expect(mockPrisma.loginAttempt.create).toHaveBeenCalledWith({
-      data: { identifier: "cert_fail:a@test.com" },
+      data: { identifier: "cert_fail:a@test.com:127.0.0.1" },
     });
   });
 
@@ -292,6 +324,7 @@ describe("verifyCertificateOtpAndIssueToken", () => {
       email: "a@test.com",
       code: correctCode,
       nonce,
+      ip: "127.0.0.1",
     });
 
     expect(result.ticketNumbers).toEqual(["GBC2_TEST_1"]);
