@@ -1,13 +1,29 @@
 # Current Tasks (Live Dashboard)
 
-State as of 2026-10-12: the review fixes #341–#345 are on `dev` and `main` but NOT on `prod`. Open PRs: the P2 security hardening and the /v4 proof numbers (#353). 873+ tests passing. See TASK-0007 and TASK-0009.
+State as of 2026-10-12: `main` (staging) has everything on `dev` (PR #358) and passed the staging smoke tests; `prod` is still behind and still has the certificate page leak until promoted. Vercel env cleaned up (see TASK-0010). 882/882 tests passing.
 
 ---
 
-## Active Session Batch: TASK-0009 — /v4: edits on a copy of the /v3 port
+## Active Session Batch: TASK-0010 — Vercel env cleanup, staging promotion, /v4 responsive
+
+**Batch Reference:** [TASK-0010](./0010-env-cleanup-staging-promotion-v4-responsive.md)  
+**Active Branch:** `feat/v4-responsive` (PR #360)  
+**Status:** `In Progress`. Responsive PR #360 is open. Waiting on roji-tech: go to promote `main` → `prod`, the AWS admin for the S3 bucket policy, go to make the cron route and Red Copy webhook fail closed.
+
+- [x] **Vercel env:** `AWS_*` added, `CRON_SECRET` set, seven unused variables removed with a backup. (Done 2026-10-12)
+- [x] **`dev` → `main` (PR #358) and staging smoke tests (17 checks) passed.** (Done 2026-10-12)
+- [ ] **Promote `main` → `prod`.** _(Waiting on: roji-tech go)_
+- [ ] **S3 bucket: policy limited to `GBC2/*`, ACL blocks on.** Needs the AWS admin. _(Waiting on: AWS admin)_
+- [ ] **Surveyor logo through the file gateway before `surfboard/*` goes private.** _(Waiting on: roji-tech go)_
+- [ ] **Remove `REVA_AWS_*` from Vercel after prod runs on `AWS_*`.**
+- [x] **/v4 mobile and tablet responsiveness** (PR #360, open for review). (Done 2026-10-12)
+
+---
+
+## Previous Session Batch: TASK-0009 — /v4: edits on a copy of the /v3 port
 
 **Batch Reference:** [TASK-0009](./0009-v4-edits.md)  
-**Active Branch:** `feat/v4-edits`  
+**Active Branch:** `feat/v4-edits` (merged)  
 **Status:** `In Progress`. `/v3` is left as is. In `/v4`: real logo, 12px text, 44px tap targets, hard-coded proof numbers, contact / insights / industry pages, Active/Next chips, new footer. Waiting on roji-tech: survey plan photo, phone number, real insight copy.
 
 - [x] **Create `/v4` and apply defect fixes (logo, text size, tap targets).** (Done 2026-10-11)
@@ -62,7 +78,7 @@ State as of 2026-10-12: the review fixes #341–#345 are on `dev` and `main` but
 
 - **GOOGLE_MAPS_SERVER_API_KEY:** Waiting on Google Cloud project owner to enable billing before setting in Vercel. _(Waiting on: roji-tech / Cloud Admin)_
 - **Paystack Renewal Webhook:** Waiting on live renewal event payload log to verify payload schema. _(Waiting on: roji-tech)_
-- **Trigger Vercel Prod Deploy:** Trigger redeploy on Vercel for `prod` branch. _(Waiting on: roji-tech / Vercel Admin)_
+- **Trigger Vercel Prod Deploy:** Promote `main` → `prod` (see TASK-0010); the certificate leak fix and the `AWS_*` rename are not on prod yet. _(Waiting on: roji-tech go)_
 - **Activate GBC 3.0 on Prod:** Edition 2.0 is past; admin dashboard activation needed when ready. _(Waiting on: roji-tech / Admin)_
 - **Staging Password Rotation:** Neon console password rotation needed. _(Waiting on: roji-tech)_
 - **Complete Kinde Configuration on Staging:** Kinde credentials and callback URLs pending. _(Waiting on: roji-tech)_
@@ -84,6 +100,7 @@ State as of 2026-10-12: the review fixes #341–#345 are on `dev` and `main` but
 | [0007](./0007-project-review-findings-oct-11.md)           | **Project Review Findings (Certificate Leak, File Privacy)** | 2026-10-11 | Certificates, Security, Storage, CI | `In Progress` |
 | [0008](./0008-v3-prototype-port.md)                        | **Port the Static Prototype to /v3**                | 2026-10-11              | Landing Page, V3, Next.js              | `In Progress` |
 | [0009](./0009-v4-edits.md)                                  | **/v4: Edits on a Copy of the /v3 Port**            | 2026-10-11              | Landing Page, V4, Accessibility        | `In Progress` |
+| [0010](./0010-env-cleanup-staging-promotion-v4-responsive.md) | **Vercel Env Cleanup, Staging Promotion, /v4 Responsive** | 2026-10-12 | DevOps, Security, Landing Page, V4 | `In Progress` |
 
 
 

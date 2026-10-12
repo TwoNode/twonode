@@ -38,7 +38,7 @@
 - [x] **Phone number** `+234 916 0002 740` confirmed correct; the old number replaced on the live site in PR #352. Social links still to confirm. _(Waiting on: roji-tech)_
 - [ ] Insight articles still carry the `/v2` draft text ("Draft — to be replaced with the real write-up."); write the real copy before /v4 goes public _(Waiting on: roji-tech)_
 - [ ] `/v4` data files are copies of `/v2`'s; keep one source when `/v2` is retired
-- [ ] Hero first frame is mostly empty; tablet layout review; diagram text sizes inside the canvas
+- [ ] Hero first frame is mostly empty; diagram text sizes inside the canvas. (Tablet and mobile layout moved to TASK-0010, Module D.)
 - [ ] Type `motion.ts` (currently `@ts-nocheck`)
 
 ---
