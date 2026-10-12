@@ -1,7 +1,7 @@
 # TASK-0012: OSSG integration and the red copy flow (planning, paused)
 
 - **Status:** Planned. Paused 2026-10-12; resume from "Where we stopped".
-- **Priority:** High (the red copy decision blocks Phase 1 of [TASK-0011](./0011-s3-privacy-and-key-layout.md))
+- **Priority:** High (the red copy decision no longer blocks Phase 1 of [TASK-0011](./0011-s3-privacy-and-key-layout.md); decided private 2026-10-12)
 - **Assignee:** Maintainer / Agent
 - **Created:** 2026-10-12 UTC
 
@@ -9,7 +9,7 @@
 
 ## Where we stopped
 
-1. **Red copy files: private (recommended, awaiting roji-tech's yes).** They are stamped cadastral plans (confidential, ADR-0012), the OSSG flow sends file bytes so no public link is needed, and viewing already works through the gateway. If OSSG ever needs to fetch by link, use a signed link that expires after a day or two. Recorded in [ADR-0013](../adr/0013-bucket-key-layout-public-and-private-prefixes.md).
+1. **Red copy files: private. DECIDED by roji-tech, 2026-10-12.** They are stamped cadastral plans (confidential, ADR-0012), the OSSG flow sends file bytes so no public link is needed, and viewing already works through the gateway. If OSSG ever needs to fetch by link, use a signed link that expires after a day or two. Recorded in [ADR-0013](../adr/0013-bucket-key-layout-public-and-private-prefixes.md) point 5.
 2. **OSSG submission: hash ledger first, QR after OSSG confirms.** Drafted as [ADR-0014](../adr/0014-ossg-submissions-recorded-in-a-hash-ledger.md) (Proposed).
 3. **Not started:** any code. Nothing here changes production.
 
@@ -40,7 +40,8 @@
 
 ## Work breakdown
 
-- [ ] **Decide:** red copy private (ADR-0013) and the hash-ledger approach (ADR-0014). _(Waiting on: roji-tech)_
+- [x] **Decide:** red copy private (roji-tech, 2026-10-12).
+- [ ] **Decide:** the hash-ledger approach (ADR-0014). _(Waiting on: roji-tech)_
 - [ ] Send the questions above to OSSG. _(Waiting on: roji-tech / OSSG)_
 - [ ] Prove PDF to PNG rendering on Vercel with real survey plans (library choice, large sheets, 300 DPI size).
 - [ ] Ledger table and migration (migrate-deploy first); background job with states APPROVED, PREPARED, SENT, CERTIFICATE_RECEIVED, FAILED; admin re-send.
