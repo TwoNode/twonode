@@ -55,6 +55,16 @@ Consequence for the move: only 30 + 30 + 10 + 6 = 76 database links are public o
 - [ ] Back up the current policy to `out/`, then apply policy v1: public read on `GBC2/*`, `reva/*` and the 4 referenced `uploads/` keys only. This makes `surfboard/*`, `uploads/PrivateSurveyPlans/*` and the rest of `uploads/` private. _(Waiting on: roji-tech go, and an identity that can write the policy or the AWS admin)_
 - [ ] Verify with curl: a `surfboard/` and a `PrivateSurveyPlans/` file return 403, a `GBC2/` image 200, a signed link from the app works, and the surveyor logo shows. Confirm with roji-tech that no other app reads `uploads/`.
 
+### Phase 1b: Plan number normalisation and the red copy key (I-024)
+
+Decision (roji-tech, 2026-10-12): red copy key is `surfboard/<userId>/redcopy/<plan number, normalised>` and plan numbers are normalised wherever they are used.
+
+- [ ] One shared module (`surfboard/utils/planNumber.ts`): `normalizePlanNumber()` (trim, uppercase, collapse spaces, drop trailing `_` and `.`; keep `/`) and `planNumberToKeySegment()` (`/` to `_`), with tests built from the real variants. Replace the three existing copies (`awsService.ts`, `lib/storage/utils.ts`, `aiExtractionService.ts`).
+- [ ] Use it for every lookup and check: the duplicate check in `planService.ts`, the Red Copy webhook lookup, search, CoD batches and payment references, certificates and QR.
+- [ ] Store the canonical form in a new column (suggest `planNumberKey`, non-unique index first) and keep `planNumber` as typed, because certificates and PDFs print it. Needs a migration (migrate-deploy first) and a guarded backfill of 2,373 rows. _(Waiting on: roji-tech go, a prod write)_
+- [ ] Resolve the 15 colliding pairs by hand before the canonical column can be unique; some are real duplicates (trailing `_`), some may be different plans (`D/012` vs `D012`). _(Waiting on: roji-tech)_
+- [ ] Fix the red copy callers that pass the plan number in the user id slot (`submitRedCopy`); new key `surfboard/<userId>/redcopy/<planNumberKey>.<ext>`. Decide: overwrite on re-upload (as written) or `__<timestamp>` to keep history.
+
 ### Phase 2: REVA private
 
 - [ ] Sign links when REVA pages render site photos, documents and reports (`SingleRequestPage.tsx`, `verifypayment/viewDetails.tsx`, `reva-restricted` views), after checking the database that the caller may see that request.
