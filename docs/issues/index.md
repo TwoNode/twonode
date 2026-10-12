@@ -43,7 +43,7 @@ Newest first. Status: Open, Fix in PR, Fixed, Won't fix. Source `R1` = review of
 
 | ID | P | Type | Issue | Live on prod | Status | Link |
 |---|---|---|---|---|---|---|
-| I-023 | P3 | File storage | 51 of 94 top-level `surfboard/` folders are not user IDs (numeric, 3-letter codes, test folders). The file gateway only allows keys under the caller's own `surfboard/<userId>/`, so files there are probably unreachable through it. Not tested | Yes | Open | TASK-0011 |
+| I-023 | P3 | File storage | Red copy files are stored under `surfboard/<plan number>/redcopy/…` (the plan number, with its slashes, takes the place of the user id), not under the user's folder as ADR-0012 says. 303 files, 136 referenced, 167 unreferenced; 77 stored links point at files that do not exist (66 from one plan-number series). They stay reachable through the gateway because it also matches `redCopyFileUrl`; the odd top-level `surfboard/` folders (`BYA/`, `AAA/`, numeric) are mostly these | Yes | Open | TASK-0011 |
 | I-022 | P3 | File storage | `GBC2/` is hard-coded in `gbc/utils/aws-s3.ts` for every GBC upload; GBC 3.0 uploads would land under the 2.0 name | Yes | Open (ADR-0013 proposes `public/gbc/<edition>/…`) | TASK-0011 |
 | I-021 | P1 | File storage | `uploads/PrivateSurveyPlans/` (about 360 old survey plan scans) is publicly readable; no REVA record points at it | Yes | Open (private in policy v1) | TASK-0011 |
 | I-020 | P1 | Access control | REVA stores permanent public links for client documents, site photos and reports (`reva/uploads/`), so anyone with a link can bypass the OTP download | Yes | Open (needs signed links in the REVA pages first) | TASK-0011 |

@@ -47,8 +47,11 @@ Consequence for the move: only 30 + 30 + 10 + 6 = 76 database links are public o
 
 ### Phase 1: Surfboard and `PrivateSurveyPlans` private
 
+- [ ] **Red copy and the external service:** `submitRedCopy` (`surfboard/services/planService.ts`) sends the file's permanent S3 URL to `https://api.redcopy.com/submit`, so once `surfboard/*` is private the service cannot fetch it. From the dev machine `api.redcopy.com` does not resolve, and no Surfboard screen was found calling `/plans/[planId]/red-copy`; red copies seem to come in through the "record copy" upload (`AmendPlanModal.tsx`) instead. Confirm with roji-tech whether Red Copy is live; if it is, sign the link at submit time with a longer expiry. _(Waiting on: roji-tech)_
+
 - [ ] Serve `SurfboardUser.logo` through the file gateway on the settings page (I-019); search for any other plain-URL use of `surfboard/` files first. _(Waiting on: roji-tech go)_
 - [ ] Add `Cache-Control: private, max-age=240` to the gateway redirect so a refresh does not re-download private images; test that the header is below the link's expiry.
+- [ ] New red copies use `surfboard/<userId>/redcopy/<plan number>-<timestamp>…`, not the plan number as the folder (ADR-0012); old red copies stay where they are.
 - [ ] Back up the current policy to `out/`, then apply policy v1: public read on `GBC2/*`, `reva/*` and the 4 referenced `uploads/` keys only. This makes `surfboard/*`, `uploads/PrivateSurveyPlans/*` and the rest of `uploads/` private. _(Waiting on: roji-tech go, and an identity that can write the policy or the AWS admin)_
 - [ ] Verify with curl: a `surfboard/` and a `PrivateSurveyPlans/` file return 403, a `GBC2/` image 200, a signed link from the app works, and the surveyor logo shows. Confirm with roji-tech that no other app reads `uploads/`.
 
