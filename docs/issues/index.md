@@ -50,16 +50,16 @@ Newest first. Status: Open, Fix in PR, Fixed, Won't fix. Source `R1` = review of
 | I-015 | P3 | File storage | Local storage adapter joins keys without normalising (dev only) | No | Fix in the P2 hardening PR (2026-10-12); captcha for request flooding is optional | R1 |
 | I-014 | P2 | Auth | Certificate download token travels in the URL query | Yes | Fix in the P2 hardening PR (2026-10-12); captcha for request flooding is optional | R1 |
 | I-013 | P2 | Access control | Attacker can lock out or flood a holder's email within the OTP limits | Yes | Fix in the P2 hardening PR (2026-10-12); captcha for request flooding is optional | R1 |
-| I-012 | P2 | Reliability | OTP "exists" vs "does not exist" timing difference | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
-| I-011 | P2 | CI and deploy | Post-flight `prisma migrate status` ended in `\|\| true` | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
-| I-010 | P1 | Access control | `files/view` ownership: self-attached file URLs grant signed links; `contains` match; empty key | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
-| I-009 | P1 | File storage | `expiresIn` taken from the query string with no cap | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
-| I-008 | P1 | Secrets and config | OTP signing key falls back to auth secrets and a constant | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
+| I-012 | P2 | Reliability | OTP "exists" vs "does not exist" timing difference | Yes | Fixed 2026-10-11; live on prod 2026-10-12 (PR #362) | R1 |
+| I-011 | P2 | CI and deploy | Post-flight `prisma migrate status` ended in `\|\| true` | Yes | Fixed 2026-10-11; live on prod 2026-10-12 (PR #362) | R1 |
+| I-010 | P1 | Access control | `files/view` ownership: self-attached file URLs grant signed links; `contains` match; empty key | Yes | Fixed 2026-10-11; live on prod 2026-10-12 (PR #362) | R1 |
+| I-009 | P1 | File storage | `expiresIn` taken from the query string with no cap | Yes | Fixed 2026-10-11; live on prod 2026-10-12 (PR #362) | R1 |
+| I-008 | P1 | Secrets and config | OTP signing key falls back to auth secrets and a constant | Yes | Fixed 2026-10-11; live on prod 2026-10-12 (PR #362) | R1 |
 | I-007 | P1 | Data integrity | 3 tickets sent before the change have no `certificateIssued`, `certificatePublicId` or frozen fields | No | Fixed 2026-10-11: no backfill; the 3 were test sends, sent count reset to 0 (backup `out/backup-gbc-sentcount-2026-10-11.csv`), public pages now 404 | R1 |
-| I-006 | P1 | Certificates and PDF | PDF read the live edition, not the frozen fields | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
-| I-005 | P1 | Data exposure | QR code and emails used the guessable `/gbc/certificate/<ticketNumber>` link | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
+| I-006 | P1 | Certificates and PDF | PDF read the live edition, not the frozen fields | Yes | Fixed 2026-10-11; live on prod 2026-10-12 (PR #362) | R1 |
+| I-005 | P1 | Data exposure | QR code and emails used the guessable `/gbc/certificate/<ticketNumber>` link | Yes | Fixed 2026-10-11; live on prod 2026-10-12 (PR #362) | R1 |
 | I-004 | P0 | File storage | `reva-store` bucket objects readable anonymously (213 red copies, 2,063 plans with PDFs) | Yes | Open (needs AWS admin). Do NOT make the whole bucket private: GBC public images share it, see below | R1 |
-| I-003 | P0 | Data exposure | Certificate pages sent the whole ticket row (email, phone, payment data, publicId) to the browser | Yes | Fixed on dev and main 2026-10-11; not yet on prod | R1 |
+| I-003 | P0 | Data exposure | Certificate pages sent the whole ticket row (email, phone, payment data, publicId) to the browser | Yes | Fixed 2026-10-11; live on prod 2026-10-12 (PR #362) | R1 |
 | I-002 | P3 | Docs drift | ADR-0012 and TASK-0005 say file privacy is complete while the bucket is public | n/a | Open (new ADR once bucket is private) | R1 |
 | I-001 | P2 | Testing gaps | Certificate routes (`request-code`, `verify-code`, `download`) read but never run end to end; public pages not browser-checked | n/a | Open | R1 |
 
