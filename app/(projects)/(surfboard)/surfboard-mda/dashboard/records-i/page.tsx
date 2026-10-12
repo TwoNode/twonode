@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaLink } from "@/components/media";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -506,10 +507,8 @@ export default function RecordsIAdminPage() {
                   </div>
                 )}
 
-                <a
+                <MediaLink
                   href={surfboardApi.files.getViewUrl(plan.redCopyFileUrl)}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface rounded-lg border text-violet-600 hover:bg-violet-50 transition-colors"
                 >
                   {isImageUrl(plan.redCopyFileUrl) ? (
@@ -519,7 +518,7 @@ export default function RecordsIAdminPage() {
                   )}
                   Open Record Copy
                   <ExternalLink className="w-3 h-3" />
-                </a>
+                </MediaLink>
               </div>
             ) : (
               <p className="text-sm text-red-600">No record copy uploaded!</p>

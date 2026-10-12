@@ -89,3 +89,17 @@ export function extractKeyFromUrl(keyOrUrl: string): string {
     return keyOrUrl;
   }
 }
+
+/**
+ * A `Content-Disposition: attachment` header value for a download, safe for any
+ * file name: an ASCII fallback plus the UTF-8 form (RFC 5987).
+ */
+export function attachmentDisposition(fileName: string): string {
+  const clean = fileName
+    .replace(/[\u0000-\u001f\u007f"\\/]/g, "")
+    .trim()
+    .slice(0, 180);
+  const name = clean || "download";
+  const ascii = name.replace(/[^\x20-\x7e]/g, "_");
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`;
+}

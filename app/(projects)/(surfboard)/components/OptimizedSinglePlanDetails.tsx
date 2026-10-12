@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaLink } from "@/components/media";
 import React, { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -68,10 +69,8 @@ const FileCard: React.FC<FileCardProps> = ({
 
       <div className="mt-2 space-x-2">
         {type === "pdf" || type === "cert" || type === "redcopy" ? (
-          <a
+          <MediaLink
             href={authenticatedUrl}
-            target="_blank"
-            rel="noopener noreferrer"
             className="text-sm text-blue-600 hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
@@ -80,11 +79,11 @@ const FileCard: React.FC<FileCardProps> = ({
               : type === "pdf"
                 ? "View PDF"
                 : "View Certificate"}
-          </a>
+          </MediaLink>
         ) : (
           <>
             <a
-              href={authenticatedUrl}
+              href={surfboardApi.files.getDownloadUrl(filePath, fileName)}
               download
               className="text-sm text-blue-600 hover:underline"
               onClick={(e) => e.stopPropagation()}
@@ -92,15 +91,13 @@ const FileCard: React.FC<FileCardProps> = ({
               Download
             </a>
             {!isDwg && (
-              <a
+              <MediaLink
                 href={authenticatedUrl}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="text-sm text-blue-600 hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
                 View
-              </a>
+              </MediaLink>
             )}
           </>
         )}

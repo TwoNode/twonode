@@ -18,6 +18,18 @@ Logic used across two or more platforms, under the top-level `hooks/`,
 | `useViewMode.ts`            | Per-page list/grid preference (`ViewMode` from `components/ui/view-toggle`), persisted in `localStorage` under `twonodes-view-mode:<pageKey>`                                                                                                                                                                                                                                                                                                                                                |
 | `useSearchParamsUpdater.ts` | Client half of a `searchParams`-driven **server** page: merges updates into the query string and navigates (an empty value deletes its key). Builds from a ref, not the render's `searchParams`, so two quick updates (pick a filter, then type) don't overwrite each other. Also exports `useDebouncedSearchParam` (350 ms debounced `?search=` that resets `page`)                                                                                                                         |
 
+## `components/media/` — the file viewer (ADR-0015)
+
+| File | Description |
+| ---- | ----------- |
+| `MediaViewerProvider.tsx` | Mounted once in `app/(projects)/layout.tsx`; `useMediaViewer().open(items, index)` shows files in the viewer from anywhere (null when no provider is mounted) |
+| `MediaLink.tsx` | A link that opens a file in the viewer instead of a new tab. Props: `href` (gateway link or public URL), optional `name`, `kind`, `group` (files to step through). Links that are not viewable files (e.g. Remita pages) still open normally in a new tab. Forwards its ref, so it works inside `asChild` menu items |
+| `MediaViewer.tsx` | The dialog: image (zoom), PDF (PDF.js), video, audio, and a download panel for other types; arrows and arrow keys for a group; Escape, the X and the Back button close it |
+| `PdfViewer.tsx` | PDF.js page viewer: draws pages as they scroll into view, fits to width, caps the canvas size for iOS |
+| `useResolvedUrl.ts` | Turns a gateway link into the signed URL it redirects to (JSON mode, 15-minute link); other links are used as they are |
+| `mediaTypes.ts` | `mediaKindFor`, `fileNameOf` (drops the upload prefix), `isGatewayLink`, `downloadHrefFor`, `jsonHrefFor` |
+| `viewerMath.ts` | `wrapIndex`, `clampZoom`, `stepZoom`, `pdfPageScale` |
+
 ## `lib/api/` — API route plumbing
 
 | File                       | Description                                                                                                                                                                                                                                                                                                                                                                                  |

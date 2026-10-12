@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaLink } from "@/components/media";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -307,16 +308,14 @@ export function RecordCopyUploadModal({
                         <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
                         <span>Record copy attached</span>
                       </div>
-                      <a
+                      <MediaLink
                         href={surfboardApi.files.getViewUrl(
                           hasExistingFile || hasUploadedFile!
                         )}
-                        target="_blank"
-                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
                       >
                         <Eye className="w-3.5 h-3.5" /> View PDF
-                      </a>
+                      </MediaLink>
                     </div>
                   ) : (
                     <div className="space-y-2">

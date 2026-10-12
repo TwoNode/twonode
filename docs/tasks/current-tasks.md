@@ -33,6 +33,17 @@ State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate
 
 ---
 
+## Active Session Batch: TASK-0013 — In-page media viewer
+
+**Batch Reference:** [TASK-0013](./0013-media-viewer.md)  
+**Active Branch:** `feat/media-viewer`  
+**Status:** `In Progress`. Viewer built and the 26 Surfboard file links moved (ADR-0015). Waiting on roji-tech: a check on real phones on staging, then REVA, GBC and the build check come next.
+
+- [x] **Viewer, gateway download, Surfboard screens.** (Done 2026-10-13, PR open)
+- [ ] **Phone check on staging, REVA and GBC links, build check.** _(Waiting on: roji-tech for the phone check)_
+
+---
+
 ## Planned Session Batch: TASK-0012 — OSSG integration and the red copy flow
 
 **Batch Reference:** [TASK-0012](./0012-ossg-integration-and-red-copy.md)  

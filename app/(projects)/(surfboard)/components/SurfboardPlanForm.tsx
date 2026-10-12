@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaLink } from "@/components/media";
 import React, {
   useEffect,
   useMemo,
@@ -181,16 +182,14 @@ const FileList = ({ files, onDelete, type }: FileListProps) => {
               <div className="flex items-center space-x-2 min-w-0">
                 {getFileIcon(fileName)}
                 {isUrl ? (
-                  <a
+                  <MediaLink
                     href={href ? surfboardApi.files.getViewUrl(href) : ""}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:underline truncate max-w-xs"
                     title={fileName}
                     onClick={(e) => e.stopPropagation()}
                   >
                     {displayText}
-                  </a>
+                  </MediaLink>
                 ) : (
                   <span
                     className="text-xs text-gray-700 truncate max-w-xs"

@@ -122,7 +122,15 @@ export const GET = withAuth<SurfboardRole>(
     }
 
     try {
-      const signedUrl = await getPresignedDownloadUrl(target, expiresIn);
+      // `download=1` makes the browser save the file (under `name`, or its own
+      // name) instead of showing it, so a Download button never leaves the page.
+      const downloadName =
+        searchParams.get("download") === "1"
+          ? searchParams.get("name") || key.split("/").pop() || "download"
+          : undefined;
+      const signedUrl = await getPresignedDownloadUrl(target, expiresIn, {
+        downloadName,
+      });
 
       if (format === "json") {
         return NextResponse.json({ success: true, url: signedUrl });
