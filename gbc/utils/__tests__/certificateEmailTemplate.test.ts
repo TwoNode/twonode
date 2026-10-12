@@ -43,7 +43,7 @@ describe("buildCertificateEmailHtml", () => {
       certificateUrl: url,
     });
     expect(html).toContain(`href="${url}"`);
-    expect(html).toContain("Congratulations, Jane.");
+    expect(html).toContain("Hi Jane,");
     expect(html).toContain("15–16 March 2026");
     expect(html).toContain("GBC2_ABC123");
   });
