@@ -43,6 +43,8 @@ Newest first. Status: Open, Fix in PR, Fixed, Won't fix. Source `R1` = review of
 
 | ID | P | Type | Issue | Live on prod | Status | Link |
 |---|---|---|---|---|---|---|
+| I-018 | P1 | Access control | `/api/webhooks/redcopy` skips its secret check when `REDCOPY_WEBHOOK_SECRET` is unset, so anyone could post red copy status updates (`app/api/webhooks/redcopy/route.ts`). Fail closed when the secret is missing | Unknown (depends on Vercel) | Open | review 2026-10-12 |
+| I-017 | P1 | Access control | `/api/cron/subscription-expiry-reminders` skips its check when `CRON_SECRET` is unset, so anyone could trigger reminder emails/SMS. Fail closed when the secret is missing | Unknown (depends on Vercel) | Open | review 2026-10-12 |
 | I-016 | P3 | Access control | `getClientIp` trusts the first `x-forwarded-for` value (fine on Vercel, spoofable elsewhere) | No | Open | R1 |
 | I-015 | P3 | File storage | Local storage adapter joins keys without normalising (dev only) | No | Open | R1 |
 | I-014 | P2 | Auth | Certificate download token travels in the URL query | Yes | Open | R1 |
