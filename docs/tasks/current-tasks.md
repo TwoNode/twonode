@@ -27,7 +27,8 @@ State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate
 
 - [ ] **Phase 1:** `surfboard/` and `uploads/PrivateSurveyPlans/` private. _(Waiting on: roji-tech go)_
 - [ ] **Phase 2:** REVA files private with signed links.
-- [ ] **Phase 3:** GBC key layout `public/gbc/<edition>/…`, QR codes private.
+- [ ] **Phase 3:** GBC key layout `public/gbc/<edition>/…`, QR codes under `private/gbc/<edition>/qrcodes/`.
+- [ ] **Phase 5 (optional):** move the legacy files (copy, rewrite rows in a guarded transaction, delete after a grace period). Not needed for privacy.
 - [ ] **Phase 4:** cleanup of odd folders, junk and orphans (separate go each).
 
 ---

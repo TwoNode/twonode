@@ -34,14 +34,30 @@ Make the private files in `reva-store` private without breaking the public GBC w
 ### Phase 2: REVA private
 
 - [ ] Sign links when REVA pages render site photos, documents and reports (`SingleRequestPage.tsx`, `verifypayment/viewDetails.tsx`, `reva-restricted` views), after checking the database that the caller may see that request.
-- [ ] New REVA uploads go to `reva/<requestId>/…` (`awsActions.ts`); stop writing to `uploads/` (`uploadToS3`).
+- [ ] New REVA uploads go to `private/reva/<requestId>/…` (`awsActions.ts`); stop writing to `uploads/` (`uploadToS3`).
 - [ ] Apply policy v2: drop `reva/*` and the 4 `uploads/` keys. Verify.
 
 ### Phase 3: GBC key layout
 
-- [ ] New GBC uploads go to `public/gbc/<edition>/{gallery,speakers,logos}/…` and `gbc/<edition>/qrcodes/…` (`gbc/utils/aws-s3.ts`); update the key-builder tests.
+- [ ] New GBC uploads go to `public/gbc/<edition>/{gallery,speakers,logos}/…` and `private/gbc/<edition>/qrcodes/…` (`gbc/utils/aws-s3.ts`); update the key-builder tests.
 - [ ] Sign ticket QR links on the "my ticket" and payment-success pages; then drop `GBC2/qrcodes/*` from the policy. Old `GBC2/{gallery,speakers,logos}/*` stay public.
 - [ ] Final policy: `public/*` plus the old `GBC2/` public folders. Verify the public GBC pages by eye.
+
+### Phase 5 (optional): move the legacy files
+
+Not needed for privacy: the policy already makes them private and signed links work from the stored key. Only worth doing to retire the legacy allow-list or to tidy. Default: not done. Per group, with a go each:
+
+1. List the rows that point at the group and the exact rows to change; take a backup of those rows (CSV in `out/`).
+2. Copy the objects server-side (`aws s3 cp s3://… s3://…`, no download) to the new key. Do not delete anything yet.
+3. In one guarded transaction, update the URL (and `…S3Key`) columns; commit only if the row count matches exactly; arrays and the REVA `report` JSON are rewritten URL by URL.
+4. Verify: new links load or sign, the page shows the file, old key still present as a fallback.
+5. After a grace period (suggest 30 days) and a check that nothing logs requests for the old key, delete the old objects.
+
+- [ ] Group A: GBC public images `GBC2/{gallery,speakers,logos}/` to `public/gbc/<2.0 edition>/…` (about 90 files; rows in `gbc_gallery` 30 + 30 thumbnails, `gbc_speakers` 10, `gbc_sponsors` 6, plus the `…S3Key` columns).
+- [ ] Group B: GBC QR codes `GBC2/qrcodes/` to `private/gbc/<edition>/qrcodes/` (155 referenced rows in `gbc_tickets`; the other 263 files are orphans, see Phase 4).
+- [ ] Group C: REVA files `reva/uploads/` and the 4 under `uploads/` to `private/reva/<requestId>/…` (about 64 files; `Property` and `OneTimeUserProperty` arrays and `report` JSON).
+- [ ] Group D: `uploads/PrivateSurveyPlans/` and the old `uploads/` root: leave in place (private, no references); archive or delete only after roji-tech decides.
+- [ ] Group E: `surfboard/`: not moved (ADR-0012 layout stays).
 
 ### Phase 4: Cleanup (separate go for each, list and back up first)
 
