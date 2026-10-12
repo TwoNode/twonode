@@ -683,7 +683,7 @@ export function AmendPlanModal({
                   <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
                     <p className="text-sm text-blue-800 mb-2">Current file:</p>
                     <a
-                      href={plan.redCopyFileUrl}
+                      href={surfboardApi.files.getViewUrl(plan.redCopyFileUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"

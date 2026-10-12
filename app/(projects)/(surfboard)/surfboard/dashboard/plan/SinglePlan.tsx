@@ -1663,7 +1663,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-white/10 p-3"
                   >
                     <a
-                      href={attachment.url}
+                      href={surfboardApi.files.getViewUrl(attachment.url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 min-w-0 hover:text-blue-600"

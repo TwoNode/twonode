@@ -475,7 +475,7 @@ export default function AccountsAdminPage() {
                             </p>
                             {batch.lasgReceiptUrl ? (
                               <a
-                                href={batch.lasgReceiptUrl}
+                                href={surfboardApi.files.getViewUrl(batch.lasgReceiptUrl)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-2 text-violet-600 hover:text-violet-700 font-medium"
@@ -554,7 +554,7 @@ export default function AccountsAdminPage() {
                                         (url: string, idx: number) => (
                                           <a
                                             key={`lasg-${idx}`}
-                                            href={url}
+                                            href={surfboardApi.files.linkFor(url)}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700"
@@ -568,7 +568,7 @@ export default function AccountsAdminPage() {
                                         (url: string, idx: number) => (
                                           <a
                                             key={`remita-${idx}`}
-                                            href={url}
+                                            href={surfboardApi.files.linkFor(url)}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700"
@@ -713,7 +713,7 @@ export default function AccountsAdminPage() {
                       <div className="flex flex-wrap gap-3">
                         {batch.lasgReceiptUrl && (
                           <a
-                            href={batch.lasgReceiptUrl}
+                            href={surfboardApi.files.getViewUrl(batch.lasgReceiptUrl)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 bg-violet-50 px-2 py-1 rounded"
@@ -766,7 +766,7 @@ export default function AccountsAdminPage() {
                               .map((item, idx) => (
                                 <a
                                   key={idx}
-                                  href={item.url}
+                                  href={surfboardApi.files.linkFor(item.url)}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 bg-violet-50 px-2 py-1 rounded"

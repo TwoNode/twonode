@@ -41,8 +41,10 @@ export const GET = withAuth<SurfboardRole>(
       SurfboardRole.RECORDS_I,
       SurfboardRole.INTAKE,
       SurfboardRole.RECORDS_II,
+      SurfboardRole.ARCHIVE,
       SurfboardRole.ADMIN,
       SurfboardRole.SUPERADMIN,
+      SurfboardRole.MDA_SUPERADMIN,
     ].includes(userRole);
 
     if (!isMdaOrAdmin) {
@@ -84,6 +86,20 @@ export const GET = withAuth<SurfboardRole>(
           select: { id: true, viewerId: true, plan: { select: { userId: true } } },
         });
 
+        // 4. Payment receipts on a batch the surveyor submitted. Staff upload
+        // these into their own folder and surveyors cannot edit the field, so
+        // the database match alone is enough (no folder check).
+        const matchingBatch = await prisma.certificateOfDepositBatch.findFirst({
+          where: {
+            submittedBy: userId,
+            OR: [
+              { lasgReceiptUrl: { endsWith: key } },
+              { remitaReceiptUrl: { endsWith: key } },
+            ],
+          },
+          select: { id: true },
+        });
+
         // Plan file fields are user-editable, so the key must also sit in the
         // owner's (or the attaching viewer's) own folder (ADR-0012).
         const planOk =
@@ -96,7 +112,7 @@ export const GET = withAuth<SurfboardRole>(
             matchingAttachment.plan.userId ?? "",
           ]);
 
-        if (!planOk && !attachmentOk) {
+        if (!planOk && !attachmentOk && !matchingBatch) {
           return NextResponse.json(
             { success: false, error: "Access denied to requested file" },
             { status: 403 }
@@ -112,8 +128,16 @@ export const GET = withAuth<SurfboardRole>(
         return NextResponse.json({ success: true, url: signedUrl });
       }
 
-      // Default: Redirect browser directly to the signed URL
-      return NextResponse.redirect(signedUrl);
+      // Default: Redirect browser directly to the signed URL. Cached privately
+      // for less than the link lives, so a refresh does not re-download every
+      // image; Vary keeps it per login session.
+      const response = NextResponse.redirect(signedUrl);
+      response.headers.set(
+        "Cache-Control",
+        `private, max-age=${Math.max(0, Math.min(240, expiresIn - 60))}`
+      );
+      response.headers.set("Vary", "Cookie");
+      return response;
     } catch (error: any) {
       console.error("Error generating signed download URL:", error);
       return NextResponse.json(
@@ -132,8 +156,10 @@ export const GET = withAuth<SurfboardRole>(
       SurfboardRole.RECORDS_I,
       SurfboardRole.INTAKE,
       SurfboardRole.RECORDS_II,
+      SurfboardRole.ARCHIVE,
       SurfboardRole.ADMIN,
       SurfboardRole.SUPERADMIN,
+      SurfboardRole.MDA_SUPERADMIN,
     ],
   }
 );

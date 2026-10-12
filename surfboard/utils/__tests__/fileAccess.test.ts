@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   clampExpiresIn,
   isSafeStorageKey,
+  isStorageFileRef,
   keyBelongsToAllowedUser,
 } from "../fileAccess";
 
@@ -32,5 +33,23 @@ describe("keyBelongsToAllowedUser", () => {
     expect(keyBelongsToAllowedUser("surfboard/me/pdf/x.pdf", ["me"])).toBe(true);
     expect(keyBelongsToAllowedUser("surfboard/pdf/x.pdf", ["me"])).toBe(true);
     expect(keyBelongsToAllowedUser("legacy/file.pdf", ["me"])).toBe(true);
+  });
+});
+
+describe("isStorageFileRef", () => {
+  it("is true for our bucket links and keys", () => {
+    expect(
+      isStorageFileRef(
+        "https://reva-store.s3.eu-north-1.amazonaws.com/surfboard/u1/pdf/a.pdf"
+      )
+    ).toBe(true);
+    expect(isStorageFileRef("surfboard/u1/pdf/a.pdf")).toBe(true);
+  });
+
+  it("is false for external links and empty values", () => {
+    expect(isStorageFileRef("https://login.remita.net/receipt/1")).toBe(false);
+    expect(isStorageFileRef("https://example.com/surfboard/x")).toBe(false);
+    expect(isStorageFileRef("")).toBe(false);
+    expect(isStorageFileRef(null)).toBe(false);
   });
 });

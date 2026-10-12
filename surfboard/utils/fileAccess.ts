@@ -43,3 +43,13 @@ export function keyBelongsToAllowedUser(
   if (FILE_TYPE_FOLDERS.has(folder)) return true; // unscoped, no owner folder
   return allowedUserIds.includes(folder);
 }
+
+/**
+ * True for a link or key that points at our own storage (`surfboard/...`), so it
+ * has to be opened through the file gateway. External links (e.g. Remita) are
+ * left alone.
+ */
+export function isStorageFileRef(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return /^(?:https?:\/\/[^/]+\.amazonaws\.com\/|\/)?surfboard\//.test(value);
+}
