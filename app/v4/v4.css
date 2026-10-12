@@ -4722,3 +4722,100 @@ button {
   letter-spacing: inherit;
   color: inherit;
 }
+
+/* ---------------------------------------------------------------------------
+   v4 responsive pass (TASK-0010): tablet (681-960px) and phone layout fixes
+   --------------------------------------------------------------------------- */
+
+/* Tablet: the hero stacks (the two-column hero left a tiny art panel and a
+   lot of dead space), and the art gets a proper size. */
+@media (min-width: 681px) and (max-width: 960px) {
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .hero-art {
+    width: 100%;
+    height: 380px;
+    margin-top: 28px;
+  }
+  .hero h1 {
+    font-size: clamp(56px, 8.4vw, 68px);
+  }
+
+  /* Work cards: one per row, art beside the copy, instead of three cramped columns */
+  .work-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .work-card {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    align-items: stretch;
+  }
+  .work-card .product-art {
+    height: 100%;
+    min-height: 230px;
+  }
+  .work-card-copy {
+    padding: 26px 24px;
+  }
+  .work-card-copy h3 {
+    font-size: 21px;
+  }
+}
+
+/* Tablet and below: the "Our work" heading and its paragraph stack, so the
+   heading no longer wraps one word per line. */
+@media (max-width: 900px) {
+  .work-heading {
+    display: block;
+  }
+  .work-heading > p {
+    margin-top: 18px;
+    max-width: 560px;
+  }
+}
+
+/* Footer: three columns on tablet, brand across the top */
+@media (min-width: 561px) and (max-width: 960px) {
+  .vf-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 40px 28px;
+  }
+  .vf-brand {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Phone: a shorter hero art panel (the network only fills a small part of it) */
+@media (max-width: 680px) {
+  .hero-art {
+    height: 270px;
+  }
+}
+
+/* Footer email: smaller in the narrower tablet columns so it stays on one line */
+@media (min-width: 561px) and (max-width: 960px) {
+  .vf-col a[href^="mailto:"] {
+    font-size: 13px;
+  }
+}
+
+/* Touch and phone: footer links reach the 44px target size */
+@media (pointer: coarse), (max-width: 680px) {
+  .vf-col a,
+  .vf-socials a,
+  .vf-brand > a {
+    min-height: 44px;
+  }
+  .vf-brand > a {
+    display: inline-flex;
+    align-items: center;
+  }
+  .vf-col ul {
+    gap: 0;
+  }
+}
