@@ -11,10 +11,10 @@ import { PhotonImage, SamplingFilter, crop, resize } from "@cf-wasm/photon";
 
 // Validate required environment variables
 const requiredEnvVars = [
-  "REVA_AWS_REGION",
-  "REVA_AWS_ACCESS_KEY_ID",
-  "REVA_AWS_SECRET_ACCESS_KEY",
-  "REVA_AWS_BUCKET_NAME",
+  "AWS_REGION",
+  "AWS_ACCESS_KEY_ID",
+  "AWS_SECRET_ACCESS_KEY",
+  "AWS_BUCKET_NAME",
 ] as const;
 
 // Check for missing environment variables
@@ -28,15 +28,15 @@ if (missingEnvVars.length > 0) {
 }
 
 const s3Client = new S3Client({
-  region: process.env.REVA_AWS_REGION,
+  region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.REVA_AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.REVA_AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });
 
-const BUCKET_NAME = process.env.REVA_AWS_BUCKET_NAME!;
-const BUCKET_REGION = process.env.REVA_AWS_REGION!;
+const BUCKET_NAME = process.env.AWS_BUCKET_NAME!;
+const BUCKET_REGION = process.env.AWS_REGION!;
 
 /**
  * Resize to exactly targetW x targetH, cropping the excess on the longer

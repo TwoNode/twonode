@@ -487,10 +487,8 @@ function calculatePolygonArea(geometry: any): number {
 }
 
 export function getSurfboardFileUrl(key: string): string {
-  const bucketName =
-    process.env.SURFBOARD_AWS_BUCKET_NAME || process.env.REVA_AWS_BUCKET_NAME!;
-  const region =
-    process.env.SURFBOARD_AWS_REGION || process.env.REVA_AWS_REGION!;
+  const bucketName = process.env.AWS_BUCKET_NAME!;
+  const region = process.env.AWS_REGION!;
   return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
 }
 
