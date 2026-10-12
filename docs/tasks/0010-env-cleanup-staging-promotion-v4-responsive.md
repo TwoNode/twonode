@@ -1,6 +1,6 @@
 # TASK-0010: Session Batch — 2026-10-12 (Vercel env cleanup, staging promotion, /v4 responsive)
 
-- **Status:** In Progress (running: /v4 mobile and tablet responsiveness; waiting on roji-tech for the prod promotion and the S3 bucket)
+- **Status:** In Progress (responsive PR #360 open; waiting on roji-tech for the prod promotion and the S3 bucket)
 - **Priority:** High
 - **Assignee:** Maintainer / Agent
 - **Target Branch / PR:** `docs/env-cleanup-and-promotion` (this record), `feat/v4-responsive` (responsive work)
@@ -51,10 +51,11 @@ See issue I-004. Do not turn on Block Public Access for the whole bucket: the GB
 - [ ] **Code change first:** the surveyor logo (`SurfboardUser.logo`, 22 rows under `surfboard/`) is shown with a plain `<img src>` on the Surfboard settings page and will break once `surfboard/*` is private. Serve it through `/api/v1/surfboard/files/view`. (Issue I-019) _(Waiting on: roji-tech go)_
 - [ ] After the change: an anonymous request to a `surfboard/` object returns 403, a `GBC2/` image returns 200, a signed link from the app works. Then record it in a new ADR (ADR-0012 is not rewritten).
 
-### Module D: /v4 mobile and tablet responsiveness (running)
+### Module D: /v4 mobile and tablet responsiveness
 
-- [ ] Review `/v4` at 320, 390, 768 and 1024 px and fix what is awkward (tablet grids, hero art, footer columns at tablet width, diagram labels, spacing). _(running)_
-- [ ] Re-measure: no horizontal scroll, no text under 12px, tap targets at least 44px, and screenshots compared before and after.
+- [x] Reviewed `/v4` at 320, 390, 768 and 1024 px and fixed (PR #360): tablet hero stacks, work cards one per row with art beside copy, the "Our work" heading stacks instead of wrapping word by word, tablet footer in three columns with the email on one line, shorter hero art on phones, footer links at 44px on touch. (Done 2026-10-12)
+- [x] Re-measured on 7 pages x 4 widths: no horizontal scroll, no text under 12px, no page errors, no link under 43px on touch widths; home page screenshots compared before and after. (Done 2026-10-12)
+- [ ] Not checked: real devices, phone landscape, and the inner pages by eye at tablet width (measured only). The hero art is still mostly empty on tablet and phone (the network is small inside a large panel).
 
 ---
 

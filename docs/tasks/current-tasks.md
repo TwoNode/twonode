@@ -7,8 +7,8 @@ State as of 2026-10-12: `main` (staging) has everything on `dev` (PR #358) and p
 ## Active Session Batch: TASK-0010 — Vercel env cleanup, staging promotion, /v4 responsive
 
 **Batch Reference:** [TASK-0010](./0010-env-cleanup-staging-promotion-v4-responsive.md)  
-**Active Branch:** `feat/v4-responsive` (running)  
-**Status:** `In Progress (running: /v4 mobile and tablet responsiveness)`. Waiting on roji-tech: go to promote `main` → `prod`, the AWS admin for the S3 bucket policy, go to make the cron route and Red Copy webhook fail closed.
+**Active Branch:** `feat/v4-responsive` (PR #360)  
+**Status:** `In Progress`. Responsive PR #360 is open. Waiting on roji-tech: go to promote `main` → `prod`, the AWS admin for the S3 bucket policy, go to make the cron route and Red Copy webhook fail closed.
 
 - [x] **Vercel env:** `AWS_*` added, `CRON_SECRET` set, seven unused variables removed with a backup. (Done 2026-10-12)
 - [x] **`dev` → `main` (PR #358) and staging smoke tests (17 checks) passed.** (Done 2026-10-12)
@@ -16,7 +16,7 @@ State as of 2026-10-12: `main` (staging) has everything on `dev` (PR #358) and p
 - [ ] **S3 bucket: policy limited to `GBC2/*`, ACL blocks on.** Needs the AWS admin. _(Waiting on: AWS admin)_
 - [ ] **Surveyor logo through the file gateway before `surfboard/*` goes private.** _(Waiting on: roji-tech go)_
 - [ ] **Remove `REVA_AWS_*` from Vercel after prod runs on `AWS_*`.**
-- [ ] **/v4 mobile and tablet responsiveness.** _(running)_
+- [x] **/v4 mobile and tablet responsiveness** (PR #360, open for review). (Done 2026-10-12)
 
 ---
 
