@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaLink } from "@/components/media";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -162,10 +163,8 @@ const FileCard = ({
 
       <div className="mt-2 space-x-2">
         {type === "pdf" || type === "cert" || type === "redcopy" ? (
-          <a
+          <MediaLink
             href={authenticatedUrl}
-            target="_blank"
-            rel="noopener noreferrer"
             className="text-sm text-blue-600 hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
@@ -174,11 +173,11 @@ const FileCard = ({
               : type === "redcopy"
               ? "View Record Copy"
               : "View Certificate"}
-          </a>
+          </MediaLink>
         ) : (
           <>
             <a
-              href={authenticatedUrl}
+              href={surfboardApi.files.getDownloadUrl(filePath, fileName)}
               download
               className="text-sm text-blue-600 hover:underline"
               onClick={(e) => e.stopPropagation()}
@@ -186,15 +185,13 @@ const FileCard = ({
               Download
             </a>
             {!isDwg && (
-              <a
+              <MediaLink
                 href={authenticatedUrl}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="text-sm text-blue-600 hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
                 View
-              </a>
+              </MediaLink>
             )}
           </>
         )}
@@ -1662,10 +1659,8 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     key={attachment.id}
                     className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-white/10 p-3"
                   >
-                    <a
+                    <MediaLink
                       href={surfboardApi.files.getViewUrl(attachment.url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="flex items-center gap-2 min-w-0 hover:text-blue-600"
                     >
                       <File className="h-4 w-4 shrink-0 text-gray-400" />
@@ -1675,7 +1670,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       >
                         {attachment.fileName}
                       </span>
-                    </a>
+                    </MediaLink>
                     <button
                       onClick={() =>
                         handleDeleteViewerAttachment(attachment.id)

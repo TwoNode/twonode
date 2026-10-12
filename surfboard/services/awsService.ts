@@ -89,10 +89,11 @@ export async function getPresignedUploadUrl(
  */
 export async function getPresignedDownloadUrl(
   keyOrUrl: string,
-  expiresIn = 300
+  expiresIn = 300,
+  options?: { downloadName?: string }
 ): Promise<string> {
   const provider = getStorageProvider();
-  return provider.getDownloadUrl(keyOrUrl, expiresIn);
+  return provider.getDownloadUrl(keyOrUrl, expiresIn, options);
 }
 
 /**

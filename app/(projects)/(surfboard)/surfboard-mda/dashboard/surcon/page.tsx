@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaLink } from "@/components/media";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -716,15 +717,13 @@ export default function SurconAdminPage() {
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Record Copy
               </p>
-              <a
+              <MediaLink
                 href={surfboardApi.files.getViewUrl(plan.redCopyFileUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-violet-600 hover:text-violet-700"
               >
                 <FileText className="w-4 h-4" />
                 View Record Copy
-              </a>
+              </MediaLink>
             </div>
           )}
 

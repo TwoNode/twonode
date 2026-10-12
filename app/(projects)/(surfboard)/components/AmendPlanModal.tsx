@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaLink } from "@/components/media";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
@@ -682,15 +683,13 @@ export function AmendPlanModal({
                 {plan.redCopyFileUrl && (
                   <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
                     <p className="text-sm text-blue-800 mb-2">Current file:</p>
-                    <a
+                    <MediaLink
                       href={surfboardApi.files.getViewUrl(plan.redCopyFileUrl)}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
                     >
                       <FileText className="w-4 h-4" />
                       View current record copy
-                    </a>
+                    </MediaLink>
                   </div>
                 )}
                 <div className="space-y-2">

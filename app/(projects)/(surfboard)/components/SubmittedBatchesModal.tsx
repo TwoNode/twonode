@@ -6,6 +6,7 @@
 
 "use client";
 
+import { MediaLink } from "@/components/media";
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
@@ -664,13 +665,11 @@ export function SubmittedBatchesModal({
                               <DropdownMenuContent align="end">
                                 {batch.lasgReceiptUrl ? (
                                   <DropdownMenuItem asChild>
-                                    <a
+                                    <MediaLink
                                       href={surfboardApi.files.getViewUrl(batch.lasgReceiptUrl)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
                                     >
                                       LASG Receipt
-                                    </a>
+                                    </MediaLink>
                                   </DropdownMenuItem>
                                 ) : (
                                   <DropdownMenuItem disabled>
@@ -764,18 +763,16 @@ export function SubmittedBatchesModal({
                                 </div>
                                 <div className="flex gap-2 shrink-0 items-center flex-wrap">
                                   {plan.redCopyFileUrl && (
-                                    <a
+                                    <MediaLink
                                       href={surfboardApi.files.getViewUrl(
                                         plan.redCopyFileUrl
                                       )}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
                                       className="inline-flex items-center gap-1 text-xs text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 border border-rose-200 dark:border-rose-500/20 px-2 py-1 rounded-md font-medium transition-colors"
                                       title="View submitted Record Copy PDF"
                                     >
                                       <Eye className="w-3.5 h-3.5 text-rose-600" />
                                       <span>Red Copy</span>
-                                    </a>
+                                    </MediaLink>
                                   )}
                                   <Badge
                                     variant="outline"

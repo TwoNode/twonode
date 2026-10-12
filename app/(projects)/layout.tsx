@@ -6,6 +6,7 @@ import { KindeAuthProvider } from "@/providers/KindeAuthProvider";
 import ToasterComponent from "@/components/ToasterComponent";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/hooks/useTheme";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { MediaViewerProvider } from "@/components/media";
 
 const bricolage = localFont({
   src: [
@@ -117,7 +118,9 @@ export default function RootLayout({
                   gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}
                 />
               )}
-              <main className="relative">{children}</main>
+              <MediaViewerProvider>
+                <main className="relative">{children}</main>
+              </MediaViewerProvider>
               <WhatsAppButton />
             </KindeAuthProvider>
           </ThemeProvider>

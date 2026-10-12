@@ -104,3 +104,13 @@ describe("lib/storage", () => {
     });
   });
 });
+
+describe("attachmentDisposition", () => {
+  it("builds a download header with an ASCII fallback and the UTF-8 name", async () => {
+    const { attachmentDisposition } = await import("../utils");
+    const h = attachmentDisposition('Plan "A"/é.pdf');
+    expect(h).toContain('attachment; filename="Plan A_.pdf"');
+    expect(h).toContain("filename*=UTF-8''Plan%20A%C3%A9.pdf");
+    expect(attachmentDisposition("  ")).toContain('filename="download"');
+  });
+});
