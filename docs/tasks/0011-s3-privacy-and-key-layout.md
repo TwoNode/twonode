@@ -22,6 +22,27 @@ Make the private files in `reva-store` private without breaking the public GBC w
 - [x] Every public GBC page image (gallery 30 + 30 thumbnails, speakers 10, sponsors 6) points at `GBC2/`. Ticket QR codes (155 rows) show on the "my ticket" and payment-success pages.
 - [x] The app key (`s3-uploader`) can read the policy and settings. Neither it nor the local `amplify-cli-admin` profile was tested for writing a policy (that needs a real write), and the profile cannot simulate IAM policies.
 
+## 2b. Legacy classification (read-only, 2026-10-12)
+
+Every link in the database (all text, JSON and array columns, 3,259 links) was matched against all 7,760 objects. No file is used by both a public and a private column. Companion `…S3Key` columns exist for GBC tickets, gallery, speakers and sponsors, and for the Certificate of Deposit receipt; a move must update them with the URL.
+
+| Group                        | Files | Referenced | Orphan | Public or private                                                                                                                       |
+| ---------------------------- | ----- | ---------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `GBC2/gallery`               | 68    | 60         | 8      | **Public** (`gbc_gallery`: media + thumbnails)                                                                                          |
+| `GBC2/speakers`              | 12    | 10         | 2      | **Public** (`gbc_speakers.photo`)                                                                                                       |
+| `GBC2/logos`                 | 7     | 6          | 1      | **Public** (`gbc_sponsors.logo`)                                                                                                        |
+| `GBC2/qrcodes`               | 418   | 155        | 263    | **Private** (`gbc_tickets.qrCode`, shown to the ticket owner)                                                                           |
+| `reva/uploads`               | 139   | 65         | 74     | **Private** (documents, reports, site photos)                                                                                           |
+| `uploads/` root              | 106   | 5          | 101    | **Private**; 4 documents and 1 report are referenced, the rest look like old user uploads and 4 plain-named `.svg` files of unknown use |
+| `uploads/PrivateSurveyPlans` | 363   | 0          | 363    | **Private** (old scans, 630 MB, nothing points at them)                                                                                 |
+| bucket root: `revaLogo.png`  | 1     | 0          | 1      | Unused: the app uses its own `public/reva/revaLogo.png`                                                                                 |
+| `surfboard/<uuid>`           | 5,653 | 2,661      | 2,992  | **Private**, not moved                                                                                                                  |
+| `surfboard/<other folder>`   | 993   | 136        | 857    | **Private**, not moved                                                                                                                  |
+
+Also found: 94 stored links whose file is missing from the bucket (77 red copies, 5 CAD, 5 REVA documents, 3 PDFs, 3 reports, 1 attachment). 3,849 of the 6,646 `surfboard/` files are unreferenced (58%, about 3 GB); do not delete without a separate check.
+
+Consequence for the move: only 30 + 30 + 10 + 6 = 76 database links are public ones. Orphans are not moved; they are only made private by the policy and listed for Phase 4.
+
 ## 3. Work breakdown
 
 ### Phase 1: Surfboard and `PrivateSurveyPlans` private
