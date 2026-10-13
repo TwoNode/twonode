@@ -41,6 +41,7 @@ State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate
 
 - [x] **Viewer, gateway download, Surfboard screens.** (Done 2026-10-13, PR open)
 - [x] **REVA, GBC and public plan links moved to the viewer, plus the new-tab test.** (Done 2026-10-13, branch `feat/media-viewer-phase2`)
+- [x] **Self-host the six Google fonts** (v2 layout and Surfboard landing page) so builds stop failing on the Google Fonts fetch. 29 files, 512 KB in `public/fonts/self-hosted/` with OFL licences. (Done 2026-10-13, branch `chore/self-host-fonts`)
 - [ ] **Phone check on staging.** Viewer is on staging (#374, build Ready). _(Waiting on: roji-tech or someone with a staging login)_
 
 ---
