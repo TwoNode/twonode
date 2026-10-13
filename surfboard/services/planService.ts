@@ -1334,7 +1334,8 @@ export async function submitRedCopy(
   const uploadResult = await uploadSurfboardFileToS3(
     file,
     "redcopy",
-    `${plan.planNumber}-${Date.now()}`
+    userId,
+    plan.planNumber
   );
   if (!uploadResult.url)
     throw new ValidationError({ file: "Failed to upload Red Copy file" });
