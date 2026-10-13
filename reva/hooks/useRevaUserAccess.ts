@@ -6,6 +6,7 @@ import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { canAccessRoute } from "@/reva/access/routes";
 import { Platform } from "@/utils/platform";
 import { revaApi } from "@/reva/apiClient";
+import { loginUrlWithReturn } from "@/lib/auth/loginReturn";
 
 interface UserData {
   platform: Platform;
@@ -73,7 +74,7 @@ export function useRevaUserAccess() {
           );
           if (isMounted) {
             setIsUser(false);
-            router.push("/reva/login");
+            router.push(loginUrlWithReturn("/reva/login"));
           }
           return;
         }
@@ -100,7 +101,7 @@ export function useRevaUserAccess() {
         console.error("Error checking user access:", error);
         if (isMounted) {
           setIsUser(false);
-          router.push("/reva/login");
+          router.push(loginUrlWithReturn("/reva/login"));
         }
       } finally {
         if (isMounted) {
