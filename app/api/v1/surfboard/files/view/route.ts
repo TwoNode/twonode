@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import {
   clampExpiresIn,
   isSafeStorageKey,
+  isRedCopyKeyOfPlan,
   keyBelongsToAllowedUser,
 } from "@/surfboard/utils/fileAccess";
 
@@ -71,7 +72,7 @@ export const GET = withAuth<SurfboardRole>(
               },
             ],
           },
-          select: { id: true, userId: true },
+          select: { id: true, userId: true, planNumber: true },
         });
 
         // 3. Check viewer attachments
@@ -104,7 +105,8 @@ export const GET = withAuth<SurfboardRole>(
         // owner's (or the attaching viewer's) own folder (ADR-0012).
         const planOk =
           !!matchingPlan &&
-          keyBelongsToAllowedUser(key, [matchingPlan.userId ?? ""]);
+          (keyBelongsToAllowedUser(key, [matchingPlan.userId ?? ""]) ||
+            isRedCopyKeyOfPlan(key, matchingPlan.planNumber));
         const attachmentOk =
           !!matchingAttachment &&
           keyBelongsToAllowedUser(key, [
