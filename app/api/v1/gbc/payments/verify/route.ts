@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { handleApiError } from "@/lib/api/errors";
 import { validateBody } from "@/lib/api/validate";
-import { verifyPayment } from "@/gbc/services/ticketService";
+import { verifyPayment, withSignedQr } from "@/gbc/services/ticketService";
 
 const bodySchema = z.object({
   reference: z.string().min(1),
@@ -13,7 +13,11 @@ const bodySchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const { reference, sendEmail } = await validateBody(req, bodySchema);
-    const data = await verifyPayment(reference, sendEmail);
+    const result = await verifyPayment(reference, sendEmail);
+    const data = {
+      ...result,
+      tickets: await Promise.all(result.tickets.map(withSignedQr)),
+    };
     return NextResponse.json({ success: true, data });
   } catch (err) {
     return handleApiError(err, {
