@@ -7,6 +7,10 @@ import SearchFilters, {
   SearchFilters as SearchFiltersType,
 } from "../../components/SearchFilters";
 import { Pagination } from "@/components/ui/pagination";
+import {
+  RequestViewToggle,
+  useRequestView,
+} from "../../components/requestView";
 
 const PAGE_SIZE = 10;
 
@@ -65,6 +69,7 @@ const AllRequestsWithReportClient: React.FC<
     hasReport: null,
     isApproved: null,
   });
+  const [view, setView] = useRequestView();
   const [oneTimePage, setOneTimePage] = useState(1);
   const [requestsPage, setRequestsPage] = useState(1);
 
@@ -281,6 +286,10 @@ const AllRequestsWithReportClient: React.FC<
         filteredCount={filteredCount}
       />
 
+      <div className="mb-4 flex justify-end">
+        <RequestViewToggle view={view} onChange={setView} />
+      </div>
+
       {filteredData.filteredOneTime.length > 0 && (
         <section className="mb-8 flex flex-col gap-4">
           <AdminMiniHeader
@@ -291,7 +300,7 @@ const AllRequestsWithReportClient: React.FC<
               </>
             }
           />
-          <RequestList requests={pagedOneTime} showStats={false} />
+          <RequestList requests={pagedOneTime} showStats={false} view={view} />
           {oneTimeTotalPages > 1 && (
             <div className="flex justify-end">
               <Pagination
@@ -316,7 +325,11 @@ const AllRequestsWithReportClient: React.FC<
 
         {filteredData.filtered.length > 0 ? (
           <>
-            <RequestList requests={pagedRequests} showStats={false} />
+            <RequestList
+              requests={pagedRequests}
+              showStats={false}
+              view={view}
+            />
             {requestsTotalPages > 1 && (
               <div className="flex justify-end">
                 <Pagination

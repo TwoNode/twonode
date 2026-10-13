@@ -58,6 +58,8 @@ interface RequestListProps {
   requests: Request[];
   title?: string;
   showStats?: boolean;
+  /** `grid` (cards, the default) or `list` (one compact row per request). */
+  view?: "grid" | "list";
 }
 
 const isOneTime = (request: Request) =>
@@ -95,6 +97,7 @@ const RequestList = ({
   requests,
   title,
   showStats = true,
+  view = "grid",
 }: RequestListProps) => {
   if (requests.length === 0) {
     return (
@@ -129,7 +132,12 @@ const RequestList = ({
         </div>
       )}
 
-      <ul className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <ul
+        className={cn(
+          "grid grid-cols-1 gap-4",
+          view === "grid" ? "xl:grid-cols-2" : "gap-3"
+        )}
+      >
         {requests.map((request) => {
           const requester = requesterOf(request);
           const oneTime = isOneTime(request);
@@ -142,6 +150,104 @@ const RequestList = ({
             request.title ||
             request.description ||
             "Untitled request";
+
+          if (view === "list") {
+            return (
+              <li
+                key={request.id}
+                className={cn(
+                  "rounded-xl border bg-white px-4 py-3 transition-shadow hover:shadow-md dark:bg-surface",
+                  request?.deleted
+                    ? "border-red-200 bg-red-50/40"
+                    : "border-border"
+                )}
+              >
+                <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)_6.5rem_8.5rem_26rem] xl:items-center">
+                  <div className="min-w-0">
+                    <p className="line-clamp-2 text-sm font-semibold text-foreground">
+                      {heading}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {oneTime ? "One-time" : "Regular"} ·{" "}
+                      <span className="font-mono">{request.reference}</span>
+                      {request.lga ? ` · ${request.lga}` : ""}
+                      {documents.length > 0
+                        ? ` · ${documents.length} ${documents.length === 1 ? "document" : "documents"}`
+                        : ""}
+                    </p>
+                  </div>
+                  <div className="min-w-0 text-sm">
+                    <p className="truncate font-medium text-foreground">
+                      {requester.name}
+                    </p>
+                    {requester.email && (
+                      <p className="truncate text-xs text-muted-foreground">
+                        {requester.email}
+                      </p>
+                    )}
+                  </div>
+                  <p
+                    className="text-sm font-semibold"
+                    style={{ color: REVA_COLORS.primary.light }}
+                  >
+                    {formatCurrency(request.totalCost)}
+                  </p>
+                  <p
+                    className={cn("text-xs", overdue && "font-medium")}
+                    style={
+                      overdue ? { color: REVA_COLORS.status.error } : undefined
+                    }
+                  >
+                    <span className="text-muted-foreground">
+                      {overdue ? "Was due " : "Due "}
+                    </span>
+                    {format(due, "dd MMM, hh:mm a")}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 sm:col-span-2 xl:col-span-1 xl:justify-end">
+                    {request.status && (
+                      <StatusPill tone={toneForStatus(request.status)}>
+                        {request.status}
+                      </StatusPill>
+                    )}
+                    {request.paymentStatus && (
+                      <StatusPill tone={toneForPayment(request.paymentStatus)}>
+                        {request.paymentStatus}
+                      </StatusPill>
+                    )}
+                    {report ? (
+                      report?.isApproved ? (
+                        <StatusPill tone="success">Approved</StatusPill>
+                      ) : (
+                        <StatusPill tone="warning">In review</StatusPill>
+                      )
+                    ) : (
+                      <StatusPill tone="error">No report</StatusPill>
+                    )}
+                    <Button asChild size="sm" variant="secondary">
+                      <Link
+                        href={`/reva-restricted/dashboard/details?reference=${request.reference}`}
+                      >
+                        <EyeIcon className="mr-2 h-4 w-4" />
+                        View
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+                {(request.statusMessage || request.error) && (
+                  <p
+                    className="mt-2 text-xs"
+                    style={{
+                      color: request.error
+                        ? REVA_COLORS.status.error
+                        : REVA_COLORS.primary.main,
+                    }}
+                  >
+                    {request.error || request.statusMessage}
+                  </p>
+                )}
+              </li>
+            );
+          }
 
           return (
             <li

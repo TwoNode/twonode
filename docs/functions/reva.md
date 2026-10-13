@@ -59,5 +59,6 @@ Non-component logic files specific to the REVA platform, under `reva/`.
 | ---- | ----------- |
 | `components/requestUi.tsx` | Presentation helpers shared by the request list and detail pages: `StatusPill`, `Fact`, `toneForStatus`, `toneForPayment`, `documentLabel` (presentation only; the tones match the old badges) |
 | `components/RequestsList.tsx` | The request cards (address as title, requester / fee / due, document chips, report state, View details). Same props as before; every link goes through the file gateway |
+| `components/requestView.tsx` | `useRequestView` (grid or list, remembered in this browser's localStorage, grid by default) and `RequestViewToggle` for the two request list pages; `RequestsList` takes `view="grid" \| "list"` |
 | `components/AdminMiniHeader.tsx` | Section heading (title with a hairline; a trailing `<small>` count is shown quieter) |
 | `components/RequestPageHeader.tsx` | Top of a request detail page: back link, kind, reference, page actions (PDF downloads) |
