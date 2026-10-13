@@ -38,7 +38,7 @@ Deliver coordinate shift corrections for Lagos, resolve pillarless and missing-s
 
 - [x] **Wrong name on every certificate link:** Fixed by awaiting Next.js dynamic params in PR #295; `getTicketByNumber` now rejects empty inputs. Released to prod 2026-10-06.
 - [x] **Web page matches PDF design:** Aligned certificate web view typography, layout, and colors with generated PDF. Released in PR #297 and PR #298.
-- [x] **Prod edition 2.0 held wrong event:** Updated event association on prod 2026-10-07 (backup saved in `out/prod-gbc-edition-2.0-backup.csv`).
+- [x] **Prod edition 2.0 held wrong event:** Updated event association on prod 2026-10-07 (backup saved in `out/db/backups/prod-gbc-edition-2.0-backup.csv`).
 
 ---
 
@@ -54,4 +54,4 @@ Deliver coordinate shift corrections for Lagos, resolve pillarless and missing-s
 ## 4. Deliverables
 
 - **PRs:** #291, #295, #297, #298, #300, #307 (all merged to prod)
-- **Database Backups:** `out/*-missing-state-backup.csv`, `out/prod-gbc-edition-2.0-backup.csv`
+- **Database Backups:** `out/*-missing-state-backup.csv`, `out/db/backups/prod-gbc-edition-2.0-backup.csv`
