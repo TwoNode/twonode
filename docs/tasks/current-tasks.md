@@ -17,6 +17,7 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 - [x] **Surveyor logo through the file gateway.** Settings page uses the gateway (#370); nothing else shows the raw URL. (Done 2026-10-13) Worth a look on prod that the logo still shows.
 - [x] **Remove `REVA_AWS_*` from Vercel.** Removed from production, preview and development; values backed up to `out/`. (Done 2026-10-13)
 - [ ] **Surfboard user dashboard: no spinner screen.** Server reads name and subscription, panel draws on first paint, skeleton as fallback (PR to `dev`). _(Waiting on: merge, then a staging check with a subscribed and an unsubscribed surveyor)_
+- [ ] **REVA admin request screens redesign** (list cards, section headers, detail pages; presentation only, PR to `dev`). _(Waiting on: merge, then a staging check with a REVA super admin)_
 - [x] **/v4 mobile and tablet responsiveness** (PR #360, open for review). (Done 2026-10-12)
 
 ---

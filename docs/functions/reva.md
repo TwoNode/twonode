@@ -52,3 +52,13 @@ Non-component logic files specific to the REVA platform, under `reva/`.
 | `reva/utils/fileAccess.ts` | `isRevaStorageKey`, `isRevaFileRef`, `ownSitePhotoMatches` for the REVA file gateway `GET /api/v1/reva/files/view` (short-lived signed link, `format=json`, `download=1&name=`). Admins open any REVA file; a requester opens only the site photos of their own requests; documents and reports stay behind the emailed one-time code |
 | `reva/utils/uploadKey.ts` | `revaUploadKey` / `safeUploadFileName`: new REVA uploads are stored as `private/reva/<reference>/<unique>-<name>` (report uploads keep their name; `unassigned` before a request has a reference). Opened through the REVA file gateway or the one-time download code; older files stay under `reva/uploads/` |
 | `reva/colors.ts`    | REVA brand color palette                            |
+
+## Admin request screens (`app/(projects)/(reva)/reva-restricted/`)
+
+| File | Description |
+| ---- | ----------- |
+| `components/requestUi.tsx` | Presentation helpers shared by the request list and detail pages: `StatusPill`, `Fact`, `toneForStatus`, `toneForPayment`, `documentLabel` (presentation only; the tones match the old badges) |
+| `components/RequestsList.tsx` | The request cards (address as title, requester / fee / due, document chips, report state, View details). Same props as before; every link goes through the file gateway |
+| `components/requestView.tsx` | `useRequestView` (grid or list, remembered in this browser's localStorage, grid by default) and `RequestViewToggle` for the two request list pages; `RequestsList` takes `view="grid" \| "list"` |
+| `components/AdminMiniHeader.tsx` | Section heading (title with a hairline; a trailing `<small>` count is shown quieter) |
+| `components/RequestPageHeader.tsx` | Top of a request detail page: back link, kind, reference, page actions (PDF downloads) |
