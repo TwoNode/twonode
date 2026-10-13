@@ -45,8 +45,10 @@ const UserRequestDataView = ({ property }: { property: any }) => {
             {property?.title || property?.address || "Untitled Request"}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {property?.address}
-            {property?.lga ? ` · ${property.lga}` : ""}
+            {property?.title && property.title !== property?.address
+              ? `${property.address} · `
+              : ""}
+            {property?.lga}
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {property?.status && (
@@ -88,7 +90,7 @@ const UserRequestDataView = ({ property }: { property: any }) => {
             }
           }}
         >
-          Download Report
+          Download uploaded report
         </Button>
       </div>
 
