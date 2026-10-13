@@ -105,3 +105,4 @@ Not needed for privacy: the policy already makes them private and signed links w
 ## 4. Verification
 
 - [ ] `npx tsc --noEmit` and `npx vitest run` after each code phase; `docs/functions/*.md` updated for any changed function.
+- [x] **Unique index on plan numbers, prod.** Done 2026-10-13 (roji-tech go): partial unique index `SurfboardPlan_planNumberKey_live_uniq` on `planNumberKey` for non-deleted plans, created CONCURRENTLY, valid. Undo: `DROP INDEX CONCURRENTLY IF EXISTS "SurfboardPlan_planNumberKey_live_uniq"`. Not applied to staging, `test_db`, `dev_db` (11 AUO duplicates there). Prod runs old code until promotion, so one plan created that day has no key yet; re-run the backfill after promoting `main` to `prod`.
