@@ -123,7 +123,7 @@ export default function RevaAdminPanelLayout({
           userData={userData}
         />
 
-        <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
+        <div className="relative flex-1 p-4 overflow-x-hidden overflow-y-auto">
           <VerificationNagBanner
             platform={Platform.REVA}
             verifyHref="/reva/verify-email"
