@@ -71,7 +71,7 @@ Decision (roji-tech, 2026-10-12): red copy key is `surfboard/<userId>/redcopy/<p
 ### Phase 2: REVA private
 
 - [x] (Done 2026-10-13, branch `feat/reva-signed-links`: gateway `/api/v1/reva/files/view`, admin views and the owner's site photos use it) Sign links when REVA pages render site photos, documents and reports (`SingleRequestPage.tsx`, `verifypayment/viewDetails.tsx`, `reva-restricted` views), after checking the database that the caller may see that request.
-- [ ] New REVA uploads go to `private/reva/<requestId>/…` (`awsActions.ts`); stop writing to `uploads/` (`uploadToS3`).
+- [x] (Done 2026-10-13, branch `feat/reva-private-uploads`) New REVA uploads go to `private/reva/<requestId>/…` (`awsActions.ts`); stop writing to `uploads/` (`uploadToS3`).
 - [ ] Apply policy v2: drop `reva/*` and the 4 `uploads/` keys. Verify.
 
 ### Phase 3: GBC key layout
