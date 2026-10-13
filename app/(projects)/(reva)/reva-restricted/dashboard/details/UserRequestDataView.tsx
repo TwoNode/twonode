@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 import Link from "next/link";
 import { REVA_COLORS } from "@/reva/colors";
-import { MediaLink } from "@/components/media";
+import { EnlargeableImage, MediaLink } from "@/components/media";
 import { revaApi } from "@/reva/apiClient";
 
 const UserRequestDataView = ({ property }: { property: any }) => {
@@ -125,11 +125,15 @@ const UserRequestDataView = ({ property }: { property: any }) => {
                     key={idx}
                     className="rounded-lg overflow-hidden border bg-white dark:bg-surface shadow hover:shadow-lg transition-shadow"
                   >
-                    <img
-                      src={revaApi.files.linkFor(url)}
+                    <EnlargeableImage
+                      href={revaApi.files.linkFor(url)}
                       alt={`Site Image ${idx + 1}`}
-                      className="w-full h-48 object-cover"
-                      loading="lazy"
+                      group={property.site_images.map((u: string, n: number) => ({
+                        href: revaApi.files.linkFor(u),
+                        name: `Site Image ${n + 1}`,
+                        kind: "image" as const,
+                      }))}
+                      imgClassName="w-full h-48 object-cover"
                     />
                   </div>
                 ))}
