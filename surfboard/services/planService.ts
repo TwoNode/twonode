@@ -35,6 +35,7 @@ import { PROVISIONAL_TYPES } from "@/surfboard/services/analyticsService";
 import { emailInUse } from "@/lib/auth/userLookup";
 import { sendPlanShareInviteEmail } from "@/utils/email";
 import { getSiteUrl } from "@/lib/siteUrl";
+import { normalizePlanNumber, samePlanNumber } from "@/surfboard/utils/planNumber";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/surfboardActions.ts —
@@ -1052,15 +1053,14 @@ export async function checkPlanNumberExists(
   planNumber: string,
   excludeId?: string
 ): Promise<boolean> {
-  if (!planNumber.trim()) return false;
-  const count = await prisma.surfboardPlan.count({
-    where: {
-      planNumber: planNumber.trim(),
-      ...(excludeId && { id: { not: excludeId } }),
-      userId,
-    },
+  if (!normalizePlanNumber(planNumber)) return false;
+  // Compared with the shared rules (case, spacing, trailing `_` and `.`), so
+  // typing variants of one number are caught (I-024). One surveyor's plans only.
+  const plans = await prisma.surfboardPlan.findMany({
+    where: { userId, ...(excludeId && { id: { not: excludeId } }) },
+    select: { planNumber: true },
   });
-  return count > 0;
+  return plans.some((p) => samePlanNumber(p.planNumber, planNumber));
 }
 
 export async function getAllFacilitatorsAndPlanNumbers(userId: string) {

@@ -1,5 +1,6 @@
 import { Readable } from "stream";
 import { getStorageProvider, extractKeyFromUrl } from "@/lib/storage/index";
+import { planNumberToKeySegment } from "@/surfboard/utils/planNumber";
 
 /**
  * Storage Service for Surfboard
@@ -218,7 +219,7 @@ export async function getSurfboardUploadTargetsMulti(
     const extension = name.split(".").pop()?.toLowerCase() || "";
 
     let newFilename: string;
-    const safePlanNumber = planNumber.replace(/\//g, "_");
+    const safePlanNumber = planNumberToKeySegment(planNumber);
     if (files.length === 1) {
       newFilename = `${safePlanNumber}.${extension}`;
     } else {
