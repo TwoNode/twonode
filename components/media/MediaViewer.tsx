@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -27,7 +27,7 @@ import {
   mediaKindFor,
   type MediaItem,
 } from "./mediaTypes";
-import { stepZoom, wrapIndex } from "./viewerMath";
+import { stepZoom, swipeStep, wrapIndex } from "./viewerMath";
 import { useResolvedUrl } from "./useResolvedUrl";
 
 const PdfViewer = dynamic(() => import("./PdfViewer"), {
@@ -70,6 +70,7 @@ export function MediaViewer({
 
   const count = items.length;
   const current = items[wrapIndex(index, count)];
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const go = useCallback(
     (step: 1 | -1) => onIndexChange(wrapIndex(index + step, count)),
     [index, count, onIndexChange]
@@ -119,7 +120,26 @@ export function MediaViewer({
           </DialogClose>
         </header>
 
-        <div className="relative min-h-0 flex-1">
+        <div
+          className="relative min-h-0 flex-1"
+          onTouchStart={(e) => {
+            // One finger only: two fingers are a pinch.
+            touchStart.current =
+              e.touches.length === 1
+                ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+                : null;
+          }}
+          onTouchEnd={(e) => {
+            const start = touchStart.current;
+            touchStart.current = null;
+            if (!start || count < 2) return;
+            // A zoomed picture or page pans sideways instead of changing file.
+            if (e.currentTarget.querySelector('[data-zoomed="true"]')) return;
+            const t = e.changedTouches[0];
+            const step = swipeStep(t.clientX - start.x, t.clientY - start.y);
+            if (step) go(step);
+          }}
+        >
           <ViewerBody
             key={current.href}
             href={current.href}
@@ -171,7 +191,10 @@ function ViewerBody({
   if (loading || !url) return <Spinner />;
 
   return (
-    <div className="flex h-full flex-col">
+    <div
+      className="flex h-full flex-col"
+      data-zoomed={zoomable && (zoom !== 1 || fit === "width") ? "true" : "false"}
+    >
       {zoomable && (
         <div className="flex shrink-0 items-center justify-center gap-1 border-b border-white/10 py-1">
           <ToolButton label="Zoom out" onClick={() => setZoom((z) => stepZoom(z, -1))}>

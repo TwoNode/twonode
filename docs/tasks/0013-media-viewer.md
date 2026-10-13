@@ -26,6 +26,6 @@ No file opens in a new tab anywhere in the app: it opens in a popup on the same 
 ### Phase 2: the rest of the app
 
 - [x] REVA (8 file links and the OTP secure download), GBC (gallery, home gallery, ticket QR), Surfboard public plan certificates now use the viewer. The other new-tab spots were classified as external (maps, payment and Remita pages, social, mail, the state GIS certificate PDF). (Done 2026-10-13, branch `feat/media-viewer-phase2`)
-- [ ] Plain images shown inline (logo, signature, site photos): optional click-to-enlarge with the same viewer.
+- [x] Plain images shown inline: `EnlargeableImage` (REVA site photos use it). (Done 2026-10-13, branch `feat/viewer-swipe-and-enlarge`)
 - [x] `components/media/__tests__/noNewTabFiles.test.ts` fails when a new `target="_blank"` or `window.open` appears that is not on the reviewed list (each entry has a reason). (Done 2026-10-13)
-- [ ] Touch swipe between files in a group (not built).
+- [x] Touch swipe between files in a group (one finger, sideways; zoomed pictures pan instead). (Done 2026-10-13)
