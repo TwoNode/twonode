@@ -129,7 +129,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/plans/[planId]/permanent`                         | DELETE             | USER, ADMIN, SUPERADMIN                                                                               |
 | `/api/v1/surfboard/plans/[planId]/person-count`                      | PATCH              | any signed-in                                                                                         |
 | `/api/v1/surfboard/plans/[planId]/public`                            | GET                | public — QR-gated (`?token=`)                                                                         |
-| `/api/v1/surfboard/plans/[planId]/public/full`                       | GET                | public — QR-gated (`?token=`)                                                                         |
+| `/api/v1/surfboard/plans/[planId]/public/full`                       | GET                | login required: staff any plan, surveyor own or shared (was open to anyone, 2026-10-12)                                                                         |
 | `/api/v1/surfboard/plans/[planId]/qr`                                | GET                | USER                                                                                                  |
 | `/api/v1/surfboard/plans/[planId]/query`                             | POST               | any signed-in                                                                                         |
 | `/api/v1/surfboard/plans/[planId]/record-copy`                       | PATCH              | USER                                                                                                  |

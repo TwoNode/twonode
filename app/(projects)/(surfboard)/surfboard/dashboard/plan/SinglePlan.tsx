@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaLink } from "@/components/media";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -46,6 +47,7 @@ import Link from "next/link";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useConfirm } from "@/hooks/useConfirm";
 import { getQrColors, setQrColors } from "@/lib/qrColorPreferences";
+import { planFileDisplayName } from "@/surfboard/utils/planFileName";
 
 interface PlanWithPillars extends Omit<Plan, "pillars"> {
   status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW";
@@ -82,6 +84,8 @@ interface FileCardProps {
   type: "pdf" | "cad" | "cert" | "redcopy";
   onDelete?: () => Promise<void>;
   showDelete?: boolean;
+  planNumber?: string | null;
+  index?: number;
 }
 
 const FileCard = ({
@@ -89,11 +93,14 @@ const FileCard = ({
   type,
   onDelete,
   showDelete = true,
+  planNumber,
+  index = 0,
 }: FileCardProps) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const fileName = filePath.split("/").pop() || "";
-  const isDwg = fileName.toLowerCase().endsWith(".dwg");
+  const storedName = filePath.split("/").pop() || "";
+  const fileName = planFileDisplayName({ planNumber, filePath, index });
+  const isDwg = storedName.toLowerCase().endsWith(".dwg");
   const authenticatedUrl = surfboardApi.files.getViewUrl(filePath);
 
   const handleDelete = async (e: React.MouseEvent) => {
@@ -162,10 +169,9 @@ const FileCard = ({
 
       <div className="mt-2 space-x-2">
         {type === "pdf" || type === "cert" || type === "redcopy" ? (
-          <a
+          <MediaLink
             href={authenticatedUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            name={fileName}
             className="text-sm text-blue-600 hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
@@ -174,11 +180,11 @@ const FileCard = ({
               : type === "redcopy"
               ? "View Record Copy"
               : "View Certificate"}
-          </a>
+          </MediaLink>
         ) : (
           <>
             <a
-              href={authenticatedUrl}
+              href={surfboardApi.files.getDownloadUrl(filePath, fileName)}
               download
               className="text-sm text-blue-600 hover:underline"
               onClick={(e) => e.stopPropagation()}
@@ -186,15 +192,14 @@ const FileCard = ({
               Download
             </a>
             {!isDwg && (
-              <a
+              <MediaLink
                 href={authenticatedUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                name={fileName}
                 className="text-sm text-blue-600 hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
                 View
-              </a>
+              </MediaLink>
             )}
           </>
         )}
@@ -1557,6 +1562,8 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     <FileCard
                       key={index}
                       filePath={filePath}
+                      planNumber={plan.planNumber}
+                      index={index}
                       type="pdf"
                       onDelete={async () => {
                         await handleDeleteFile(filePath, "pdf");
@@ -1577,6 +1584,8 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     <FileCard
                       key={index}
                       filePath={filePath}
+                      planNumber={plan.planNumber}
+                      index={index}
                       type="cert"
                       onDelete={async () => {
                         await handleDeleteFile(filePath, "certificate");
@@ -1597,6 +1606,8 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     <FileCard
                       key={index}
                       filePath={filePath}
+                      planNumber={plan.planNumber}
+                      index={index}
                       type="cad"
                       onDelete={async () => {
                         await handleDeleteFile(filePath, "cad");
@@ -1618,6 +1629,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <FileCard
                     filePath={plan.redCopyFileUrl}
+                    planNumber={plan.planNumber}
                     type="redcopy"
                     showDelete={false}
                   />
@@ -1662,10 +1674,8 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     key={attachment.id}
                     className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-white/10 p-3"
                   >
-                    <a
-                      href={attachment.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <MediaLink
+                      href={surfboardApi.files.getViewUrl(attachment.url)}
                       className="flex items-center gap-2 min-w-0 hover:text-blue-600"
                     >
                       <File className="h-4 w-4 shrink-0 text-gray-400" />
@@ -1675,7 +1685,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       >
                         {attachment.fileName}
                       </span>
-                    </a>
+                    </MediaLink>
                     <button
                       onClick={() =>
                         handleDeleteViewerAttachment(attachment.id)

@@ -6,6 +6,7 @@ import { getEditions } from "@/gbc/services/editionService";
 import Link from "next/link";
 import GBC2Navbar from "@/gbc/components/Navbar";
 import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
+import { MediaLink } from "@/components/media";
 
 export const dynamic = "force-dynamic";
 
@@ -257,10 +258,10 @@ function GalleryItem({ item }: { item: any }) {
         )}
       </div>
 
-      <a
+      <MediaLink
         href={item.mediaUrl}
-        target="_blank"
-        rel="noopener noreferrer"
+        name={item.title}
+        kind={item.mediaType === "VIDEO" ? "video" : "image"}
         className="absolute inset-0"
         aria-label={`View ${item.title}`}
       />

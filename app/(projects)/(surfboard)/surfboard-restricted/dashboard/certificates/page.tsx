@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaLink } from "@/components/media";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -317,15 +318,13 @@ export default function CertificatesPage() {
                         <Eye className="w-4 h-4" />
                       </Link>
                       {batch.lasgReceiptUrl && (
-                        <a
-                          href={batch.lasgReceiptUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <MediaLink
+                          href={surfboardApi.files.getViewUrl(batch.lasgReceiptUrl)}
                           className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
                           title="Download Receipt"
                         >
                           <Download className="w-4 h-4" />
-                        </a>
+                        </MediaLink>
                       )}
                     </div>
                   </div>
@@ -465,15 +464,13 @@ export default function CertificatesPage() {
                             <Eye className="w-4 h-4" />
                           </Link>
                           {batch.lasgReceiptUrl && (
-                            <a
-                              href={batch.lasgReceiptUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <MediaLink
+                              href={surfboardApi.files.getViewUrl(batch.lasgReceiptUrl)}
                               className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
                               title="Download Receipt"
                             >
                               <Download className="w-4 h-4" />
-                            </a>
+                            </MediaLink>
                           )}
                         </div>
                       </td>

@@ -10,6 +10,8 @@ import { toast } from "sonner";
 
 import Link from "next/link";
 import { REVA_COLORS } from "@/reva/colors";
+import { EnlargeableImage, MediaLink } from "@/components/media";
+import { revaApi } from "@/reva/apiClient";
 
 const UserRequestDataView = ({ property }: { property: any }) => {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
@@ -123,11 +125,15 @@ const UserRequestDataView = ({ property }: { property: any }) => {
                     key={idx}
                     className="rounded-lg overflow-hidden border bg-white dark:bg-surface shadow hover:shadow-lg transition-shadow"
                   >
-                    <img
-                      src={url}
+                    <EnlargeableImage
+                      href={revaApi.files.linkFor(url)}
                       alt={`Site Image ${idx + 1}`}
-                      className="w-full h-48 object-cover"
-                      loading="lazy"
+                      group={property.site_images.map((u: string, n: number) => ({
+                        href: revaApi.files.linkFor(u),
+                        name: `Site Image ${n + 1}`,
+                        kind: "image" as const,
+                      }))}
+                      imgClassName="w-full h-48 object-cover"
                     />
                   </div>
                 ))}
@@ -200,15 +206,13 @@ const UserRequestDataView = ({ property }: { property: any }) => {
               <ul className="list-disc pl-6 space-y-1">
                 {(property.documentsUrls as string[])?.map((url, idx) => (
                   <li key={idx}>
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <MediaLink
+                      href={revaApi.files.linkFor(url)}
                       className="underline"
                       style={{ color: REVA_COLORS.primary.light }}
                     >
                       Document {idx + 1}
-                    </a>
+                    </MediaLink>
                   </li>
                 ))}
               </ul>

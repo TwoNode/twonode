@@ -5,6 +5,7 @@ import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useMediaViewer } from "@/components/media";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +59,7 @@ export function SecureDownloadDialog({
   disabled,
   className,
 }: Props) {
+  const viewer = useMediaViewer();
   const [step, setStep] = useState<
     "idle" | "requesting" | "code-entry" | "verifying"
   >("idle");
@@ -125,9 +127,10 @@ export function SecureDownloadDialog({
       return;
     }
 
-    window.open(result.data.url, "_blank");
-    toast.success("Download started");
     closeDialog();
+    // The viewer shows what it can and offers a Download button for the rest.
+    if (viewer) viewer.open([{ href: result.data.url }]);
+    else window.location.assign(result.data.url);
   };
 
   const closeDialog = () => {

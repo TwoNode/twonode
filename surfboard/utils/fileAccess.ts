@@ -43,3 +43,23 @@ export function keyBelongsToAllowedUser(
   if (FILE_TYPE_FOLDERS.has(folder)) return true; // unscoped, no owner folder
   return allowedUserIds.includes(folder);
 }
+
+/**
+ * Record copies are stored under the plan number, not the owner's id:
+ * `surfboard/<plan number>/redcopy/<file>` (I-023). That key proves ownership
+ * when the folder is the plan's own number.
+ */
+export function isRedCopyKeyOfPlan(key: string, planNumber: string): boolean {
+  if (!planNumber) return false;
+  return key.startsWith(`surfboard/${planNumber}/redcopy/`);
+}
+
+/**
+ * True for a link or key that points at our own storage (`surfboard/...`), so it
+ * has to be opened through the file gateway. External links (e.g. Remita) are
+ * left alone.
+ */
+export function isStorageFileRef(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return /^(?:https?:\/\/[^/]+\.amazonaws\.com\/|\/)?surfboard\//.test(value);
+}

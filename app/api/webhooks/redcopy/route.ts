@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { SurfboardPlanStatus } from "@/prisma/generated";
+import { findPlanIdByNumber } from "@/surfboard/services/planService";
 
 type WebhookPayload = {
   planNumber: string;
@@ -12,11 +13,11 @@ type WebhookPayload = {
 
 export async function POST(request: Request) {
   try {
-    // Verify the webhook secret (if provided by Red Copy)
+    // Fails closed: with no secret configured, every request is refused.
     const authHeader = request.headers.get("authorization");
     const expectedToken = process.env.REDCOPY_WEBHOOK_SECRET;
 
-    if (expectedToken && authHeader !== `Bearer ${expectedToken}`) {
+    if (!expectedToken || authHeader !== `Bearer ${expectedToken}`) {
       console.error("Webhook unauthorized - invalid token");
       return new NextResponse("Unauthorized", { status: 401 });
     }
@@ -34,14 +35,17 @@ export async function POST(request: Request) {
     );
 
     // Find the plan by planNumber
-    const plan = await prisma.surfboardPlan.findFirst({
-      where: { planNumber: payload.planNumber },
-      select: {
-        id: true,
-        status: true,
-        redCopyStatus: true,
-      },
-    });
+    const planId = await findPlanIdByNumber(payload.planNumber);
+    const plan = planId
+      ? await prisma.surfboardPlan.findUnique({
+          where: { id: planId },
+          select: {
+            id: true,
+            status: true,
+            redCopyStatus: true,
+          },
+        })
+      : null;
 
     if (!plan) {
       console.error(`Plan not found: ${payload.planNumber}`);

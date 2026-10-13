@@ -1,6 +1,6 @@
 # Current Tasks (Live Dashboard)
 
-State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate page leak fix and the `AWS_*` rename are live. PR #363 (certificate email redesign) is open against `dev`. Vercel env cleaned up (see TASK-0010). 882/882 tests passing.
+State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate page leak fix and the `AWS_*` rename are live. The certificate email redesign (#363, #365) and the docs updates (#364) reached `prod` on 2026-10-12 through #366 (`dev` → `main`) and #367 (`main` → `prod`); live checks passed. Vercel env cleaned up (see TASK-0010). 882/882 tests passing.
 
 ---
 
@@ -17,6 +17,42 @@ State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate
 - [ ] **Surveyor logo through the file gateway before `surfboard/*` goes private.** _(Waiting on: roji-tech go)_
 - [ ] **Remove `REVA_AWS_*` from Vercel.** Prod runs on `AWS_*` now. _(Waiting on: roji-tech go after seeing the exact list)_
 - [x] **/v4 mobile and tablet responsiveness** (PR #360, open for review). (Done 2026-10-12)
+
+---
+
+## Planned Session Batch: TASK-0011 — S3 privacy and key layout
+
+**Batch Reference:** [TASK-0011](./0011-s3-privacy-and-key-layout.md)  
+**Status:** `Planned`. Plan and [ADR-0013](../adr/0013-bucket-key-layout-public-and-private-prefixes.md) (Proposed) written 2026-10-12. Waiting on roji-tech: go for Phase 1 (surveyor logo through the gateway, then policy v1), accept ADR-0013, and an identity or the AWS admin that can write the bucket policy.
+
+- [ ] **Phase 1:** `surfboard/` and `uploads/PrivateSurveyPlans/` private. _(Waiting on: roji-tech go)_
+- [ ] **Phase 2:** REVA files private with signed links.
+- [ ] **Phase 3:** GBC key layout `public/gbc/<edition>/…`, QR codes under `private/gbc/<edition>/qrcodes/`.
+- [ ] **Phase 5 (optional):** move the legacy files (copy, rewrite rows in a guarded transaction, delete after a grace period). Not needed for privacy.
+- [ ] **Phase 4:** cleanup of odd folders, junk and orphans (separate go each).
+
+---
+
+## Active Session Batch: TASK-0013 — In-page media viewer
+
+**Batch Reference:** [TASK-0013](./0013-media-viewer.md)  
+**Active Branch:** `feat/media-viewer`  
+**Status:** `In Progress`. Viewer built and the 26 Surfboard file links moved (ADR-0015). Waiting on roji-tech: a check on real phones on staging, then REVA, GBC and the build check come next.
+
+- [x] **Viewer, gateway download, Surfboard screens.** (Done 2026-10-13, PR open)
+- [x] **REVA, GBC and public plan links moved to the viewer, plus the new-tab test.** (Done 2026-10-13, branch `feat/media-viewer-phase2`)
+- [x] **Self-host the six Google fonts** (v2 layout and Surfboard landing page) so builds stop failing on the Google Fonts fetch. 29 files, 512 KB in `public/fonts/self-hosted/` with OFL licences. (Done 2026-10-13, branch `chore/self-host-fonts`)
+- [x] **Plan file display names:** plan page and plan details show every file as the plan number (`/` as `_`, capitals), `_2`, `_3` for more of one kind; viewer header and Download use it. (Done 2026-10-13, branch `feat/plan-file-display-names`)
+- [x] **Stored file names for new uploads** `surfboard/<userId>/<type>/<PLAN_NUMBER>[_n].<ext>`; an earlier file is kept (S3 conditional write, next free `_n`). Built in PR #381; old files keep their names. Needs an upload check on staging. (Done 2026-10-13)
+- [x] **Plan numbers: uppercase everywhere.** Existing lowercase test plans converted and the lowercase TNT duplicate deleted in prod, staging, test_db and dev_db (guarded transactions, backups in `out/`). App: numbers are saved in capitals; the plan form shows a calm warning under the field for similar own plans (clickable, opens the plan in a popup) and an error for an exact match; nothing is ever shown about another surveyor's plan. (Done 2026-10-13, branch `feat/plan-number-uppercase`)
+- [ ] **Phone check on staging.** Viewer is on staging (#374, build Ready). _(Waiting on: roji-tech or someone with a staging login)_
+
+---
+
+## Planned Session Batch: TASK-0012 — OSSG integration and the red copy flow
+
+**Batch Reference:** [TASK-0012](./0012-ossg-integration-and-red-copy.md)  
+**Status:** `Planned`, paused 2026-10-12. Resume from "Where we stopped" in the task file. Red copy private: decided 2026-10-12. Hash ledger, no QR, `.jpg`: decided 2026-10-12 (ADR-0014 Accepted). Waiting on roji-tech: the questions to OSSG.
 
 ---
 

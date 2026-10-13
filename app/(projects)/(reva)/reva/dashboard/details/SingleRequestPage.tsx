@@ -22,6 +22,8 @@ import Link from "next/link";
 import { notifyInfo, notifyWarning } from "@/utils/notify";
 import { PDFDownloadButton } from "@/app/(projects)/(reva)/reva-restricted/dashboard/details/components/PDFDownloadButton";
 import { SecureDownloadDialog } from "@/reva/components/SecureDownloadDialog";
+import { revaApi } from "@/reva/apiClient";
+import { EnlargeableImage } from "@/components/media";
 
 export type ReportType = {
   centroid: string | null; // e.g. "6.5244, 3.3792"
@@ -212,11 +214,15 @@ const SingleRequestPage = ({
                     key={idx}
                     className="rounded-lg overflow-hidden border bg-white dark:bg-surface shadow hover:shadow-lg transition-shadow"
                   >
-                    <img
-                      src={url}
+                    <EnlargeableImage
+                      href={revaApi.files.linkFor(url)}
                       alt={`Site Image ${idx + 1}`}
-                      className="w-full h-48 object-cover"
-                      loading="lazy"
+                      group={property.site_images.map((u: string, n: number) => ({
+                        href: revaApi.files.linkFor(u),
+                        name: `Site Image ${n + 1}`,
+                        kind: "image" as const,
+                      }))}
+                      imgClassName="w-full h-48 object-cover"
                     />
                   </div>
                 ))}

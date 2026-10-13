@@ -13,6 +13,7 @@ import { verifyPayment } from "@/gbc/services/ticketService";
 import { getSettings } from "@/gbc/services/settingsService";
 import { notFound, redirect } from "next/navigation";
 import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
+import { MediaLink } from "@/components/media";
 
 export default async function TicketSuccessPage({
   searchParams,
@@ -225,14 +226,14 @@ export default async function TicketSuccessPage({
                       Download your ticket{isGroupTicket ? "s" : ""}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      <a
+                      <MediaLink
                         href={primaryTicket.qrCode}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        name="Ticket QR code.png"
+                        kind="image"
                         className="text-blue-600 hover:underline"
                       >
                         Click here to download your QR code
-                      </a>
+                      </MediaLink>
                     </p>
                   </div>
                 </div>

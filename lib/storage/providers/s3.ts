@@ -13,7 +13,15 @@ import {
   StoragePresignedUploadResult,
   SurfboardFileType,
 } from "../types";
-import { buildStorageKey, extractKeyFromUrl, toBuffer } from "../utils";
+import {
+  buildPlanFileKey,
+  buildStorageKey,
+  extractKeyFromUrl,
+  isPlanFileType,
+  putUnderFreeName,
+  toBuffer,
+  attachmentDisposition,
+} from "../utils";
 
 export class S3StorageAdapter implements StorageAdapter {
   name = "s3" as const;
@@ -41,28 +49,55 @@ export class S3StorageAdapter implements StorageAdapter {
 
   async upload(input: StorageUploadInput): Promise<StorageUploadResult> {
     const buffer = await toBuffer(input.file);
-    const key = buildStorageKey({
-      userId: input.userId,
-      fileType: input.fileType,
-      fileName: input.fileName,
-      planNumber: input.planNumber,
-    });
+    const metadata = {
+      originalName: input.fileName,
+      fileType: input.fileType || "unknown",
+      planNumber: input.planNumber || "unknown",
+      uploadedAt: new Date().toISOString(),
+      ...(input.metadata || {}),
+    };
+    const put = (key: string, onlyIfNew: boolean) =>
+      this.client
+        .send(
+          new PutObjectCommand({
+            Bucket: this.bucket,
+            Key: key,
+            Body: buffer,
+            ContentType: input.contentType,
+            Metadata: metadata,
+            ...(onlyIfNew ? { IfNoneMatch: "*" } : {}),
+          })
+        )
+        .then(() => undefined);
 
-    await this.client.send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: key,
-        Body: buffer,
-        ContentType: input.contentType,
-        Metadata: {
-          originalName: input.fileName,
-          fileType: input.fileType || "unknown",
-          planNumber: input.planNumber || "unknown",
-          uploadedAt: new Date().toISOString(),
-          ...(input.metadata || {}),
-        },
-      })
-    );
+    let key: string;
+    if (input.userId && input.planNumber && isPlanFileType(input.fileType)) {
+      // Named after the plan; an earlier file is kept and this one gets _2, _3...
+      const { userId, planNumber, fileName } = input;
+      const fileType = input.fileType as string;
+      key = await putUnderFreeName(
+        (attempt) =>
+          buildPlanFileKey({ userId, fileType, planNumber, fileName, attempt }),
+        (candidate) => put(candidate, true),
+        (error) => {
+          const e = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+          return (
+            e?.name === "PreconditionFailed" ||
+            e?.name === "ConditionalRequestConflict" ||
+            e?.$metadata?.httpStatusCode === 412 ||
+            e?.$metadata?.httpStatusCode === 409
+          );
+        }
+      );
+    } else {
+      key = buildStorageKey({
+        userId: input.userId,
+        fileType: input.fileType,
+        fileName: input.fileName,
+        planNumber: input.planNumber,
+      });
+      await put(key, false);
+    }
 
     const url = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
     return {
@@ -107,13 +142,20 @@ export class S3StorageAdapter implements StorageAdapter {
     };
   }
 
-  async getDownloadUrl(keyOrUrl: string, expiresIn = 300): Promise<string> {
+  async getDownloadUrl(
+    keyOrUrl: string,
+    expiresIn = 300,
+    options?: { downloadName?: string }
+  ): Promise<string> {
     const key = extractKeyFromUrl(keyOrUrl);
     return getSignedUrl(
       this.client,
       new GetObjectCommand({
         Bucket: this.bucket,
         Key: key,
+        ResponseContentDisposition: options?.downloadName
+          ? attachmentDisposition(options.downloadName)
+          : undefined,
       }),
       { expiresIn }
     );

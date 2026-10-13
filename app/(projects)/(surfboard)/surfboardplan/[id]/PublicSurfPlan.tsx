@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { PillarData } from "../../types/surfboardTypes";
 import MaplibreMap from "../../components/maps/MaplibreMap";
+import { MediaLink } from "@/components/media";
 
 function DetailItem({
   icon: Icon,
@@ -156,9 +157,12 @@ function PillarsOverview({ pillars }: { pillars: any }) {
 function CoDAccessPanel({
   plan,
   isCoDAvailable,
+  token,
 }: {
   plan: any;
   isCoDAvailable: boolean;
+  /** The paid QR session token; certificate links are signed against it. */
+  token: string;
 }) {
   const certificateFilePaths: string[] = Array.isArray(
     plan.certificateFilePaths
@@ -187,11 +191,11 @@ function CoDAccessPanel({
           {isCoDAvailable && certificateFilePaths.length > 0 ? (
             <div className="space-y-3">
               {certificateFilePaths.map((url, i) => (
-                <a
+                <MediaLink
                   key={url}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={`/api/v1/surfboard/plans/${encodeURIComponent(plan.id)}/public/certificate?index=${i}&token=${encodeURIComponent(token)}`}
+                  name={`Certificate of Deposit${certificateFilePaths.length > 1 ? ` ${i + 1}` : ""}.pdf`}
+                  kind="pdf"
                   className="flex items-center gap-3 p-4 rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-100 transition-colors"
                 >
                   <FileCheck className="h-5 w-5 text-indigo-600 shrink-0" />
@@ -200,7 +204,7 @@ function CoDAccessPanel({
                     {certificateFilePaths.length > 1 ? ` #${i + 1}` : ""}
                   </span>
                   <Download className="h-4 w-4 text-indigo-500" />
-                </a>
+                </MediaLink>
               ))}
             </div>
           ) : (
@@ -545,6 +549,7 @@ function PlanDetails({ planId }: { planId: string }) {
             <CoDAccessPanel
               plan={plan}
               isCoDAvailable={qrAccessInfo?.isCoDAvailable ?? false}
+              token={token}
             />
           ) : (
             <>

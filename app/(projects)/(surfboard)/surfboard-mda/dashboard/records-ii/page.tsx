@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaLink } from "@/components/media";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -694,10 +695,8 @@ export default function RecordsIIAdminPage() {
                               </p>
                             </div>
                           )}
-                          <a
-                            href={p.redCopyFileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <MediaLink
+                            href={surfboardApi.files.getViewUrl(p.redCopyFileUrl)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface rounded border text-violet-600 hover:bg-violet-50 transition-colors text-xs"
                           >
                             {isImageUrl(p.redCopyFileUrl) ? (
@@ -707,7 +706,7 @@ export default function RecordsIIAdminPage() {
                             )}
                             Open Record Copy
                             <ExternalLink className="w-3 h-3" />
-                          </a>
+                          </MediaLink>
 
                           {p.recordCopyVerdict &&
                             p.recordCopyVerificationData && (

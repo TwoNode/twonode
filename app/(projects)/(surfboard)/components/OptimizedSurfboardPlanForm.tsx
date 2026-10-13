@@ -17,6 +17,8 @@ import { formatDateForInput } from "@/utils/formatters";
 import { Badge } from "@/components/ui/badge";
 import MaplibreMap from "./maps/MaplibreMap";
 import { File, X, FileText, FileCheck, Save, Loader2 } from "lucide-react";
+import { PlanNumberNotice } from "./PlanNumberNotice";
+import type { PlanNumberMatch } from "@/surfboard/apiClient";
 
 interface OptimizedSurfboardPlanFormProps {
   mode: "create" | "edit";
@@ -166,6 +168,29 @@ export default function OptimizedSurfboardPlanForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [planNumberChecking, setPlanNumberChecking] = useState(false);
+  const [planNumberNotice, setPlanNumberNotice] = useState<{
+    severity: "warning" | "error";
+    matches: PlanNumberMatch[];
+  } | null>(null);
+  // Editing an older plan: say so if its number looks similar to another of the surveyor's plans.
+  useEffect(() => {
+    if (mode !== "edit" || !formData.planNumber?.trim()) return;
+    let cancelled = false;
+    surfboardApi.plans
+      .checkNumberExists(formData.planNumber, formData.id)
+      .then((res) => {
+        if (cancelled || !res.success) return;
+        if (res.data.similar.length > 0)
+          setPlanNumberNotice({ severity: "warning", matches: res.data.similar });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // Runs once when the edit form opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   // File state
   const [pdfFiles, setPdfFiles] = useState<File[]>([]);
@@ -425,12 +450,19 @@ export default function OptimizedSurfboardPlanForm({
         formData.planNumber,
         mode === "edit" ? formData.id : undefined
       );
-      const exists = checkResult.success ? checkResult.data.exists : false;
-      if (exists) {
+      const check = checkResult.success ? checkResult.data : null;
+      setPlanNumberNotice(null);
+      if (check?.exists) {
         setErrors((prev) => ({
           ...prev,
-          planNumber: "This plan number is already in use",
+          planNumber: check.own
+            ? "You already have a plan with exactly this number."
+            : "This plan number is already registered.",
         }));
+        if (check.own)
+          setPlanNumberNotice({ severity: "error", matches: [check.own] });
+      } else if (check && check.similar.length > 0) {
+        setPlanNumberNotice({ severity: "warning", matches: check.similar });
       }
     } catch (error) {
       console.error("Error checking plan number:", error);
@@ -577,8 +609,12 @@ export default function OptimizedSurfboardPlanForm({
                       type="text"
                       value={formData.planNumber}
                       onChange={(e) => {
-                        const cleanValue = e.target.value.replace(/\s+/g, "");
+                        // Plan numbers are capitals only, with no spaces.
+                        const cleanValue = e.target.value
+                          .replace(/\s+/g, "")
+                          .toUpperCase();
                         setField("planNumber", cleanValue);
+                        setPlanNumberNotice(null);
                       }}
                       onBlur={handlePlanNumberBlur}
                       className={cn(
@@ -598,6 +634,12 @@ export default function OptimizedSurfboardPlanForm({
                   </div>
                   {errors.planNumber && (
                     <p className={errorCls}>{errors.planNumber}</p>
+                  )}
+                  {planNumberNotice && (
+                    <PlanNumberNotice
+                      severity={planNumberNotice.severity}
+                      matches={planNumberNotice.matches}
+                    />
                   )}
                 </div>
 

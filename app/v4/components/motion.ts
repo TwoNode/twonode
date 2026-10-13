@@ -8,6 +8,8 @@
 
 export function initMotion(): () => void {
   let stopped = false;
+  // Canvas text uses the page's body font (Bricolage Grotesque via next/font).
+  const CANVAS_FONT = getComputedStyle(document.body).fontFamily;
   const cleanups: Array<() => void> = [];
   const rafIds = new Set<number>();
   const timers = new Set<number>();
@@ -902,7 +904,7 @@ export function initMotion(): () => void {
             ctx.arc(c[0], c[1], (i ? 3.4 : 5) * sc, 0, 6.2832);
             ctx.fill();
             if (c[2]) {
-              ctx.font = '700 10px "DM Sans", sans-serif';
+              ctx.font = `700 10px ${CANVAS_FONT}`;
               ctx.textAlign = "left";
               ctx.fillStyle = "rgba(0,11,61," + (0.85 * mm).toFixed(3) + ")";
               ctx.fillText(c[2], c[0] + 9 * sc, c[1] + 4);
@@ -983,7 +985,7 @@ export function initMotion(): () => void {
       // hub labels once the network has formed
       const la = smooth((u - 8.8) / 0.8) * (1 - smooth((u - 10.7) / 0.7));
       if (la > 0.01) {
-        ctx.font = '600 10px "DM Sans", sans-serif';
+        ctx.font = `600 10px ${CANVAS_FONT}`;
         hubs.forEach((h) => {
           const n = nodes[h.i];
           ctx.textAlign = h.align;
@@ -1322,7 +1324,7 @@ export function initMotion(): () => void {
         ctx.fill();
         ctx.shadowBlur = 0;
         if (c.n) {
-          ctx.font = '700 10px "DM Sans", sans-serif';
+          ctx.font = `700 10px ${CANVAS_FONT}`;
           ctx.fillStyle = "rgba(219,229,255," + (0.9 * net).toFixed(3) + ")";
           ctx.fillText(c.n, c.x + 9, c.y + 4);
         }

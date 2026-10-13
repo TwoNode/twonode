@@ -8,6 +8,7 @@ import {
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { revaUploadKey } from "@/reva/utils/uploadKey";
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -92,9 +93,13 @@ export async function uploadToS3FromServer(
       reference ? `${reference}-` : ""
     }${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
 
-    const key = options?.useDirectFileName
-      ? `reva/uploads/${file.name}`
-      : `reva/uploads/${uniqueSuffix}-${file.name}`;
+    // New uploads are private (TASK-0011); older ones stay under reva/uploads/.
+    const key = revaUploadKey({
+      reference,
+      fileName: file.name,
+      direct: options?.useDirectFileName,
+      uniqueSuffix,
+    });
 
     try {
       await s3.send(

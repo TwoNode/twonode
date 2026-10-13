@@ -1,6 +1,7 @@
 // In AllPlans.tsx
 "use client";
 
+import { MediaLink } from "@/components/media";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -1803,12 +1804,10 @@ export default function AllPlans() {
                               </span>
                               <span>•</span>
                               {plan.redCopyFileUrl ? (
-                                <a
+                                <MediaLink
                                   href={surfboardApi.files.getViewUrl(
                                     plan.redCopyFileUrl
                                   )}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:underline cursor-pointer"
                                   title="View uploaded Record Copy PDF"
                                   onClick={(e) => e.stopPropagation()}
@@ -1817,7 +1816,7 @@ export default function AllPlans() {
                                   <span className="text-xs">
                                     Record Copy (View PDF)
                                   </span>
-                                </a>
+                                </MediaLink>
                               ) : (
                                 <span
                                   className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400"
@@ -1948,17 +1947,15 @@ export default function AllPlans() {
                               </DropdownMenuItem>
                               {plan.redCopyFileUrl && (
                                 <DropdownMenuItem asChild>
-                                  <a
+                                  <MediaLink
                                     href={surfboardApi.files.getViewUrl(
                                       plan.redCopyFileUrl
                                     )}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
                                     className="flex items-center cursor-pointer text-rose-600 dark:text-rose-400"
                                   >
                                     <FileText className="w-4 h-4 mr-2 text-rose-600" />
                                     View Record Copy
-                                  </a>
+                                  </MediaLink>
                                 </DropdownMenuItem>
                               )}
                               {scope !== "sharedWithMe" && (
@@ -2237,18 +2234,16 @@ export default function AllPlans() {
                     {/* Record Copy Status */}
                     <div className="flex items-center gap-2 text-xs">
                       {plan.redCopyFileUrl ? (
-                        <a
+                        <MediaLink
                           href={surfboardApi.files.getViewUrl(
                             plan.redCopyFileUrl
                           )}
-                          target="_blank"
-                          rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-full hover:underline cursor-pointer"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <CheckCircle className="w-3 h-3" />
                           <span>Record Copy (View PDF)</span>
-                        </a>
+                        </MediaLink>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-full">
                           <Clock className="w-3 h-3" />

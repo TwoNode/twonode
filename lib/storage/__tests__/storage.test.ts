@@ -104,3 +104,56 @@ describe("lib/storage", () => {
     });
   });
 });
+
+describe("attachmentDisposition", () => {
+  it("builds a download header with an ASCII fallback and the UTF-8 name", async () => {
+    const { attachmentDisposition } = await import("../utils");
+    const h = attachmentDisposition('Plan "A"/é.pdf');
+    expect(h).toContain('attachment; filename="Plan A_.pdf"');
+    expect(h).toContain("filename*=UTF-8''Plan%20A%C3%A9.pdf");
+    expect(attachmentDisposition("  ")).toContain('filename="download"');
+  });
+});
+
+describe("plan file keys", () => {
+  it("names a plan file after the plan number, in the owner's folder", async () => {
+    const { buildPlanFileKey, isPlanFileType } = await import("../utils");
+    expect(
+      buildPlanFileKey({ userId: "u1", fileType: "pdf", planNumber: "xxx/4763/a/011/2026/la", fileName: "My Scan.PDF" })
+    ).toBe("surfboard/u1/pdf/XXX_4763_A_011_2026_LA.pdf");
+    expect(
+      buildPlanFileKey({ userId: "u1", fileType: "cad", planNumber: "A/1", fileName: "x.dwg", attempt: 3 })
+    ).toBe("surfboard/u1/cad/A_1_3.dwg");
+    expect(isPlanFileType("redcopy")).toBe(true);
+    expect(isPlanFileType("viewer-attachment")).toBe(false);
+  });
+
+  it("takes the next free name and never replaces an earlier file", async () => {
+    const { putUnderFreeName } = await import("../utils");
+    const taken = new Set(["k1", "k2"]);
+    const stored: string[] = [];
+    const key = await putUnderFreeName(
+      (n) => `k${n}`,
+      async (k) => {
+        if (taken.has(k)) throw Object.assign(new Error("exists"), { name: "PreconditionFailed" });
+        stored.push(k);
+      },
+      (e) => (e as { name?: string }).name === "PreconditionFailed"
+    );
+    expect(key).toBe("k3");
+    expect(stored).toEqual(["k3"]);
+  });
+
+  it("does not hide other errors", async () => {
+    const { putUnderFreeName } = await import("../utils");
+    await expect(
+      putUnderFreeName(
+        (n) => `k${n}`,
+        async () => {
+          throw new Error("network");
+        },
+        () => false
+      )
+    ).rejects.toThrow("network");
+  });
+});

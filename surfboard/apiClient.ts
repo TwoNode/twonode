@@ -1,3 +1,4 @@
+import { isStorageFileRef } from "@/surfboard/utils/fileAccess";
 import type {
   AdminInvitationRow,
   InviteAdminInput,
@@ -100,6 +101,26 @@ function buildPlanListQuery(
   }
   return sp.toString();
 }
+
+/** A plan that a typed plan number collides with (own plans only, see findPlanNumberMatches). */
+export type PlanNumberMatch = {
+  id: string;
+  planNumber: string;
+  surveyTitle: string;
+  status: string;
+  createdAt: string;
+};
+
+export type PlanNumberCheck = {
+  /** The same number is already registered (any surveyor). */
+  exists: boolean;
+  /** Registered by someone else: show an error, never details. */
+  taken: boolean;
+  /** Registered on one of the caller's own plans. */
+  own: PlanNumberMatch | null;
+  /** The caller's other plans whose number differs only by spacing or a trailing `_` or `.`. */
+  similar: PlanNumberMatch[];
+};
 
 export type AnalyticsDateRangeParam = {
   dateFrom?: string | Date;
@@ -520,7 +541,7 @@ export const surfboardApi = {
       }),
 
     checkNumberExists: (planNumber: string, excludeId?: string) =>
-      jsonFetch<{ exists: boolean }>(
+      jsonFetch<PlanNumberCheck>(
         `${BASE}/plans/check-number?planNumber=${encodeURIComponent(planNumber)}${excludeId ? `&excludeId=${encodeURIComponent(excludeId)}` : ""}`
       ),
 
@@ -631,7 +652,7 @@ export const surfboardApi = {
         `${BASE}/plans/${encodeURIComponent(planId)}/public${token ? `?token=${encodeURIComponent(token)}` : ""}`
       ),
 
-    /** Public, ungated — full plan data, no redaction. Increments the QR scan counter. */
+    /** Logged-in only — full plan data, no redaction. Staff read any plan; a surveyor only their own or a shared one. */
     getPublicFull: (planId: string) =>
       jsonFetch<any>(`${BASE}/plans/${encodeURIComponent(planId)}/public/full`),
 
@@ -1343,6 +1364,18 @@ export const surfboardApi = {
     /** Returns the authenticated view/download URL that handles signed URLs under the hood. */
     getViewUrl: (urlOrKey: string) =>
       `${BASE}/files/view?url=${encodeURIComponent(urlOrKey)}`,
+
+    /** A link that saves the file (under `name`) instead of showing it; never leaves the page. */
+    getDownloadUrl: (urlOrKey: string, name?: string) =>
+      `${BASE}/files/view?url=${encodeURIComponent(urlOrKey)}&download=1${
+        name ? `&name=${encodeURIComponent(name)}` : ""
+      }`,
+
+    /** The gateway link for our own files, the link unchanged for anything else (e.g. Remita receipts). */
+    linkFor: (urlOrKey: string) =>
+      isStorageFileRef(urlOrKey)
+        ? `${BASE}/files/view?url=${encodeURIComponent(urlOrKey)}`
+        : urlOrKey,
 
     /** Fetches the signed URL as JSON payload instead of redirect. */
     getSignedUrl: async (urlOrKey: string, expiresIn = 300) => {

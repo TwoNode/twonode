@@ -290,9 +290,9 @@ export default function V4HomePage() {
               <div className="work-card-copy">
                 <p className="eyebrow">
                   SURFBOARD
-                  <span className="status status-active">Active</span>
                   <span className="eyebrow-cat">
                     Surveying &amp; geospatial
+                    <span className="status status-active">Active</span>
                   </span>
                 </p>
                 <h3>Make survey plan records more accessible and useful.</h3>
@@ -330,8 +330,11 @@ export default function V4HomePage() {
               </div>
               <div className="work-card-copy">
                 <p className="eyebrow">
-                  REVA<span className="status status-next">Next</span>
-                  <span className="eyebrow-cat">Real estate</span>
+                  REVA
+                  <span className="eyebrow-cat">
+                    Real estate
+                    <span className="status status-next">Next</span>
+                  </span>
                 </p>
                 <h3>Make property information easier to understand.</h3>
                 <p>
@@ -371,8 +374,10 @@ export default function V4HomePage() {
               <div className="work-card-copy">
                 <p className="eyebrow">
                   GEOSPATIAL BUILDERS CONFERENCE
-                  <span className="status status-active">Active</span>
-                  <span className="eyebrow-cat">Industry community</span>
+                  <span className="eyebrow-cat">
+                    Industry community
+                    <span className="status status-active">Active</span>
+                  </span>
                 </p>
                 <h3>Bring the industry into the room.</h3>
                 <p>

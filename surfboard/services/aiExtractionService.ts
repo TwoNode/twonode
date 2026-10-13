@@ -4,6 +4,7 @@
 // appears in commented-out code; the other two have zero call sites anywhere).
 
 import type { ApiResult } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
+import { normalizePlanNumber as sharedNormalizePlanNumber } from "@/surfboard/utils/planNumber";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -273,15 +274,11 @@ function parseAIResponse(text: string): AIExtractedData {
  * Normalize plan number - uppercase, no spaces
  */
 function normalizePlanNumber(planNumber: string): string {
-  if (!planNumber) return "";
-  return (
-    planNumber
-      .toUpperCase()
-      .trim()
-      .replace(/\s+/g, "")
-      // Remove any X placeholder patterns (like XXXXXXXXX)
-      .replace(/^X+$/, "")
-  );
+  // The model reads numbers off a drawing, where spaces are layout, not part
+  // of the number; the shared rules then apply (I-024).
+  return sharedNormalizePlanNumber(planNumber.replace(/\s+/g, ""))
+    // Remove any X placeholder patterns (like XXXXXXXXX)
+    .replace(/^X+$/, "");
 }
 
 /**

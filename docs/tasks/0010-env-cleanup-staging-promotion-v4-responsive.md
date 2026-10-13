@@ -29,7 +29,7 @@ Tidy the Vercel environment variables, promote the review fixes to staging and t
 - [x] Local `.env`, `.env.staging`, `.env.local`: `REVA_AWS_*` renamed to `AWS_*` (values unchanged). (Done 2026-10-12)
 - [ ] **Remove `REVA_AWS_*` from Vercel** once the `AWS_*` code is deployed to prod and working. _(Waiting on: roji-tech go to remove them; prod now runs on `AWS_*`)_
 - [ ] **`REDCOPY_WEBHOOK_SECRET`** not set anywhere; the webhook accepts anyone (issue I-018). Needs Red Copy to send the same value. _(Waiting on: roji-tech / Red Copy)_
-- [ ] **Make the cron route and the Red Copy webhook refuse requests when their secret is missing** (I-017, I-018). _(Waiting on: roji-tech go)_
+- [x] **Make the cron route and the Red Copy webhook refuse requests when their secret is missing** (I-017, I-018). Done 2026-10-13: fails closed, tests added, PR to `dev`. The Red Copy webhook now rejects everything until `REDCOPY_WEBHOOK_SECRET` is set (OSSG replaces it).
 - [ ] **`GOOGLE_MAPS_SERVER_API_KEY`** still missing (Google billing). _(Waiting on: roji-tech / Cloud Admin)_
 - [ ] Leftovers to review: `PAYSTACK_SECRET` (read by no code), `ONLINE_BASE_URL`, the legacy `utils/paystackConfig.ts` (reads `PAYSTACK_LIVE_PUBLIC_KEY` / `PAYSTACK_TEST_PUBLIC_KEY`, not set on Vercel).
 
@@ -79,3 +79,5 @@ See issue I-004. Do not turn on Block Public Access for the whole bucket: the GB
 
 - Staging (`main`) is protected by Vercel Authentication. To test it from a terminal: `vercel curl <path> --deployment <staging url>` (needs `vercel login`). Plain `curl` gets a 302 to the Vercel login page.
 - `.env.example` and `SURFBOARD_ENV_TEMPLATE.env` now list only the plain `AWS_*` names.
+- [x] **Second promotion 2026-10-12:** certificate email redesign (#363, #365) and docs (#364) promoted `dev` → `main` → `prod` (#366, #367). Production build Ready; home, `/v4`, `/v4/contact`, `/v2/contact` 200; bogus verify and certificate pages 404; cron 401; file gateway 401; old certificate PDF route 403; download without a token 400. Not tested: a real certificate email send.
+- [ ] **Vercel "Git information retrieval failed" on two Preview builds** (feature-branch commits, not production). Cause not found; check Project Settings → Git (the repo remote still uses the old lowercase `twonode/twonode` URL). _(Waiting on: roji-tech, Vercel dashboard)_
