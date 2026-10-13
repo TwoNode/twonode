@@ -7,6 +7,7 @@ import { canAccessRoute } from "@/reva/access/routes";
 import type { RevaPanelUser } from "@/reva/access/panelUser";
 import { Platform } from "@/utils/platform";
 import { revaApi } from "@/reva/apiClient";
+import { loginUrlWithReturn } from "@/lib/auth/loginReturn";
 
 interface UserData {
   platform: Platform;
@@ -92,7 +93,7 @@ export function useRevaUserAccess(initialUser?: RevaPanelUser | null) {
           );
           if (isMounted) {
             setIsUser(false);
-            router.push("/reva/login");
+            router.push(loginUrlWithReturn("/reva/login"));
           }
           return;
         }
@@ -119,7 +120,7 @@ export function useRevaUserAccess(initialUser?: RevaPanelUser | null) {
         console.error("Error checking user access:", error);
         if (isMounted) {
           setIsUser(false);
-          router.push("/reva/login");
+          router.push(loginUrlWithReturn("/reva/login"));
         }
       } finally {
         if (isMounted) {
