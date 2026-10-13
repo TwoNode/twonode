@@ -6,6 +6,7 @@ import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { revaApi } from "@/reva/apiClient";
 import { Platform } from "@/utils/platform";
 import { canAccessRoute } from "@/reva/access/routes";
+import { loginUrlWithReturn } from "@/lib/auth/loginReturn";
 
 interface UserData {
   platform: string;
@@ -83,7 +84,7 @@ export function useRevaAdminAccess() {
           );
           if (isMounted) {
             setIsAdmin(false);
-            router.push("/reva-restricted/login");
+            router.push(loginUrlWithReturn("/reva-restricted/login"));
           }
           return;
         }
@@ -115,7 +116,7 @@ export function useRevaAdminAccess() {
         console.error("❌ Error checking admin access:", error);
         if (isMounted) {
           setIsAdmin(false);
-          router.push("/reva-restricted/login");
+          router.push(loginUrlWithReturn("/reva-restricted/login"));
         }
       } finally {
         if (isMounted) {
