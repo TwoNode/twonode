@@ -33,6 +33,7 @@ import {
 } from "@/lib/api/errors";
 import { SurfboardRole } from "@/utils/platform";
 import { paginatedResult } from "@/lib/api/pagination";
+import { planNumberSearchClauses } from "@/surfboard/utils/planNumber";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/codActions.ts — batch
@@ -1177,9 +1178,7 @@ export async function getUserBatchesPaginated(
       { batchCode: { contains: options.search, mode: "insensitive" } },
       {
         plans: {
-          some: {
-            planNumber: { contains: options.search, mode: "insensitive" },
-          },
+          some: { OR: planNumberSearchClauses(options.search) },
         },
       },
       {

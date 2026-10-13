@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { MediaLink } from "@/components/media";
+import { revaApi } from "@/reva/apiClient";
 
 // Format currency helper
 const formatCurrency = (amount: number | string | null | undefined): string => {
@@ -333,7 +334,7 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
                       {request.documentsUrls.map((doc, index) => (
                         <MediaLink
                           key={index}
-                          href={doc}
+                          href={revaApi.files.linkFor(doc)}
                           className="flex items-center gap-2 text-sm text-primary hover:underline"
                         >
                           <FileText className="h-4 w-4" />
@@ -353,11 +354,11 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
                       {request.site_images.map((img, index) => (
                         <MediaLink
                           key={index}
-                          href={img}
+                          href={revaApi.files.linkFor(img)}
                           className="group relative aspect-square overflow-hidden rounded-md border"
                         >
                           <img
-                            src={img}
+                            src={revaApi.files.linkFor(img)}
                             alt={`Site image ${index + 1}`}
                             className="h-full w-full object-cover transition-transform group-hover:scale-105"
                           />
@@ -395,7 +396,7 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
                 </div>
                 <Button variant="outline" size="sm" asChild>
                   <MediaLink
-                    href={request.report.downloadUrl}
+                    href={revaApi.files.linkFor(request.report.downloadUrl)}
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Download Report

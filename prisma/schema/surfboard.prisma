@@ -172,6 +172,9 @@ model SurfboardPlan {
   /// User-entered reference number
   planNumber String @unique
 
+  /// Canonical form of `planNumber` (surfboard/utils/planNumber.ts), used to compare plan numbers. Null until backfilled.
+  planNumberKey String?
+
   /// Descriptive title
   surveyTitle String
 
@@ -358,6 +361,7 @@ model SurfboardPlan {
 
   /// Index by reference number
   @@index([planNumber])
+  @@index([planNumberKey])
   @@index([deleted])
 }
 

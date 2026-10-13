@@ -35,6 +35,11 @@ import { PROVISIONAL_TYPES } from "@/surfboard/services/analyticsService";
 import { emailInUse } from "@/lib/auth/userLookup";
 import { sendPlanShareInviteEmail } from "@/utils/email";
 import { getSiteUrl } from "@/lib/siteUrl";
+import {
+  normalizePlanNumber,
+  planNumberSearchClauses,
+  samePlanNumber,
+} from "@/surfboard/utils/planNumber";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/surfboardActions.ts —
@@ -202,7 +207,7 @@ async function buildPlanFilterWhere(
 
   if (filters.search) {
     where.OR = [
-      { planNumber: { contains: filters.search, mode: "insensitive" } },
+      ...planNumberSearchClauses(filters.search),
       { surveyTitle: { contains: filters.search, mode: "insensitive" } },
       { facilitator: { contains: filters.search, mode: "insensitive" } },
     ];
@@ -464,6 +469,7 @@ export async function createSurfPlan(
   const rec = await prisma.surfboardPlan.create({
     data: {
       planNumber: dto.planNumber || "",
+      planNumberKey: normalizePlanNumber(dto.planNumber) || null,
       surveyTitle: dto.surveyTitle,
       planType: dto.planType,
       referencePlanNumber: dto.referencePlanNumber || null,
@@ -509,8 +515,10 @@ export async function createSurfPlan(
     rec.referencePlanNumber
   ) {
     try {
+      const referencedId = await findPlanIdByNumber(rec.referencePlanNumber);
+      if (!referencedId) throw new NotFoundError("Referenced plan");
       await prisma.surfboardPlan.update({
-        where: { planNumber: rec.referencePlanNumber },
+        where: { id: referencedId },
         data: { withdrawalAndResubmissionStatus: "Withdrawn" },
       });
     } catch {
@@ -576,7 +584,10 @@ export async function updateSurfPlan(
   // The 24h edit-lock was force-disabled in the source (`enforceLock = false`,
   // the real check left commented out) — preserved exactly, not re-enabled.
   const data: any = {};
-  if (dto.planNumber) data.planNumber = dto.planNumber;
+  if (dto.planNumber) {
+    data.planNumber = dto.planNumber;
+    data.planNumberKey = normalizePlanNumber(dto.planNumber) || null;
+  }
   if (dto.surveyTitle) data.surveyTitle = dto.surveyTitle;
   if (dto.planType) data.planType = dto.planType;
   data.referencePlanNumber = dto.referencePlanNumber ?? null;
@@ -625,8 +636,10 @@ export async function updateSurfPlan(
     data.referencePlanNumber
   ) {
     try {
+      const referencedId = await findPlanIdByNumber(data.referencePlanNumber);
+      if (!referencedId) throw new NotFoundError("Referenced plan");
       await prisma.surfboardPlan.update({
-        where: { planNumber: data.referencePlanNumber },
+        where: { id: referencedId },
         data: { withdrawalAndResubmissionStatus: "Withdrawn" },
       });
     } catch {
@@ -1013,6 +1026,11 @@ export async function getGatedPublicSurfPlan(id: string, token?: string) {
     geometry: null,
     areaSqM: 0,
     user: null,
+    // File links are a paid or free-scan benefit too (I-027).
+    pdfFilePaths: [],
+    cadFilePaths: [],
+    certificateFilePaths: [],
+    redCopyFileUrl: null,
   };
   return { plan: redactedPlan, accessInfo };
 }
@@ -1047,20 +1065,45 @@ export async function getDeletedSurfPlans(
   };
 }
 
+/**
+ * The plan a typed plan number refers to: the exact number first, then the
+ * canonical key (case, spacing, trailing `_` or `.`), newest live plan first.
+ * Used where a number arrives from outside (Red Copy webhook, a reference to an
+ * earlier plan).
+ */
+export async function findPlanIdByNumber(
+  planNumber: string
+): Promise<string | null> {
+  const typed = planNumber.trim();
+  if (!typed) return null;
+  const exact = await prisma.surfboardPlan.findFirst({
+    where: { planNumber: typed },
+    select: { id: true },
+  });
+  if (exact) return exact.id;
+  const key = normalizePlanNumber(typed);
+  if (!key) return null;
+  const byKey = await prisma.surfboardPlan.findFirst({
+    where: { planNumberKey: key, deleted: false },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  return byKey?.id ?? null;
+}
+
 export async function checkPlanNumberExists(
   userId: string,
   planNumber: string,
   excludeId?: string
 ): Promise<boolean> {
-  if (!planNumber.trim()) return false;
-  const count = await prisma.surfboardPlan.count({
-    where: {
-      planNumber: planNumber.trim(),
-      ...(excludeId && { id: { not: excludeId } }),
-      userId,
-    },
+  if (!normalizePlanNumber(planNumber)) return false;
+  // Compared with the shared rules (case, spacing, trailing `_` and `.`), so
+  // typing variants of one number are caught (I-024). One surveyor's plans only.
+  const plans = await prisma.surfboardPlan.findMany({
+    where: { userId, ...(excludeId && { id: { not: excludeId } }) },
+    select: { planNumber: true },
   });
-  return count > 0;
+  return plans.some((p) => samePlanNumber(p.planNumber, planNumber));
 }
 
 export async function getAllFacilitatorsAndPlanNumbers(userId: string) {
@@ -1329,7 +1372,8 @@ export async function submitRedCopy(
   const uploadResult = await uploadSurfboardFileToS3(
     file,
     "redcopy",
-    `${plan.planNumber}-${Date.now()}`
+    userId,
+    plan.planNumber
   );
   if (!uploadResult.url)
     throw new ValidationError({ file: "Failed to upload Red Copy file" });
@@ -1906,7 +1950,7 @@ export async function getAdminSurfPlansPaginated(params: AdminPlanListParams) {
 
   if (search) {
     where.OR = [
-      { planNumber: { contains: search, mode: "insensitive" } },
+      ...planNumberSearchClauses(search),
       { surveyTitle: { contains: search, mode: "insensitive" } },
       { ward: { contains: search, mode: "insensitive" } },
       { lga: { contains: search, mode: "insensitive" } },

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Sora, DM_Sans, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "../globals.css";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { NavV2 } from "./components/NavV2";
@@ -12,32 +12,127 @@ import { FooterV2 } from "./components/FooterV2";
  * - JetBrains Mono: Technical metadata, status beacons & timestamps
  * - Fraunces: Editorial italics & accent quotes
  */
-const fraunces = Fraunces({
-  subsets: ["latin"],
+// Self-hosted (latin) so a build never depends on fetching from Google Fonts.
+const fraunces = localFont({
+  src: [
+    {
+      path: "../../public/fonts/self-hosted/fraunces-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/self-hosted/fraunces-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/self-hosted/fraunces-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/self-hosted/fraunces-latin-400-italic.woff2",
+      weight: "400",
+      style: "italic",
+    },
+    {
+      path: "../../public/fonts/self-hosted/fraunces-latin-500-italic.woff2",
+      weight: "500",
+      style: "italic",
+    },
+    {
+      path: "../../public/fonts/self-hosted/fraunces-latin-600-italic.woff2",
+      weight: "600",
+      style: "italic",
+    },
+  ],
   variable: "--font-display",
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
   display: "swap",
 });
 
-const sora = Sora({
-  subsets: ["latin"],
+const sora = localFont({
+  src: [
+    {
+      path: "../../public/fonts/self-hosted/sora-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/self-hosted/sora-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/self-hosted/sora-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/self-hosted/sora-latin-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/self-hosted/sora-latin-800-normal.woff2",
+      weight: "800",
+      style: "normal",
+    },
+  ],
   variable: "--font-sora",
-  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
-const dmSans = DM_Sans({
-  subsets: ["latin"],
+const dmSans = localFont({
+  src: [
+    {
+      path: "../../public/fonts/self-hosted/dm-sans-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/self-hosted/dm-sans-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/self-hosted/dm-sans-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/self-hosted/dm-sans-latin-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-sans",
-  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
+const jetbrainsMono = localFont({
+  src: [
+    {
+      path: "../../public/fonts/self-hosted/jetbrains-mono-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/self-hosted/jetbrains-mono-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/self-hosted/jetbrains-mono-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/self-hosted/jetbrains-mono-latin-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-mono",
-  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 

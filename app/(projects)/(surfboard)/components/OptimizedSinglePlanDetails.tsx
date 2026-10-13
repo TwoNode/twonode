@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import MaplibreMap from "./maps/MaplibreMap";
 import { surfboardApi } from "@/surfboard/apiClient";
+import { planFileDisplayName } from "@/surfboard/utils/planFileName";
 
 interface OptimizedSinglePlanDetailsProps {
   planData: any; // The pre-loaded plan data
@@ -28,12 +29,16 @@ interface FileCardProps {
   filePath: string;
   type: "pdf" | "cad" | "cert" | "redcopy";
   showDelete?: boolean;
+  planNumber?: string | null;
+  index?: number;
 }
 
 const FileCard: React.FC<FileCardProps> = ({
   filePath,
   type,
   showDelete = false,
+  planNumber,
+  index = 0,
 }) => {
   const getFileIcon = () => {
     switch (type) {
@@ -52,8 +57,9 @@ const FileCard: React.FC<FileCardProps> = ({
     }
   };
 
-  const fileName = filePath.split("/").pop() || "";
-  const isDwg = fileName.toLowerCase().endsWith(".dwg");
+  const storedName = filePath.split("/").pop() || "";
+  const fileName = planFileDisplayName({ planNumber, filePath, index });
+  const isDwg = storedName.toLowerCase().endsWith(".dwg");
   const authenticatedUrl = surfboardApi.files.getViewUrl(filePath);
 
   return (
@@ -71,6 +77,7 @@ const FileCard: React.FC<FileCardProps> = ({
         {type === "pdf" || type === "cert" || type === "redcopy" ? (
           <MediaLink
             href={authenticatedUrl}
+            name={fileName}
             className="text-sm text-blue-600 hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
@@ -93,6 +100,7 @@ const FileCard: React.FC<FileCardProps> = ({
             {!isDwg && (
               <MediaLink
                 href={authenticatedUrl}
+                name={fileName}
                 className="text-sm text-blue-600 hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -666,7 +674,7 @@ export default function OptimizedSinglePlanDetails({
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {planData.pdfFilePaths.map((path: string, idx: number) => (
-                    <FileCard key={idx} filePath={path} type="pdf" />
+                    <FileCard key={idx} filePath={path} planNumber={planData.planNumber} index={idx} type="pdf" />
                   ))}
                 </div>
               </div>
@@ -679,7 +687,7 @@ export default function OptimizedSinglePlanDetails({
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {planData.cadFilePaths.map((path: string, idx: number) => (
-                    <FileCard key={idx} filePath={path} type="cad" />
+                    <FileCard key={idx} filePath={path} planNumber={planData.planNumber} index={idx} type="cad" />
                   ))}
                 </div>
               </div>
@@ -693,7 +701,7 @@ export default function OptimizedSinglePlanDetails({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {planData.certificateFilePaths.map(
                     (path: string, idx: number) => (
-                      <FileCard key={idx} filePath={path} type="cert" />
+                      <FileCard key={idx} filePath={path} planNumber={planData.planNumber} index={idx} type="cert" />
                     )
                   )}
                 </div>
@@ -708,7 +716,7 @@ export default function OptimizedSinglePlanDetails({
                   Record Copy (Red Copy)
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <FileCard filePath={planData.redCopyFileUrl} type="redcopy" />
+                  <FileCard filePath={planData.redCopyFileUrl} planNumber={planData.planNumber} type="redcopy" />
                 </div>
               </div>
             )}
