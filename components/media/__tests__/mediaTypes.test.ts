@@ -82,3 +82,13 @@ describe("downloadHrefFor / jsonHrefFor", () => {
     ).toBe("json");
   });
 });
+
+describe("public certificate route", () => {
+  it("is treated as a gateway link, with the download option", async () => {
+    const { isGatewayLink, downloadHrefFor, jsonHrefFor } = await import("../mediaTypes");
+    const href = "/api/v1/surfboard/plans/p1/public/certificate?index=0&token=t";
+    expect(isGatewayLink(href)).toBe(true);
+    expect(downloadHrefFor(href, "Certificate.pdf")).toContain("download=1");
+    expect(jsonHrefFor(href)).toContain("format=json");
+  });
+});

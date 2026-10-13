@@ -63,3 +63,19 @@ export function pdfPageScale(input: {
   if (pixels > maxPixels) canvasScale *= Math.sqrt(maxPixels / pixels);
   return { canvasScale, cssHeight: pageHeight * fit };
 }
+
+/**
+ * A horizontal swipe between files: far enough sideways and mostly sideways,
+ * so a vertical scroll through a PDF is never taken for a swipe. Returns the
+ * step to take (1 = next file, -1 = previous) or null.
+ */
+export function swipeStep(
+  dx: number,
+  dy: number,
+  minDistance = 60
+): 1 | -1 | null {
+  if (Math.abs(dx) < minDistance) return null;
+  if (Math.abs(dx) < Math.abs(dy) * 1.5) return null;
+  return dx < 0 ? 1 : -1;
+}
+

@@ -21,7 +21,11 @@ const IMAGE = new Set([
 const VIDEO = new Set(["mp4", "webm", "mov", "m4v", "ogv"]);
 const AUDIO = new Set(["mp3", "wav", "ogg", "m4a", "aac"]);
 
-const GATEWAY_PATH = "/files/view";
+// Links whose target is signed on demand: the file gateways and the public
+// (paid-session) certificate route.
+const GATEWAY_PATHS = ["/files/view", "/public/certificate"];
+const isGatewayPath = (pathname: string) =>
+  GATEWAY_PATHS.some((p) => pathname.endsWith(p));
 
 function parse(href: string): URL | null {
   try {
@@ -33,14 +37,14 @@ function parse(href: string): URL | null {
 
 /** True for a link to the authenticated file gateway (`/api/v1/surfboard/files/view?...`). */
 export function isGatewayLink(href: string): boolean {
-  return !!parse(href)?.pathname.endsWith(GATEWAY_PATH);
+  return isGatewayPath(parse(href)?.pathname ?? "");
 }
 
 /** The stored file behind a link: the `url` / `key` of a gateway link, else the link itself. */
 export function fileRefOf(href: string): string {
   const u = parse(href);
   if (!u) return href;
-  if (u.pathname.endsWith(GATEWAY_PATH)) {
+  if (u.pathname.endsWith("/files/view")) {
     return u.searchParams.get("url") || u.searchParams.get("key") || href;
   }
   return href;
@@ -85,7 +89,7 @@ export function mediaKindFor(href: string, name?: string): MediaKind {
  */
 export function downloadHrefFor(href: string, name?: string): string {
   const u = parse(href);
-  if (!u || !u.pathname.endsWith(GATEWAY_PATH)) return href;
+  if (!u || !isGatewayPath(u.pathname)) return href;
   u.searchParams.set("download", "1");
   if (name) u.searchParams.set("name", name);
   return /^https?:\/\//i.test(href) ? u.toString() : `${u.pathname}${u.search}`;

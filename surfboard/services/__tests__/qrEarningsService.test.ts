@@ -16,7 +16,7 @@ import { Platform } from "@/utils/platform";
 
 const mockPrisma = vi.hoisted(() => ({
   surfboardSettings: { findFirst: vi.fn() },
-  surfboardPlan: { findFirst: vi.fn(), update: vi.fn() },
+  surfboardPlan: { findFirst: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
   qREarningsTransaction: {
     findFirst: vi.fn(),
     findUnique: vi.fn(),
@@ -58,6 +58,7 @@ vi.mock("@/utils/email", () => ({
 }));
 
 import {
+  getPaidCertificateKey,
   getPlanQRAccessState,
   getQREarningsSettings,
   incrementPlanQRScanCount,
@@ -624,5 +625,55 @@ describe("toggleBankVerification", () => {
       toggleBankVerification("surveyor-1", true, "admin-1")
     ).rejects.toThrow(NotFoundError);
     expect(mockWriteAudit).not.toHaveBeenCalled();
+  });
+});
+
+describe("getPaidCertificateKey (I-026)", () => {
+  const plan = {
+    id: "plan-1",
+    planNumber: "X/1",
+    surveyTitle: "T",
+    redCopyStatus: "PENDING",
+    recordsIIStatus: "PENDING",
+    qrScanCount: 10,
+    certificateFilePaths: ["k0.pdf", "k1.pdf"],
+  };
+  beforeEach(() => {
+    mockPrisma.surfboardSettings.findFirst.mockResolvedValue(null);
+    mockPrisma.surfboardPlan.findFirst.mockResolvedValue(plan);
+    mockPrisma.surfboardPlan.findUnique.mockResolvedValue({
+      certificateFilePaths: ["k0.pdf", "k1.pdf"],
+    });
+  });
+
+  it("returns the file for a paid, active Certificate of Deposit session", async () => {
+    mockPrisma.qREarningsTransaction.findFirst.mockResolvedValue({
+      serviceType: "CERTIFICATE_OF_DEPOSIT",
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    expect(await getPaidCertificateKey("plan-1", "tok", 1)).toBe("k1.pdf");
+  });
+
+  it("refuses a paid session for the other service", async () => {
+    mockPrisma.qREarningsTransaction.findFirst.mockResolvedValue({
+      serviceType: "LOCATION_AUTHENTICITY",
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    await expect(getPaidCertificateKey("plan-1", "tok", 0)).rejects.toThrow(NotFoundError);
+  });
+
+  it("refuses an expired session, no token, and an index that does not exist", async () => {
+    mockPrisma.qREarningsTransaction.findFirst.mockResolvedValue({
+      serviceType: "CERTIFICATE_OF_DEPOSIT",
+      expiresAt: new Date(Date.now() - 60_000),
+    });
+    await expect(getPaidCertificateKey("plan-1", "tok", 0)).rejects.toThrow(NotFoundError);
+    mockPrisma.qREarningsTransaction.findFirst.mockResolvedValue(null);
+    await expect(getPaidCertificateKey("plan-1", undefined, 0)).rejects.toThrow(NotFoundError);
+    mockPrisma.qREarningsTransaction.findFirst.mockResolvedValue({
+      serviceType: "CERTIFICATE_OF_DEPOSIT",
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    await expect(getPaidCertificateKey("plan-1", "tok", 5)).rejects.toThrow(NotFoundError);
   });
 });

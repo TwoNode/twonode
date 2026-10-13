@@ -75,3 +75,17 @@ describe("fitPageWidth", () => {
     expect(fitPageWidth({ width: 500, height: 0, aspect: 0 })).toBe(476);
   });
 });
+
+describe("swipeStep", () => {
+  it("steps on a clear sideways swipe", async () => {
+    const { swipeStep } = await import("../viewerMath");
+    expect(swipeStep(-120, 10)).toBe(1);
+    expect(swipeStep(120, -10)).toBe(-1);
+  });
+  it("ignores short swipes and vertical scrolls", async () => {
+    const { swipeStep } = await import("../viewerMath");
+    expect(swipeStep(-30, 0)).toBeNull();
+    expect(swipeStep(-100, 90)).toBeNull();
+    expect(swipeStep(0, 200)).toBeNull();
+  });
+});

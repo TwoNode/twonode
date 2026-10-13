@@ -28,7 +28,8 @@ Logic used across two or more platforms, under the top-level `hooks/`,
 | `PdfViewer.tsx` | PDF.js page viewer: draws pages as they scroll into view, fits to width, caps the canvas size for iOS |
 | `useResolvedUrl.ts` | Turns a gateway link into the signed URL it redirects to (JSON mode, 15-minute link); other links are used as they are |
 | `mediaTypes.ts` | `mediaKindFor`, `fileNameOf` (drops the upload prefix), `isGatewayLink`, `downloadHrefFor`, `jsonHrefFor` |
-| `viewerMath.ts` | `wrapIndex`, `clampZoom`, `stepZoom`, `pdfPageScale` |
+| `viewerMath.ts` | `wrapIndex`, `clampZoom`, `stepZoom`, `pdfPageScale`, `fitPageWidth`, `swipeStep` (a clear sideways swipe steps to the next or previous file; vertical scrolls are ignored) |
+| `EnlargeableImage.tsx` | An inline `<img>` that opens large in the viewer when tapped or clicked; pass `group` to step through the other pictures with the arrows or a swipe. Used for the REVA site photos |
 | `__tests__/noNewTabFiles.test.ts` | Fails when a `target="_blank"` or `window.open` appears that is not on the reviewed list (external links only). Add real file links with `MediaLink` |
 
 ## `lib/api/` — API route plumbing
