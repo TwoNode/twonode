@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { MediaLink } from "@/components/media";
 
 export type FormState = {
   directFileLink: File | null;
@@ -229,15 +230,13 @@ export function AdminDirectLinkUpload({
                     <div className="text-sm font-medium">
                       Previously uploaded file
                     </div>
-                    <a
+                    <MediaLink
                       href={property.report.directFileLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="underline text-sm"
                       style={{ color: REVA_COLORS.primary.light }}
                     >
                       View
-                    </a>
+                    </MediaLink>
                   </div>
 
                   <iframe
@@ -261,15 +260,14 @@ export function AdminDirectLinkUpload({
                           {form.directFileLink.type || "Unknown type"}
                         </div>
                       </div>
-                      <a
+                      <MediaLink
                         href={URL.createObjectURL(form.directFileLink)}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        name={form.directFileLink.name}
                         className="underline text-sm"
                         style={{ color: REVA_COLORS.primary.light }}
                       >
                         Preview Selected File
-                      </a>
+                      </MediaLink>
                     </div>
                   </>
                 ) : (
