@@ -1013,6 +1013,11 @@ export async function getGatedPublicSurfPlan(id: string, token?: string) {
     geometry: null,
     areaSqM: 0,
     user: null,
+    // File links are a paid or free-scan benefit too (I-027).
+    pdfFilePaths: [],
+    cadFilePaths: [],
+    certificateFilePaths: [],
+    redCopyFileUrl: null,
   };
   return { plan: redactedPlan, accessInfo };
 }
