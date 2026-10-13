@@ -4646,16 +4646,32 @@ button {
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+/* Footer status tags: quiet outlined labels. Solid border = live, dashed = coming. */
 .vf .status {
   margin-left: 0;
+  padding: 2px 7px;
+  border: 1px solid rgba(219, 229, 255, 0.5);
+  border-radius: 3px;
+  background: transparent;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  color: #dbe5ff;
+}
+.vf .status:before {
+  content: none;
 }
 .vf .status-active {
-  color: #6fe0ae;
-  background: rgba(111, 224, 174, 0.12);
+  color: #dbe5ff;
+  background: transparent;
 }
 .vf .status-next {
-  color: #b8b6ff;
-  background: rgba(184, 182, 255, 0.14);
+  color: #93a0c8;
+  background: transparent;
+  border-color: rgba(147, 160, 200, 0.55);
+  border-style: dashed;
 }
 .vf-bottom {
   align-items: center;
