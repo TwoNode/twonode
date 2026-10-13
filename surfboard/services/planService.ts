@@ -35,7 +35,11 @@ import { PROVISIONAL_TYPES } from "@/surfboard/services/analyticsService";
 import { emailInUse } from "@/lib/auth/userLookup";
 import { sendPlanShareInviteEmail } from "@/utils/email";
 import { getSiteUrl } from "@/lib/siteUrl";
-import { normalizePlanNumber, samePlanNumber } from "@/surfboard/utils/planNumber";
+import {
+  normalizePlanNumber,
+  planNumberSearchClauses,
+  samePlanNumber,
+} from "@/surfboard/utils/planNumber";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/surfboardActions.ts —
@@ -203,7 +207,7 @@ async function buildPlanFilterWhere(
 
   if (filters.search) {
     where.OR = [
-      { planNumber: { contains: filters.search, mode: "insensitive" } },
+      ...planNumberSearchClauses(filters.search),
       { surveyTitle: { contains: filters.search, mode: "insensitive" } },
       { facilitator: { contains: filters.search, mode: "insensitive" } },
     ];
@@ -511,8 +515,10 @@ export async function createSurfPlan(
     rec.referencePlanNumber
   ) {
     try {
+      const referencedId = await findPlanIdByNumber(rec.referencePlanNumber);
+      if (!referencedId) throw new NotFoundError("Referenced plan");
       await prisma.surfboardPlan.update({
-        where: { planNumber: rec.referencePlanNumber },
+        where: { id: referencedId },
         data: { withdrawalAndResubmissionStatus: "Withdrawn" },
       });
     } catch {
@@ -630,8 +636,10 @@ export async function updateSurfPlan(
     data.referencePlanNumber
   ) {
     try {
+      const referencedId = await findPlanIdByNumber(data.referencePlanNumber);
+      if (!referencedId) throw new NotFoundError("Referenced plan");
       await prisma.surfboardPlan.update({
-        where: { planNumber: data.referencePlanNumber },
+        where: { id: referencedId },
         data: { withdrawalAndResubmissionStatus: "Withdrawn" },
       });
     } catch {
@@ -1055,6 +1063,32 @@ export async function getDeletedSurfPlans(
     total,
     totalPages: Math.ceil(total / pageSize),
   };
+}
+
+/**
+ * The plan a typed plan number refers to: the exact number first, then the
+ * canonical key (case, spacing, trailing `_` or `.`), newest live plan first.
+ * Used where a number arrives from outside (Red Copy webhook, a reference to an
+ * earlier plan).
+ */
+export async function findPlanIdByNumber(
+  planNumber: string
+): Promise<string | null> {
+  const typed = planNumber.trim();
+  if (!typed) return null;
+  const exact = await prisma.surfboardPlan.findFirst({
+    where: { planNumber: typed },
+    select: { id: true },
+  });
+  if (exact) return exact.id;
+  const key = normalizePlanNumber(typed);
+  if (!key) return null;
+  const byKey = await prisma.surfboardPlan.findFirst({
+    where: { planNumberKey: key, deleted: false },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  return byKey?.id ?? null;
 }
 
 export async function checkPlanNumberExists(
@@ -1916,7 +1950,7 @@ export async function getAdminSurfPlansPaginated(params: AdminPlanListParams) {
 
   if (search) {
     where.OR = [
-      { planNumber: { contains: search, mode: "insensitive" } },
+      ...planNumberSearchClauses(search),
       { surveyTitle: { contains: search, mode: "insensitive" } },
       { ward: { contains: search, mode: "insensitive" } },
       { lga: { contains: search, mode: "insensitive" } },

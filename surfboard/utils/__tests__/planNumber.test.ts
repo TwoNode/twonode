@@ -45,3 +45,17 @@ describe("planNumberToKeySegment", () => {
     expect(planNumberToKeySegment("QED 1236")).toBe("QED-1236");
   });
 });
+
+describe("planNumberSearchClauses", () => {
+  it("matches as typed and by canonical key", async () => {
+    const { planNumberSearchClauses } = await import("../planNumber");
+    expect(planNumberSearchClauses("abc/1/la_")).toEqual([
+      { planNumber: { contains: "abc/1/la_", mode: "insensitive" } },
+      { planNumberKey: { contains: "ABC/1/LA" } },
+    ]);
+  });
+  it("keeps only the typed match for an empty key", async () => {
+    const { planNumberSearchClauses } = await import("../planNumber");
+    expect(planNumberSearchClauses("_")).toHaveLength(1);
+  });
+});

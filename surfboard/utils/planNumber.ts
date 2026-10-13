@@ -31,3 +31,20 @@ export function planNumberToKeySegment(
 ): string {
   return normalizePlanNumber(value).replace(/\//g, "_").replace(/\s/g, "-");
 }
+
+/**
+ * Prisma `where` clauses that match a search term against a plan's number: as
+ * typed (any case), and by canonical key, so `abc/1/la_` finds `ABC/1/LA`.
+ * `planNumberKey` is empty until the backfill has run, so the typed match stays.
+ */
+export function planNumberSearchClauses(
+  term: string
+): Array<Record<string, unknown>> {
+  const clauses: Array<Record<string, unknown>> = [
+    { planNumber: { contains: term, mode: "insensitive" } },
+  ];
+  const key = normalizePlanNumber(term);
+  if (key) clauses.push({ planNumberKey: { contains: key } });
+  return clauses;
+}
+
