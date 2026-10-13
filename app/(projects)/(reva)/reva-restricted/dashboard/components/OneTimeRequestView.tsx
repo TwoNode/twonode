@@ -394,14 +394,20 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
                   <p className="text-sm font-medium text-green-700">Status</p>
                   <p className="text-green-800 font-medium">Approved</p>
                 </div>
-                <Button variant="outline" size="sm" asChild>
-                  <MediaLink
-                    href={revaApi.files.linkFor(request.report.downloadUrl)}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Report
-                  </MediaLink>
-                </Button>
+                {/* The report file is `directFileLink` (a Detailed Form report has none; `downloadUrl` was never set). */}
+                {request.report.directFileLink && (
+                  <Button variant="outline" size="sm" asChild>
+                    <MediaLink
+                      href={revaApi.files.linkFor(
+                        request.report.directFileLink
+                      )}
+                      name={`${request.reference}.pdf`}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Report
+                    </MediaLink>
+                  </Button>
+                )}
               </div>
               {request.report.approvedAt && (
                 <div>

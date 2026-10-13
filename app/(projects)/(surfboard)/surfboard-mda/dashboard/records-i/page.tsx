@@ -494,10 +494,14 @@ export default function RecordsIAdminPage() {
                 {isImageUrl(plan.redCopyFileUrl) && (
                   <div
                     className="cursor-pointer"
-                    onClick={() => setViewingImage(plan.redCopyFileUrl)}
+                    onClick={() =>
+                      setViewingImage(
+                        surfboardApi.files.getViewUrl(plan.redCopyFileUrl!)
+                      )
+                    }
                   >
                     <img
-                      src={plan.redCopyFileUrl}
+                      src={surfboardApi.files.getViewUrl(plan.redCopyFileUrl)}
                       alt="Record Copy Preview"
                       className="max-h-48 rounded-lg border shadow-sm hover:shadow-md transition-shadow"
                     />
