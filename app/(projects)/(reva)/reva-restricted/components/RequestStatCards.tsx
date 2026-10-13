@@ -26,7 +26,12 @@ export function RequestStatCards({
   onSelectTab: (tab: RequestTab) => void;
 }) {
   return (
-    <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+    <div
+      className={cn(
+        "mb-6 grid grid-cols-2 gap-3 md:grid-cols-3",
+        cards.length === 5 ? "xl:grid-cols-5" : "xl:grid-cols-6"
+      )}
+    >
       {cards.map((card) => {
         const interactive = !!card.tab;
         const active = interactive && card.tab === activeTab;
