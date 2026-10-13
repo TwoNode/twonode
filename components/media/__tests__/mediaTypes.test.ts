@@ -85,10 +85,22 @@ describe("downloadHrefFor / jsonHrefFor", () => {
 
 describe("public certificate route", () => {
   it("is treated as a gateway link, with the download option", async () => {
-    const { isGatewayLink, downloadHrefFor, jsonHrefFor } = await import("../mediaTypes");
-    const href = "/api/v1/surfboard/plans/p1/public/certificate?index=0&token=t";
+    const { isGatewayLink, downloadHrefFor, jsonHrefFor } =
+      await import("../mediaTypes");
+    const href =
+      "/api/v1/surfboard/plans/p1/public/certificate?index=0&token=t";
     expect(isGatewayLink(href)).toBe(true);
     expect(downloadHrefFor(href, "Certificate.pdf")).toContain("download=1");
     expect(jsonHrefFor(href)).toContain("format=json");
+  });
+});
+
+describe("a missing link", () => {
+  // The admin one-time request page passed `report.downloadUrl`, which nothing sets: it crashed the whole page.
+  it("does not throw", () => {
+    const missing = undefined as unknown as string;
+    expect(() => mediaKindFor(missing)).not.toThrow();
+    expect(mediaKindFor(missing)).toBe("other");
+    expect(fileNameOf(missing)).toBe("File");
   });
 });

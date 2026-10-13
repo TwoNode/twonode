@@ -42,6 +42,8 @@ export function isGatewayLink(href: string): boolean {
 
 /** The stored file behind a link: the `url` / `key` of a gateway link, else the link itself. */
 export function fileRefOf(href: string): string {
+  // A missing link (a field a screen expects but the data does not have) must not crash the page.
+  if (!href) return "";
   const u = parse(href);
   if (!u) return href;
   if (u.pathname.endsWith("/files/view")) {
