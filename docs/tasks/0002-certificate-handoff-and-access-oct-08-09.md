@@ -64,4 +64,4 @@ Execute comprehensive certificate handoff, resolve long attendee name clipping v
 - **PR #313:** Open release PR `main` → `prod` (Release: long names fix + ADRs)
 - **PR #314:** Open feature PR `feat/gbc-certificate-access` → `dev` (ADR-0008 certificate access security overhaul)
 - **Branch `feat/gbc-certificate-access`:** Complete ADR-0008 security implementation
-- **Backups:** `out/staging-odd-dates-backup.csv`, `out/prod-odd-dates-backup.csv`
+- **Backups:** `out/db/backups/staging-odd-dates-backup.csv`, `out/db/backups/prod-odd-dates-backup.csv`
