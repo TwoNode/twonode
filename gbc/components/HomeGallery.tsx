@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Play, Image as ImageIcon } from "lucide-react";
 import { gbcApi } from "@/gbc/apiClient";
 import type { GBCSettingsData } from "@/gbc/utils/settings";
+import { MediaLink } from "@/components/media";
 
 export default function HomeGallery({
   gallery,
@@ -109,10 +110,10 @@ export default function HomeGallery({
                     </p>
                   )}
                 </div>
-                <a
+                <MediaLink
                   href={item.mediaUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  name={item.title}
+                  kind={item.mediaType === "VIDEO" ? "video" : "image"}
                   className="absolute inset-0"
                   aria-label={`View ${item.title}`}
                 />

@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { format, addDays } from "date-fns";
 import Link from "next/link";
 import { REVA_COLORS, revaStatusBadgeStyle } from "@/reva/colors";
+import { MediaLink } from "@/components/media";
 
 const OneTimeRequestList = ({ requests }: { requests: any[] }) => {
   return (
@@ -102,14 +103,12 @@ const OneTimeRequestList = ({ requests }: { requests: any[] }) => {
                 >
                   {req?.documentsUrls.map((url: string, idx: number) => (
                     <li key={idx}>
-                      <a
+                      <MediaLink
                         href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
                         className="underline"
                       >
                         Document {idx + 1}
-                      </a>
+                      </MediaLink>
                     </li>
                   ))}
                 </ul>

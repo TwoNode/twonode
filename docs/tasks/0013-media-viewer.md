@@ -21,11 +21,11 @@ No file opens in a new tab anywhere in the app: it opens in a popup on the same 
 - [x] 26 file links moved to `MediaLink` across the Surfboard screens (plans list, single plan, red copies, receipts, edit plan modal, MDA pages, submitted batches, record copy upload, plan form file list); the ad-hoc PDF popup in `CertificateBatchSelection` replaced.
 - [x] Checked in a real browser (Chrome) at 1280 px and 390 px with a 3-page PDF, an image and a DWG: opens in place, no new tab, next and previous, zoom, Escape, Back and the X close it, DWG shows the download panel, no page errors.
 - [ ] Check on a real iPhone and Android phone, on staging with a login: a plan PDF, a red copy, a receipt, an image; Back button; download. _(Waiting on: roji-tech or whoever has a staging login)_
-- [ ] Confirm the production build bundles the PDF.js worker (Vercel preview of this PR).
+- [ ] Confirm the production build bundles the PDF.js worker. The staging build of #374 is Ready; the check is to open a PDF on staging. _(Waiting on: staging login)_
 
 ### Phase 2: the rest of the app
 
-- [ ] REVA (about 4 file links), GBC (3), shared components (1), and the 18 "other" new-tab spots to classify (files or external). The GBC gallery video and any lightbox.
+- [x] REVA (8 file links and the OTP secure download), GBC (gallery, home gallery, ticket QR), Surfboard public plan certificates now use the viewer. The other new-tab spots were classified as external (maps, payment and Remita pages, social, mail, the state GIS certificate PDF). (Done 2026-10-13, branch `feat/media-viewer-phase2`)
 - [ ] Plain images shown inline (logo, signature, site photos): optional click-to-enlarge with the same viewer.
-- [ ] A check that fails the build when a file link uses `target="_blank"` (like the other `verify-` scripts), added once every screen is moved.
+- [x] `components/media/__tests__/noNewTabFiles.test.ts` fails when a new `target="_blank"` or `window.open` appears that is not on the reviewed list (each entry has a reason). (Done 2026-10-13)
 - [ ] Touch swipe between files in a group (not built).

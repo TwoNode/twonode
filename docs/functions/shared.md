@@ -22,13 +22,14 @@ Logic used across two or more platforms, under the top-level `hooks/`,
 
 | File | Description |
 | ---- | ----------- |
-| `MediaViewerProvider.tsx` | Mounted once in `app/(projects)/layout.tsx`; `useMediaViewer().open(items, index)` shows files in the viewer from anywhere (null when no provider is mounted) |
+| `MediaViewerProvider.tsx` | Mounted once in `app/(projects)/layout.tsx` (Surfboard, REVA and GBC; REVA's secure download opens the file through it); `useMediaViewer().open(items, index)` shows files in the viewer from anywhere (null when no provider is mounted) |
 | `MediaLink.tsx` | A link that opens a file in the viewer instead of a new tab. Props: `href` (gateway link or public URL), optional `name`, `kind`, `group` (files to step through). Links that are not viewable files (e.g. Remita pages) still open normally in a new tab. Forwards its ref, so it works inside `asChild` menu items |
 | `MediaViewer.tsx` | The dialog: image (zoom), PDF (PDF.js), video, audio, and a download panel for other types; arrows and arrow keys for a group; Escape, the X and the Back button close it |
 | `PdfViewer.tsx` | PDF.js page viewer: draws pages as they scroll into view, fits to width, caps the canvas size for iOS |
 | `useResolvedUrl.ts` | Turns a gateway link into the signed URL it redirects to (JSON mode, 15-minute link); other links are used as they are |
 | `mediaTypes.ts` | `mediaKindFor`, `fileNameOf` (drops the upload prefix), `isGatewayLink`, `downloadHrefFor`, `jsonHrefFor` |
 | `viewerMath.ts` | `wrapIndex`, `clampZoom`, `stepZoom`, `pdfPageScale` |
+| `__tests__/noNewTabFiles.test.ts` | Fails when a `target="_blank"` or `window.open` appears that is not on the reviewed list (external links only). Add real file links with `MediaLink` |
 
 ## `lib/api/` — API route plumbing
 

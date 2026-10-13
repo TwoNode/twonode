@@ -53,3 +53,13 @@ describe("isStorageFileRef", () => {
     expect(isStorageFileRef(null)).toBe(false);
   });
 });
+
+describe("isRedCopyKeyOfPlan", () => {
+  it("accepts only the plan's own redcopy folder", async () => {
+    const { isRedCopyKeyOfPlan } = await import("../fileAccess");
+    expect(isRedCopyKeyOfPlan("surfboard/A/B/1/redcopy/f.pdf", "A/B/1")).toBe(true);
+    expect(isRedCopyKeyOfPlan("surfboard/A/B/1/redcopy/f.pdf", "A/B/2")).toBe(false);
+    expect(isRedCopyKeyOfPlan("surfboard/A/B/1/pdf/f.pdf", "A/B/1")).toBe(false);
+    expect(isRedCopyKeyOfPlan("surfboard/A/B/1/redcopy/f.pdf", "")).toBe(false);
+  });
+});
