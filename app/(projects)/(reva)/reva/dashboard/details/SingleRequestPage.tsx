@@ -22,6 +22,7 @@ import Link from "next/link";
 import { notifyInfo, notifyWarning } from "@/utils/notify";
 import { PDFDownloadButton } from "@/app/(projects)/(reva)/reva-restricted/dashboard/details/components/PDFDownloadButton";
 import { SecureDownloadDialog } from "@/reva/components/SecureDownloadDialog";
+import { revaApi } from "@/reva/apiClient";
 
 export type ReportType = {
   centroid: string | null; // e.g. "6.5244, 3.3792"
@@ -213,7 +214,7 @@ const SingleRequestPage = ({
                     className="rounded-lg overflow-hidden border bg-white dark:bg-surface shadow hover:shadow-lg transition-shadow"
                   >
                     <img
-                      src={url}
+                      src={revaApi.files.linkFor(url)}
                       alt={`Site Image ${idx + 1}`}
                       className="w-full h-48 object-cover"
                       loading="lazy"

@@ -26,6 +26,7 @@ import {
 import Link from "next/link";
 import { REVA_COLORS, revaStatusBadgeStyle } from "@/reva/colors";
 import { MediaLink } from "@/components/media";
+import { revaApi } from "@/reva/apiClient";
 
 // Custom Naira icon component
 const NairaIcon = ({ className }: { className?: string }) => (
@@ -524,7 +525,7 @@ const RequestList = ({
                         .map((url: string, index: number) => (
                           <MediaLink
                             key={index}
-                            href={url}
+                            href={revaApi.files.linkFor(url)}
                             className="flex items-center gap-2 p-2 text-sm text-[#008cff] hover:text-[#032740] hover:bg-[#008cff]/10 rounded-md transition-colors"
                           >
                             <ArrowDownTrayIcon className="h-3 w-3" />

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { REVA_COLORS } from "@/reva/colors";
 import { MediaLink } from "@/components/media";
+import { revaApi } from "@/reva/apiClient";
 
 const UserRequestDataView = ({ property }: { property: any }) => {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
@@ -125,7 +126,7 @@ const UserRequestDataView = ({ property }: { property: any }) => {
                     className="rounded-lg overflow-hidden border bg-white dark:bg-surface shadow hover:shadow-lg transition-shadow"
                   >
                     <img
-                      src={url}
+                      src={revaApi.files.linkFor(url)}
                       alt={`Site Image ${idx + 1}`}
                       className="w-full h-48 object-cover"
                       loading="lazy"
@@ -202,7 +203,7 @@ const UserRequestDataView = ({ property }: { property: any }) => {
                 {(property.documentsUrls as string[])?.map((url, idx) => (
                   <li key={idx}>
                     <MediaLink
-                      href={url}
+                      href={revaApi.files.linkFor(url)}
                       className="underline"
                       style={{ color: REVA_COLORS.primary.light }}
                     >

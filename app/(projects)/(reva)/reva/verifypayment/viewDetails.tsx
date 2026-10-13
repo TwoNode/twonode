@@ -26,6 +26,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { SecureDownloadDialog } from "@/reva/components/SecureDownloadDialog";
 import { MediaLink } from "@/components/media";
+import { revaApi } from "@/reva/apiClient";
 
 // Format currency helper
 const formatCurrency = (amount: number | string | null | undefined): string => {
@@ -389,7 +390,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                   .map((doc: string, index: number) => (
                     <MediaLink
                       key={index}
-                      href={doc}
+                      href={revaApi.files.linkFor(doc)}
                       className="flex items-center gap-2 p-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
                     >
                       <Download className="h-3 w-3" />
