@@ -9,6 +9,7 @@ import {
   FileQuestion,
   Loader2,
   Maximize2,
+  MoveHorizontal,
   X,
   ZoomIn,
   ZoomOut,
@@ -88,7 +89,8 @@ export function MediaViewer({
           if (e.key === "ArrowRight") go(1);
           if (e.key === "ArrowLeft") go(-1);
         }}
-        className="fixed inset-0 left-0 top-0 z-[60] flex h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 bg-neutral-950 p-0 text-white data-[state=closed]:slide-out-to-left-0 data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-left-0 data-[state=open]:slide-in-from-top-0 sm:left-[2vw] sm:top-[2vh] sm:h-[96vh] sm:w-[96vw] sm:rounded-xl sm:border sm:border-white/10"
+        overlayClassName="z-[20000]"
+        className="fixed inset-0 left-0 top-0 z-[20001] flex h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 bg-neutral-950 p-0 text-white data-[state=closed]:slide-out-to-left-0 data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-left-0 data-[state=open]:slide-in-from-top-0 sm:left-[2vw] sm:top-[2vh] sm:h-[96vh] sm:w-[96vw] sm:rounded-xl sm:border sm:border-white/10"
       >
         <DialogTitle className="sr-only">{name}</DialogTitle>
         <DialogDescription className="sr-only">File viewer</DialogDescription>
@@ -147,6 +149,8 @@ function ViewerBody({
 }) {
   const { url, error, loading } = useResolvedUrl(href);
   const [zoom, setZoom] = useState(1);
+  // Opens fitted to the whole page; the fit button switches to fit-to-width.
+  const [fit, setFit] = useState<"page" | "width">("page");
   const [renderError, setRenderError] = useState<string | null>(null);
   const message = error || renderError;
   const zoomable = kind === "image" || kind === "pdf";
@@ -179,14 +183,24 @@ function ViewerBody({
           <ToolButton label="Zoom in" onClick={() => setZoom((z) => stepZoom(z, 1))}>
             <ZoomIn className="h-4 w-4" aria-hidden />
           </ToolButton>
-          <ToolButton label="Fit to screen" onClick={() => setZoom(1)}>
-            <Maximize2 className="h-4 w-4" aria-hidden />
+          <ToolButton
+            label={fit === "page" ? "Fit to width" : "Fit to page"}
+            onClick={() => {
+              setFit(fit === "page" ? "width" : "page");
+              setZoom(1);
+            }}
+          >
+            {fit === "page" ? (
+              <MoveHorizontal className="h-4 w-4" aria-hidden />
+            ) : (
+              <Maximize2 className="h-4 w-4" aria-hidden />
+            )}
           </ToolButton>
         </div>
       )}
       <div className="min-h-0 flex-1">
         {kind === "pdf" && (
-          <PdfViewer url={url} zoom={zoom} onError={setRenderError} />
+          <PdfViewer url={url} fit={fit} zoom={zoom} onError={setRenderError} />
         )}
         {kind === "image" && (
           <div className="flex h-full w-full overflow-auto">
@@ -197,7 +211,7 @@ function ViewerBody({
               onError={() => setRenderError("This image could not be shown here.")}
               className="m-auto object-contain"
               style={
-                zoom === 1
+                fit === "page" && zoom === 1
                   ? { maxWidth: "100%", maxHeight: "100%" }
                   : { width: `${zoom * 100}%`, maxWidth: "none" }
               }

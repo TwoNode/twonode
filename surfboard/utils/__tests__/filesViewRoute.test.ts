@@ -114,3 +114,19 @@ describe("GET /api/v1/surfboard/files/view", () => {
     expect(mocks.sign.mock.calls[0][2]).toEqual({ downloadName: "Plan.pdf" });
   });
 });
+
+describe("record copies stored under the plan number (I-023)", () => {
+  const key = "surfboard/SAS/LA/1886/2023/A001/redcopy/1700000000000__ab12__x.pdf";
+
+  it("lets the plan owner open their record copy", async () => {
+    mocks.plan.mockResolvedValue({ id: "p1", userId: "user-1", planNumber: "SAS/LA/1886/2023/A001" });
+    const res = await get(key);
+    expect(res.status).toBe(307);
+  });
+
+  it("refuses a record copy filed under a different plan number", async () => {
+    mocks.plan.mockResolvedValue({ id: "p1", userId: "user-1", planNumber: "SAS/LA/9999/2023/A001" });
+    const res = await get(key);
+    expect(res.status).toBe(403);
+  });
+});

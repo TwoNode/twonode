@@ -3,14 +3,16 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Loader2 } from "lucide-react";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist/types/src/pdf";
-import { pdfPageScale } from "./viewerMath";
+import { fitPageWidth, pdfPageScale } from "./viewerMath";
 
 const SIDE_PADDING = 24;
 
 type Props = {
   /** A signed URL (or any public URL) the browser can read directly. */
   url: string;
-  /** 1 fits the page to the width; more zooms in. */
+  /** "page" fits a whole page on screen; "width" fits the page to the width. */
+  fit: "page" | "width";
+  /** 1 is the fitted size; more zooms in. */
   zoom: number;
   onError: (message: string) => void;
 };
@@ -20,11 +22,12 @@ type Props = {
  * a PDF in an iframe often only offers a download) and on desktops. Pages are
  * drawn as they scroll into view, which keeps large survey sheets light.
  */
-export default function PdfViewer({ url, zoom, onError }: Props) {
+export default function PdfViewer({ url, fit, zoom, onError }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const onErrorRef = useRef(onError);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
-  const [width, setWidth] = useState(0);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const [firstAspect, setFirstAspect] = useState(0);
 
   useEffect(() => {
     onErrorRef.current = onError;
@@ -34,7 +37,10 @@ export default function PdfViewer({ url, zoom, onError }: Props) {
     const el = scrollerRef.current;
     if (!el) return;
     const observer = new ResizeObserver(([entry]) =>
-      setWidth(entry.contentRect.width)
+      setSize({
+        width: entry.contentRect.width,
+        height: entry.contentRect.height,
+      })
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -57,6 +63,13 @@ export default function PdfViewer({ url, zoom, onError }: Props) {
           void loaded.destroy();
           return;
         }
+        const first = await loaded.getPage(1);
+        const view = first.getViewport({ scale: 1 });
+        if (cancelled) {
+          void loaded.destroy();
+          return;
+        }
+        setFirstAspect(view.height / view.width);
         setDoc(loaded);
       } catch {
         if (!cancelled) onErrorRef.current("This PDF could not be shown here.");
@@ -68,7 +81,16 @@ export default function PdfViewer({ url, zoom, onError }: Props) {
     };
   }, [url]);
 
-  const cssWidth = Math.max(160, (width - SIDE_PADDING) * zoom);
+  const base =
+    fit === "page"
+      ? fitPageWidth({
+          width: size.width,
+          height: size.height,
+          aspect: firstAspect,
+          padding: SIDE_PADDING,
+        })
+      : size.width - SIDE_PADDING;
+  const cssWidth = Math.max(160, base * zoom);
 
   return (
     <div

@@ -40,7 +40,8 @@ State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate
 **Status:** `In Progress`. Viewer built and the 26 Surfboard file links moved (ADR-0015). Waiting on roji-tech: a check on real phones on staging, then REVA, GBC and the build check come next.
 
 - [x] **Viewer, gateway download, Surfboard screens.** (Done 2026-10-13, PR open)
-- [ ] **Phone check on staging, REVA and GBC links, build check.** _(Waiting on: roji-tech for the phone check)_
+- [x] **REVA, GBC and public plan links moved to the viewer, plus the new-tab test.** (Done 2026-10-13, branch `feat/media-viewer-phase2`)
+- [ ] **Phone check on staging.** Viewer is on staging (#374, build Ready). _(Waiting on: roji-tech or someone with a staging login)_
 
 ---
 

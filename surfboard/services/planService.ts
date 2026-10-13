@@ -953,6 +953,38 @@ export async function getPublicSurfPlanByIdWithSurveyor(id: string) {
   return withGeometry(plan);
 }
 
+/**
+ * The full plan for a logged-in viewer (route `plans/[planId]/public/full`).
+ * Staff and admins read any plan; a surveyor only their own or a shared one.
+ * Unlike `getPublicSurfPlanByIdWithSurveyor` this does not count a QR scan.
+ */
+export async function getFullSurfPlanForViewer(
+  userId: string,
+  userRole: SurfboardRole,
+  id: string
+) {
+  if (userRole === SurfboardRole.USER) return getSurfPlanById(userId, id);
+
+  const plan = await prisma.surfboardPlan.findUnique({
+    where: { id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          surconRegNumber: true,
+          surconRegName: true,
+          companyName: true,
+        },
+      },
+    },
+  });
+  if (!plan) throw new NotFoundError("Plan (or access denied)");
+  return withGeometry(plan);
+}
+
 export async function getGatedPublicSurfPlan(id: string, token?: string) {
   const plan = await getPublicSurfPlanByIdWithSurveyor(id);
 

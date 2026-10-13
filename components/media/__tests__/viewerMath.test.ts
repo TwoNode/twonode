@@ -60,3 +60,18 @@ describe("pdfPageScale", () => {
     ).toEqual({ canvasScale: 1, cssHeight: 0 });
   });
 });
+
+describe("fitPageWidth", () => {
+  it("keeps the full width when the page fits the height", async () => {
+    const { fitPageWidth } = await import("../viewerMath");
+    expect(fitPageWidth({ width: 1224, height: 2000, aspect: 1.414 })).toBe(1200);
+  });
+  it("narrows the page so its height fits", async () => {
+    const { fitPageWidth } = await import("../viewerMath");
+    expect(fitPageWidth({ width: 1224, height: 624, aspect: 1.5 })).toBe(400);
+  });
+  it("falls back to the width before the size is known", async () => {
+    const { fitPageWidth } = await import("../viewerMath");
+    expect(fitPageWidth({ width: 500, height: 0, aspect: 0 })).toBe(476);
+  });
+});

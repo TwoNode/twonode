@@ -17,6 +17,25 @@ export function stepZoom(zoom: number, direction: 1 | -1): number {
   return clampZoom(zoom + direction * ZOOM_STEP);
 }
 
+/**
+ * The page width that fits a whole page in the viewing area: the full width
+ * when the page is wide enough to fit, else narrower so the height fits too.
+ * `aspect` is page height divided by page width.
+ */
+export function fitPageWidth(input: {
+  width: number;
+  height: number;
+  aspect: number;
+  padding?: number;
+}): number {
+  const { width, height, aspect } = input;
+  const padding = input.padding ?? 24;
+  const availableWidth = Math.max(0, width - padding);
+  if (!(aspect > 0) || height <= 0) return availableWidth;
+  const availableHeight = Math.max(0, height - padding);
+  return Math.min(availableWidth, availableHeight / aspect);
+}
+
 /** iOS Safari refuses canvases bigger than about 16.7 million pixels. */
 export const MAX_CANVAS_PIXELS = 16_000_000;
 
