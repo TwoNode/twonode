@@ -48,5 +48,6 @@ Non-component logic files specific to the REVA platform, under `reva/`.
 
 | File                | Description                                         |
 | ------------------- | --------------------------------------------------- |
-| `reva/apiClient.ts` | Typed client wrapper around `/api/v1/reva/*` routes |
+| `reva/apiClient.ts` | Typed client wrapper around `/api/v1/reva/*` routes. `revaApi.files.linkFor` / `getDownloadUrl` turn a REVA file URL into a gateway link (other links are returned unchanged) |
+| `reva/utils/fileAccess.ts` | `isRevaStorageKey`, `isRevaFileRef`, `ownSitePhotoMatches` for the REVA file gateway `GET /api/v1/reva/files/view` (short-lived signed link, `format=json`, `download=1&name=`). Admins open any REVA file; a requester opens only the site photos of their own requests; documents and reports stay behind the emailed one-time code |
 | `reva/colors.ts`    | REVA brand color palette                            |

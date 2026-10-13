@@ -231,7 +231,7 @@ export function AdminDirectLinkUpload({
                       Previously uploaded file
                     </div>
                     <MediaLink
-                      href={property.report.directFileLink}
+                      href={revaApi.files.linkFor(property.report.directFileLink)}
                       className="underline text-sm"
                       style={{ color: REVA_COLORS.primary.light }}
                     >
