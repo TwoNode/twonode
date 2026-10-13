@@ -1,4 +1,7 @@
-import { lookupMyTicket } from "@/gbc/services/ticketService";
+import {
+  lookupMyTicket,
+  signedTicketQrUrl,
+} from "@/gbc/services/ticketService";
 import { getEditions } from "@/gbc/services/editionService";
 import TicketLookupForm from "./TicketLookupForm";
 import MyTicketView from "./MyTicketView";
@@ -25,7 +28,8 @@ export default async function MyTicketPage({ searchParams }: PageProps) {
     const ticket = await lookupMyTicket(ticketNumber, email);
     const editions = await getEditions();
     const edition = editions.find((e) => e.key === ticket.edition) ?? null;
-    return <MyTicketView ticket={ticket} edition={edition} />;
+    const qrUrl = await signedTicketQrUrl(ticket);
+    return <MyTicketView ticket={ticket} edition={edition} qrUrl={qrUrl} />;
   } catch {
     return <TicketLookupForm notFound />;
   }

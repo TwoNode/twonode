@@ -11,7 +11,8 @@ import {
   koboToNaira,
   verifyPayment as verifyPaystackPayment,
 } from "@/gbc/utils/paystack";
-import { uploadQRCode } from "@/gbc/utils/aws-s3";
+import { getSignedS3Url, uploadQRCode } from "@/gbc/utils/aws-s3";
+import { ticketQrKey } from "@/gbc/utils/storageKeys";
 import { generateQRCodeBuffer } from "@/gbc/utils/qr_code";
 import { sendGBCTicketConfirmation } from "@/gbc/utils/email";
 import { sendGBCTicketSMS } from "@/gbc/utils/sms";
@@ -370,7 +371,8 @@ async function ensureQRAndEmail(
       });
       const { url: qrCodeUrl, key: qrCodeS3Key } = await uploadQRCode(
         qrBuffer,
-        ticket.ticketNumber
+        ticket.ticketNumber,
+        ticket.edition
       );
       await prisma.gBCTicket.update({
         where: { id: ticket.id },
@@ -511,8 +513,20 @@ export async function verifyPayment(reference: string, sendEmail?: boolean) {
     )
   );
 
+  // ensureQRAndEmail may have just stored the QR code; return it with the tickets.
+  const qrRows = await prisma.gBCTicket.findMany({
+    where: { id: { in: updatedTickets.map((t) => t.id) } },
+    select: { id: true, qrCode: true, qrCodeS3Key: true },
+  });
+  const qrById = new Map(qrRows.map((r) => [r.id, r]));
+  const ticketsWithQr = updatedTickets.map((t) => ({
+    ...t,
+    qrCode: qrById.get(t.id)?.qrCode ?? t.qrCode,
+    qrCodeS3Key: qrById.get(t.id)?.qrCodeS3Key ?? t.qrCodeS3Key,
+  }));
+
   return {
-    tickets: updatedTickets,
+    tickets: ticketsWithQr,
     count: updatedTickets.length,
     amount: koboToNaira(verification.data.amount),
   };
@@ -548,6 +562,28 @@ export async function getTicketByNumber(ticketNumber: string) {
   });
   if (!ticket) throw new NotFoundError("Ticket");
   return ticket;
+}
+
+/**
+ * A short-lived signed link to a ticket's QR code, for the pages that show it
+ * to its holder (my ticket, payment success). The QR files are private; the
+ * stored `qrCode` URL is not a usable link. Null when the ticket has no QR yet.
+ */
+export async function signedTicketQrUrl(
+  ticket: { qrCodeS3Key?: string | null; qrCode?: string | null } | undefined,
+  options: { downloadName?: string } = {}
+): Promise<string | null> {
+  const key = ticket ? ticketQrKey(ticket) : null;
+  if (!key) return null;
+  return getSignedS3Url(key, 3600, options);
+}
+
+/** A ticket for an API response: the stored QR link is private, so it carries a signed link instead. */
+export async function withSignedQr<
+  T extends { qrCodeS3Key?: string | null; qrCode?: string | null },
+>(ticket: T): Promise<T> {
+  const qrCode = await signedTicketQrUrl(ticket);
+  return { ...ticket, qrCode };
 }
 
 /** Reference+email guest-auth, same pattern as REVA's one-time-request lookup — never confirms which field mismatched, so it can't be used to probe valid ticket numbers. */
@@ -765,7 +801,11 @@ export async function generateTicketQRCode(ticketId: string) {
     email: ticket.email,
     ticketType: ticket.ticketType,
   });
-  const { url, key } = await uploadQRCode(qrBuffer, ticket.ticketNumber);
+  const { url, key } = await uploadQRCode(
+    qrBuffer,
+    ticket.ticketNumber,
+    ticket.edition
+  );
   await prisma.gBCTicket.update({
     where: { id: ticketId },
     data: { qrCode: url, qrCodeS3Key: key },

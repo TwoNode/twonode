@@ -27,7 +27,7 @@ Tidy the Vercel environment variables, promote the review fixes to staging and t
 - [x] **`CRON_SECRET` set** for Production and Preview (separate random values, stored as secrets). Applies from the next deploy. (Done 2026-10-12)
 - [x] **Seven unused variables removed** from every environment, after backing up their values to a private local file: `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_LOGIN_URL`, `NOTIF_EMAIL`, `NOTIF_EMAIL_PASS`, `PAYSTACK_CALLBACK_URL`, `NEXT_PUBLIC_PAYSTACK_TEST_PUBLIC_KEY`. `KINDE_*` kept (the Kinde SDK reads them implicitly). (Done 2026-10-12)
 - [x] Local `.env`, `.env.staging`, `.env.local`: `REVA_AWS_*` renamed to `AWS_*` (values unchanged). (Done 2026-10-12)
-- [ ] **Remove `REVA_AWS_*` from Vercel** once the `AWS_*` code is deployed to prod and working. _(Waiting on: roji-tech go to remove them; prod now runs on `AWS_*`)_
+- [x] **Remove `REVA_AWS_*` from Vercel** once the `AWS_*` code is deployed to prod and working. _(Waiting on: roji-tech go to remove them; prod now runs on `AWS_*`)_ (Done 2026-10-13, see TASK-0011.)
 - [ ] **`REDCOPY_WEBHOOK_SECRET`** not set anywhere; the webhook accepts anyone (issue I-018). Needs Red Copy to send the same value. _(Waiting on: roji-tech / Red Copy)_
 - [x] **Make the cron route and the Red Copy webhook refuse requests when their secret is missing** (I-017, I-018). Done 2026-10-13: fails closed, tests added, PR to `dev`. The Red Copy webhook now rejects everything until `REDCOPY_WEBHOOK_SECRET` is set (OSSG replaces it).
 - [ ] **`GOOGLE_MAPS_SERVER_API_KEY`** still missing (Google billing). _(Waiting on: roji-tech / Cloud Admin)_
@@ -44,12 +44,12 @@ Tidy the Vercel environment variables, promote the review fixes to staging and t
 
 See issue I-004. Do not turn on Block Public Access for the whole bucket: the GBC website images and ticket QR codes (`GBC2/`) are served from the same bucket by plain URL.
 
-- [ ] Find the public-read statement in the bucket policy (or a bucket ACL) and replace it with one that allows public `s3:GetObject` only on `GBC2/*`. _(Waiting on: AWS admin)_
+- [x] Find the public-read statement in the bucket policy (or a bucket ACL) and replace it with one that allows public `s3:GetObject` only on `GBC2/*`. _(Waiting on: AWS admin)_ (Done 2026-10-13, see TASK-0011.)
 - [ ] Turn on the ACL blocks (Block public ACLs, Ignore public ACLs) so no object-level ACL can expose a file. _(Waiting on: AWS admin)_
 - [ ] Confirm the app's IAM user has `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` on the bucket (signed links depend on it).
 - [ ] Leave `reva/*` and `uploads/*` alone until we know whether the REVA pages show those files with plain URLs (26 property images, 10 + 4 documents).
-- [ ] **Code change first:** the surveyor logo (`SurfboardUser.logo`, 22 rows under `surfboard/`) is shown with a plain `<img src>` on the Surfboard settings page and will break once `surfboard/*` is private. Serve it through `/api/v1/surfboard/files/view`. (Issue I-019) _(Waiting on: roji-tech go)_
-- [ ] After the change: an anonymous request to a `surfboard/` object returns 403, a `GBC2/` image returns 200, a signed link from the app works. Then record it in a new ADR (ADR-0012 is not rewritten).
+- [x] **Code change first:** the surveyor logo (`SurfboardUser.logo`, 22 rows under `surfboard/`) is shown with a plain `<img src>` on the Surfboard settings page and will break once `surfboard/*` is private. Serve it through `/api/v1/surfboard/files/view`. (Issue I-019) _(Waiting on: roji-tech go)_ (Done 2026-10-13, see TASK-0011.)
+- [x] After the change: an anonymous request to a `surfboard/` object returns 403, a `GBC2/` image returns 200, a signed link from the app works. Then record it in a new ADR (ADR-0012 is not rewritten). (Done 2026-10-13, see TASK-0011.)
 
 ### Module D: /v4 mobile and tablet responsiveness
 
