@@ -2,7 +2,7 @@
 
 **Purpose:** one place that lists every route in the app — pages and API routes, across all three products plus shared/marketing and the new `/v2` site.
 
-**Last updated:** 2026-10-04.
+**Last updated:** 2026-10-13.
 
 **How this file is maintained:** the two tables below (API routes and pages) are **generated from the filesystem** by [`scripts/docs/generate-route-inventory.mjs`](../../scripts/docs/generate-route-inventory.mjs). Do not edit between the `BEGIN GENERATED` / `END GENERATED` markers by hand — run
 
@@ -51,141 +51,143 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/auth/verify-email`           | POST      | session (see source)                 |
 | `/api/v1/auth/verify-email-otp`       | POST      | session (see source)                 |
 
-#### Surfboard (129)
+#### Surfboard (131)
 
-| Route                                                                | Method(s)          | Auth                                                                                                  |
-| :------------------------------------------------------------------- | :----------------- | :---------------------------------------------------------------------------------------------------- |
-| `/api/v1/surfboard/admin/audit-logs`                                 | GET                | SUPERADMIN                                                                                            |
-| `/api/v1/surfboard/admin/audit-logs/filters`                         | GET                | SUPERADMIN                                                                                            |
-| `/api/v1/surfboard/admin/invitations`                                | GET, POST          | SUPERADMIN                                                                                            |
-| `/api/v1/surfboard/admin/invitations/[id]`                           | DELETE             | SUPERADMIN                                                                                            |
-| `/api/v1/surfboard/admin/invitations/[id]/resend`                    | POST               | SUPERADMIN                                                                                            |
-| `/api/v1/surfboard/admin/kyc`                                        | GET, POST          | SUPERADMIN                                                                                            |
-| `/api/v1/surfboard/admin/plans`                                      | GET                | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/admin/plans/map`                                  | GET                | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/admin/plans/stats`                                | GET                | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/admin/qr/settings`                                | PATCH              | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/admin/qr/stats`                                   | GET                | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/admin/qr/withdrawals`                             | GET                | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/admin/qr/withdrawals/[id]`                        | PATCH              | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/admin/users`                                      | GET                | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/admin/users/[id]/kyc`                             | PATCH              | SUPERADMIN                                                                                            |
-| `/api/v1/surfboard/admin/users/[id]/promote`                         | POST               | SUPERADMIN                                                                                            |
-| `/api/v1/surfboard/admin/users/[id]/role`                            | PATCH              | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/admin/users/[id]/status`                          | PATCH              | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/admin/users/[id]/subscription`                    | PATCH, DELETE      | SUPERADMIN                                                                                            |
-| `/api/v1/surfboard/admin/users/stats`                                | GET                | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/ai/extract-survey-plan`                           | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/ai/recognize-person-count`                        | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/analytics`                                        | GET                | USER, ADMIN, SUPERADMIN                                                                               |
-| `/api/v1/surfboard/cod/batches`                                      | GET, POST          | GET: USER, ADMIN, SUPERADMIN; POST: USER                                                              |
-| `/api/v1/surfboard/cod/batches/[batchId]`                            | GET                | USER                                                                                                  |
-| `/api/v1/surfboard/cod/batches/[batchId]/lasg-receipt`               | POST               | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/cod/batches/[batchId]/payment/retry`              | POST               | USER                                                                                                  |
-| `/api/v1/surfboard/cod/batches/[batchId]/payment/verify`             | POST               | USER                                                                                                  |
-| `/api/v1/surfboard/cod/batches/[batchId]/payment/verify-lasg`        | POST               | USER, SUPERADMIN                                                                                      |
-| `/api/v1/surfboard/cod/batches/[batchId]/payment/verify-links`       | POST               | USER, SUPERADMIN                                                                                      |
-| `/api/v1/surfboard/cod/batches/[batchId]/receipt-pdf`                | GET                | USER, ADMIN, SUPERADMIN, ACCOUNTS                                                                     |
-| `/api/v1/surfboard/cod/batches/reset`                                | POST               | SUPERADMIN                                                                                            |
-| `/api/v1/surfboard/cod/batches/stats`                                | GET                | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/cod/fee-preview`                                  | POST               | USER                                                                                                  |
-| `/api/v1/surfboard/cod/locks/[planId]`                               | GET, POST, DELETE  | any signed-in                                                                                         |
-| `/api/v1/surfboard/cod/locks/batch/next`                             | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/cod/locks/batch/release`                          | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/cod/locks/next`                                   | POST               | MDA_ROLES, SUPERADMIN                                                                                 |
-| `/api/v1/surfboard/cod/locks/release-all`                            | POST               | MDA_ROLES, SUPERADMIN                                                                                 |
-| `/api/v1/surfboard/cod/payer-profile`                                | GET                | USER                                                                                                  |
-| `/api/v1/surfboard/cod/zone`                                         | POST               | USER                                                                                                  |
-| `/api/v1/surfboard/files/delete`                                     | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/files/upload`                                     | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/files/upload-multi`                               | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/files/upload-with-auth`                           | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/mda/[role]/plans`                                 | GET                | CHARTING, SURCON, RECORDS_I, RECORDS_II, SUPERADMIN, MDA_SUPERADMIN                                   |
-| `/api/v1/surfboard/mda/[role]/plans/[planId]/decision`               | POST               | CHARTING, SURCON, RECORDS_I, INTAKE, SUPERADMIN                                                       |
-| `/api/v1/surfboard/mda/accounts/batches`                             | GET                | ACCOUNTS, SUPERADMIN, MDA_SUPERADMIN                                                                  |
-| `/api/v1/surfboard/mda/accounts/batches/[batchId]/decision`          | POST               | ACCOUNTS, SUPERADMIN                                                                                  |
-| `/api/v1/surfboard/mda/archive/batches`                              | GET                | ARCHIVE, SUPERADMIN, MDA_SUPERADMIN                                                                   |
-| `/api/v1/surfboard/mda/archive/plans/[planId]`                       | POST               | ARCHIVE, SUPERADMIN, MDA_SUPERADMIN                                                                   |
-| `/api/v1/surfboard/mda/intake/batches`                               | GET                | INTAKE, SUPERADMIN, MDA_SUPERADMIN                                                                    |
-| `/api/v1/surfboard/mda/intake/batches/[batchId]/decision`            | POST               | INTAKE, SUPERADMIN                                                                                    |
-| `/api/v1/surfboard/mda/pending-counts`                               | GET                | ADMIN, SUPERADMIN, ACCOUNTS, CHARTING, SURCON, RECORDS_I, INTAKE, RECORDS_II, ARCHIVE, MDA_SUPERADMIN |
-| `/api/v1/surfboard/mda/records-ii/batches`                           | GET                | RECORDS_II, SUPERADMIN, MDA_SUPERADMIN                                                                |
-| `/api/v1/surfboard/mda/records-ii/plans/[planId]/decision`           | POST               | RECORDS_II, SUPERADMIN                                                                                |
-| `/api/v1/surfboard/mda/remarks/charting`                             | GET                | any signed-in                                                                                         |
-| `/api/v1/surfboard/mda/remarks/query-reasons`                        | GET                | any signed-in                                                                                         |
-| `/api/v1/surfboard/mda/stage-stats`                                  | GET                | STAGE_ROLES, MDA_SUPERADMIN, SUPERADMIN                                                               |
-| `/api/v1/surfboard/notifications`                                    | GET, POST          | GET: any signed-in; POST: ADMIN, SUPERADMIN                                                           |
-| `/api/v1/surfboard/notifications/[id]`                               | PATCH, DELETE      | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/notifications/[id]/dismiss`                       | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/notifications/[id]/read`                          | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/notifications/active-announcement`                | GET                | any signed-in                                                                                         |
-| `/api/v1/surfboard/notifications/stats`                              | GET                | any signed-in                                                                                         |
-| `/api/v1/surfboard/notifications/unread-count`                       | GET                | any signed-in                                                                                         |
-| `/api/v1/surfboard/plans`                                            | GET, POST          | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]`                                   | GET, PATCH, DELETE | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/attachments`                       | DELETE             | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/comments`                          | GET, POST          | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/comments/[commentId]`              | DELETE             | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/permanent`                         | DELETE             | USER, ADMIN, SUPERADMIN                                                                               |
-| `/api/v1/surfboard/plans/[planId]/person-count`                      | PATCH              | any signed-in                                                                                         |
-| `/api/v1/surfboard/plans/[planId]/public`                            | GET                | public — QR-gated (`?token=`)                                                                         |
-| `/api/v1/surfboard/plans/[planId]/public/full`                       | GET                | login required: staff any plan, surveyor own or shared (was open to anyone, 2026-10-12)                                                                         |
-| `/api/v1/surfboard/plans/[planId]/qr`                                | GET                | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/query`                             | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/plans/[planId]/record-copy`                       | PATCH              | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/record-copy/download`              | GET                | any signed-in                                                                                         |
-| `/api/v1/surfboard/plans/[planId]/record-copy/verification`          | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/plans/[planId]/red-copy`                          | POST               | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/restore`                           | POST               | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/resubmit`                          | POST               | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/share`                             | POST, DELETE       | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/share-response`                    | POST               | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/share/invite`                      | POST               | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/status`                            | PATCH              | USER, ADMIN, SUPERADMIN                                                                               |
-| `/api/v1/surfboard/plans/[planId]/surveyor`                          | GET                | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/title`                             | PATCH              | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/plans/[planId]/viewer-attachments`                | GET, POST          | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/viewer-attachments/[attachmentId]` | DELETE             | USER                                                                                                  |
-| `/api/v1/surfboard/plans/[planId]/viewer-attachments/presign`        | POST               | USER                                                                                                  |
-| `/api/v1/surfboard/plans/check-number`                               | GET                | USER                                                                                                  |
-| `/api/v1/surfboard/plans/deleted`                                    | GET                | USER                                                                                                  |
-| `/api/v1/surfboard/plans/facilitators`                               | GET                | USER                                                                                                  |
-| `/api/v1/surfboard/plans/geo/boundaries`                             | POST               | USER                                                                                                  |
-| `/api/v1/surfboard/plans/physical-copy`                              | POST               | USER                                                                                                  |
-| `/api/v1/surfboard/plans/queried`                                    | GET                | USER                                                                                                  |
-| `/api/v1/surfboard/plans/reference-numbers`                          | GET                | USER                                                                                                  |
-| `/api/v1/surfboard/plans/shared`                                     | GET                | USER                                                                                                  |
-| `/api/v1/surfboard/plans/shared-with-me`                             | GET                | USER                                                                                                  |
-| `/api/v1/surfboard/profile`                                          | GET, PATCH         | any signed-in                                                                                         |
-| `/api/v1/surfboard/qr/access-state`                                  | GET                | public — anonymous QR-service payer                                                                   |
-| `/api/v1/surfboard/qr/bank-details`                                  | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/qr/earnings-overview`                             | GET                | any signed-in                                                                                         |
-| `/api/v1/surfboard/qr/earnings-this-month`                           | GET                | any signed-in                                                                                         |
-| `/api/v1/surfboard/qr/payments`                                      | POST               | public — anonymous QR-service payer                                                                   |
-| `/api/v1/surfboard/qr/payments/verify`                               | POST               | public — anonymous QR-service payer                                                                   |
-| `/api/v1/surfboard/qr/settings`                                      | GET                | SUPERADMIN                                                                                            |
-| `/api/v1/surfboard/qr/withdrawals`                                   | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/session`                                          | GET                | own session cookie (404 if none)                                                                      |
-| `/api/v1/surfboard/settings`                                         | GET, PATCH         | GET: any signed-in; PATCH: ADMIN, SUPERADMIN                                                          |
-| `/api/v1/surfboard/settings/account-update-inquiry`                  | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/settings/cod-submission`                          | GET                | public (read-only config)                                                                             |
-| `/api/v1/surfboard/settings/coordinate-shifts`                       | GET                | public (read-only config)                                                                             |
-| `/api/v1/surfboard/settings/history`                                 | GET                | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/settings/reset`                                   | POST               | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/settings/revert/[id]`                             | POST               | ADMIN, SUPERADMIN                                                                                     |
-| `/api/v1/surfboard/subscription`                                     | GET                | any signed-in                                                                                         |
-| `/api/v1/surfboard/subscription-analytics`                           | GET                | any signed-in                                                                                         |
-| `/api/v1/surfboard/subscription/clear`                               | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/subscription/disable`                             | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/subscription/initiate`                            | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/subscription/initiate-onetime`                    | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/subscription/user-and-active`                     | GET                | any signed-in                                                                                         |
-| `/api/v1/surfboard/subscription/verify`                              | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/subscription/verify-onetime`                      | POST               | any signed-in                                                                                         |
-| `/api/v1/surfboard/users/lookup`                                     | GET                | USER                                                                                                  |
-| `/api/v1/surfboard/users/search`                                     | GET                | USER                                                                                                  |
+| Route                                                                | Method(s)          | Auth                                                                                                        |
+| :------------------------------------------------------------------- | :----------------- | :---------------------------------------------------------------------------------------------------------- |
+| `/api/v1/surfboard/admin/audit-logs`                                 | GET                | SUPERADMIN                                                                                                  |
+| `/api/v1/surfboard/admin/audit-logs/filters`                         | GET                | SUPERADMIN                                                                                                  |
+| `/api/v1/surfboard/admin/invitations`                                | GET, POST          | SUPERADMIN                                                                                                  |
+| `/api/v1/surfboard/admin/invitations/[id]`                           | DELETE             | SUPERADMIN                                                                                                  |
+| `/api/v1/surfboard/admin/invitations/[id]/resend`                    | POST               | SUPERADMIN                                                                                                  |
+| `/api/v1/surfboard/admin/kyc`                                        | GET, POST          | SUPERADMIN                                                                                                  |
+| `/api/v1/surfboard/admin/plans`                                      | GET                | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/admin/plans/map`                                  | GET                | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/admin/plans/stats`                                | GET                | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/admin/qr/settings`                                | PATCH              | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/admin/qr/stats`                                   | GET                | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/admin/qr/withdrawals`                             | GET                | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/admin/qr/withdrawals/[id]`                        | PATCH              | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/admin/users`                                      | GET                | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/admin/users/[id]/kyc`                             | PATCH              | SUPERADMIN                                                                                                  |
+| `/api/v1/surfboard/admin/users/[id]/promote`                         | POST               | SUPERADMIN                                                                                                  |
+| `/api/v1/surfboard/admin/users/[id]/role`                            | PATCH              | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/admin/users/[id]/status`                          | PATCH              | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/admin/users/[id]/subscription`                    | PATCH, DELETE      | SUPERADMIN                                                                                                  |
+| `/api/v1/surfboard/admin/users/stats`                                | GET                | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/ai/extract-survey-plan`                           | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/ai/recognize-person-count`                        | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/analytics`                                        | GET                | USER, ADMIN, SUPERADMIN                                                                                     |
+| `/api/v1/surfboard/cod/batches`                                      | GET, POST          | GET: USER, ADMIN, SUPERADMIN; POST: USER                                                                    |
+| `/api/v1/surfboard/cod/batches/[batchId]`                            | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/cod/batches/[batchId]/lasg-receipt`               | POST               | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/cod/batches/[batchId]/payment/retry`              | POST               | USER                                                                                                        |
+| `/api/v1/surfboard/cod/batches/[batchId]/payment/verify`             | POST               | USER                                                                                                        |
+| `/api/v1/surfboard/cod/batches/[batchId]/payment/verify-lasg`        | POST               | USER, SUPERADMIN                                                                                            |
+| `/api/v1/surfboard/cod/batches/[batchId]/payment/verify-links`       | POST               | USER, SUPERADMIN                                                                                            |
+| `/api/v1/surfboard/cod/batches/[batchId]/receipt-pdf`                | GET                | USER, ADMIN, SUPERADMIN, ACCOUNTS                                                                           |
+| `/api/v1/surfboard/cod/batches/reset`                                | POST               | SUPERADMIN                                                                                                  |
+| `/api/v1/surfboard/cod/batches/stats`                                | GET                | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/cod/fee-preview`                                  | POST               | USER                                                                                                        |
+| `/api/v1/surfboard/cod/locks/[planId]`                               | GET, POST, DELETE  | any signed-in                                                                                               |
+| `/api/v1/surfboard/cod/locks/batch/next`                             | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/cod/locks/batch/release`                          | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/cod/locks/next`                                   | POST               | MDA_ROLES, SUPERADMIN                                                                                       |
+| `/api/v1/surfboard/cod/locks/release-all`                            | POST               | MDA_ROLES, SUPERADMIN                                                                                       |
+| `/api/v1/surfboard/cod/payer-profile`                                | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/cod/zone`                                         | POST               | USER                                                                                                        |
+| `/api/v1/surfboard/files/delete`                                     | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/files/upload`                                     | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/files/upload-multi`                               | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/files/upload-with-auth`                           | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/files/view`                                       | GET                | USER, ACCOUNTS, CHARTING, SURCON, RECORDS_I, INTAKE, RECORDS_II, ARCHIVE, ADMIN, SUPERADMIN, MDA_SUPERADMIN |
+| `/api/v1/surfboard/mda/[role]/plans`                                 | GET                | CHARTING, SURCON, RECORDS_I, RECORDS_II, SUPERADMIN, MDA_SUPERADMIN                                         |
+| `/api/v1/surfboard/mda/[role]/plans/[planId]/decision`               | POST               | CHARTING, SURCON, RECORDS_I, INTAKE, SUPERADMIN                                                             |
+| `/api/v1/surfboard/mda/accounts/batches`                             | GET                | ACCOUNTS, SUPERADMIN, MDA_SUPERADMIN                                                                        |
+| `/api/v1/surfboard/mda/accounts/batches/[batchId]/decision`          | POST               | ACCOUNTS, SUPERADMIN                                                                                        |
+| `/api/v1/surfboard/mda/archive/batches`                              | GET                | ARCHIVE, SUPERADMIN, MDA_SUPERADMIN                                                                         |
+| `/api/v1/surfboard/mda/archive/plans/[planId]`                       | POST               | ARCHIVE, SUPERADMIN, MDA_SUPERADMIN                                                                         |
+| `/api/v1/surfboard/mda/intake/batches`                               | GET                | INTAKE, SUPERADMIN, MDA_SUPERADMIN                                                                          |
+| `/api/v1/surfboard/mda/intake/batches/[batchId]/decision`            | POST               | INTAKE, SUPERADMIN                                                                                          |
+| `/api/v1/surfboard/mda/pending-counts`                               | GET                | ADMIN, SUPERADMIN, ACCOUNTS, CHARTING, SURCON, RECORDS_I, INTAKE, RECORDS_II, ARCHIVE, MDA_SUPERADMIN       |
+| `/api/v1/surfboard/mda/records-ii/batches`                           | GET                | RECORDS_II, SUPERADMIN, MDA_SUPERADMIN                                                                      |
+| `/api/v1/surfboard/mda/records-ii/plans/[planId]/decision`           | POST               | RECORDS_II, SUPERADMIN                                                                                      |
+| `/api/v1/surfboard/mda/remarks/charting`                             | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/mda/remarks/query-reasons`                        | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/mda/stage-stats`                                  | GET                | STAGE_ROLES, MDA_SUPERADMIN, SUPERADMIN                                                                     |
+| `/api/v1/surfboard/notifications`                                    | GET, POST          | GET: any signed-in; POST: ADMIN, SUPERADMIN                                                                 |
+| `/api/v1/surfboard/notifications/[id]`                               | PATCH, DELETE      | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/notifications/[id]/dismiss`                       | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/notifications/[id]/read`                          | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/notifications/active-announcement`                | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/notifications/stats`                              | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/notifications/unread-count`                       | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/plans`                                            | GET, POST          | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]`                                   | GET, PATCH, DELETE | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/attachments`                       | DELETE             | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/comments`                          | GET, POST          | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/comments/[commentId]`              | DELETE             | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/permanent`                         | DELETE             | USER, ADMIN, SUPERADMIN                                                                                     |
+| `/api/v1/surfboard/plans/[planId]/person-count`                      | PATCH              | any signed-in                                                                                               |
+| `/api/v1/surfboard/plans/[planId]/public`                            | GET                | public — QR-gated (`?token=`)                                                                               |
+| `/api/v1/surfboard/plans/[planId]/public/certificate`                | GET                | public — QR-gated (`?token=`)                                                                               |
+| `/api/v1/surfboard/plans/[planId]/public/full`                       | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/plans/[planId]/qr`                                | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/query`                             | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/plans/[planId]/record-copy`                       | PATCH              | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/record-copy/download`              | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/plans/[planId]/record-copy/verification`          | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/plans/[planId]/red-copy`                          | POST               | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/restore`                           | POST               | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/resubmit`                          | POST               | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/share`                             | POST, DELETE       | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/share-response`                    | POST               | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/share/invite`                      | POST               | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/status`                            | PATCH              | USER, ADMIN, SUPERADMIN                                                                                     |
+| `/api/v1/surfboard/plans/[planId]/surveyor`                          | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/title`                             | PATCH              | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/plans/[planId]/viewer-attachments`                | GET, POST          | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/viewer-attachments/[attachmentId]` | DELETE             | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/viewer-attachments/presign`        | POST               | USER                                                                                                        |
+| `/api/v1/surfboard/plans/check-number`                               | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/plans/deleted`                                    | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/plans/facilitators`                               | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/plans/geo/boundaries`                             | POST               | USER                                                                                                        |
+| `/api/v1/surfboard/plans/physical-copy`                              | POST               | USER                                                                                                        |
+| `/api/v1/surfboard/plans/queried`                                    | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/plans/reference-numbers`                          | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/plans/shared`                                     | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/plans/shared-with-me`                             | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/profile`                                          | GET, PATCH         | any signed-in                                                                                               |
+| `/api/v1/surfboard/qr/access-state`                                  | GET                | public — anonymous QR-service payer                                                                         |
+| `/api/v1/surfboard/qr/bank-details`                                  | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/qr/earnings-overview`                             | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/qr/earnings-this-month`                           | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/qr/payments`                                      | POST               | public — anonymous QR-service payer                                                                         |
+| `/api/v1/surfboard/qr/payments/verify`                               | POST               | public — anonymous QR-service payer                                                                         |
+| `/api/v1/surfboard/qr/settings`                                      | GET                | SUPERADMIN                                                                                                  |
+| `/api/v1/surfboard/qr/withdrawals`                                   | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/session`                                          | GET                | own session cookie (404 if none)                                                                            |
+| `/api/v1/surfboard/settings`                                         | GET, PATCH         | GET: any signed-in; PATCH: ADMIN, SUPERADMIN                                                                |
+| `/api/v1/surfboard/settings/account-update-inquiry`                  | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/settings/cod-submission`                          | GET                | public (read-only config)                                                                                   |
+| `/api/v1/surfboard/settings/coordinate-shifts`                       | GET                | public (read-only config)                                                                                   |
+| `/api/v1/surfboard/settings/history`                                 | GET                | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/settings/reset`                                   | POST               | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/settings/revert/[id]`                             | POST               | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/subscription`                                     | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/subscription-analytics`                           | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/subscription/clear`                               | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/subscription/disable`                             | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/subscription/initiate`                            | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/subscription/initiate-onetime`                    | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/subscription/user-and-active`                     | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/subscription/verify`                              | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/subscription/verify-onetime`                      | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/users/lookup`                                     | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/users/search`                                     | GET                | USER                                                                                                        |
 
-#### REVA (34)
+#### REVA (35)
 
 | Route                                                       | Method(s)  | Auth                                                  |
 | :---------------------------------------------------------- | :--------- | :---------------------------------------------------- |
@@ -203,6 +205,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/reva/admin/users/[id]`                             | DELETE     | SUPERADMIN                                            |
 | `/api/v1/reva/admin/users/[id]/role`                        | PATCH      | SUPERADMIN                                            |
 | `/api/v1/reva/admin/users/[id]/status`                      | PATCH      | SUPERADMIN                                            |
+| `/api/v1/reva/files/view`                                   | GET        | USER, ADMIN, SUPERADMIN                               |
 | `/api/v1/reva/notifications`                                | GET, POST  | GET: USER, ADMIN, SUPERADMIN; POST: ADMIN, SUPERADMIN |
 | `/api/v1/reva/notifications/[id]/dismiss`                   | POST       | USER, ADMIN, SUPERADMIN                               |
 | `/api/v1/reva/notifications/[id]/read`                      | POST       | USER, ADMIN, SUPERADMIN                               |
@@ -224,7 +227,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/reva/properties/transactions/[reference]`          | GET        | USER, ADMIN, SUPERADMIN                               |
 | `/api/v1/reva/session`                                      | GET        | own session cookie (404 if none)                      |
 
-#### GBC (74)
+#### GBC (77)
 
 | Route                                                | Method(s)     | Auth                                 |
 | :--------------------------------------------------- | :------------ | :----------------------------------- |
@@ -278,6 +281,9 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/gbc/admin/users/[id]/role`                  | PATCH         | SUPERADMIN                           |
 | `/api/v1/gbc/admin/users/[id]/status`                | PATCH         | SUPERADMIN                           |
 | `/api/v1/gbc/admin/users/stats`                      | GET           | ADMIN, SUPERADMIN                    |
+| `/api/v1/gbc/certificates/download`                  | POST          | public — ticket buyer / site visitor |
+| `/api/v1/gbc/certificates/request-code`              | POST          | public — ticket buyer / site visitor |
+| `/api/v1/gbc/certificates/verify-code`               | POST          | public — ticket buyer / site visitor |
 | `/api/v1/gbc/contact`                                | POST          | public — ticket buyer / site visitor |
 | `/api/v1/gbc/editions`                               | GET           | public — ticket buyer / site visitor |
 | `/api/v1/gbc/editions/[key]/recap`                   | GET           | public — ticket buyer / site visitor |
@@ -295,7 +301,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/gbc/speakers`                               | GET           | public — ticket buyer / site visitor |
 | `/api/v1/gbc/sponsors`                               | GET           | public — ticket buyer / site visitor |
 | `/api/v1/gbc/tickets`                                | POST          | public — ticket buyer / site visitor |
-| `/api/v1/gbc/tickets/[ticketNumber]`                 | GET           | public — ticket buyer / site visitor |
+| `/api/v1/gbc/tickets/[ticketNumber]`                 | GET           | ADMIN, SUPERADMIN                    |
 | `/api/v1/gbc/tickets/[ticketNumber]/certificate-pdf` | GET           | public — ticket buyer / site visitor |
 | `/api/v1/gbc/tickets/[ticketNumber]/receipt-pdf`     | GET           | public — ticket buyer / site visitor |
 | `/api/v1/gbc/tickets/availability`                   | GET           | public — ticket buyer / site visitor |
@@ -351,9 +357,9 @@ The auth column is a static reading of source, not an access-control test. The a
 
 <!-- BEGIN GENERATED: pages -->
 
-#### Marketing / shared (15)
+#### Marketing / shared (23)
 
-`/about-us` · `/contact` · `/events` · `/featurednews` · `/gallery` · `/grid/calculate` · `/grid/generate` · `/grid/route` · `/grid/search` · `/grid/verify` · `/login` · `/present` · `/redirect` · `/services` · `/signup`
+`/about-us` · `/contact` · `/events` · `/featurednews` · `/gallery` · `/grid/calculate` · `/grid/generate` · `/grid/route` · `/grid/search` · `/grid/verify` · `/login` · `/present` · `/redirect` · `/services` · `/signup` · `/v3` · `/v3/our-story` · `/v4` · `/v4/contact` · `/v4/industries/[slug]` · `/v4/insights` · `/v4/insights/[slug]` · `/v4/our-story`
 
 #### TwoNode /v2 site (6)
 
@@ -367,9 +373,9 @@ The auth column is a static reading of source, not an access-control test. The a
 
 `/reva` · `/reva-restricted` · `/reva-restricted/dashboard` · `/reva-restricted/dashboard/alluserrequests` · `/reva-restricted/dashboard/audit-logs` · `/reva-restricted/dashboard/details` · `/reva-restricted/dashboard/notifications` · `/reva-restricted/dashboard/notifications/create` · `/reva-restricted/dashboard/notifications/manage` · `/reva-restricted/dashboard/payment-verification` · `/reva-restricted/dashboard/review` · `/reva-restricted/dashboard/settings` · `/reva-restricted/dashboard/spatial-record` · `/reva-restricted/dashboard/superadmin` · `/reva-restricted/login` · `/reva/accept-invite` · `/reva/contact` · `/reva/dashboard` · `/reva/dashboard/allrequests` · `/reva/dashboard/details` · `/reva/dashboard/newrequest` · `/reva/dashboard/notifications` · `/reva/dashboard/settings` · `/reva/dashboard/verifypayment` · `/reva/dashboard/viewmap` · `/reva/details` · `/reva/error-login` · `/reva/login` · `/reva/newsletter` · `/reva/onetimerequest` · `/reva/requestform` · `/reva/reset-password` · `/reva/verify-email` · `/reva/verifypayment`
 
-#### GBC (34)
+#### GBC (35)
 
-`/gbc` · `/gbc-frame` · `/gbc-restricted` · `/gbc-restricted/accept-invite` · `/gbc-restricted/attendees` · `/gbc-restricted/audit-logs` · `/gbc-restricted/certificates` · `/gbc-restricted/check-in` · `/gbc-restricted/editions` · `/gbc-restricted/gallery` · `/gbc-restricted/inquiries` · `/gbc-restricted/login` · `/gbc-restricted/notifications` · `/gbc-restricted/profile` · `/gbc-restricted/reset-password` · `/gbc-restricted/settings` · `/gbc-restricted/speakers` · `/gbc-restricted/sponsors` · `/gbc-restricted/tickets` · `/gbc-restricted/users` · `/gbc-restricted/verify-email` · `/gbc/about` · `/gbc/certificate/[ticketNumber]` · `/gbc/contact` · `/gbc/editions` · `/gbc/editions/[key]` · `/gbc/error-login` · `/gbc/gallery` · `/gbc/login` · `/gbc/speakers` · `/gbc/sponsors` · `/gbc/tickets` · `/gbc/tickets/success` · `/gbccertificate`
+`/gbc` · `/gbc-frame` · `/gbc-restricted` · `/gbc-restricted/accept-invite` · `/gbc-restricted/attendees` · `/gbc-restricted/audit-logs` · `/gbc-restricted/certificates` · `/gbc-restricted/check-in` · `/gbc-restricted/editions` · `/gbc-restricted/gallery` · `/gbc-restricted/inquiries` · `/gbc-restricted/login` · `/gbc-restricted/notifications` · `/gbc-restricted/profile` · `/gbc-restricted/reset-password` · `/gbc-restricted/settings` · `/gbc-restricted/speakers` · `/gbc-restricted/sponsors` · `/gbc-restricted/tickets` · `/gbc-restricted/users` · `/gbc-restricted/verify-email` · `/gbc/about` · `/gbc/certificate/[ticketNumber]` · `/gbc/contact` · `/gbc/editions` · `/gbc/editions/[key]` · `/gbc/error-login` · `/gbc/gallery` · `/gbc/login` · `/gbc/speakers` · `/gbc/sponsors` · `/gbc/tickets` · `/gbc/tickets/success` · `/gbc/verify/[publicId]` · `/gbccertificate`
 
 <!-- END GENERATED: pages -->
 
