@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ findMany: vi.fn(), findFirst: vi.fn() }));
 
 vi.mock("@/lib/prisma", () => ({
-  default: { surfboardPlan: { findMany: mocks.findMany, findFirst: mocks.findFirst } },
+  default: {
+    surfboardPlan: { findMany: mocks.findMany, findFirst: mocks.findFirst },
+  },
 }));
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
 vi.mock("@/surfboard/services/subscriptionService", () => ({
@@ -15,40 +17,82 @@ vi.mock("@/surfboard/services/analyticsService", () => ({
 vi.mock("@/utils/email", () => ({ sendPlanShareInviteEmail: vi.fn() }));
 vi.mock("@/lib/auth/userLookup", () => ({ emailInUse: vi.fn() }));
 
-const { checkPlanNumberExists } =
-  await import("@/surfboard/services/planService");
+const { findPlanNumberMatches, findPlanIdByNumber } = await import(
+  "@/surfboard/services/planService"
+);
+
+const row = (over: Record<string, unknown>) => ({
+  id: "p",
+  planNumber: "X",
+  surveyTitle: "T",
+  status: "PENDING",
+  createdAt: new Date("2026-01-01"),
+  userId: "me",
+  ...over,
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.findMany.mockResolvedValue([
-    { planNumber: "AUO/4768/003/2022/LA_" },
-    { planNumber: "D/012" },
-  ]);
+  mocks.findFirst.mockResolvedValue(null);
+  mocks.findMany.mockResolvedValue([]);
 });
 
-describe("checkPlanNumberExists", () => {
-  it("catches case and trailing-underscore variants", async () => {
-    expect(await checkPlanNumberExists("u1", "auo/4768/003/2022/la")).toBe(true);
+describe("findPlanNumberMatches", () => {
+  it("compares in capitals", async () => {
+    await findPlanNumberMatches("me", "auo/1/la");
+    expect(mocks.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { planNumber: "AUO/1/LA" } })
+    );
   });
-  it("does not treat D012 as D/012", async () => {
-    expect(await checkPlanNumberExists("u1", "D012")).toBe(false);
+
+  it("describes an exact match on the caller's own plan, without the owner id", async () => {
+    mocks.findFirst.mockResolvedValue(row({ id: "mine", planNumber: "AUO/1/LA" }));
+    const res = await findPlanNumberMatches("me", "AUO/1/LA");
+    expect(res.exists).toBe(true);
+    expect(res.taken).toBe(false);
+    expect(res.own).toMatchObject({ id: "mine", planNumber: "AUO/1/LA" });
+    expect(res.own).not.toHaveProperty("userId");
   });
-  it("ignores empty input without a query", async () => {
-    expect(await checkPlanNumberExists("u1", "  ")).toBe(false);
-    expect(mocks.findMany).not.toHaveBeenCalled();
+
+  it("says only 'taken' for an exact match on someone else's plan", async () => {
+    mocks.findFirst.mockResolvedValue(row({ id: "theirs", userId: "other" }));
+    const res = await findPlanNumberMatches("me", "X");
+    expect(res).toMatchObject({ exists: true, taken: true, own: null, similar: [] });
   });
+
+  it("lists the caller's own similar plans, never an exact one, never someone else's", async () => {
+    mocks.findMany.mockResolvedValue([
+      row({ id: "a", planNumber: "AUO/1/LA_" }),
+      row({ id: "b", planNumber: "AUO/1/LA" }),
+      row({ id: "c", planNumber: "AUO/2/LA" }),
+    ]);
+    const res = await findPlanNumberMatches("me", "AUO/1/LA");
+    expect(res.similar.map((p) => p.id)).toEqual(["a"]);
+    expect(mocks.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "me", deleted: false } })
+    );
+  });
+
   it("excludes the plan being edited", async () => {
-    await checkPlanNumberExists("u1", "X", "plan-9");
-    expect(mocks.findMany).toHaveBeenCalledWith({
-      where: { userId: "u1", id: { not: "plan-9" } },
-      select: { planNumber: true },
+    await findPlanNumberMatches("me", "X", "plan-9");
+    expect(mocks.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { planNumber: "X", id: { not: "plan-9" } } })
+    );
+    expect(mocks.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "me", deleted: false, id: { not: "plan-9" } } })
+    );
+  });
+
+  it("ignores empty input without a query", async () => {
+    expect(await findPlanNumberMatches("me", "  ")).toEqual({
+      exists: false, taken: false, own: null, similar: [],
     });
+    expect(mocks.findFirst).not.toHaveBeenCalled();
   });
 });
 
 describe("findPlanIdByNumber", () => {
   it("prefers the exact number, then the canonical key among live plans", async () => {
-    const { findPlanIdByNumber } = await import("@/surfboard/services/planService");
     mocks.findFirst.mockReset();
     mocks.findFirst.mockResolvedValueOnce({ id: "exact" });
     expect(await findPlanIdByNumber("AUO/1/LA")).toBe("exact");
@@ -64,7 +108,6 @@ describe("findPlanIdByNumber", () => {
     });
   });
   it("returns null for empty input or no match", async () => {
-    const { findPlanIdByNumber } = await import("@/surfboard/services/planService");
     mocks.findFirst.mockReset();
     mocks.findFirst.mockResolvedValue(null);
     expect(await findPlanIdByNumber("  ")).toBeNull();
