@@ -683,10 +683,18 @@ export default function RecordsIIAdminPage() {
                           {isImageUrl(p.redCopyFileUrl) && (
                             <div
                               className="cursor-pointer inline-block"
-                              onClick={() => setViewingImage(p.redCopyFileUrl)}
+                              onClick={() =>
+                                setViewingImage(
+                                  surfboardApi.files.getViewUrl(
+                                    p.redCopyFileUrl!
+                                  )
+                                )
+                              }
                             >
                               <img
-                                src={p.redCopyFileUrl}
+                                src={surfboardApi.files.getViewUrl(
+                                  p.redCopyFileUrl
+                                )}
                                 alt={`Record Copy - ${p.planNumber}`}
                                 className="max-h-32 rounded border shadow-sm hover:shadow-md transition-shadow"
                               />
@@ -696,7 +704,9 @@ export default function RecordsIIAdminPage() {
                             </div>
                           )}
                           <MediaLink
-                            href={surfboardApi.files.getViewUrl(p.redCopyFileUrl)}
+                            href={surfboardApi.files.getViewUrl(
+                              p.redCopyFileUrl
+                            )}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface rounded border text-violet-600 hover:bg-violet-50 transition-colors text-xs"
                           >
                             {isImageUrl(p.redCopyFileUrl) ? (

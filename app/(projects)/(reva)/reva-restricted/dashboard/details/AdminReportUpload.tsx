@@ -459,7 +459,9 @@ export function AdminReportUpload({
                       <Label>Transaction Flow Image</Label>
                       {imageUrls.transactionFlowImg && (
                         <img
-                          src={imageUrls.transactionFlowImg}
+                          src={revaApi.files.linkFor(
+                            imageUrls.transactionFlowImg
+                          )}
                           alt="Transaction Flow"
                           className="w-32 h-32 object-cover rounded border"
                         />
@@ -590,7 +592,7 @@ export function AdminReportUpload({
                   <Label>Parcel Check Image</Label>
                   {imageUrls.parcelCheck && (
                     <img
-                      src={imageUrls.parcelCheck}
+                      src={revaApi.files.linkFor(imageUrls.parcelCheck)}
                       alt="Parcel Check"
                       className="w-32 h-32 object-cover rounded border"
                     />
@@ -684,7 +686,7 @@ export function AdminReportUpload({
                   <Label>Parcel Charting Free Image</Label>
                   {imageUrls.parcelChartingFree && (
                     <img
-                      src={imageUrls.parcelChartingFree}
+                      src={revaApi.files.linkFor(imageUrls.parcelChartingFree)}
                       alt="Parcel Charting Free"
                       className="w-32 h-32 object-cover rounded border"
                     />
@@ -705,7 +707,9 @@ export function AdminReportUpload({
                   <Label>Parcel Charting Offset Image</Label>
                   {imageUrls.parcelChartingOffset && (
                     <img
-                      src={imageUrls.parcelChartingOffset}
+                      src={revaApi.files.linkFor(
+                        imageUrls.parcelChartingOffset
+                      )}
                       alt="Parcel Charting Offset"
                       className="w-32 h-32 object-cover rounded border"
                     />
@@ -744,7 +748,7 @@ export function AdminReportUpload({
                   <Label>Land Use Check Image</Label>
                   {imageUrls.landUseCheck && (
                     <img
-                      src={imageUrls.landUseCheck}
+                      src={revaApi.files.linkFor(imageUrls.landUseCheck)}
                       alt="Land Use Check"
                       className="w-32 h-32 object-cover rounded border"
                     />
