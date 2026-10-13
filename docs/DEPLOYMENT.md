@@ -76,7 +76,7 @@ _(The maintainer verified this against the databases; it is recorded here becaus
 - **Environment variables** (Vercel, set per environment: Production, Preview which is staging, Development):
   - AWS S3 uses one set only: `AWS_REGION`, `AWS_BUCKET_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. The old `REVA_AWS_*` and `SURFBOARD_AWS_*` names are gone from the code (PR #356); `REVA_AWS_*` can be deleted from Vercel once prod runs on `AWS_*`. The GBC and REVA helpers throw at startup if these are missing.
   - `CERTIFICATE_OTP_SECRET` is required in production (the OTP service throws without it); each environment has its own value.
-  - `CRON_SECRET` is set for Production and Preview. The cron route still skips its check if the variable is missing (issue I-017), as does the Red Copy webhook with `REDCOPY_WEBHOOK_SECRET` (I-018, not set yet).
+  - `CRON_SECRET` is set for Production and Preview. Both the cron route (`CRON_SECRET`) and the Red Copy webhook (`REDCOPY_WEBHOOK_SECRET`) now fail closed: with the variable missing they refuse every request (I-017, I-018). `REDCOPY_WEBHOOK_SECRET` is not set, so the Red Copy webhook rejects everything until Red Copy and we agree a value.
   - Changing a variable only affects the next deployment.
 - **Testing staging from a terminal:** `main` is behind Vercel Authentication, so plain `curl` gets a 302 to the login page. Use `vercel curl <path> --deployment <staging url>` after `vercel login`.
 - **Function duration**: Vercel's default function duration with Fluid compute is 300 s (800 s max on Pro), so the practical limits are database timeouts, not the platform's.

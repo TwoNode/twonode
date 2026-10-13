@@ -13,11 +13,11 @@ type WebhookPayload = {
 
 export async function POST(request: Request) {
   try {
-    // Verify the webhook secret (if provided by Red Copy)
+    // Fails closed: with no secret configured, every request is refused.
     const authHeader = request.headers.get("authorization");
     const expectedToken = process.env.REDCOPY_WEBHOOK_SECRET;
 
-    if (expectedToken && authHeader !== `Bearer ${expectedToken}`) {
+    if (!expectedToken || authHeader !== `Bearer ${expectedToken}`) {
       console.error("Webhook unauthorized - invalid token");
       return new NextResponse("Unauthorized", { status: 401 });
     }

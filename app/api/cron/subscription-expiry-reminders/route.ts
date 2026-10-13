@@ -5,14 +5,13 @@ import { sendExpiringSubscriptionReminders } from "@/surfboard/services/subscrip
  * Triggered daily by Vercel Cron (see vercel.json's "crons" entry). Vercel
  * signs cron requests with a bearer token matching CRON_SECRET — reject
  * anything else so this can't be hit by an outsider to spam every expiring
- * subscriber on demand.
+ * subscriber on demand. Fails closed: with no CRON_SECRET configured the
+ * route refuses every request instead of running for anyone.
  */
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  if (
-    process.env.CRON_SECRET &&
-    authHeader !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || authHeader !== `Bearer ${secret}`) {
     return NextResponse.json(
       { success: false, error: "Unauthorized" },
       { status: 401 }
