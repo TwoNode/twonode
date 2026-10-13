@@ -4819,3 +4819,47 @@ button {
     gap: 0;
   }
 }
+
+/* Phone footer: shorter. Products and Company sit side by side, tighter spacing. */
+@media (max-width: 560px) {
+  .vf {
+    padding-top: 40px;
+  }
+  .vf-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 20px;
+    padding-bottom: 24px;
+  }
+  .vf-brand,
+  .vf-col-industries,
+  .vf-col-contact {
+    grid-column: 1 / -1;
+  }
+  .vf-col-group {
+    display: contents;
+  }
+  .vf-tagline {
+    margin: 14px 0 16px;
+    font-size: 20px;
+  }
+  .vf-socials {
+    margin-top: 14px;
+    gap: 8px;
+  }
+  .vf-col h2 {
+    margin-bottom: 2px;
+  }
+  .vf-col h2.vf-reach {
+    margin-top: 0;
+  }
+  .vf-bottom {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 0 16px;
+    padding: 12px 0 16px;
+  }
+  .vf-bottom span:nth-child(2) {
+    order: 3;
+    flex-basis: 100%;
+  }
+}

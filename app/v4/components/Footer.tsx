@@ -47,7 +47,7 @@ export function Footer() {
             </ul>
           </div>
 
-          <nav className="vf-col" aria-label="Industries">
+          <nav className="vf-col vf-col-industries" aria-label="Industries">
             <h2>Industries</h2>
             <ul>
               <li>
@@ -96,31 +96,36 @@ export function Footer() {
             </ul>
           </nav>
 
-          <nav className="vf-col" aria-label="Company">
-            <h2>Company</h2>
-            <ul>
-              <li>
-                <Link href="/v4/our-story">Our story</Link>
-              </li>
-              <li>
-                <Link href="/v4/insights">Insights</Link>
-              </li>
-              <li>
-                <Link href="/v4/contact">Contact</Link>
-              </li>
-            </ul>
-            <h2 className="vf-reach">Reach us</h2>
-            <ul>
-              <li>
-                <a href="mailto:info@twonodetechnologies.com">
-                  info@twonodetechnologies.com
-                </a>
-              </li>
-              <li>
-                <a href="tel:+2349160002740">+234 916 0002 740</a>
-              </li>
-            </ul>
-          </nav>
+          {/* One column on desktop and tablet; on a phone the two navs become separate grid cells. */}
+          <div className="vf-col-group">
+            <nav className="vf-col" aria-label="Company">
+              <h2>Company</h2>
+              <ul>
+                <li>
+                  <Link href="/v4/our-story">Our story</Link>
+                </li>
+                <li>
+                  <Link href="/v4/insights">Insights</Link>
+                </li>
+                <li>
+                  <Link href="/v4/contact">Contact</Link>
+                </li>
+              </ul>
+            </nav>
+            <nav className="vf-col vf-col-contact" aria-label="Reach us">
+              <h2 className="vf-reach">Reach us</h2>
+              <ul>
+                <li>
+                  <a href="mailto:info@twonodetechnologies.com">
+                    info@twonodetechnologies.com
+                  </a>
+                </li>
+                <li>
+                  <a href="tel:+2349160002740">+234 916 0002 740</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
         </div>
 
         <div className="vf-bottom">
