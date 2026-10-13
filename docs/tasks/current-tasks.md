@@ -44,6 +44,7 @@ State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate
 - [x] **Self-host the six Google fonts** (v2 layout and Surfboard landing page) so builds stop failing on the Google Fonts fetch. 29 files, 512 KB in `public/fonts/self-hosted/` with OFL licences. (Done 2026-10-13, branch `chore/self-host-fonts`)
 - [x] **Plan file display names:** plan page and plan details show every file as the plan number (`/` as `_`, capitals), `_2`, `_3` for more of one kind; viewer header and Download use it. (Done 2026-10-13, branch `feat/plan-file-display-names`)
 - [x] **Stored file names for new uploads** `surfboard/<userId>/<type>/<PLAN_NUMBER>[_n].<ext>`; an earlier file is kept (S3 conditional write, next free `_n`). Built in PR #381; old files keep their names. Needs an upload check on staging. (Done 2026-10-13)
+- [x] **Plan numbers: uppercase everywhere.** Existing lowercase test plans converted and the lowercase TNT duplicate deleted in prod, staging, test_db and dev_db (guarded transactions, backups in `out/`). App: numbers are saved in capitals; the plan form shows a calm warning under the field for similar own plans (clickable, opens the plan in a popup) and an error for an exact match; nothing is ever shown about another surveyor's plan. (Done 2026-10-13, branch `feat/plan-number-uppercase`)
 - [ ] **Phone check on staging.** Viewer is on staging (#374, build Ready). _(Waiting on: roji-tech or someone with a staging login)_
 
 ---

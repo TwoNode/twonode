@@ -102,6 +102,26 @@ function buildPlanListQuery(
   return sp.toString();
 }
 
+/** A plan that a typed plan number collides with (own plans only, see findPlanNumberMatches). */
+export type PlanNumberMatch = {
+  id: string;
+  planNumber: string;
+  surveyTitle: string;
+  status: string;
+  createdAt: string;
+};
+
+export type PlanNumberCheck = {
+  /** The same number is already registered (any surveyor). */
+  exists: boolean;
+  /** Registered by someone else: show an error, never details. */
+  taken: boolean;
+  /** Registered on one of the caller's own plans. */
+  own: PlanNumberMatch | null;
+  /** The caller's other plans whose number differs only by spacing or a trailing `_` or `.`. */
+  similar: PlanNumberMatch[];
+};
+
 export type AnalyticsDateRangeParam = {
   dateFrom?: string | Date;
   dateTo?: string | Date;
@@ -521,7 +541,7 @@ export const surfboardApi = {
       }),
 
     checkNumberExists: (planNumber: string, excludeId?: string) =>
-      jsonFetch<{ exists: boolean }>(
+      jsonFetch<PlanNumberCheck>(
         `${BASE}/plans/check-number?planNumber=${encodeURIComponent(planNumber)}${excludeId ? `&excludeId=${encodeURIComponent(excludeId)}` : ""}`
       ),
 
