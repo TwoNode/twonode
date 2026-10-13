@@ -282,7 +282,7 @@ const AllRequestsWithReportClient: React.FC<
       />
 
       {filteredData.filteredOneTime.length > 0 && (
-        <section className="mb-8">
+        <section className="mb-8 flex flex-col gap-4">
           <AdminMiniHeader
             title={
               <>
@@ -291,9 +291,9 @@ const AllRequestsWithReportClient: React.FC<
               </>
             }
           />
-          <RequestList requests={pagedOneTime} />
+          <RequestList requests={pagedOneTime} showStats={false} />
           {oneTimeTotalPages > 1 && (
-            <div className="mt-3 flex justify-end">
+            <div className="flex justify-end">
               <Pagination
                 page={oneTimePage}
                 totalPages={oneTimeTotalPages}
@@ -316,7 +316,7 @@ const AllRequestsWithReportClient: React.FC<
 
         {filteredData.filtered.length > 0 ? (
           <>
-            <RequestList requests={pagedRequests} />
+            <RequestList requests={pagedRequests} showStats={false} />
             {requestsTotalPages > 1 && (
               <div className="flex justify-end">
                 <Pagination
@@ -328,7 +328,7 @@ const AllRequestsWithReportClient: React.FC<
             )}
           </>
         ) : (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <div className="rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
             <p>No requests with reports found matching your criteria.</p>
           </div>
         )}

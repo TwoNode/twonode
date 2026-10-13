@@ -266,7 +266,7 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
   );
 
   return (
-    <div className="mx-auto flex flex-col p-6 max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-5xl">
+    <div className="mx-auto flex flex-col p-6 max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-6xl">
       <SearchFilters
         onSearch={handleSearch}
         onClear={handleClear}
@@ -275,7 +275,7 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
       />
 
       {filteredData.filteredOneTime.length > 0 && (
-        <section className="mb-8">
+        <section className="mb-8 flex flex-col gap-4">
           <AdminMiniHeader
             title={
               <>
@@ -284,9 +284,9 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
               </>
             }
           />
-          <RequestList requests={pagedOneTime} />
+          <RequestList requests={pagedOneTime} showStats={false} />
           {oneTimeTotalPages > 1 && (
-            <div className="mt-3 flex justify-end">
+            <div className="flex justify-end">
               <Pagination
                 page={oneTimePage}
                 totalPages={oneTimeTotalPages}
@@ -309,7 +309,7 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
 
         {filteredData.filtered.length > 0 ? (
           <>
-            <RequestList requests={pagedRequests} />
+            <RequestList requests={pagedRequests} showStats={false} />
             {requestsTotalPages > 1 && (
               <div className="flex justify-end">
                 <Pagination
@@ -321,7 +321,7 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
             )}
           </>
         ) : (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <div className="rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
             <p>No requests found matching your criteria.</p>
           </div>
         )}
