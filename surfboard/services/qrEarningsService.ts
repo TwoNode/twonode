@@ -619,3 +619,31 @@ export async function toggleBankVerification(
 
   return { success: true };
 }
+
+/**
+ * The stored key of one Certificate of Deposit file, for a visitor whose QR
+ * session was paid for Certificate of Deposit and is still active (I-026). Any
+ * other session gets nothing, so a certificate link is never public.
+ */
+export async function getPaidCertificateKey(
+  planId: string,
+  accessToken: string | undefined,
+  index: number
+): Promise<string> {
+  const state = await getPlanQRAccessState(planId, accessToken);
+  if (
+    state.accessState !== "PAID_ACTIVE" ||
+    !("serviceType" in state) ||
+    state.serviceType !== "CERTIFICATE_OF_DEPOSIT"
+  ) {
+    throw new NotFoundError("Certificate");
+  }
+  const plan = await prisma.surfboardPlan.findUnique({
+    where: { id: state.planId },
+    select: { certificateFilePaths: true },
+  });
+  const key = plan?.certificateFilePaths?.[index];
+  if (!key) throw new NotFoundError("Certificate");
+  return key;
+}
+
