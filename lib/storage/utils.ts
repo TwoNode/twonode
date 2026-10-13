@@ -1,5 +1,6 @@
 import path from "path";
 import { Readable } from "stream";
+import { planNumberToKeySegment } from "@/surfboard/utils/planNumber";
 
 /**
  * Standardize an S3/storage key for a file upload across all providers.
@@ -22,7 +23,7 @@ export function buildStorageKey(input: {
     .toLowerCase();
 
   const uniqueSuffix = planNumber
-    ? `${planNumber.replace(/\//g, "_")}__${Date.now()}`
+    ? `${planNumberToKeySegment(planNumber)}__${Date.now()}`
     : `${Date.now()}__${Math.random().toString(36).substring(2, 12)}`;
 
   const prefix = userId
