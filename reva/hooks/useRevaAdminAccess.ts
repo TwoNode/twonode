@@ -6,6 +6,7 @@ import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { revaApi } from "@/reva/apiClient";
 import { Platform } from "@/utils/platform";
 import { canAccessRoute } from "@/reva/access/routes";
+import type { RevaPanelUser } from "@/reva/access/panelUser";
 
 interface UserData {
   platform: string;
@@ -15,10 +16,20 @@ interface UserData {
   lastName: string;
 }
 
-export function useRevaAdminAccess() {
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Start as loading
-  const [userData, setUserData] = useState<UserData | null>(null);
+/**
+ * `initialUser` is the session the server layout already resolved. With it the
+ * panel is known on the first render (no loading screen, no request). Without
+ * it, the browser asks, as before.
+ */
+export function useRevaAdminAccess(initialUser?: RevaPanelUser | null) {
+  const initialAccess = initialUser
+    ? canAccessRoute("/reva-restricted/dashboard", initialUser.role)
+    : null;
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(initialAccess);
+  const [isLoading, setIsLoading] = useState(!initialUser); // Start as loading
+  const [userData, setUserData] = useState<UserData | null>(
+    (initialUser as UserData | null) ?? null
+  );
   const router = useRouter();
   const {
     user,
@@ -28,6 +39,14 @@ export function useRevaAdminAccess() {
 
   useEffect(() => {
     let isMounted = true;
+    // The server already resolved the session: nothing to fetch. A signed-in
+    // user without access still gets sent to their own dashboard.
+    if (initialUser) {
+      if (!initialAccess) router.push("/reva/dashboard");
+      return () => {
+        isMounted = false;
+      };
+    }
     const checkAdminAccess = async () => {
       // 1. Initial Loading State & Cleanup
       if (!isMounted) return;

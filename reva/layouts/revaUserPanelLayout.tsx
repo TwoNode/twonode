@@ -10,6 +10,7 @@ import { LogOut } from "lucide-react";
 import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
 import { useRevaUserAccess } from "@/reva/hooks/useRevaUserAccess";
 import RevaLoading from "@/reva/components/RevaLoading";
+import type { RevaPanelUser } from "@/reva/access/panelUser";
 import { sideBarWidthClass } from "./revaAdminPanelLayout";
 import { getNavItemsForRole } from "@/reva/access/routes";
 import { Platform } from "@/utils/platform";
@@ -18,11 +19,14 @@ import { VerificationNagBanner } from "@/components/dashboard/VerificationNagBan
 
 export default function RevaUserPanelLayout({
   children,
+  initialUser,
 }: {
   children: React.ReactNode;
+  /** The session the server layout resolved; without it the browser checks. */
+  initialUser?: RevaPanelUser | null;
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
-  const { user, isUser, isLoading, userData } = useRevaUserAccess();
+  const { user, isUser, isLoading, userData } = useRevaUserAccess(initialUser);
   const router = useRouter();
   useNativeAuthRefresh(Platform.REVA);
 
@@ -67,7 +71,9 @@ export default function RevaUserPanelLayout({
     : undefined;
 
   if (isLoading) {
-    return <RevaLoading />;
+    return (
+      <RevaLoading variant="user" railCollapsed={sidebar?.isRailCollapsed} />
+    );
   }
 
   if (!isUser) {

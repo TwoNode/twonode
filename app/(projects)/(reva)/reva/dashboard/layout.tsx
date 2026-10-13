@@ -1,4 +1,5 @@
 import RevaUserPanelLayout from "@/reva/layouts/revaUserPanelLayout";
+import { getInitialRevaPanelUser } from "@/reva/access/serverSession";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -6,10 +7,15 @@ export const metadata: Metadata = {
   description: "Dashboard",
 };
 
-export default function DemoLayout({
+export default async function DemoLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <RevaUserPanelLayout>{children}</RevaUserPanelLayout>;
+  const initialUser = await getInitialRevaPanelUser();
+  return (
+    <RevaUserPanelLayout initialUser={initialUser}>
+      {children}
+    </RevaUserPanelLayout>
+  );
 }
