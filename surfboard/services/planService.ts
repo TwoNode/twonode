@@ -465,6 +465,7 @@ export async function createSurfPlan(
   const rec = await prisma.surfboardPlan.create({
     data: {
       planNumber: dto.planNumber || "",
+      planNumberKey: normalizePlanNumber(dto.planNumber) || null,
       surveyTitle: dto.surveyTitle,
       planType: dto.planType,
       referencePlanNumber: dto.referencePlanNumber || null,
@@ -577,7 +578,10 @@ export async function updateSurfPlan(
   // The 24h edit-lock was force-disabled in the source (`enforceLock = false`,
   // the real check left commented out) — preserved exactly, not re-enabled.
   const data: any = {};
-  if (dto.planNumber) data.planNumber = dto.planNumber;
+  if (dto.planNumber) {
+    data.planNumber = dto.planNumber;
+    data.planNumberKey = normalizePlanNumber(dto.planNumber) || null;
+  }
   if (dto.surveyTitle) data.surveyTitle = dto.surveyTitle;
   if (dto.planType) data.planType = dto.planType;
   data.referencePlanNumber = dto.referencePlanNumber ?? null;
