@@ -1,173 +1,112 @@
-import Image from "next/image";
-import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
+import { REVA_GRADIENTS } from "@/reva/colors";
+import { cn } from "@/lib/utils";
 
-export default function RevaLoading() {
+// Same ink as the real sidebar (components/sidebars/sidebar.tsx).
+const SIDEBAR_INK = "#0A0F16";
+
+const bar = "animate-pulse motion-reduce:animate-none";
+const onDark = `${bar} bg-white/10`;
+const onLight = `${bar} rounded-md bg-slate-200/70 dark:bg-white/10`;
+
+type Props = {
+  /** The user panel has the taller 80px top bar; the admin panel 64px. */
+  variant?: "admin" | "user";
+  /** Match the rail the real sidebar will open with, so nothing shifts. */
+  railCollapsed?: boolean;
+};
+
+/**
+ * Shown by the REVA panel layouts while the session and role are checked.
+ * The check itself must stay (it keeps admin screens from flashing for the
+ * wrong person and decides which menu items exist), so this is the layout
+ * with placeholders instead of content: the same rail, top bar and page
+ * regions, none of the role-specific items. When the real panel replaces it,
+ * nothing moves.
+ */
+export default function RevaLoading({
+  variant = "admin",
+  railCollapsed = false,
+}: Props) {
   return (
     <div
-      className="h-screen w-screen flex flex-col items-center justify-center relative overflow-hidden"
-      style={{
-        background: `linear-gradient(135deg, ${REVA_COLORS.background.primary} 0%, ${REVA_COLORS.slate[50]} 50%, ${REVA_COLORS.background.secondary} 100%)`,
-      }}
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+      className="flex h-screen w-screen overflow-hidden bg-background"
     >
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -top-40 -right-40 w-80 h-80 rounded-full opacity-10 animate-pulse"
-          style={{
-            background: `radial-gradient(circle, ${REVA_COLORS.primary.light} 0%, transparent 70%)`,
-            animation: "float 6s ease-in-out infinite",
-          }}
-        />
-        <div
-          className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-5 animate-pulse"
-          style={{
-            background: `radial-gradient(circle, ${REVA_COLORS.secondary.light} 0%, transparent 70%)`,
-            animation: "float 8s ease-in-out infinite reverse",
-          }}
-        />
-      </div>
+      <span className="sr-only">Loading your workspace</span>
 
-      {/* Main loading container */}
-      <div className="relative z-10 flex flex-col items-center gap-8">
-        {/* Logo container with enhanced animation */}
-        <div className="relative">
-          <div
-            className="absolute inset-0 rounded-full animate-ping opacity-20"
-            style={{
-              background: `radial-gradient(circle, ${REVA_COLORS.primary.light} 0%, transparent 70%)`,
-              animation: "ping 2s cubic-bezier(0, 0, 0.2, 1) infinite",
-            }}
-          />
-          <div
-            className="relative animate-bounce"
-            style={{
-              animationDuration: "2s",
-              animationTimingFunction: "cubic-bezier(0.68, -0.55, 0.265, 1.55)",
-            }}
-          >
-            <Image
-              src="/reva/revaLogo.png"
-              alt="Reva Logo"
-              width={120}
-              height={120}
-              priority
-              className="drop-shadow-lg"
-            />
-          </div>
+      {/* Sidebar */}
+      <div
+        className={cn(
+          "hidden h-full shrink-0 flex-col gap-2 p-3 lg:flex",
+          railCollapsed ? "lg:w-[76px]" : "lg:w-[284px]"
+        )}
+        style={{ background: SIDEBAR_INK }}
+      >
+        <div className="flex items-center gap-3 px-1 py-2">
+          <div className={cn(onDark, "h-11 w-11 shrink-0 rounded-full")} />
+          {!railCollapsed && <div className={cn(onDark, "h-4 w-28 rounded")} />}
         </div>
-
-        {/* Loading text and progress */}
-        <div className="flex flex-col items-center gap-4">
-          <h2
-            className="text-2xl font-bold tracking-wide"
-            style={{ color: REVA_COLORS.text.primary }}
-          >
-            Loading Reva Dashboard
-          </h2>
-
-          <p
-            className="text-sm font-medium opacity-75"
-            style={{ color: REVA_COLORS.text.secondary }}
-          >
-            Preparing your workspace...
-          </p>
-
-          {/* Enhanced loading dots */}
-          <div className="flex items-center gap-2 mt-2">
-            <div
-              className="w-3 h-3 rounded-full animate-bounce"
-              style={{
-                backgroundColor: REVA_COLORS.primary.light,
-                animationDelay: "0ms",
-                animationDuration: "1.4s",
-              }}
-            />
-            <div
-              className="w-3 h-3 rounded-full animate-bounce"
-              style={{
-                backgroundColor: REVA_COLORS.secondary.light,
-                animationDelay: "200ms",
-                animationDuration: "1.4s",
-              }}
-            />
-            <div
-              className="w-3 h-3 rounded-full animate-bounce"
-              style={{
-                backgroundColor: REVA_COLORS.blueGradient.light,
-                animationDelay: "400ms",
-                animationDuration: "1.4s",
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="w-64 h-2 bg-gray-200 rounded-full overflow-hidden mt-4">
+        <div className="my-2 h-px bg-white/10" />
+        {Array.from({ length: 7 }).map((_, i) => (
           <div
-            className="h-full rounded-full animate-pulse"
-            style={{
-              background: REVA_GRADIENTS.primary,
-              animation: "progress 2s ease-in-out infinite",
-              width: "60%",
-            }}
-          />
-        </div>
-
-        {/* Loading steps */}
-        <div className="flex flex-col items-center gap-2 mt-4">
-          <div className="flex items-center gap-2 text-xs opacity-60">
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: REVA_COLORS.status.success }}
-            />
-            <span style={{ color: REVA_COLORS.text.secondary }}>
-              Initializing...
-            </span>
+            key={i}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-2 py-2.5",
+              railCollapsed && "justify-center"
+            )}
+          >
+            <div className={cn(onDark, "h-5 w-5 shrink-0 rounded")} />
+            {!railCollapsed && (
+              <div
+                className={cn(onDark, "h-3.5 rounded")}
+                style={{ width: `${52 + ((i * 17) % 40)}%` }}
+              />
+            )}
           </div>
-          <div className="flex items-center gap-2 text-xs opacity-40">
-            <div
-              className="w-2 h-2 rounded-full animate-pulse"
-              style={{ backgroundColor: REVA_COLORS.primary.light }}
-            />
-            <span style={{ color: REVA_COLORS.text.secondary }}>
-              Loading modules...
-            </span>
-          </div>
+        ))}
+        <div className="mt-auto flex items-center gap-3 border-t border-white/10 px-1 pt-3">
+          <div className={cn(onDark, "h-10 w-10 shrink-0 rounded-full")} />
+          {!railCollapsed && (
+            <div className="flex flex-1 flex-col gap-1.5">
+              <div className={cn(onDark, "h-3 w-24 rounded")} />
+              <div className={cn(onDark, "h-2.5 w-16 rounded")} />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Custom CSS animations */}
-      <style jsx>{`
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-20px) rotate(180deg);
-          }
-        }
+      {/* Main column */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div
+          className={cn(
+            "flex shrink-0 items-center justify-between px-4 sm:px-6",
+            variant === "user" ? "h-20" : "h-16"
+          )}
+          style={{ background: REVA_GRADIENTS.header }}
+        >
+          <div className={cn(onDark, "h-8 w-8 rounded-lg lg:hidden")} />
+          <div className="flex-1" />
+          <div className="flex items-center gap-3">
+            <div className={cn(onDark, "h-9 w-9 rounded-full")} />
+            <div className={cn(onDark, "h-9 w-28 rounded-2xl")} />
+          </div>
+        </div>
 
-        @keyframes progress {
-          0% {
-            width: 0%;
-          }
-          50% {
-            width: 60%;
-          }
-          100% {
-            width: 100%;
-          }
-        }
-
-        @keyframes ping {
-          75%,
-          100% {
-            transform: scale(2);
-            opacity: 0;
-          }
-        }
-      `}</style>
+        <div className="flex-1 overflow-hidden p-4 sm:p-6 lg:p-10">
+          <div className="mx-auto flex max-w-6xl flex-col gap-6">
+            <div className={cn(onLight, "h-9 w-72")} />
+            <div className={cn(onLight, "h-14 w-full rounded-xl")} />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <div className={cn(onLight, "h-64 rounded-xl")} />
+              <div className={cn(onLight, "hidden h-64 rounded-xl lg:block")} />
+              <div className={cn(onLight, "hidden h-64 rounded-xl lg:block")} />
+              <div className={cn(onLight, "hidden h-64 rounded-xl lg:block")} />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

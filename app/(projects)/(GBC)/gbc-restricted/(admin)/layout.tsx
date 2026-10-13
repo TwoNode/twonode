@@ -42,7 +42,7 @@ export default function AdminLayout({
       )}
 
       {/* Main Content */}
-      <main className="flex flex-1 flex-col overflow-y-auto">
+      <main className="relative flex flex-1 flex-col overflow-y-auto">
         {/* Mobile Header */}
         <AdminMobileNav onMenuClick={() => setSidebarOpen(true)} />
 

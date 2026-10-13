@@ -13,17 +13,22 @@ import RevaLoading from "@/reva/components/RevaLoading";
 import { getNavItemsForRole } from "@/reva/access/routes";
 import { Platform } from "@/utils/platform";
 import { VerificationNagBanner } from "@/components/dashboard/VerificationNagBanner";
+import type { RevaPanelUser } from "@/reva/access/panelUser";
 
 export const sideBarWidthClass = " lg:w-[284px] ";
 
 export default function RevaAdminPanelLayout({
   children,
+  initialUser,
 }: {
   children: React.ReactNode;
+  /** The session the server layout resolved; without it the browser checks. */
+  initialUser?: RevaPanelUser | null;
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
   const router = useRouter();
-  const { user, isAdmin, isLoading, userData } = useRevaAdminAccess();
+  const { user, isAdmin, isLoading, userData } =
+    useRevaAdminAccess(initialUser);
   useNativeAuthRefresh(Platform.REVA);
 
   const sidebarItems = [
@@ -72,7 +77,9 @@ export default function RevaAdminPanelLayout({
 
   // Show loading state while checking admin access
   if (isLoading) {
-    return <RevaLoading />;
+    return (
+      <RevaLoading variant="admin" railCollapsed={sidebar.isRailCollapsed} />
+    );
   }
 
   // If not admin, don't render the admin panel
@@ -116,7 +123,7 @@ export default function RevaAdminPanelLayout({
           userData={userData}
         />
 
-        <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
+        <div className="relative flex-1 p-4 overflow-x-hidden overflow-y-auto">
           <VerificationNagBanner
             platform={Platform.REVA}
             verifyHref="/reva/verify-email"
