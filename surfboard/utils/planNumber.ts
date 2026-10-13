@@ -48,3 +48,7 @@ export function planNumberSearchClauses(
   return clauses;
 }
 
+/** What is saved as `planNumber`: trimmed and in capitals (plan numbers are capitals only). */
+export function toStoredPlanNumber(value: string | null | undefined): string {
+  return (value ?? "").trim().toUpperCase();
+}

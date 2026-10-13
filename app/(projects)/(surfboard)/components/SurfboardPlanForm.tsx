@@ -56,6 +56,8 @@ import {
   type AIExtractedData,
 } from "./AIAutofillButton";
 import { SubmitConfirmationModal } from "./SubmitConfirmationModal";
+import { PlanNumberNotice } from "./PlanNumberNotice";
+import type { PlanNumberMatch } from "@/surfboard/apiClient";
 
 // Confirmation Modal Component using shadcn AlertDialog
 interface ConfirmationModalProps {
@@ -386,6 +388,29 @@ export default function SurfboardPlanForm({
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCheckingPlanNumber, setIsCheckingPlanNumber] = useState(false);
+  const [planNumberNotice, setPlanNumberNotice] = useState<{
+    severity: "warning" | "error";
+    matches: PlanNumberMatch[];
+  } | null>(null);
+  // Editing an older plan: say so if its number looks similar to another of the surveyor's plans.
+  useEffect(() => {
+    if (mode !== "edit" || !form.planNumber?.trim()) return;
+    let cancelled = false;
+    surfboardApi.plans
+      .checkNumberExists(form.planNumber, form.id)
+      .then((res) => {
+        if (cancelled || !res.success) return;
+        if (res.data.similar.length > 0)
+          setPlanNumberNotice({ severity: "warning", matches: res.data.similar });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // Runs once when the edit form opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   // Person Count State
   const [personCountAI, setPersonCountAI] = useState<number | null>(null);
@@ -932,19 +957,25 @@ export default function SurfboardPlanForm({
         form.planNumber,
         form.id
       );
-      const exists = checkResult.success ? checkResult.data.exists : false;
-      if (exists) {
+      const check = checkResult.success ? checkResult.data : null;
+      setPlanNumberNotice(null);
+      if (check?.exists) {
         setErrors((prev) => ({
           ...prev,
-          planNumber:
-            "This plan number already exists. Please choose a different one.",
+          planNumber: check.own
+            ? "You already have a plan with exactly this number."
+            : "This plan number is already registered.",
         }));
+        if (check.own)
+          setPlanNumberNotice({ severity: "error", matches: [check.own] });
       } else {
         setErrors((prev) => {
           const newErrors = { ...prev };
           delete newErrors.planNumber;
           return newErrors;
         });
+        if (check && check.similar.length > 0)
+          setPlanNumberNotice({ severity: "warning", matches: check.similar });
       }
     } catch (error) {
       console.error("Error checking plan number:", error);
@@ -1458,9 +1489,12 @@ export default function SurfboardPlanForm({
                     type="text"
                     value={form.planNumber}
                     onChange={(e) => {
-                      // Remove all spaces from the input
-                      const cleanValue = e.target.value.replace(/\s+/g, "");
+                      // Plan numbers are capitals only, with no spaces.
+                      const cleanValue = e.target.value
+                        .replace(/\s+/g, "")
+                        .toUpperCase();
                       setField("planNumber", cleanValue);
+                      setPlanNumberNotice(null);
                     }}
                     onBlur={handlePlanNumberBlur}
                     aria-invalid={!!errors.planNumber}
@@ -1489,6 +1523,12 @@ export default function SurfboardPlanForm({
                   <p id="planNumber-error" className={errorCls}>
                     {errors.planNumber}
                   </p>
+                )}
+                {planNumberNotice && (
+                  <PlanNumberNotice
+                    severity={planNumberNotice.severity}
+                    matches={planNumberNotice.matches}
+                  />
                 )}
               </div>
 

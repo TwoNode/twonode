@@ -37,6 +37,7 @@ import { sendPlanShareInviteEmail } from "@/utils/email";
 import { getSiteUrl } from "@/lib/siteUrl";
 import {
   normalizePlanNumber,
+  toStoredPlanNumber,
   planNumberSearchClauses,
   samePlanNumber,
 } from "@/surfboard/utils/planNumber";
@@ -468,7 +469,7 @@ export async function createSurfPlan(
 
   const rec = await prisma.surfboardPlan.create({
     data: {
-      planNumber: dto.planNumber || "",
+      planNumber: toStoredPlanNumber(dto.planNumber),
       planNumberKey: normalizePlanNumber(dto.planNumber) || null,
       surveyTitle: dto.surveyTitle,
       planType: dto.planType,
@@ -585,7 +586,7 @@ export async function updateSurfPlan(
   // the real check left commented out) — preserved exactly, not re-enabled.
   const data: any = {};
   if (dto.planNumber) {
-    data.planNumber = dto.planNumber;
+    data.planNumber = toStoredPlanNumber(dto.planNumber);
     data.planNumberKey = normalizePlanNumber(dto.planNumber) || null;
   }
   if (dto.surveyTitle) data.surveyTitle = dto.surveyTitle;
@@ -1091,19 +1092,67 @@ export async function findPlanIdByNumber(
   return byKey?.id ?? null;
 }
 
-export async function checkPlanNumberExists(
+export type PlanNumberMatch = {
+  id: string;
+  planNumber: string;
+  surveyTitle: string;
+  status: string;
+  createdAt: Date;
+};
+
+/**
+ * What a typed plan number collides with, for the plan form.
+ * - `exact`: the same number (capitals) is already registered. Only the
+ *   surveyor's own plan is described (`own`); a plan of someone else is never
+ *   shown, only `taken`.
+ * - `similar`: other plans of this surveyor whose number differs only by
+ *   spacing or a trailing `_` or `.`. Never includes anyone else's plans.
+ */
+export async function findPlanNumberMatches(
   userId: string,
   planNumber: string,
   excludeId?: string
-): Promise<boolean> {
-  if (!normalizePlanNumber(planNumber)) return false;
-  // Compared with the shared rules (case, spacing, trailing `_` and `.`), so
-  // typing variants of one number are caught (I-024). One surveyor's plans only.
-  const plans = await prisma.surfboardPlan.findMany({
-    where: { userId, ...(excludeId && { id: { not: excludeId } }) },
-    select: { planNumber: true },
+): Promise<{
+  exists: boolean;
+  taken: boolean;
+  own: PlanNumberMatch | null;
+  similar: PlanNumberMatch[];
+}> {
+  const typed = toStoredPlanNumber(planNumber);
+  if (!typed) return { exists: false, taken: false, own: null, similar: [] };
+
+  const select = {
+    id: true,
+    planNumber: true,
+    surveyTitle: true,
+    status: true,
+    createdAt: true,
+    userId: true,
+  } as const;
+  const exactRow = await prisma.surfboardPlan.findFirst({
+    where: { planNumber: typed, ...(excludeId && { id: { not: excludeId } }) },
+    select,
   });
-  return plans.some((p) => samePlanNumber(p.planNumber, planNumber));
+  const strip = ({ userId: _owner, ...rest }: NonNullable<typeof exactRow>) =>
+    rest as PlanNumberMatch;
+  const own = exactRow && exactRow.userId === userId ? strip(exactRow) : null;
+
+  const mine = await prisma.surfboardPlan.findMany({
+    where: { userId, deleted: false, ...(excludeId && { id: { not: excludeId } }) },
+    select,
+    orderBy: { createdAt: "desc" },
+  });
+  const similar = mine
+    .filter((p) => p.planNumber !== typed && samePlanNumber(p.planNumber, typed))
+    .slice(0, 5)
+    .map(strip);
+
+  return {
+    exists: !!exactRow,
+    taken: !!exactRow && !own,
+    own,
+    similar,
+  };
 }
 
 export async function getAllFacilitatorsAndPlanNumbers(userId: string) {

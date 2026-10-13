@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/lib/api/withAuth";
 import { ValidationError } from "@/lib/api/errors";
-import { checkPlanNumberExists } from "@/surfboard/services/planService";
+import { findPlanNumberMatches } from "@/surfboard/services/planService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 export const GET = withAuth<SurfboardRole>(
@@ -10,12 +10,12 @@ export const GET = withAuth<SurfboardRole>(
     if (!planNumber)
       throw new ValidationError({ planNumber: "Missing planNumber" });
     const excludeId = req.nextUrl.searchParams.get("excludeId") ?? undefined;
-    const exists = await checkPlanNumberExists(
+    const data = await findPlanNumberMatches(
       ctx.session.sub,
       planNumber,
       excludeId
     );
-    return NextResponse.json({ success: true, data: { exists } });
+    return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] }
 );
