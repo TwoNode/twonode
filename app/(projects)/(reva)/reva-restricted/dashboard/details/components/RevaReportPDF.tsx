@@ -10,6 +10,13 @@ import {
   Image,
   Font,
 } from "@react-pdf/renderer";
+import { revaApi } from "@/reva/apiClient";
+
+/** Report images are private files: load them through the file gateway (absolute, because the PDF renderer fetches them itself). */
+const fileSrc = (url: string) =>
+  typeof window === "undefined"
+    ? url
+    : new URL(revaApi.files.linkFor(url), window.location.origin).toString();
 
 // Register fonts
 Font.register({
@@ -494,7 +501,7 @@ export function RevaReportPDF({ property }: RevaReportPDFProps) {
               </Text>
               <Image
                 style={styles.fullWidthImage}
-                source={report.images.transactionFlowImg}
+                source={fileSrc(report.images.transactionFlowImg)}
               />
               {report.rightToSellHolder && (
                 <View style={styles.quoteText}>
@@ -654,7 +661,7 @@ export function RevaReportPDF({ property }: RevaReportPDFProps) {
             <View style={styles.section}>
               <Image
                 style={styles.fullWidthImage}
-                source={report.images.parcelCheck}
+                source={fileSrc(report.images.parcelCheck)}
               />
               <Text style={styles.imageCaption}>Figure 1.0 - Parcel Check</Text>
             </View>
@@ -743,7 +750,7 @@ export function RevaReportPDF({ property }: RevaReportPDFProps) {
                 <View style={{ marginTop: 10 }}>
                   <Image
                     style={styles.fullWidthImage}
-                    source={report.images.parcelChartingFree}
+                    source={fileSrc(report.images.parcelChartingFree)}
                   />
                   <Text style={styles.imageCaption}>
                     Figure 2.0 - Parcel Charting (Free from Government
@@ -756,7 +763,7 @@ export function RevaReportPDF({ property }: RevaReportPDFProps) {
                 <View style={{ marginTop: 10 }}>
                   <Image
                     style={styles.fullWidthImage}
-                    source={report.images.parcelChartingOffset}
+                    source={fileSrc(report.images.parcelChartingOffset)}
                   />
                   <Text style={styles.imageCaption}>
                     Figure 3.0 - Parcel Charting (Falls within setback)
@@ -842,7 +849,7 @@ export function RevaReportPDF({ property }: RevaReportPDFProps) {
                 <View style={{ marginTop: 10 }}>
                   <Image
                     style={styles.fullWidthImage}
-                    source={report.images.landUseCheck}
+                    source={fileSrc(report.images.landUseCheck)}
                   />
                   <Text style={styles.imageCaption}>
                     Figure 4.0 - Parcel Land Use Check

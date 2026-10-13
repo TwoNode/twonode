@@ -231,7 +231,9 @@ export function AdminDirectLinkUpload({
                       Previously uploaded file
                     </div>
                     <MediaLink
-                      href={revaApi.files.linkFor(property.report.directFileLink)}
+                      href={revaApi.files.linkFor(
+                        property.report.directFileLink
+                      )}
                       className="underline text-sm"
                       style={{ color: REVA_COLORS.primary.light }}
                     >
@@ -240,7 +242,7 @@ export function AdminDirectLinkUpload({
                   </div>
 
                   <iframe
-                    src={property.report.directFileLink}
+                    src={revaApi.files.linkFor(property.report.directFileLink)}
                     title="Report Preview"
                     className="w-full h-72 rounded border"
                   />
