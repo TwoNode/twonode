@@ -4,6 +4,7 @@ import { getAnyRequestByReferenceForAdmin } from "@/reva/services/reportService"
 import InvalidReferencePage from "@/components/InvalidReferencePage";
 import UserRequestDataView from "./UserRequestDataView";
 import { AdminMiniHeader } from "../../components/AdminMiniHeader";
+import { RequestPageHeader } from "../../components/RequestPageHeader";
 import AdminReport from "./AdminReport";
 import { OneTimeRequestView } from "../components/OneTimeRequestView";
 import { AdminReportUpload } from "./AdminReportUpload";
@@ -34,12 +35,22 @@ const ViewDetailsPage = async ({
 
       return (
         <div className="container mx-auto p-4 md:p-8 max-w-6xl">
-          <AdminMiniHeader title="One-Time Request Details" />
-
-          <div className="mt-4 flex flex-wrap gap-3">
-            <PDFDownloadButton property={transformedProperty} type="receipt" />
-            <PDFDownloadButton property={transformedProperty} type="report" />
-          </div>
+          <RequestPageHeader
+            kind="One-time request"
+            reference={transformedProperty.reference}
+            actions={
+              <>
+                <PDFDownloadButton
+                  property={transformedProperty}
+                  type="receipt"
+                />
+                <PDFDownloadButton
+                  property={transformedProperty}
+                  type="report"
+                />
+              </>
+            }
+          />
 
           <div className="mt-6">
             <OneTimeRequestView request={transformedProperty as any} />
@@ -67,12 +78,19 @@ const ViewDetailsPage = async ({
 
     return (
       <div className="container mx-auto p-4 md:p-8 max-w-6xl">
-        <AdminMiniHeader title="User Request Details" />
-
-        <div className="mt-4 flex flex-wrap gap-3">
-          <PDFDownloadButton property={transformedProperty} type="receipt" />
-          <PDFDownloadButton property={transformedProperty} type="report" />
-        </div>
+        <RequestPageHeader
+          kind="User request"
+          reference={transformedProperty.reference}
+          actions={
+            <>
+              <PDFDownloadButton
+                property={transformedProperty}
+                type="receipt"
+              />
+              <PDFDownloadButton property={transformedProperty} type="report" />
+            </>
+          }
+        />
 
         <div className="mt-6">
           <UserRequestDataView property={transformedProperty} />

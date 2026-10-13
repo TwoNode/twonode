@@ -134,7 +134,9 @@ function SurfboardUserDashboardNavbar({
       <UserAccountMenu
         name={fullName}
         email={user?.email}
-        picture={user?.picture}
+        picture={
+          user?.picture ? surfboardApi.files.linkFor(user.picture) : undefined
+        }
         roleLabel="Surveyor"
         profileHref="/surfboard/dashboard/settings"
         settingsHref="/surfboard/dashboard/settings"
@@ -342,7 +344,11 @@ export default function SurfboardUserPanelLayout({
         >
           <Sidebar
             items={menuList}
-            userImageUrl={user?.picture}
+            userImageUrl={
+              user?.picture
+                ? surfboardApi.files.linkFor(user.picture)
+                : undefined
+            }
             userName={user?.firstName || user?.given_name}
             userRole="Surveyor"
             colorPalette={SURFBOARD_COLORS}
