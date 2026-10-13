@@ -7,6 +7,17 @@ import SearchFilters, {
   SearchFilters as SearchFiltersType,
 } from "../../components/SearchFilters";
 import { Pagination } from "@/components/ui/pagination";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  RequestStatCards,
+  type StatCard,
+} from "../../components/RequestStatCards";
+import {
+  applyRequestTab,
+  reportStateOf,
+  summarizeRequests,
+  type RequestTab,
+} from "../../components/requestStats";
 import {
   RequestViewToggle,
   useRequestView,
@@ -70,6 +81,7 @@ const AllRequestsWithReportClient: React.FC<
     isApproved: null,
   });
   const [view, setView] = useRequestView();
+  const [tab, setTab] = useState<RequestTab>("all");
   const [oneTimePage, setOneTimePage] = useState(1);
   const [requestsPage, setRequestsPage] = useState(1);
 
@@ -77,7 +89,7 @@ const AllRequestsWithReportClient: React.FC<
   useEffect(() => {
     setOneTimePage(1);
     setRequestsPage(1);
-  }, [filters]);
+  }, [filters, tab]);
 
   const filteredData = useMemo(() => {
     let filtered = [...initialData];
@@ -256,29 +268,107 @@ const AllRequestsWithReportClient: React.FC<
   };
 
   const totalCount = initialData.length + initialOneTimeRequests.length;
+
+  // Cards count everything; tabs count what the search filters leave.
+  const summary = useMemo(
+    () => summarizeRequests(initialOneTimeRequests, initialData),
+    [initialData, initialOneTimeRequests]
+  );
+  const visible = applyRequestTab(
+    tab,
+    filteredData.filteredOneTime,
+    filteredData.filtered
+  );
   const filteredCount =
     filteredData.filtered.length + filteredData.filteredOneTime.length;
+  const inFiltered = (state: ReturnType<typeof reportStateOf>) =>
+    [...filteredData.filtered, ...filteredData.filteredOneTime].filter(
+      (r) => reportStateOf(r) === state
+    ).length;
+
+  const tabs: { id: RequestTab; label: string; count: number }[] = [
+    { id: "all", label: "All", count: filteredCount },
+    {
+      id: "oneTime",
+      label: "One-time",
+      count: filteredData.filteredOneTime.length,
+    },
+    { id: "regular", label: "Regular", count: filteredData.filtered.length },
+    { id: "review", label: "In review", count: inFiltered("review") },
+    { id: "approved", label: "Approved", count: inFiltered("approved") },
+  ];
+
+  const naira = (n: number) =>
+    new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      maximumFractionDigits: 0,
+    }).format(n);
+
+  const cards: StatCard[] = [
+    {
+      id: "total",
+      label: "With a report",
+      value: String(summary.total),
+      hint: `${summary.oneTime} one-time · ${summary.regular} regular`,
+      tab: "all",
+    },
+    {
+      id: "review",
+      label: "In review",
+      value: String(summary.inReview),
+      hint: "Awaiting approval",
+      tone: "warning",
+      tab: "review",
+    },
+    {
+      id: "approved",
+      label: "Approved",
+      value: String(summary.approved),
+      hint: "Report approved",
+      tone: "success",
+      tab: "approved",
+    },
+    {
+      id: "unpaid",
+      label: "Unpaid",
+      value: String(summary.unpaid),
+      hint: "Waiting for payment",
+      tone: "info",
+    },
+    {
+      id: "fees",
+      label: "Fees paid",
+      value: naira(summary.feesPaid),
+      hint: "From paid requests",
+    },
+  ];
 
   const oneTimeTotalPages = Math.max(
     1,
-    Math.ceil(filteredData.filteredOneTime.length / PAGE_SIZE)
+    Math.ceil(visible.oneTime.length / PAGE_SIZE)
   );
-  const pagedOneTime = filteredData.filteredOneTime.slice(
+  const pagedOneTime = visible.oneTime.slice(
     (oneTimePage - 1) * PAGE_SIZE,
     oneTimePage * PAGE_SIZE
   );
 
   const requestsTotalPages = Math.max(
     1,
-    Math.ceil(filteredData.filtered.length / PAGE_SIZE)
+    Math.ceil(visible.regular.length / PAGE_SIZE)
   );
-  const pagedRequests = filteredData.filtered.slice(
+  const pagedRequests = visible.regular.slice(
     (requestsPage - 1) * PAGE_SIZE,
     requestsPage * PAGE_SIZE
   );
 
+  const showRegularSection = tab !== "oneTime";
+  const nothingToShow = visible.oneTime.length + visible.regular.length === 0;
+
   return (
-    <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">
+    <div className="mx-auto flex flex-col p-6 max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-6xl">
+      <RequestStatCards cards={cards} activeTab={tab} onSelectTab={setTab} />
+
       <SearchFilters
         onSearch={handleSearch}
         onClear={handleClear}
@@ -286,17 +376,29 @@ const AllRequestsWithReportClient: React.FC<
         filteredCount={filteredCount}
       />
 
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as RequestTab)}>
+          <TabsList className="h-auto flex-wrap justify-start gap-1">
+            {tabs.map((t) => (
+              <TabsTrigger key={t.id} value={t.id} className="gap-2">
+                {t.label}
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {t.count}
+                </span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
         <RequestViewToggle view={view} onChange={setView} />
       </div>
 
-      {filteredData.filteredOneTime.length > 0 && (
+      {visible.oneTime.length > 0 && (
         <section className="mb-8 flex flex-col gap-4">
           <AdminMiniHeader
             title={
               <>
                 OneTime Requests with Report &nbsp;{" "}
-                <small> ( {filteredData.filteredOneTime.length} )</small>
+                <small> ( {visible.oneTime.length} )</small>
               </>
             }
           />
@@ -313,39 +415,34 @@ const AllRequestsWithReportClient: React.FC<
         </section>
       )}
 
-      <section className="info-section mb-6 flex flex-col gap-4">
-        <AdminMiniHeader
-          title={
-            <>
-              All Requests with Report &nbsp;{" "}
-              <small> ( {filteredData.filtered.length} )</small>
-            </>
-          }
-        />
+      {showRegularSection && visible.regular.length > 0 && (
+        <section className="info-section mb-6 flex flex-col gap-4">
+          <AdminMiniHeader
+            title={
+              <>
+                All Requests with Report &nbsp;{" "}
+                <small> ( {visible.regular.length} )</small>
+              </>
+            }
+          />
+          <RequestList requests={pagedRequests} showStats={false} view={view} />
+          {requestsTotalPages > 1 && (
+            <div className="flex justify-end">
+              <Pagination
+                page={requestsPage}
+                totalPages={requestsTotalPages}
+                onPageChange={setRequestsPage}
+              />
+            </div>
+          )}
+        </section>
+      )}
 
-        {filteredData.filtered.length > 0 ? (
-          <>
-            <RequestList
-              requests={pagedRequests}
-              showStats={false}
-              view={view}
-            />
-            {requestsTotalPages > 1 && (
-              <div className="flex justify-end">
-                <Pagination
-                  page={requestsPage}
-                  totalPages={requestsTotalPages}
-                  onPageChange={setRequestsPage}
-                />
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
-            <p>No requests with reports found matching your criteria.</p>
-          </div>
-        )}
-      </section>
+      {nothingToShow && (
+        <div className="rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
+          <p>No requests with reports found matching your criteria.</p>
+        </div>
+      )}
     </div>
   );
 };

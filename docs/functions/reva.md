@@ -61,6 +61,6 @@ Non-component logic files specific to the REVA platform, under `reva/`.
 | `components/RequestsList.tsx` | The request cards (address as title, requester / fee / due, document chips, report state, View details). Same props as before; every link goes through the file gateway |
 | `components/requestView.tsx` | `useRequestView` (grid or list, remembered in this browser's localStorage, grid by default) and `RequestViewToggle` for the two request list pages; `RequestsList` takes `view="grid" \| "list"` |
 | `components/requestStats.ts` | Pure counting for the all-requests page: `reportStateOf` (none / review / approved), `applyRequestTab`, `summarizeRequests` (totals, unpaid, fees from paid requests) |
-| `components/RequestStatCards.tsx` | The six summary cards above the tabs; four switch to their tab when clicked |
+| `components/RequestStatCards.tsx` | The summary cards above the tabs (six on all requests, five on the review page, which only lists requests with a report); the ones tied to a tab switch to it when clicked |
 | `components/AdminMiniHeader.tsx` | Section heading (title with a hairline; a trailing `<small>` count is shown quieter) |
 | `components/RequestPageHeader.tsx` | Top of a request detail page: back link, kind, reference, page actions (PDF downloads) |
