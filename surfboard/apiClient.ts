@@ -632,7 +632,7 @@ export const surfboardApi = {
         `${BASE}/plans/${encodeURIComponent(planId)}/public${token ? `?token=${encodeURIComponent(token)}` : ""}`
       ),
 
-    /** Public, ungated — full plan data, no redaction. Increments the QR scan counter. */
+    /** Logged-in only — full plan data, no redaction. Staff read any plan; a surveyor only their own or a shared one. */
     getPublicFull: (planId: string) =>
       jsonFetch<any>(`${BASE}/plans/${encodeURIComponent(planId)}/public/full`),
 
