@@ -19,6 +19,7 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 - [ ] **Surveyor picture in the Surfboard dashboard** went through the raw bucket URL (403); now the gateway (PR #423, I-030). _(Waiting on: merge dev → main → prod)_
 - [x] **Surfboard user dashboard: no spinner screen.** Server reads name and subscription, panel draws on first paint, skeleton as fallback (PR to `dev`). _(Waiting on: merge, then a staging check with a subscribed and an unsubscribed surveyor)_
 - [ ] **REVA admin request screens redesign** (list cards, section headers, detail pages; presentation only, PR to `dev`). _(Waiting on: merge, then a staging check with a REVA super admin)_
+- [ ] **REVA all-requests page: summary cards and tabs** (All, One-time, Regular, Needs report, In review, Approved; PR to `dev`). _(Waiting on: merge, then a staging check with real data)_
 - [x] **/v4 mobile and tablet responsiveness** (PR #360, open for review). (Done 2026-10-12)
 
 ---
