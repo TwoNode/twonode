@@ -19,6 +19,7 @@ import type {
   ProfileUpdateInput,
 } from "@/reva/services/profileService";
 import type { EncryptedUserData } from "@/utils/encryptedCookies";
+import { isRevaFileRef } from "@/reva/utils/fileAccess";
 
 /** "report" or "document:N" (N = index into documentsCount) — which S3-backed field a download-OTP authorizes. */
 export type DownloadTarget = "report" | `document:${number}`;
@@ -126,6 +127,21 @@ export type UploadReportResult = {
 };
 
 export const revaApi = {
+  /** Admin and site-photo links for REVA files go through the signed-link gateway (TASK-0011 Phase 2). */
+  files: {
+    /** The gateway link for our own REVA files, the link unchanged for anything else. */
+    linkFor: (urlOrKey: string) =>
+      isRevaFileRef(urlOrKey)
+        ? `${BASE}/files/view?url=${encodeURIComponent(urlOrKey)}`
+        : urlOrKey,
+    /** A link that saves the file (under `name`) instead of showing it. */
+    getDownloadUrl: (urlOrKey: string, name?: string) =>
+      isRevaFileRef(urlOrKey)
+        ? `${BASE}/files/view?url=${encodeURIComponent(urlOrKey)}&download=1${
+            name ? `&name=${encodeURIComponent(name)}` : ""
+          }`
+        : urlOrKey,
+  },
   profile: {
     get: () => jsonFetch<RevaProfile>(`${BASE}/profile`),
 
