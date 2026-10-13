@@ -9,7 +9,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { verifyPayment } from "@/gbc/services/ticketService";
+import { signedTicketQrUrl, verifyPayment } from "@/gbc/services/ticketService";
 import { getSettings } from "@/gbc/services/settingsService";
 import { notFound, redirect } from "next/navigation";
 import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
@@ -61,6 +61,7 @@ export default async function TicketSuccessPage({
   // Extract ticket data from verification response
   const { tickets, count, amount } = verification;
   const primaryTicket = tickets[0]; // Get the first ticket (or primary ticket for groups)
+  const qrUrl = await signedTicketQrUrl(primaryTicket);
   const isGroupTicket = count > 1;
 
   // Fetch settings for event details
@@ -214,7 +215,7 @@ export default async function TicketSuccessPage({
                 </div>
               </div>
 
-              {primaryTicket.qrCode && (
+              {qrUrl && (
                 <div className="flex items-start gap-3 text-gray-700">
                   <div className="mt-0.5">
                     <div className="p-2 bg-blue-100 rounded-full">
@@ -227,7 +228,7 @@ export default async function TicketSuccessPage({
                     </h3>
                     <p className="text-sm text-gray-500">
                       <MediaLink
-                        href={primaryTicket.qrCode}
+                        href={qrUrl}
                         name="Ticket QR code.png"
                         kind="image"
                         className="text-blue-600 hover:underline"

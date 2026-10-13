@@ -8,6 +8,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { PhotonImage, SamplingFilter, crop, resize } from "@cf-wasm/photon";
+import { gbcPublicKey, gbcQrCodeKey } from "@/gbc/utils/storageKeys";
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -119,6 +120,8 @@ interface UploadOptions {
   fileName: string;
   contentType: string;
   folder?: string;
+  /** Full key, when the file does not belong in the old public `GBC2/<folder>/` layout (QR codes). */
+  key?: string;
   generateThumbnail?: boolean;
 }
 
@@ -127,22 +130,6 @@ interface UploadResult {
   url: string;
   thumbnailKey?: string;
   thumbnailUrl?: string;
-}
-
-/**
- * Generate unique file name
- */
-function generateFileName(originalName: string, folder?: string): string {
-  const timestamp = Date.now();
-  const randomString = Math.random().toString(36).substring(2, 15);
-  const extension = originalName.split(".").pop();
-  const sanitizedName = originalName
-    .replace(/[^a-zA-Z0-9.-]/g, "_")
-    .toLowerCase();
-
-  const fileName = `${timestamp}-${randomString}-${sanitizedName}`;
-
-  return folder ? `GBC2/${folder}/${fileName}` : `GBC2/${fileName}`;
 }
 
 /**
@@ -159,7 +146,7 @@ export async function uploadToS3(
     }
 
     // Generate unique file name
-    const key = generateFileName(fileName, folder);
+    const key = options.key ?? gbcPublicKey(folder, fileName);
 
     console.log("Uploading to S3:", {
       bucket: BUCKET_NAME,
@@ -272,12 +259,18 @@ export async function fileExistsInS3(key: string): Promise<boolean> {
  */
 export async function getSignedS3Url(
   key: string,
-  expiresIn: number = 3600
+  expiresIn: number = 3600,
+  options: { downloadName?: string } = {}
 ): Promise<string> {
   try {
     const command = new GetObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
+      ...(options.downloadName
+        ? {
+            ResponseContentDisposition: `attachment; filename="${options.downloadName.replace(/[^\w.\- ]/g, "_")}"`,
+          }
+        : {}),
     });
 
     const signedUrl = await getSignedUrl(s3Client, command, { expiresIn });
@@ -368,13 +361,14 @@ export async function uploadGalleryMedia(
  */
 export async function uploadQRCode(
   qrCodeBuffer: Buffer,
-  ticketNumber: string
+  ticketNumber: string,
+  edition: string
 ): Promise<UploadResult> {
   return uploadToS3({
     file: qrCodeBuffer,
     fileName: `${ticketNumber}.png`,
     contentType: "image/png",
-    folder: "qrcodes",
+    key: gbcQrCodeKey(edition, ticketNumber),
   });
 }
 

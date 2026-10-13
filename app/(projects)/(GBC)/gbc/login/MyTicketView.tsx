@@ -14,9 +14,12 @@ const TICKET_TYPE_LABEL: Record<string, string> = {
 export default function MyTicketView({
   ticket,
   edition,
+  qrUrl,
 }: {
   ticket: GBCTicket;
   edition: GBCEdition | null;
+  /** Short-lived signed link to the QR code (the stored file is private). */
+  qrUrl: string | null;
 }) {
   const isPending = ticket.paymentStatus !== "COMPLETED";
 
@@ -62,10 +65,10 @@ export default function MyTicketView({
               </div>
             )}
 
-            {ticket.qrCode && !isPending && (
+            {qrUrl && !isPending && (
               <div className="mb-6 flex justify-center">
                 <img
-                  src={ticket.qrCode}
+                  src={qrUrl}
                   alt={`QR code for ticket ${ticket.ticketNumber}`}
                   className="w-48 h-48 rounded-lg border border-gray-200 shadow-sm"
                 />
