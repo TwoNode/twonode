@@ -59,7 +59,10 @@ const UserRequestDataView = ({ property }: { property: any }) => {
               onClick={() => {
                 if (property?.report?.directFileLink) {
                   const link = document.createElement("a");
-                  link.href = property.report.directFileLink;
+                  link.href = revaApi.files.getDownloadUrl(
+                    property.report.directFileLink,
+                    `${property?.title ?? "report"}.pdf`
+                  );
                   link.download = `${property?.title ?? "report"}.pdf`; // You can customize the file name
                   document.body.appendChild(link);
                   link.click();
@@ -128,11 +131,13 @@ const UserRequestDataView = ({ property }: { property: any }) => {
                     <EnlargeableImage
                       href={revaApi.files.linkFor(url)}
                       alt={`Site Image ${idx + 1}`}
-                      group={property.site_images.map((u: string, n: number) => ({
-                        href: revaApi.files.linkFor(u),
-                        name: `Site Image ${n + 1}`,
-                        kind: "image" as const,
-                      }))}
+                      group={property.site_images.map(
+                        (u: string, n: number) => ({
+                          href: revaApi.files.linkFor(u),
+                          name: `Site Image ${n + 1}`,
+                          kind: "image" as const,
+                        })
+                      )}
                       imgClassName="w-full h-48 object-cover"
                     />
                   </div>
