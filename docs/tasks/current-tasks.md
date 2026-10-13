@@ -1,6 +1,6 @@
 # Current Tasks (Live Dashboard)
 
-State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate page leak fix and the `AWS_*` rename are live. The certificate email redesign (#363, #365) and the docs updates (#364) reached `prod` on 2026-10-12 through #366 (`dev` → `main`) and #367 (`main` → `prod`); live checks passed. Vercel env cleaned up (see TASK-0010). 882/882 tests passing.
+State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gateways, REVA private uploads, swipe/enlarge viewer, plan number key and fail-closed cron/webhook are live. S3 bucket policy v1 is applied (`surfboard/`, `PrivateSurveyPlans/` and other old `uploads/` are private). and #367 (`main` → `prod`); live checks passed. Vercel env cleaned up (see TASK-0010). 882/882 tests passing.
 
 ---
 
@@ -13,9 +13,9 @@ State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate
 - [x] **Vercel env:** `AWS_*` added, `CRON_SECRET` set, seven unused variables removed with a backup. (Done 2026-10-12)
 - [x] **`dev` → `main` (PR #358) and staging smoke tests (17 checks) passed.** (Done 2026-10-12)
 - [x] **Promote `main` → `prod`.** PR #362, prod build Ready, live smoke checks passed. (Done 2026-10-12)
-- [ ] **S3 bucket: policy limited to `GBC2/*`, ACL blocks on.** Needs the AWS admin. _(Waiting on: AWS admin)_
-- [ ] **Surveyor logo through the file gateway before `surfboard/*` goes private.** _(Waiting on: roji-tech go)_
-- [ ] **Remove `REVA_AWS_*` from Vercel.** Prod runs on `AWS_*` now. _(Waiting on: roji-tech go after seeing the exact list)_
+- [x] **S3 bucket policy v1** applied in the console by roji-tech (public read only on `GBC2/*`, `reva/*` and 5 legacy `uploads/` files); anonymous checks passed. (Done 2026-10-13) The ACL blocks (Block public ACLs, Ignore public ACLs) are still off. _(Waiting on: AWS admin / roji-tech)_
+- [x] **Surveyor logo through the file gateway.** Settings page uses the gateway (#370); nothing else shows the raw URL. (Done 2026-10-13) Worth a look on prod that the logo still shows.
+- [x] **Remove `REVA_AWS_*` from Vercel.** Removed from production, preview and development; values backed up to `out/`. (Done 2026-10-13)
 - [x] **/v4 mobile and tablet responsiveness** (PR #360, open for review). (Done 2026-10-12)
 
 ---
@@ -25,11 +25,11 @@ State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate
 **Batch Reference:** [TASK-0011](./0011-s3-privacy-and-key-layout.md)  
 **Status:** `Planned`. Plan and [ADR-0013](../adr/0013-bucket-key-layout-public-and-private-prefixes.md) (Proposed) written 2026-10-12. Waiting on roji-tech: go for Phase 1 (surveyor logo through the gateway, then policy v1), accept ADR-0013, and an identity or the AWS admin that can write the bucket policy.
 
-- [ ] **Phase 1:** `surfboard/` and `uploads/PrivateSurveyPlans/` private. _(Waiting on: roji-tech go)_
-- [ ] **Phase 2:** REVA files private with signed links.
+- [x] **Phase 1:** `surfboard/` and `uploads/PrivateSurveyPlans/` private. (Done 2026-10-13, policy v1)
+- [ ] **Phase 2:** REVA files private with signed links. New uploads go to `private/reva/…` (#393, live); old `reva/*` files stay public until moved (Phase 5 group C), then policy v2.
 - [ ] **Phase 3:** GBC key layout `public/gbc/<edition>/…`, QR codes under `private/gbc/<edition>/qrcodes/`.
 - [ ] **Phase 5 (optional):** move the legacy files (copy, rewrite rows in a guarded transaction, delete after a grace period). Not needed for privacy.
-- [ ] **Phase 4:** cleanup of odd folders, junk and orphans (separate go each).
+- [ ] **Phase 4:** cleanup of odd folders, junk and orphans (separate go each). Tier 1 (111 files) and tier 2 (415 files) deleted 2026-10-13; odd `surfboard/` folders, `.db` junk and `PrivateSurveyPlans` still need a decision.
 
 ---
 
@@ -85,7 +85,7 @@ State as of 2026-10-12: `main` was promoted to `prod` (PR #362); the certificate
 **Status:** `In Progress`. Fixes #341–#345 are on `dev`, `main` and `prod` (promoted 2026-10-12, PR #362). `CERTIFICATE_OTP_SECRET` is set. Waiting on the AWS admin for the bucket (see I-004 in the issues register).
 
 - [x] **P0: public certificate page leaks attendee data.** Fixed in PR #341; live on `prod` since 2026-10-12 (PR #362). A bogus certificate page returns 404.
-- [ ] **P0: surveyor files are still publicly readable in S3.** _(Waiting on: roji-tech / AWS admin)_
+- [x] **P0: surveyor files are still publicly readable in S3.** _(Waiting on: roji-tech / AWS admin)_ Done 2026-10-13: bucket policy v1 applied; anonymous requests to `surfboard/` and `PrivateSurveyPlans/` return 403.
 - [x] **P1 items and the CI check:** QR/email links, PDF frozen fields, OTP secret, `expiresIn` cap, CI `|| true`, and the 3 test tickets: all done (PRs #342, #343). (Done 2026-10-11)
 - [x] **P2 smaller items** (timing, lockout, token in URL, client IP, local paths): PR #344 plus the hardening PR. Only the optional captcha remains. _(Waiting on: roji-tech decision)_
 

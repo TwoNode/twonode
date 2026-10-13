@@ -55,8 +55,8 @@ Consequence for the move: only 30 + 30 + 10 + 6 = 76 database links are public o
 - [x] (Done 2026-10-13, branch `fix/public-cod-certificate-gate`) **Public plan page Certificate of Deposit link (I-026):** add a gated route that checks `getPlanQRAccessState` before signing a short link, and use it in `PublicSurfPlan.tsx`. Policy v1 must wait for this. _(Waiting on: roji-tech go)_
 - [x] **Public `plans/[planId]/public/full` route (I-027):** gated behind login (staff any plan, surveyor own or shared); nothing in the app called it, any outside caller must now send a login. (2026-10-12)
 - [x] **Strip file fields from the public QR-gated plan response (I-027):** `getGatedPublicSurfPlan` now empties `pdfFilePaths`, `cadFilePaths`, `certificateFilePaths` and `redCopyFileUrl` unless access is paid or free-scan. Test `planService.gatedPublic.test.ts`. (Done 2026-10-13, branch `fix/gated-public-plan-no-files`)
-- [ ] Back up the current policy to `out/`, then apply policy v1: public read on `GBC2/*`, `reva/*` and the 4 referenced `uploads/` keys only. This makes `surfboard/*`, `uploads/PrivateSurveyPlans/*` and the rest of `uploads/` private. _(Waiting on: roji-tech go, and an identity that can write the policy or the AWS admin)_
-- [ ] Verify with curl: a `surfboard/` and a `PrivateSurveyPlans/` file return 403, a `GBC2/` image 200, a signed link from the app works, and the surveyor logo shows. Confirm with roji-tech that no other app reads `uploads/`.
+- [x] Back up the current policy to `out/`, then apply policy v1: public read on `GBC2/*`, `reva/*` and the 4 referenced `uploads/` keys only. This makes `surfboard/*`, `uploads/PrivateSurveyPlans/*` and the rest of `uploads/` private. _(Waiting on: roji-tech go, and an identity that can write the policy or the AWS admin)_ (Done 2026-10-13.)
+- [x] Verify with curl: a `surfboard/` and a `PrivateSurveyPlans/` file return 403, a `GBC2/` image 200, a signed link from the app works, and the surveyor logo shows. Confirm with roji-tech that no other app reads `uploads/`. (Done 2026-10-13.)
 
 ### Phase 1b: Plan number normalisation and the red copy key (I-024)
 
@@ -76,8 +76,8 @@ Decision (roji-tech, 2026-10-12): red copy key is `surfboard/<userId>/redcopy/<p
 
 ### Phase 3: GBC key layout
 
-- [ ] New GBC uploads go to `public/gbc/<edition>/{gallery,speakers,logos}/…` and `private/gbc/<edition>/qrcodes/…` (`gbc/utils/aws-s3.ts`); update the key-builder tests.
-- [ ] Sign ticket QR links on the "my ticket" and payment-success pages; then drop `GBC2/qrcodes/*` from the policy. Old `GBC2/{gallery,speakers,logos}/*` stay public.
+- [ ] New GBC uploads go to `public/gbc/<edition>/{gallery,speakers,logos}/…` and `private/gbc/<edition>/qrcodes/…` (`gbc/utils/aws-s3.ts`; key builders in `gbc/utils/storageKeys.ts`). QR codes done 2026-10-13 (PR for `feat/gbc-private-qr`); gallery, speakers and logos still use `GBC2/<folder>/`.
+- [x] Sign ticket QR links on the "my ticket" and payment-success pages and in the `tickets/lookup` and `payments/verify` responses (done 2026-10-13, PR for `feat/gbc-private-qr`); also gated the public `tickets/[ticketNumber]` route (I-028). Still to do: move the old `GBC2/qrcodes/*` files (group B), then drop them from the policy (v2). Old `GBC2/{gallery,speakers,logos}/*` stay public.
 - [ ] Final policy: `public/*` plus the old `GBC2/` public folders. Verify the public GBC pages by eye.
 
 ### Phase 5 (optional): move the legacy files
@@ -106,3 +106,9 @@ Not needed for privacy: the policy already makes them private and signed links w
 
 - [ ] `npx tsc --noEmit` and `npx vitest run` after each code phase; `docs/functions/*.md` updated for any changed function.
 - [x] **Unique index on plan numbers, prod.** Done 2026-10-13 (roji-tech go): partial unique index `SurfboardPlan_planNumberKey_live_uniq` on `planNumberKey` for non-deleted plans, created CONCURRENTLY, valid. Undo: `DROP INDEX CONCURRENTLY IF EXISTS "SurfboardPlan_planNumberKey_live_uniq"`. Not applied to staging, `test_db`, `dev_db` (11 AUO duplicates there). Prod runs old code until promotion, so one plan created that day has no key yet; re-run the backfill after promoting `main` to `prod`.
+- [x] **Tier 2 S3 cleanup.** Done 2026-10-13 (roji-tech go): 415 files deleted (263 orphan GBC QR codes, 152 older surfboard versions, 56.7 MB), each backed up first to `out/s3-trash-tier2-2026-10-13/`; verified gone. Every key was re-checked against prod, staging, `test_db` and `dev_db` first; 139 older surfboard files that a non-prod row still points at were kept (`out/s3-tier2-kept-referenced-2026-10-13.tsv`).
+- [x] **`main` promoted to `prod`** (#402, 2026-10-13, by roji-tech). Prod runs the file gateway code: gateways return 401 without a login, Red Copy webhook rejects without a secret.
+- [x] **Bucket policy v1.** Applied 2026-10-13 by roji-tech in the S3 console (`out/aws/bucket-policy-v1.json`; previous policy in `out/aws/bucket-policy-backup-2026-10-13.json`). Checked with unauthenticated requests: `GBC2/`, `reva/` and the five legacy `uploads/` files return 200; `surfboard/`, `uploads/PrivateSurveyPlans/`, other `uploads/` and `revaLogo.png` return 403.
+- [ ] **Re-run the plan number key backfill on prod** after promotion: one plan created 2026-10-13 on the old code has no `planNumberKey` (`scripts/backfill-plan-number-key.ts --apply --expect 1`, needs a go). _(Waiting on: roji-tech go)_
+
+- [ ] **Policy v2 and key layout.** Drop `reva/*` once nothing links to it, move GBC to `public/gbc/…` and `private/gbc/…qrcodes/` (sign ticket QR links), then the legacy file move with an old-to-new path mapping file. Dry-run mapping first. _(Not started)_

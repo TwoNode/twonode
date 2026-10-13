@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleApiError, ValidationError } from "@/lib/api/errors";
-import { lookupMyTicket } from "@/gbc/services/ticketService";
+import { lookupMyTicket, withSignedQr } from "@/gbc/services/ticketService";
 
 /** Public — ticket number + email is the real guest-auth pattern (GBCTicket has no relation to GBCUser). Backs "My Ticket". */
 export async function GET(req: NextRequest) {
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
         ticketNumber: "ticketNumber and email are required",
       });
     }
-    const data = await lookupMyTicket(ticketNumber, email);
+    const data = await withSignedQr(await lookupMyTicket(ticketNumber, email));
     return NextResponse.json({ success: true, data });
   } catch (err) {
     return handleApiError(err, {
