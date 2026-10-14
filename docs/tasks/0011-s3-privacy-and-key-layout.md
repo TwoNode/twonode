@@ -91,7 +91,7 @@ Not needed for privacy: the policy already makes them private and signed links w
 5. After a grace period (suggest 30 days) and a check that nothing logs requests for the old key, delete the old objects.
 
 - [ ] Group A: GBC public images `GBC2/{gallery,speakers,logos}/` to `public/gbc/<2.0 edition>/…` (about 90 files; rows in `gbc_gallery` 30 + 30 thumbnails, `gbc_speakers` 10, `gbc_sponsors` 6, plus the `…S3Key` columns).
-- [ ] Group B: GBC QR codes `GBC2/qrcodes/` to `private/gbc/<edition>/qrcodes/` (155 referenced rows in `gbc_tickets`; the other 263 files are orphans, see Phase 4).
+- [x] (Done 2026-10-14, roji-tech go: 155 objects copied to `private/gbc/2.0/qrcodes/`, sizes checked; guarded `UPDATE` committed only at exactly 155 rows in staging, `test_db`, `dev_db` and prod; backup `out/db/backups/gbc-qr-backup-prod-2026-10-14.csv`. Old `GBC2/qrcodes/` objects stay (still public) until deleted after a grace period or until the policy excludes them.) Group B: GBC QR codes `GBC2/qrcodes/` to `private/gbc/<edition>/qrcodes/` (155 referenced rows in `gbc_tickets`; the other 263 files are orphans, see Phase 4).
 - [ ] Group C: REVA files `reva/uploads/` and the 4 under `uploads/` to `private/reva/<requestId>/…` (about 64 files; `Property` and `OneTimeUserProperty` arrays and `report` JSON).
 - [ ] Group D: `uploads/PrivateSurveyPlans/` and the old `uploads/` root: leave in place (private, no references); archive or delete only after roji-tech decides.
 - [ ] Group E: `surfboard/`: not moved (ADR-0012 layout stays).
