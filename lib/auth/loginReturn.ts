@@ -25,3 +25,14 @@ export function loginUrlWithReturn(
   }
   return `${loginPath}?post_login_redirect_url=${encodeURIComponent(target)}`;
 }
+
+/** True for a path on this site (`/a/b?c=d`), never a full URL or a `//host` link. */
+export function isSafeReturnPath(value: string | null | undefined): boolean {
+  return (
+    typeof value === "string" &&
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !value.includes("\\") &&
+    value.length <= 2048
+  );
+}

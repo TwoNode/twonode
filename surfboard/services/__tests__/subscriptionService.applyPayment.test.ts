@@ -10,6 +10,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * loop so that, without the locks, concurrent calls WOULD interleave.
  */
 
+vi.mock("@/surfboard/services/subscriptionThanksService", () => ({
+  sendSubscriptionThanks: vi.fn(async () => {}),
+}));
+
 type Sub = Record<string, any>;
 const db = vi.hoisted(() => ({
   subs: new Map<string, any>(),
@@ -94,6 +98,8 @@ const {
   createOrUpdateSubscription,
   applyOneTimeSubscriptionPayment,
 } = await import("@/surfboard/services/subscriptionService");
+const { sendSubscriptionThanks } =
+  await import("@/surfboard/services/subscriptionThanksService");
 
 const at = (y: number, m: number, d: number, h = 0, mi = 0, s = 0) =>
   new Date(y, m - 1, d, h, mi, s);
@@ -421,5 +427,16 @@ describe("applyOneTimeSubscriptionPayment (a VERIFIED one-time payment)", () => 
 
     expect(results.filter((r) => r.status === "applied")).toHaveLength(1);
     expect(db.history).toHaveLength(1);
+  });
+
+  it("thanks the user once per applied payment, never for a repeat or a refused one", async () => {
+    vi.mocked(sendSubscriptionThanks).mockClear();
+
+    await pay();
+    await pay(); // already applied
+    await pay({ userId: "u2" }); // same reference, another account: refused
+
+    expect(sendSubscriptionThanks).toHaveBeenCalledTimes(1);
+    expect(sendSubscriptionThanks).toHaveBeenCalledWith("u1");
   });
 });
