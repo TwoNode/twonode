@@ -4927,3 +4927,34 @@ button {
     margin-top: 16px;
   }
 }
+
+/* Footer: back to top is an arrow only */
+.vf-bottom a.vf-top {
+  justify-content: center;
+  width: 44px;
+  border: 1px solid rgba(201, 210, 238, 0.28);
+  border-radius: 50%;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+}
+.vf-bottom a.vf-top:hover,
+.vf-bottom a.vf-top:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(219, 229, 255, 0.6);
+  transform: translateY(-2px);
+}
+.vf-bottom a.vf-top:focus-visible {
+  outline: 2px solid #dbe5ff;
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vf-bottom a.vf-top {
+    transition: none;
+  }
+  .vf-bottom a.vf-top:hover,
+  .vf-bottom a.vf-top:focus-visible {
+    transform: none;
+  }
+}
