@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SiteHeader } from "../components/SiteHeader";
 import { Footer } from "../components/Footer";
 import { MotionLayer } from "../components/MotionLayer";
+import { ArticleStepNav } from "../components/ArticleStepNav";
 
 export const metadata: Metadata = {
   title: "Our Story — TwoNode Technologies",
@@ -210,6 +211,9 @@ export default function V4StoryPage() {
             </div>
           </div>
         </section>
+        <ArticleStepNav
+          ids={["beginning", "learning", "growth", "beliefs", "future"]}
+        />
         <section className="story-cta">
           <div className="section-wrap story-cta-inner">
             <p className="eyebrow">THE WORK CONTINUES</p>
