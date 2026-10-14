@@ -69,6 +69,24 @@ export async function getAllRequestsWithUserByAdmin({
   return { properties, oneTimeRequests };
 }
 
+/**
+ * Only the columns the admin home needs to count requests (payment, fee and
+ * report state) for every request, one-time and regular. Counting itself is
+ * `summarizeRequests` in the admin request components.
+ */
+export async function getAdminRequestSummaryRows() {
+  const select = {
+    paymentStatus: true,
+    totalCost: true,
+    report: true,
+  } as const;
+  const [properties, oneTime] = await Promise.all([
+    prisma.property.findMany({ select }),
+    prisma.oneTimeUserProperty.findMany({ select }),
+  ]);
+  return { properties, oneTime };
+}
+
 export async function getRequestByReferenceByAdmin(reference: string) {
   const request = await prisma.property.findUnique({
     where: { reference },
