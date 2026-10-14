@@ -27,7 +27,7 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 - [x] **Vercel build hang fixed (2026-10-14).** Cause was `@arcgis/core` in the REVA spatial-record map; page now shows Coming Soon (PRs #448, #451). Main and prod deploy again (about 6 to 11 minutes).
 - [x] **Google site verification DNS records added** for twonodetechnologies.com in Vercel DNS (TXT at root, CNAME `wz4tswlnwfw6`), 2026-10-14. _(Waiting on: roji-tech to click Verify in Google)_
 - [ ] **Staging checks after the 2026-10-14 promotion.** Google sign-in return to a deep link; expiry reminder and thank-you emails from a real payment; a plan shared to another account (green record-copy chip); pillar labels at about 1:5000; viewer shows the plan number as its name; REVA redesign screens with real data. _(Waiting on: roji-tech or a staging login)_
-- [ ] **One-time request detail page shows the report form twice.** Found 2026-10-14, not yet fixed. _(Waiting on: nothing; next REVA fix)_
+- [x] **One-time request detail page showed the report form twice.** Removed the extra "Admin Actions" copy; `AdminReport` already holds the form (Done 2026-10-14, PR to `dev`). Check on staging with a one-time request.
 - [x] **/v4 mobile and tablet responsiveness** (PR #360, open for review). (Done 2026-10-12)
 
 ---
