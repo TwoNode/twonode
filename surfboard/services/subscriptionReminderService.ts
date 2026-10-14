@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { sendMail } from "@/utils/email";
 import { sendWhatsAppSubscriptionExpiryReminder } from "@/lib/whatsapp";
 import { getSiteUrl } from "@/lib/siteUrl";
+import { expiryReminderEmail } from "@/surfboard/utils/subscriptionEmails";
 
 const REMINDER_WINDOW_DAYS = 3;
 
@@ -52,59 +53,18 @@ export async function sendExpiringSubscriptionReminders(): Promise<{
 
     try {
       const renewUrl = `${getSiteUrl()}/surfboard/dashboard/subscription`;
+      const email = expiryReminderEmail({
+        firstName: sub.user.firstName,
+        daysLeft,
+        expiresAt: sub.currentEnd,
+        renewUrl,
+      });
       await sendMail({
         to: sub.user.email,
-        subject: `Your ${sub.planName} subscription is expiring soon`,
-        text: `Hi ${sub.user.firstName || ""},\n\nYour "${sub.planName}" subscription ${daysLeft <= 0 ? "expires today" : `expires in ${daysLeft} day${daysLeft === 1 ? "" : "s"}`} (${sub.currentEnd.toDateString()}). Renew now to keep uninterrupted access.\n\n— Surfboard`,
+        subject: email.subject,
+        text: email.text,
+        html: email.html,
         fromName: "Surfboard · TwoNode Technologies",
-        html: `
-          <!DOCTYPE html>
-          <html lang="en">
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>Subscription Expiring Soon</title>
-            </head>
-            <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1a1a1a;">
-              <div style="max-width: 520px; margin: 0 auto; padding: 24px 20px;">
-                <!-- Brand Header -->
-                <div style="padding: 20px 0 16px; border-bottom: 3px solid #233dff;">
-                  <span style="font-size: 16px; font-weight: 700; color: #141c4d; letter-spacing: .02em;">Surfboard</span>
-                  <span style="font-size: 13px; color: #888888; margin-left: 8px;">by TwoNode Technologies</span>
-                </div>
-
-                <!-- Body -->
-                <div style="padding: 28px 0 20px;">
-                  <p style="margin: 0 0 16px; font-size: 15px; color: #111827; font-weight: 500;">
-                    Hi ${sub.user.firstName || "there"},
-                  </p>
-                  <h2 style="margin: 0 0 16px; font-size: 18px; font-weight: 600; color: #111827;">
-                    Your ${sub.planName} subscription is expiring soon
-                  </h2>
-                  <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #374151;">
-                    Your <strong>${sub.planName}</strong> subscription ${daysLeft <= 0 ? "expires today" : `expires in ${daysLeft} day${daysLeft === 1 ? "" : "s"}`} on <strong>${sub.currentEnd.toDateString()}</strong>. Renew now to maintain uninterrupted access to all your survey plans and features.
-                  </p>
-                  
-                  <div style="margin: 28px 0;">
-                    <a href="${renewUrl}" style="background-color: #233dff; background-image: linear-gradient(135deg, #233dff, #141c4d); color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">
-                      Renew Subscription
-                    </a>
-                  </div>
-                </div>
-
-                <!-- Footer -->
-                <div style="padding: 20px 0; border-top: 1px solid #e5e5e5; color: #888888; font-size: 12px; line-height: 1.6;">
-                  <a href="https://www.twonodetechnologies.com" style="color: #141c4d; text-decoration: none; font-weight: 600;">TwoNode Technologies</a>
-                  &nbsp;&middot;&nbsp;
-                  <a href="mailto:info@twonodetechnologies.com" style="color: #888888; text-decoration: none;">info@twonodetechnologies.com</a>
-                  <p style="margin: 6px 0 0; color: #9ca3af; font-size: 11px;">
-                    This is an automated notification from Surfboard. Please do not reply directly to this email.
-                  </p>
-                </div>
-              </div>
-            </body>
-          </html>
-        `,
       });
 
       if (sub.user.phoneNumber) {
