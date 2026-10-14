@@ -4,7 +4,10 @@
  *   - 127 Surfboard surveyor accounts (role USER)
  *   - 2,358 survey plans (not deleted)
  *   - 11,493 pillars (survey beacons) on those plans
- *   - plans in Lagos, Ogun, Ondo, Oyo and the FCT; first plan 2025-07-29
+ *   - plans in Lagos, Ogun, Ondo, Oyo and the FCT
+ *   - "Since" is the year on the survey plans (`dateOnSurveyPlan`), not when they
+ *     were uploaded: 86 plans dated 2022, 1 dated 2021, 1 dated 1999 (a typo in
+ *     the data, ignored). 2022 is the first year with a real number of plans.
  * They are shown rounded down with a "+", so they stay true as the numbers
  * grow. Update this file by hand; nothing reads the database at runtime.
  */
@@ -15,5 +18,5 @@ export const proof = {
     { value: 11000, label: "survey beacons" },
   ],
   places: ["Lagos", "Ogun", "Ondo", "Oyo", "FCT"],
-  since: 2025,
+  since: 2022,
 } as const;

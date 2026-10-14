@@ -33,9 +33,6 @@ export function Footer() {
               <br />
               Build what it needs.
             </p>
-            <Link className="vf-cta" href="/v4/contact">
-              Let&apos;s talk <span>↗</span>
-            </Link>
             <ul className="vf-socials" aria-label="Social links">
               {SOCIALS.map((s) => (
                 <li key={s.label}>
@@ -45,6 +42,19 @@ export function Footer() {
                 </li>
               ))}
             </ul>
+            <nav className="vf-col vf-col-contact" aria-label="Reach us">
+              <h2 className="vf-reach">Reach us</h2>
+              <ul>
+                <li>
+                  <a href="mailto:info@twonodetechnologies.com">
+                    info@twonodetechnologies.com
+                  </a>
+                </li>
+                <li>
+                  <a href="tel:+2349160002740">+234 916 0002 740</a>
+                </li>
+              </ul>
+            </nav>
           </div>
 
           <nav className="vf-col vf-col-industries" aria-label="Industries">
@@ -54,11 +64,11 @@ export function Footer() {
                 <Link href="/v4/industries/surveying-geospatial">
                   Surveying &amp; geospatial
                 </Link>
-                <span className="status status-active">Active</span>
+                <span className="vf-state">Active now</span>
               </li>
               <li>
                 <Link href="/v4/industries/real-estate">Real estate</Link>
-                <span className="status status-next">Next</span>
+                <span className="vf-state">Up next</span>
               </li>
             </ul>
           </nav>
@@ -96,7 +106,6 @@ export function Footer() {
             </ul>
           </nav>
 
-          {/* One column on desktop and tablet; on a phone the two navs become separate grid cells. */}
           <div className="vf-col-group">
             <nav className="vf-col" aria-label="Company">
               <h2>Company</h2>
@@ -109,19 +118,6 @@ export function Footer() {
                 </li>
                 <li>
                   <Link href="/v4/contact">Contact</Link>
-                </li>
-              </ul>
-            </nav>
-            <nav className="vf-col vf-col-contact" aria-label="Reach us">
-              <h2 className="vf-reach">Reach us</h2>
-              <ul>
-                <li>
-                  <a href="mailto:info@twonodetechnologies.com">
-                    info@twonodetechnologies.com
-                  </a>
-                </li>
-                <li>
-                  <a href="tel:+2349160002740">+234 916 0002 740</a>
                 </li>
               </ul>
             </nav>
