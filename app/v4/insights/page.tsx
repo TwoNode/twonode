@@ -26,11 +26,6 @@ export default function V4InsightsPage() {
         <h1>
           Behind the <span>Build.</span>
         </h1>
-        <p className="story-lede">
-          Industry observations, product stories, and lessons from building —
-          documented as we learn them, not published because every website is
-          supposed to have a blog.
-        </p>
       </section>
       <section className="section-wrap v4-rows">
         {insights.map((post) => (

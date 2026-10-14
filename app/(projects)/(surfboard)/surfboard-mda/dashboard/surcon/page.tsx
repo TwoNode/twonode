@@ -1,6 +1,8 @@
 "use client";
 
 import { MediaLink } from "@/components/media";
+import { planFileDisplayName } from "@/surfboard/utils/planFileName";
+
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -719,6 +721,10 @@ export default function SurconAdminPage() {
               </p>
               <MediaLink
                 href={surfboardApi.files.getViewUrl(plan.redCopyFileUrl)}
+                name={planFileDisplayName({
+                  planNumber: plan.planNumber,
+                  filePath: plan.redCopyFileUrl!,
+                })}
                 className="inline-flex items-center gap-2 text-violet-600 hover:text-violet-700"
               >
                 <FileText className="w-4 h-4" />

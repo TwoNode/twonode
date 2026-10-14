@@ -43,6 +43,13 @@ interface TempPlan extends Omit<Plan, "status"> {
   planType: "CSV";
 }
 
+/**
+ * Pillar numbers show from about a 1:5000 map scale. MapLibre's zoom z has
+ * 156543.03 * cos(lat) / 2^(z+1) metres per pixel; 1:5000 on a 96 dpi screen is
+ * 1.32 m per pixel, which at Lagos (6.5°N) is zoom 15.8.
+ */
+const PILLAR_LABEL_MIN_ZOOM = 15.8;
+
 // Define the coordinate reference system for pillar conversion
 proj4.defs(
   "EPSG:26331",
@@ -1088,6 +1095,27 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({
           "circle-stroke-color": "#FFFFFF",
         },
       });
+      // Pillar numbers, from a 1:5000 scale (about zoom 15.8 at this latitude,
+      // 96 dpi screen) and closer: any wider and they would crowd the map.
+      map.current.addLayer({
+        id: "pillars-labels",
+        type: "symbol",
+        source: "pillarsLayer",
+        minzoom: PILLAR_LABEL_MIN_ZOOM,
+        layout: {
+          "text-field": ["to-string", ["get", "pillarNumber"]],
+          "text-size": 11,
+          "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+          "text-anchor": "bottom",
+          "text-offset": [0, -0.7],
+          "text-padding": 2,
+        },
+        paint: {
+          "text-color": "#7f1d1d",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1.5,
+        },
+      });
       const popup = new maplibregl.Popup({
         closeButton: true,
         closeOnClick: false,
@@ -1372,6 +1400,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({
       map.current?.setFilter("plans-outline", filter);
       map.current?.setFilter("plans-labels", filter);
       map.current?.setFilter("pillars-symbol", pillarFilter);
+      map.current?.setFilter("pillars-labels", pillarFilter);
 
       // Search highlight — a distinct layer on top of plans-outline, never
       // hiding anything; empty when there's no active search.

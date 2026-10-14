@@ -104,6 +104,8 @@ export async function GET(request: NextRequest) {
       request.url
     );
     const response = NextResponse.redirect(redirectPageUrl);
+    // The return page is used once.
+    response.cookies.delete("my_redirect_url");
     const responseWithCookie = await setEncryptedUserCookie(userData, response);
     return responseWithCookie;
   } catch (error) {

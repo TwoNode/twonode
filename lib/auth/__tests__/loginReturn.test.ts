@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loginUrlWithReturn } from "../loginReturn";
+import { isSafeReturnPath, loginUrlWithReturn } from "../loginReturn";
 
 describe("loginUrlWithReturn", () => {
   it("returns to the page the user was on, with its query", () => {
@@ -40,5 +40,24 @@ describe("loginUrlWithReturn", () => {
 
   it("falls back to the plain login path without a browser", () => {
     expect(loginUrlWithReturn("/reva/login")).toBe("/reva/login");
+  });
+});
+
+describe("isSafeReturnPath", () => {
+  it("accepts a path on this site", () => {
+    expect(isSafeReturnPath("/surfboard/dashboard/plans?tab=all")).toBe(true);
+  });
+  it("rejects anything that could leave the site", () => {
+    for (const v of [
+      "https://evil.test/x",
+      "//evil.test",
+      "/\\evil.test",
+      "javascript:1",
+      "",
+      null,
+      undefined,
+    ]) {
+      expect(isSafeReturnPath(v as string)).toBe(false);
+    }
   });
 });
