@@ -1,6 +1,8 @@
 "use client";
 
 import { MediaLink } from "@/components/media";
+import { planFileDisplayName } from "@/surfboard/utils/planFileName";
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -13,7 +15,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Upload, FileText, CheckCircle, AlertCircle, X, Eye } from "lucide-react";
+import {
+  Upload,
+  FileText,
+  CheckCircle,
+  AlertCircle,
+  X,
+  Eye,
+} from "lucide-react";
 import { surfboardApi } from "@/surfboard/apiClient";
 
 interface Plan {
@@ -312,6 +321,10 @@ export function RecordCopyUploadModal({
                         href={surfboardApi.files.getViewUrl(
                           hasExistingFile || hasUploadedFile!
                         )}
+                        name={planFileDisplayName({
+                          planNumber: plan.planNumber,
+                          filePath: (hasExistingFile || hasUploadedFile)!,
+                        })}
                         className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
                       >
                         <Eye className="w-3.5 h-3.5" /> View PDF
