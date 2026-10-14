@@ -23,6 +23,7 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 - [ ] **REVA review page: summary cards and tabs** (same as the all-requests page, without "Needs report"; PR to `dev`). _(Waiting on: merge, then a staging check)_
 - [ ] **REVA admin home redesign** (summary cards, needs-attention links, latest requests; PR to `dev`). _(Waiting on: merge, then a staging check)_
 - [ ] **Google sign-in returns to the page the user was on** (PR to `dev`: return cookie set on all login pages, lax, 15 min, cleared after use). _(Waiting on: merge, then a staging test with a Google account: open a deep link while signed out, sign in with Google, expect to land on it)_
+- [ ] **REVA spatial record page: ArcGIS web map is not accessible.** The page read a deleted file; now a React component (PR to `dev`) that shows a clear message. The web map item `9f45cec4…` returns 403 "Subscription is disabled, the item is not accessible" from ArcGIS Online (org TwoNodeSolution). _(Waiting on: roji-tech to renew or re-enable the ArcGIS Online subscription, or share the item publicly)_
 - [x] **/v4 mobile and tablet responsiveness** (PR #360, open for review). (Done 2026-10-12)
 
 ---
