@@ -15,14 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Upload,
-  FileText,
-  CheckCircle,
-  AlertCircle,
-  X,
-  Eye,
-} from "lucide-react";
+import { Upload, CheckCircle, AlertCircle, X, Eye } from "lucide-react";
 import { surfboardApi } from "@/surfboard/apiClient";
 
 interface Plan {
@@ -52,44 +45,6 @@ export function RecordCopyUploadModal({
     Record<string, { uploading: boolean; url?: string; error?: string }>
   >({});
   const [files, setFiles] = useState<Record<string, File>>({});
-
-  const handleUsePlanPdf = async (planId: string, pdfUrl: string) => {
-    const plan = selectedPlans.find((p) => p.id === planId);
-    if (!plan) return;
-
-    setUploadStatus((prev) => ({
-      ...prev,
-      [planId]: { uploading: true },
-    }));
-
-    try {
-      const updateResult = await surfboardApi.plans.updateRecordCopy(
-        planId,
-        pdfUrl
-      );
-      if (!updateResult.success) {
-        throw new Error(updateResult.error || "Failed to link record copy");
-      }
-      setUploadStatus((prev) => ({
-        ...prev,
-        [planId]: { uploading: false, url: pdfUrl },
-      }));
-      toast.success(`Record copy linked for ${plan.planNumber}`);
-    } catch (error: any) {
-      setUploadStatus((prev) => ({
-        ...prev,
-        [planId]: {
-          uploading: false,
-          error: error instanceof Error ? error.message : "Failed to link PDF",
-        },
-      }));
-      toast.error(
-        `Failed to link plan PDF: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
-    }
-  };
 
   const handleFileSelect = (planId: string, file: File | null) => {
     if (file) {
@@ -332,27 +287,6 @@ export function RecordCopyUploadModal({
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {plan.pdfFilePaths && plan.pdfFilePaths.length > 0 && (
-                        <div className="flex items-center justify-between text-xs bg-blue-50/50 dark:bg-white/5 border border-dashed border-blue-200 dark:border-white/10 rounded p-2">
-                          <div className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
-                            <FileText className="w-3.5 h-3.5 text-blue-600" />
-                            <span>Uploaded Survey Plan PDF available</span>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() =>
-                              handleUsePlanPdf(plan.id, plan.pdfFilePaths![0])
-                            }
-                            disabled={status?.uploading}
-                          >
-                            Use as Record Copy
-                          </Button>
-                        </div>
-                      )}
-
                       <div className="flex items-center gap-2">
                         <input
                           type="file"

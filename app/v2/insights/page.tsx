@@ -14,9 +14,8 @@ export default function InsightsPage() {
         Behind the Build.
       </h1>
       <p className="mt-6 max-w-xl leading-relaxed opacity-75">
-        Industry observations, product stories, and lessons from building —
-        documented as we learn them, not published because every website is
-        supposed to have a blog.
+        Industry observations, product stories, and lessons from building
+        documented as we learn them.
       </p>
 
       <div
