@@ -90,3 +90,37 @@ export function documentLabel(url: string, index: number): string {
     .trim();
   return name || `Document ${index + 1}`;
 }
+
+/** One colour per kind of request, used on the card chip and the avatar ring. */
+export const KIND_COLOR = { oneTime: "#7c3aed", regular: "#2563eb" } as const;
+
+/** A round avatar with the requester's initials, tinted with the kind's colour. */
+export function Avatar({
+  name,
+  color,
+  className,
+}: {
+  name: string;
+  color: string;
+  className?: string;
+}) {
+  const initials =
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase())
+      .join("") || "?";
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+        className
+      )}
+      style={{ backgroundColor: `${color}1F`, color }}
+    >
+      {initials}
+    </span>
+  );
+}
