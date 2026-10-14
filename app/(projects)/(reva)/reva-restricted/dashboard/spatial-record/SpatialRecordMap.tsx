@@ -1,6 +1,5 @@
 "use client";
 
-import "@arcgis/core/assets/esri/themes/light/main.css";
 import { useEffect, useRef, useState } from "react";
 import { useJsApiLoader } from "@react-google-maps/api";
 import {
@@ -110,6 +109,16 @@ export default function SpatialRecordMap() {
   useEffect(() => {
     let destroyed = false;
     let view: any;
+
+    // The ArcGIS theme is a very large stylesheet; fetching it from the CDN
+    // keeps it out of the production build.
+    const themeHref = `${ARCGIS_ASSETS}/esri/themes/light/main.css`;
+    if (!document.querySelector(`link[href="${themeHref}"]`)) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = themeHref;
+      document.head.appendChild(link);
+    }
 
     (async () => {
       try {

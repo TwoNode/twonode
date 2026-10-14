@@ -1,4 +1,4 @@
-import SpatialRecordMap from "./SpatialRecordMap";
+import SpatialRecordMap from "./SpatialRecordMapLoader";
 
 const SpatialRecord = () => (
   <div className="mx-auto w-full max-w-7xl p-4 sm:p-6">
