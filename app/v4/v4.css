@@ -4895,3 +4895,35 @@ button {
     font-size: 14px;
   }
 }
+
+/* Phones: a tighter hero so the animation starts higher on the first screen */
+@media (max-width: 680px) {
+  .hero {
+    padding-top: 36px;
+  }
+  .hero .eyebrow {
+    margin-bottom: 14px;
+  }
+  .hero h1 {
+    font-size: clamp(36px, 10.2vw, 46px);
+    letter-spacing: -1.1px;
+    line-height: 1.07;
+  }
+  .hero-lede {
+    margin: 14px 0 18px;
+    line-height: 1.65;
+  }
+  .hero-actions {
+    gap: 16px;
+  }
+  .hero-actions .button {
+    padding: 10px 13px;
+    gap: 18px;
+  }
+  .hero-foot {
+    margin-top: 20px;
+  }
+  .hero-art {
+    margin-top: 16px;
+  }
+}
