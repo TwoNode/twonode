@@ -39,8 +39,8 @@ export default async function V4InsightPage({
         <p className="eyebrow">
           <Link href="/v4/insights">← Insights</Link>
         </p>
-        <h1>{post.title}</h1>
-        <p className="story-lede">{post.excerpt}</p>
+        <h1 className="insight-title">{post.title}</h1>
+        <p className="story-lede insight-lede">{post.excerpt}</p>
         <div className="story-hero-note">
           <span className="tiny-line"></span>
           <span>
@@ -54,6 +54,7 @@ export default async function V4InsightPage({
           </span>
         </div>
       </section>
+
       <section className="story-body">
         <div className="section-wrap story-content">
           <aside className="story-index">
