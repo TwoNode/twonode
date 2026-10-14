@@ -142,7 +142,10 @@ const RequestList = ({
           const requester = requesterOf(request);
           const oneTime = isOneTime(request);
           const due = addDays(referenceDate(request), 1);
-          const overdue = new Date() > due;
+          // A finished request is not overdue, whatever its date.
+          const finished =
+            request.status === "Completed" || request.status === "Available";
+          const overdue = !finished && new Date() > due;
           const documents = request.documentsUrls ?? [];
           const report = request.report;
           const heading =
@@ -162,7 +165,7 @@ const RequestList = ({
                     : "border-border"
                 )}
               >
-                <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)_6.5rem_8.5rem_26rem] xl:items-center">
+                <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)_6.5rem_11rem_26rem] xl:items-center">
                   <div className="min-w-0">
                     <p className="line-clamp-2 text-sm font-semibold text-foreground">
                       {heading}
@@ -193,7 +196,10 @@ const RequestList = ({
                     {formatCurrency(request.totalCost)}
                   </p>
                   <p
-                    className={cn("text-xs", overdue && "font-medium")}
+                    className={cn(
+                      "text-xs whitespace-nowrap",
+                      overdue && "font-medium"
+                    )}
                     style={
                       overdue ? { color: REVA_COLORS.status.error } : undefined
                     }
