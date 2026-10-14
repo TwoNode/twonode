@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { PageShell } from "../../components/PageShell";
+import { ArticleStepNav } from "../../components/ArticleStepNav";
 import { getInsight, insights } from "../../data/insights";
 
 export function generateStaticParams() {
@@ -66,7 +67,7 @@ export default async function V4InsightPage({
             ))}
           </aside>
           <div className="story-article">
-            <section>
+            <section id="intro">
               {post.intro.map((para, i) => (
                 <p key={i}>{para}</p>
               ))}
@@ -85,6 +86,7 @@ export default async function V4InsightPage({
           </div>
         </div>
       </section>
+      <ArticleStepNav ids={["intro", ...post.sections.map((s) => s.id)]} />
       <section className="story-cta">
         <div className="section-wrap story-cta-inner">
           <p className="eyebrow">THE WORK CONTINUES</p>

@@ -4958,3 +4958,76 @@ button {
     transform: none;
   }
 }
+
+/* Insight articles on phones: back and forward arrows between sections */
+.step-nav {
+  display: none;
+}
+@media (max-width: 680px) {
+  .step-nav {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 15;
+    display: flex;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 999px;
+    background: var(--navy);
+    box-shadow: 0 8px 24px rgba(0, 11, 61, 0.28);
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+    transition:
+      opacity 0.25s,
+      transform 0.25s;
+  }
+  .step-nav.is-visible {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  .step-nav button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      opacity 0.2s;
+  }
+  .step-nav button:hover:not(:disabled),
+  .step-nav button:focus-visible {
+    background: rgba(255, 255, 255, 0.14);
+  }
+  .step-nav button:focus-visible {
+    outline: 2px solid #dbe5ff;
+    outline-offset: 1px;
+  }
+  .step-nav button:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+  .step-nav svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+@media (max-width: 680px) and (prefers-reduced-motion: reduce) {
+  .step-nav {
+    transition: none;
+    transform: none;
+  }
+}
