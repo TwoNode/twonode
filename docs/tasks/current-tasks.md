@@ -22,6 +22,7 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 - [ ] **REVA all-requests page: summary cards and tabs** (All, One-time, Regular, Needs report, In review, Approved; PR to `dev`). _(Waiting on: merge, then a staging check with real data)_
 - [ ] **REVA review page: summary cards and tabs** (same as the all-requests page, without "Needs report"; PR to `dev`). _(Waiting on: merge, then a staging check)_
 - [ ] **REVA admin home redesign** (summary cards, needs-attention links, latest requests; PR to `dev`). _(Waiting on: merge, then a staging check)_
+- [ ] **Google sign-in returns to the page the user was on** (PR to `dev`: return cookie set on all login pages, lax, 15 min, cleared after use). _(Waiting on: merge, then a staging test with a Google account: open a deep link while signed out, sign in with Google, expect to land on it)_
 - [x] **/v4 mobile and tablet responsiveness** (PR #360, open for review). (Done 2026-10-12)
 
 ---
