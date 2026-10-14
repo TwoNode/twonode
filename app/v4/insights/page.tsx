@@ -6,7 +6,7 @@ import { insights } from "../data/insights";
 export const metadata: Metadata = {
   title: "Behind the Build — TwoNode Technologies",
   description:
-    "Industry observations, product stories, and lessons from building — documented as we learn them.",
+    "Industry observations, product stories, and lessons from building documented as we learn them.",
 };
 
 const fmt = (iso: string) =>

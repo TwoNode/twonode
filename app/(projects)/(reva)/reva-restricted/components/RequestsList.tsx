@@ -103,7 +103,7 @@ const RequestList = ({
 }: RequestListProps) => {
   if (requests.length === 0) {
     return (
-      <div className="flex min-h-[320px] items-center justify-center rounded-xl border border-dashed border-border bg-surface">
+      <div className="flex min-h-80 items-center justify-center rounded-xl border border-dashed border-border bg-surface">
         <div className="text-center">
           <DocumentTextIcon className="mx-auto mb-3 h-12 w-12 text-muted-foreground/50" />
           <h3 className="mb-1 text-base font-medium text-foreground">
@@ -359,7 +359,7 @@ const RequestList = ({
                     <MediaLink
                       key={index}
                       href={revaApi.files.linkFor(url)}
-                      className="inline-flex max-w-[11rem] items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs text-foreground transition-colors hover:bg-surface-muted"
+                      className="inline-flex max-w-44 items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs text-foreground transition-colors hover:bg-surface-muted"
                     >
                       <DocumentTextIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                       <span className="truncate">

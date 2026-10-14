@@ -3,11 +3,9 @@ import { FC } from "react";
 import { getAnyRequestByReferenceForAdmin } from "@/reva/services/reportService";
 import InvalidReferencePage from "@/components/InvalidReferencePage";
 import UserRequestDataView from "./UserRequestDataView";
-import { AdminMiniHeader } from "../../components/AdminMiniHeader";
 import { RequestPageHeader } from "../../components/RequestPageHeader";
 import AdminReport from "./AdminReport";
 import { OneTimeRequestView } from "../components/OneTimeRequestView";
-import { AdminReportUpload } from "./AdminReportUpload";
 import { PDFDownloadButton } from "@/app/(projects)/(reva)/reva-restricted/dashboard/details/components/PDFDownloadButton";
 
 const ViewDetailsPage = async ({
@@ -58,14 +56,6 @@ const ViewDetailsPage = async ({
 
           <div className="mt-8">
             <AdminReport property={transformedProperty} user={user} />
-          </div>
-
-          <div className="mt-8 bg-gray-50 dark:bg-surface p-6 rounded-lg">
-            <AdminMiniHeader title="Admin Actions" />
-
-            <div className="mt-4">
-              <AdminReportUpload property={transformedProperty} user={user} />
-            </div>
           </div>
         </div>
       );
