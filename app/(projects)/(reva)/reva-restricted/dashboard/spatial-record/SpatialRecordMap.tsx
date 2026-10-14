@@ -517,7 +517,7 @@ export default function SpatialRecordMap() {
       </div>
 
       <div className="relative overflow-hidden rounded-xl border border-border">
-        <div ref={mapDiv} className="h-[75vh] min-h-[480px] w-full" />
+        <div ref={mapDiv} className="h-[75vh] min-h-120 w-full" />
         {!ready && !mapError && (
           <div className="absolute inset-0 flex items-center justify-center bg-surface text-sm text-muted-foreground">
             Loading map…
