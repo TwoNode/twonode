@@ -1,6 +1,8 @@
 "use client";
 
 import { MediaLink } from "@/components/media";
+import { planFileDisplayName } from "@/surfboard/utils/planFileName";
+
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -513,6 +515,10 @@ export default function RecordsIAdminPage() {
 
                 <MediaLink
                   href={surfboardApi.files.getViewUrl(plan.redCopyFileUrl)}
+                  name={planFileDisplayName({
+                    planNumber: plan.planNumber,
+                    filePath: plan.redCopyFileUrl!,
+                  })}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface rounded-lg border text-violet-600 hover:bg-violet-50 transition-colors"
                 >
                   {isImageUrl(plan.redCopyFileUrl) ? (

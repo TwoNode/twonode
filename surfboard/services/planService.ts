@@ -814,7 +814,12 @@ export async function getAllSharedSurfPlans(
   const [plans, total] = await Promise.all([
     prisma.surfboardPlan.findMany({
       where,
-      select: PLAN_LIST_SELECT,
+      // The owner's own plans: the record copy state and link show here too.
+      select: {
+        ...PLAN_LIST_SELECT,
+        redCopyStatus: true,
+        redCopyFileUrl: true,
+      },
       skip,
       take: pageSize,
       orderBy,
@@ -853,6 +858,9 @@ export async function getSharedWithMeSurfPlans(
       where,
       select: {
         ...PLAN_LIST_SELECT,
+        // Read only to say whether a record copy exists: the file itself is not
+        // shared with the person the plan was shared to (see below).
+        redCopyFileUrl: true,
         user: {
           select: {
             id: true,
@@ -871,7 +879,11 @@ export async function getSharedWithMeSurfPlans(
   ]);
 
   return {
-    plans: plans.map(withGeometry),
+    plans: plans.map(({ redCopyFileUrl, ...plan }) => ({
+      ...withGeometry(plan),
+      // Shown as "uploaded" (green) but the link is never sent.
+      hasRecordCopy: !!redCopyFileUrl,
+    })),
     total,
     totalPages: Math.ceil(total / pageSize),
   };
@@ -1138,12 +1150,18 @@ export async function findPlanNumberMatches(
   const own = exactRow && exactRow.userId === userId ? strip(exactRow) : null;
 
   const mine = await prisma.surfboardPlan.findMany({
-    where: { userId, deleted: false, ...(excludeId && { id: { not: excludeId } }) },
+    where: {
+      userId,
+      deleted: false,
+      ...(excludeId && { id: { not: excludeId } }),
+    },
     select,
     orderBy: { createdAt: "desc" },
   });
   const similar = mine
-    .filter((p) => p.planNumber !== typed && samePlanNumber(p.planNumber, typed))
+    .filter(
+      (p) => p.planNumber !== typed && samePlanNumber(p.planNumber, typed)
+    )
     .slice(0, 5)
     .map(strip);
 

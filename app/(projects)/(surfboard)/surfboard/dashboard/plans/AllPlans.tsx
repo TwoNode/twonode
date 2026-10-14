@@ -2,6 +2,8 @@
 "use client";
 
 import { MediaLink } from "@/components/media";
+import { planFileDisplayName } from "@/surfboard/utils/planFileName";
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -802,7 +804,8 @@ export default function AllPlans() {
       // `redCopyFileUrl` is the same field the row-level "Record Copy"
       // badge below already treats as the source of truth for "uploaded".
       label: "Red Copy",
-      value: plans.filter((p) => !!p.redCopyFileUrl).length,
+      value: plans.filter((p) => !!(p.redCopyFileUrl || p.hasRecordCopy))
+        .length,
       color: "text-blue-600 dark:text-blue-400",
       bgColor: "bg-blue-50 dark:bg-blue-500/10",
       icon: QrCode,
@@ -1808,6 +1811,10 @@ export default function AllPlans() {
                                   href={surfboardApi.files.getViewUrl(
                                     plan.redCopyFileUrl
                                   )}
+                                  name={planFileDisplayName({
+                                    planNumber: plan.planNumber,
+                                    filePath: plan.redCopyFileUrl!,
+                                  })}
                                   className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:underline cursor-pointer"
                                   title="View uploaded Record Copy PDF"
                                   onClick={(e) => e.stopPropagation()}
@@ -1817,6 +1824,16 @@ export default function AllPlans() {
                                     Record Copy (View PDF)
                                   </span>
                                 </MediaLink>
+                              ) : plan.hasRecordCopy ? (
+                                <span
+                                  className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"
+                                  title="Record copy uploaded (the file is not shared with you)"
+                                >
+                                  <CheckCircle className="w-3 h-3" />
+                                  <span className="text-xs">
+                                    Record Copy uploaded
+                                  </span>
+                                </span>
                               ) : (
                                 <span
                                   className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400"
@@ -1951,6 +1968,10 @@ export default function AllPlans() {
                                     href={surfboardApi.files.getViewUrl(
                                       plan.redCopyFileUrl
                                     )}
+                                    name={planFileDisplayName({
+                                      planNumber: plan.planNumber,
+                                      filePath: plan.redCopyFileUrl!,
+                                    })}
                                     className="flex items-center cursor-pointer text-rose-600 dark:text-rose-400"
                                   >
                                     <FileText className="w-4 h-4 mr-2 text-rose-600" />
@@ -2238,12 +2259,24 @@ export default function AllPlans() {
                           href={surfboardApi.files.getViewUrl(
                             plan.redCopyFileUrl
                           )}
+                          name={planFileDisplayName({
+                            planNumber: plan.planNumber,
+                            filePath: plan.redCopyFileUrl!,
+                          })}
                           className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-full hover:underline cursor-pointer"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <CheckCircle className="w-3 h-3" />
                           <span>Record Copy (View PDF)</span>
                         </MediaLink>
+                      ) : plan.hasRecordCopy ? (
+                        <span
+                          className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-full"
+                          title="Record copy uploaded (the file is not shared with you)"
+                        >
+                          <CheckCircle className="w-3 h-3" />
+                          <span>Record Copy uploaded</span>
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-full">
                           <Clock className="w-3 h-3" />
