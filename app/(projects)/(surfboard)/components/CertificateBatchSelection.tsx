@@ -61,6 +61,30 @@ interface BatchSubmissionModalProps {
   onRemovePlan?: (planId: string) => void;
 }
 
+/** The route answers bad input with "Invalid request" and puts the field messages in `details` (Zod's format()); show those instead. */
+function describeValidationFailure(res: {
+  error?: string;
+  code?: string;
+  details?: unknown;
+}): string | undefined {
+  if (res.code !== "VALIDATION_ERROR" || typeof res.details !== "object") {
+    return res.error;
+  }
+  const messages: string[] = [];
+  const walk = (node: unknown, path: string) => {
+    if (!node || typeof node !== "object") return;
+    for (const [key, value] of Object.entries(node)) {
+      if (key === "_errors" && Array.isArray(value)) {
+        for (const m of value) messages.push(path ? `${path}: ${m}` : `${m}`);
+      } else {
+        walk(value, path ? `${path}.${key}` : key);
+      }
+    }
+  };
+  walk(res.details, "");
+  return messages[0] || res.error;
+}
+
 export function BatchSubmissionModal({
   isOpen,
   onClose,
@@ -361,6 +385,11 @@ export function BatchSubmissionModal({
       }
 
       const finalOverall = parcels.length > 0 ? overallSum / parcels.length : 0;
+      if (!Number.isFinite(finalOverall)) {
+        throw new Error(
+          "This PDF could not be read as a record copy. Check that the record copy was uploaded, not the survey plan."
+        );
+      }
       let finalStatus: "VERIFIED" | "REVIEW" | "NOT_VERIFIED" = "REVIEW";
 
       if (
@@ -397,7 +426,8 @@ export function BatchSubmissionModal({
 
       if (!saveRes.success) {
         throw new Error(
-          saveRes.error || "Failed to save verification result to database."
+          describeValidationFailure(saveRes) ||
+            "Failed to save verification result to database."
         );
       }
 
