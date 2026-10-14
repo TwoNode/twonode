@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { canAccessRoute } from "@/reva/access/routes";
+import type { RevaPanelUser } from "@/reva/access/panelUser";
 import { Platform } from "@/utils/platform";
 import { revaApi } from "@/reva/apiClient";
+import { loginUrlWithReturn } from "@/lib/auth/loginReturn";
 
 interface UserData {
   platform: Platform;
@@ -15,10 +17,20 @@ interface UserData {
   lastName: string;
 }
 
-export function useRevaUserAccess() {
-  const [isUser, setIsUser] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userData, setUserData] = useState<UserData | null>(null);
+/**
+ * `initialUser` is the session the server layout already resolved. With it the
+ * panel is known on the first render (no loading screen, no request). Without
+ * it, the browser asks, as before.
+ */
+export function useRevaUserAccess(initialUser?: RevaPanelUser | null) {
+  const initialAccess = initialUser
+    ? canAccessRoute("/reva/dashboard", initialUser.role)
+    : null;
+  const [isUser, setIsUser] = useState<boolean | null>(initialAccess);
+  const [isLoading, setIsLoading] = useState(!initialUser);
+  const [userData, setUserData] = useState<UserData | null>(
+    (initialUser as UserData | null) ?? null
+  );
   const router = useRouter();
   const {
     user,
@@ -28,6 +40,14 @@ export function useRevaUserAccess() {
 
   useEffect(() => {
     let isMounted = true;
+    // The server already resolved the session: nothing to fetch. A signed-in
+    // user without access still gets sent to their own dashboard.
+    if (initialUser) {
+      if (!initialAccess) router.push("/reva/dashboard");
+      return () => {
+        isMounted = false;
+      };
+    }
     const checkUserAccess = async () => {
       if (!isMounted) return;
 
@@ -73,7 +93,7 @@ export function useRevaUserAccess() {
           );
           if (isMounted) {
             setIsUser(false);
-            router.push("/reva/login");
+            router.push(loginUrlWithReturn("/reva/login"));
           }
           return;
         }
@@ -100,7 +120,7 @@ export function useRevaUserAccess() {
         console.error("Error checking user access:", error);
         if (isMounted) {
           setIsUser(false);
-          router.push("/reva/login");
+          router.push(loginUrlWithReturn("/reva/login"));
         }
       } finally {
         if (isMounted) {

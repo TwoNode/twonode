@@ -28,6 +28,8 @@ import Link from "next/link";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
 import { Platform } from "@/utils/platform";
+import SurfboardLoading from "@/surfboard/components/SurfboardLoading";
+import type { SurfboardPanelInitial } from "@/surfboard/access/panelInitial";
 import {
   DashboardSearch,
   type DashboardSearchResult,
@@ -132,7 +134,9 @@ function SurfboardUserDashboardNavbar({
       <UserAccountMenu
         name={fullName}
         email={user?.email}
-        picture={user?.picture}
+        picture={
+          user?.picture ? surfboardApi.files.linkFor(user.picture) : undefined
+        }
         roleLabel="Surveyor"
         profileHref="/surfboard/dashboard/settings"
         settingsHref="/surfboard/dashboard/settings"
@@ -158,12 +162,17 @@ function SurfboardUserDashboardNavbar({
 
 export default function SurfboardUserPanelLayout({
   children,
+  initial,
 }: {
   children: React.ReactNode;
+  /** Read on the server by the route layout; when null the browser checks, behind a skeleton. */
+  initial?: SurfboardPanelInitial | null;
 }) {
-  const [hasSubscriptionAccess, setHasSubscriptionAccess] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [hasSubscriptionAccess, setHasSubscriptionAccess] = useState(
+    initial?.hasSubscriptionAccess ?? true
+  );
+  const [isLoading, setIsLoading] = useState(!initial);
+  const [user, setUser] = useState<any>(initial?.user ?? null);
   const sidebar = useStore(useSidebar, (x) => x);
   const router = useRouter();
   useNativeAuthRefresh(Platform.SURFBOARD);
@@ -185,6 +194,8 @@ export default function SurfboardUserPanelLayout({
   }
 
   useEffect(() => {
+    // The server already answered (same lookups as the API call below).
+    if (initial) return;
     const checkSubscription = async () => {
       try {
         console.log("--- Checking subscription access...");
@@ -300,18 +311,7 @@ export default function SurfboardUserPanelLayout({
   });
 
   if (isLoading || !sidebar) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-blue-200">
-        <div className="h-20 w-20 relative">
-          <img
-            src="/surfboard/surf_logo.svg"
-            alt="Surfboard Logo"
-            className="w-8/12 h-8/12 m-auto object-contain absolute inset-0"
-          />
-          <div className="animate-spin rounded-full h-20 w-20 border-t-2 border-b-2 border-blue-700"></div>
-        </div>
-      </div>
-    );
+    return <SurfboardLoading />;
   }
 
   return (
@@ -344,7 +344,11 @@ export default function SurfboardUserPanelLayout({
         >
           <Sidebar
             items={menuList}
-            userImageUrl={user?.picture}
+            userImageUrl={
+              user?.picture
+                ? surfboardApi.files.linkFor(user.picture)
+                : undefined
+            }
             userName={user?.firstName || user?.given_name}
             userRole="Surveyor"
             colorPalette={SURFBOARD_COLORS}
@@ -365,7 +369,7 @@ export default function SurfboardUserPanelLayout({
             }
           />
         </div>
-        <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
+        <div className="relative flex-1 p-4 overflow-x-hidden overflow-y-auto">
           <VerificationNagBanner
             platform={Platform.SURFBOARD}
             verifyHref="/surfboard/verify-email"

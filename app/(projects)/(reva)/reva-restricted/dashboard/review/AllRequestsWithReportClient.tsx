@@ -2,11 +2,25 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import RequestList from "../../components/RequestsList";
-import { AdminMiniHeader } from "../../components/AdminMiniHeader";
 import SearchFilters, {
   SearchFilters as SearchFiltersType,
 } from "../../components/SearchFilters";
 import { Pagination } from "@/components/ui/pagination";
+import { RequestTabs } from "../../components/RequestTabs";
+import {
+  RequestStatCards,
+  type StatCard,
+} from "../../components/RequestStatCards";
+import {
+  applyRequestTab,
+  reportStateOf,
+  summarizeRequests,
+  type RequestTab,
+} from "../../components/requestStats";
+import {
+  RequestViewToggle,
+  useRequestView,
+} from "../../components/requestView";
 
 const PAGE_SIZE = 10;
 
@@ -65,14 +79,14 @@ const AllRequestsWithReportClient: React.FC<
     hasReport: null,
     isApproved: null,
   });
-  const [oneTimePage, setOneTimePage] = useState(1);
-  const [requestsPage, setRequestsPage] = useState(1);
+  const [view, setView] = useRequestView();
+  const [tab, setTab] = useState<RequestTab>("all");
+  const [page, setPage] = useState(1);
 
   // A filter change invalidates whatever page either section was showing.
   useEffect(() => {
-    setOneTimePage(1);
-    setRequestsPage(1);
-  }, [filters]);
+    setPage(1);
+  }, [filters, tab]);
 
   const filteredData = useMemo(() => {
     let filtered = [...initialData];
@@ -251,29 +265,96 @@ const AllRequestsWithReportClient: React.FC<
   };
 
   const totalCount = initialData.length + initialOneTimeRequests.length;
+
+  // Cards count everything; tabs count what the search filters leave.
+  const summary = useMemo(
+    () => summarizeRequests(initialOneTimeRequests, initialData),
+    [initialData, initialOneTimeRequests]
+  );
+  const visible = applyRequestTab(
+    tab,
+    filteredData.filteredOneTime,
+    filteredData.filtered
+  );
   const filteredCount =
     filteredData.filtered.length + filteredData.filteredOneTime.length;
+  const inFiltered = (state: ReturnType<typeof reportStateOf>) =>
+    [...filteredData.filtered, ...filteredData.filteredOneTime].filter(
+      (r) => reportStateOf(r) === state
+    ).length;
 
-  const oneTimeTotalPages = Math.max(
-    1,
-    Math.ceil(filteredData.filteredOneTime.length / PAGE_SIZE)
-  );
-  const pagedOneTime = filteredData.filteredOneTime.slice(
-    (oneTimePage - 1) * PAGE_SIZE,
-    oneTimePage * PAGE_SIZE
-  );
+  const tabs: { id: RequestTab; label: string; count: number }[] = [
+    { id: "all", label: "All", count: filteredCount },
+    {
+      id: "oneTime",
+      label: "One-time",
+      count: filteredData.filteredOneTime.length,
+    },
+    { id: "regular", label: "Regular", count: filteredData.filtered.length },
+    { id: "review", label: "In review", count: inFiltered("review") },
+    { id: "approved", label: "Approved", count: inFiltered("approved") },
+  ];
 
-  const requestsTotalPages = Math.max(
-    1,
-    Math.ceil(filteredData.filtered.length / PAGE_SIZE)
+  const naira = (n: number) =>
+    new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      maximumFractionDigits: 0,
+    }).format(n);
+
+  const cards: StatCard[] = [
+    {
+      id: "total",
+      label: "With a report",
+      value: String(summary.total),
+      hint: `${summary.oneTime} one-time · ${summary.regular} regular`,
+      key: "all",
+    },
+    {
+      id: "review",
+      label: "In review",
+      value: String(summary.inReview),
+      hint: "Awaiting approval",
+      key: "review",
+    },
+    {
+      id: "approved",
+      label: "Approved",
+      value: String(summary.approved),
+      hint: "Report approved",
+      key: "approved",
+    },
+    {
+      id: "unpaid",
+      label: "Unpaid",
+      value: String(summary.unpaid),
+      hint: "Waiting for payment",
+    },
+    {
+      id: "fees",
+      label: "Fees paid",
+      value: naira(summary.feesPaid),
+      hint: "From paid requests",
+    },
+  ];
+
+  // One list per tab; "All" mixes both kinds, newest activity first.
+  const rows = [...visible.oneTime, ...visible.regular].sort(
+    (a, b) =>
+      new Date(b.updatedAt || b.createdAt || 0).getTime() -
+      new Date(a.updatedAt || a.createdAt || 0).getTime()
   );
-  const pagedRequests = filteredData.filtered.slice(
-    (requestsPage - 1) * PAGE_SIZE,
-    requestsPage * PAGE_SIZE
-  );
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pagedRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">
+    <div className="mx-auto flex flex-col p-6 max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-6xl">
+      <RequestStatCards
+        cards={cards}
+        activeKey={tab}
+        onSelect={(k) => setTab(k as RequestTab)}
+      />
+
       <SearchFilters
         onSearch={handleSearch}
         onClear={handleClear}
@@ -281,58 +362,29 @@ const AllRequestsWithReportClient: React.FC<
         filteredCount={filteredCount}
       />
 
-      {filteredData.filteredOneTime.length > 0 && (
-        <section className="mb-8">
-          <AdminMiniHeader
-            title={
-              <>
-                OneTime Requests with Report &nbsp;{" "}
-                <small> ( {filteredData.filteredOneTime.length} )</small>
-              </>
-            }
-          />
-          <RequestList requests={pagedOneTime} />
-          {oneTimeTotalPages > 1 && (
-            <div className="mt-3 flex justify-end">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <RequestTabs tabs={tabs} value={tab} onChange={setTab} />
+        <RequestViewToggle view={view} onChange={setView} />
+      </div>
+
+      {rows.length > 0 ? (
+        <section className="flex flex-col gap-4">
+          <RequestList requests={pagedRows} showStats={false} view={view} />
+          {totalPages > 1 && (
+            <div className="flex justify-end">
               <Pagination
-                page={oneTimePage}
-                totalPages={oneTimeTotalPages}
-                onPageChange={setOneTimePage}
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
               />
             </div>
           )}
         </section>
+      ) : (
+        <div className="rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
+          <p>No requests with reports found matching your criteria.</p>
+        </div>
       )}
-
-      <section className="info-section mb-6 flex flex-col gap-4">
-        <AdminMiniHeader
-          title={
-            <>
-              All Requests with Report &nbsp;{" "}
-              <small> ( {filteredData.filtered.length} )</small>
-            </>
-          }
-        />
-
-        {filteredData.filtered.length > 0 ? (
-          <>
-            <RequestList requests={pagedRequests} />
-            {requestsTotalPages > 1 && (
-              <div className="flex justify-end">
-                <Pagination
-                  page={requestsPage}
-                  totalPages={requestsTotalPages}
-                  onPageChange={setRequestsPage}
-                />
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <p>No requests with reports found matching your criteria.</p>
-          </div>
-        )}
-      </section>
     </div>
   );
 };

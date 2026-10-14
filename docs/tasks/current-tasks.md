@@ -16,6 +16,11 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 - [x] **S3 bucket policy v1** applied in the console by roji-tech (public read only on `GBC2/*`, `reva/*` and 5 legacy `uploads/` files); anonymous checks passed. (Done 2026-10-13) The ACL blocks (Block public ACLs, Ignore public ACLs) are still off. _(Waiting on: AWS admin / roji-tech)_
 - [x] **Surveyor logo through the file gateway.** Settings page uses the gateway (#370); nothing else shows the raw URL. (Done 2026-10-13) Worth a look on prod that the logo still shows.
 - [x] **Remove `REVA_AWS_*` from Vercel.** Removed from production, preview and development; values backed up to `out/`. (Done 2026-10-13)
+- [ ] **Surveyor picture in the Surfboard dashboard** went through the raw bucket URL (403); now the gateway (PR #423, I-030). _(Waiting on: merge dev → main → prod)_
+- [x] **Surfboard user dashboard: no spinner screen.** Server reads name and subscription, panel draws on first paint, skeleton as fallback (PR to `dev`). _(Waiting on: merge, then a staging check with a subscribed and an unsubscribed surveyor)_
+- [ ] **REVA admin request screens redesign** (list cards, section headers, detail pages; presentation only, PR to `dev`). _(Waiting on: merge, then a staging check with a REVA super admin)_
+- [ ] **REVA all-requests page: summary cards and tabs** (All, One-time, Regular, Needs report, In review, Approved; PR to `dev`). _(Waiting on: merge, then a staging check with real data)_
+- [ ] **REVA review page: summary cards and tabs** (same as the all-requests page, without "Needs report"; PR to `dev`). _(Waiting on: merge, then a staging check)_
 - [x] **/v4 mobile and tablet responsiveness** (PR #360, open for review). (Done 2026-10-12)
 
 ---

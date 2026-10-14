@@ -1,44 +1,23 @@
 "use client";
 
 import React from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { format, addDays } from "date-fns";
-import {
-  MapPinIcon,
-  UserIcon,
-  EnvelopeIcon,
-  PhoneIcon,
-  DocumentTextIcon,
-  EyeIcon,
-  ArrowDownTrayIcon,
-  CalendarIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  ExclamationCircleIcon,
-  BanknotesIcon,
-  BuildingOfficeIcon,
-  HomeModernIcon,
-  ShoppingBagIcon,
-  GlobeAltIcon,
-} from "@heroicons/react/24/outline";
+import { DocumentTextIcon, EyeIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { REVA_COLORS, revaStatusBadgeStyle } from "@/reva/colors";
+import { REVA_COLORS } from "@/reva/colors";
 import { MediaLink } from "@/components/media";
 import { revaApi } from "@/reva/apiClient";
-
-// Custom Naira icon component
-const NairaIcon = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path d="M7 6V4H9V6H11V4H13V6H15V8H13V16H15V18H13V20H11V18H9V20H7V18H5V16H7V8H5V6H7ZM9 8V16H11V8H9Z" />
-  </svg>
-);
+import { cn } from "@/lib/utils";
+import {
+  Avatar,
+  Fact,
+  KIND_COLOR,
+  StatusPill,
+  documentLabel,
+  toneForPayment,
+  toneForStatus,
+} from "./requestUi";
 
 interface Request {
   id: string;
@@ -81,155 +60,56 @@ interface RequestListProps {
   requests: Request[];
   title?: string;
   showStats?: boolean;
+  /** `grid` (cards, the default) or `list` (one compact row per request). */
+  view?: "grid" | "list";
 }
+
+const isOneTime = (request: Request) =>
+  !!(request?.isOneTimeRequest || request?.requester || request?.email);
+
+const requesterOf = (request: Request) =>
+  isOneTime(request)
+    ? {
+        name: request.requester || "OneTime User",
+        email: request.email,
+        phone: request.userPhoneNumber,
+      }
+    : {
+        name: request.user
+          ? `${request.user.firstName} ${request.user.lastName}`
+          : "Unknown User",
+        email: request.user?.email,
+        phone: null,
+      };
+
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+
+const referenceDate = (request: Request) => {
+  const value = request.updatedAt || request.createdAt;
+  return value ? new Date(value) : new Date();
+};
 
 const RequestList = ({
   requests,
   title,
   showStats = true,
+  view = "grid",
 }: RequestListProps) => {
-  const getPropertyIcon = (propertyType?: string) => {
-    switch (propertyType?.toLowerCase()) {
-      case "commercial":
-        return (
-          <ShoppingBagIcon
-            className="h-5 w-5"
-            style={{ color: REVA_COLORS.primary.light }}
-          />
-        );
-      case "apartment":
-        return (
-          <BuildingOfficeIcon
-            className="h-5 w-5"
-            style={{ color: REVA_COLORS.secondary.light }}
-          />
-        );
-      default:
-        return (
-          <HomeModernIcon
-            className="h-5 w-5"
-            style={{ color: REVA_COLORS.status.success }}
-          />
-        );
-    }
-  };
-
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case "Available":
-      case "Completed":
-        return revaStatusBadgeStyle("success");
-      case "Processing":
-        return revaStatusBadgeStyle("warning");
-      default:
-        return revaStatusBadgeStyle("info");
-    }
-  };
-
-  const getPaymentStatusColor = (status?: string) => {
-    switch (status) {
-      case "Paid":
-        return revaStatusBadgeStyle("success");
-      case "Unpaid":
-        return revaStatusBadgeStyle("error");
-      default:
-        return revaStatusBadgeStyle("info");
-    }
-  };
-
-  const getStatusIcon = (status?: string) => {
-    switch (status) {
-      case "Available":
-      case "Completed":
-        return <CheckCircleIcon className="h-4 w-4" />;
-      case "Processing":
-        return <ClockIcon className="h-4 w-4" />;
-      default:
-        return <ExclamationCircleIcon className="h-4 w-4" />;
-    }
-  };
-
-  const getPaymentStatusIcon = (status?: string) => {
-    switch (status) {
-      case "Paid":
-        return <BanknotesIcon className="h-4 w-4" />;
-      case "Unpaid":
-        return <ExclamationCircleIcon className="h-4 w-4" />;
-      default:
-        return <ExclamationCircleIcon className="h-4 w-4" />;
-    }
-  };
-
-  const getPropertyType = (name?: string | null) => {
-    if (!name) return "Unknown";
-    if (name.toLowerCase().includes("apartment")) return "Apartment";
-    if (
-      name.toLowerCase().includes("commercial") ||
-      name.toLowerCase().includes("plaza")
-    )
-      return "Commercial";
-    return "Residential";
-  };
-
-  const getRequestType = (request: Request) => {
-    return request?.isOneTimeRequest || request?.requester || request?.email
-      ? "OneTime"
-      : "Regular";
-  };
-
-  const getRequesterInfo = (request: Request) => {
-    if (request?.isOneTimeRequest || request?.requester || request?.email) {
-      return {
-        name: request.requester || "OneTime User",
-        email: request.email,
-        phone: request.userPhoneNumber,
-        type: "OneTime",
-      };
-    }
-    return {
-      name: request.user
-        ? `${request.user.firstName} ${request.user.lastName}`
-        : "Unknown User",
-      email: request.user?.email,
-      phone: null,
-      type: "Regular",
-    };
-  };
-
-  const isReportReady = (request: Request) => {
-    return (
-      request?.report &&
-      typeof request.report === "object" &&
-      "isApproved" in request.report &&
-      request.report?.isApproved === true
-    );
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const getDateForFormatting = (request: Request) => {
-    const dateString = request.updatedAt || request.createdAt;
-    return dateString ? new Date(dateString) : new Date();
-  };
-
   if (requests.length === 0) {
     return (
-      <div className="min-h-[400px] bg-linear-to-b from-gray-50 to-gray-100 flex items-center justify-center rounded-lg dark:from-background dark:to-background">
+      <div className="flex min-h-[320px] items-center justify-center rounded-xl border border-dashed border-border bg-surface">
         <div className="text-center">
-          <div className="mx-auto h-24 w-24 text-gray-300 mb-4">
-            <DocumentTextIcon className="h-full w-full" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <DocumentTextIcon className="mx-auto mb-3 h-12 w-12 text-muted-foreground/50" />
+          <h3 className="mb-1 text-base font-medium text-foreground">
             No requests found
           </h3>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             No property requests match your criteria.
           </p>
         </div>
@@ -237,391 +117,312 @@ const RequestList = ({
     );
   }
 
+  const oneTimeCount = requests.filter(isOneTime).length;
+  const regularCount = requests.length - oneTimeCount;
+
   return (
-    <div className="space-y-6">
-      {/* Header with Stats */}
+    <div className="space-y-4">
       {showStats && (
-        <div className="bg-white dark:bg-surface rounded-lg shadow-sm border p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {title || "Property Requests"}
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Showing {requests.length}{" "}
-                {requests.length === 1 ? "request" : "requests"}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge
-                variant="outline"
-                style={{
-                  backgroundColor: `${REVA_COLORS.primary.light}1A`,
-                  color: REVA_COLORS.primary.light,
-                }}
-              >
-                {
-                  requests.filter((r) => !r.isOneTimeRequest && !r.requester)
-                    .length
-                }{" "}
-                Regular
-              </Badge>
-              <Badge
-                variant="outline"
-                style={{
-                  backgroundColor: `${REVA_COLORS.secondary.light}1A`,
-                  color: REVA_COLORS.secondary.dark,
-                }}
-              >
-                {
-                  requests.filter((r) => r.isOneTimeRequest || r.requester)
-                    .length
-                }{" "}
-                OneTime
-              </Badge>
-            </div>
-          </div>
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
+          <p className="text-sm text-muted-foreground">
+            {title ? `${title}: ` : ""}Showing {requests.length}{" "}
+            {requests.length === 1 ? "request" : "requests"}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {regularCount} regular · {oneTimeCount} one-time
+          </p>
         </div>
       )}
 
-      {/* Requests Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <ul
+        className={cn(
+          "grid grid-cols-1 gap-4",
+          view === "grid" ? "xl:grid-cols-2" : "gap-3"
+        )}
+      >
         {requests.map((request) => {
-          const propertyType = getPropertyType(request.title);
-          const requesterInfo = getRequesterInfo(request);
-          const requestType = getRequestType(request);
-          const reportReady = isReportReady(request);
+          const requester = requesterOf(request);
+          const oneTime = isOneTime(request);
+          const kindColor = oneTime ? KIND_COLOR.oneTime : KIND_COLOR.regular;
+          const due = addDays(referenceDate(request), 1);
+          // A finished request is not overdue, whatever its date.
+          const finished =
+            request.status === "Completed" || request.status === "Available";
+          const overdue = !finished && new Date() > due;
+          const documents = request.documentsUrls ?? [];
+          const report = request.report;
+          const heading =
+            request.address ||
+            request.title ||
+            request.description ||
+            "Untitled request";
 
-          return (
-            <Card
-              key={request.id}
-              className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg"
-              style={
-                request?.deleted
-                  ? {
-                      backgroundColor: `${REVA_COLORS.status.error}0D`,
-                      borderColor: `${REVA_COLORS.status.error}33`,
-                      borderWidth: 1,
-                    }
-                  : undefined
-              }
-            >
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-50 dark:bg-white/5 rounded-lg">
-                      {getPropertyIcon(propertyType)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge
-                          variant="outline"
-                          style={
-                            requestType === "OneTime"
-                              ? {
-                                  backgroundColor: `${REVA_COLORS.secondary.light}1A`,
-                                  color: REVA_COLORS.secondary.dark,
-                                }
-                              : {
-                                  backgroundColor: `${REVA_COLORS.primary.light}1A`,
-                                  color: REVA_COLORS.primary.light,
-                                }
-                          }
-                        >
-                          {requestType}
-                        </Badge>
-                        {reportReady && (
-                          <Badge style={revaStatusBadgeStyle("success")}>
-                            <CheckCircleIcon className="h-3 w-3 mr-1" />
-                            Approved
-                          </Badge>
-                        )}
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-[#008cff] transition-colors">
-                        {request.title ||
-                          request.description ||
-                          "Untitled Request"}
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        REF: {request.reference}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-                {/* Status Badges */}
-                <div className="flex flex-wrap gap-2">
-                  <Badge style={getStatusColor(request.status || undefined)}>
-                    {getStatusIcon(request.status || undefined)}
-                    {request.status}
-                  </Badge>
-                  <Badge
-                    style={getPaymentStatusColor(
-                      request.paymentStatus || undefined
-                    )}
-                  >
-                    {getPaymentStatusIcon(request.paymentStatus || undefined)}
-                    {request.paymentStatus}
-                  </Badge>
-                </div>
-
-                {/* Requester Information */}
-                <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <UserIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Requester
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-medium">{requesterInfo.name}</span>
-                    </div>
-                    {requesterInfo.email && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <EnvelopeIcon className="h-4 w-4" />
-                        <span>{requesterInfo.email}</span>
-                      </div>
-                    )}
-                    {requesterInfo.phone && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <PhoneIcon className="h-4 w-4" />
-                        <span>{requesterInfo.phone}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Property Details */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <MapPinIcon className="h-4 w-4 text-gray-400" />
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Address
-                        </p>
-                        <p className="text-sm text-gray-900 dark:text-white">
-                          {request.address}
-                        </p>
-                        {request.lga && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {request.lga}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Coordinates */}
-                    {(request.lat || request.lng) && (
-                      <div className="flex items-center gap-2">
-                        <GlobeAltIcon className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Coordinates
-                          </p>
-                          <p className="text-sm text-gray-900 dark:text-white">
-                            {request.lat && request.lng
-                              ? `${request.lat.toFixed(
-                                  6
-                                )}, ${request.lng.toFixed(6)}`
-                              : request.lat
-                                ? `Lat: ${request.lat.toFixed(6)}`
-                                : `Lng: ${request.lng?.toFixed(6)}`}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {request.parcelId && (
-                      <div className="flex items-center gap-2">
-                        <DocumentTextIcon className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Parcel ID
-                          </p>
-                          <p className="text-sm text-gray-900 dark:text-white">
-                            {request.parcelId}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <NairaIcon className="h-4 w-4 text-gray-400" />
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Total Cost
-                        </p>
-                        <p
-                          className="text-lg font-bold"
-                          style={{ color: REVA_COLORS.primary.light }}
-                        >
-                          {formatCurrency(request.totalCost)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-gray-400" />
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          {request.updatedAt ? "Last Updated" : "Created"}
-                        </p>
-                        <p className="text-sm text-gray-900 dark:text-white">
-                          {format(
-                            getDateForFormatting(request),
-                            "dd MMM yyyy, hh:mm a"
-                          )}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <ClockIcon className="h-4 w-4 text-gray-400" />
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Due Date
-                        </p>
-                        <p
-                          className="text-sm"
-                          style={{
-                            color:
-                              new Date() >
-                              addDays(getDateForFormatting(request), 1)
-                                ? REVA_COLORS.status.error
-                                : REVA_COLORS.gray[900],
-                          }}
-                        >
-                          {format(
-                            addDays(getDateForFormatting(request), 1),
-                            "dd MMM yyyy, hh:mm a"
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Documents Section */}
-                {request.documentsUrls.length > 0 && (
-                  <div className="border-t pt-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <DocumentTextIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Supporting Documents
-                      </span>
-                      <Badge variant="outline" className="text-xs">
-                        {request.documentsUrls.length}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {request.documentsUrls
-                        .slice(0, 4)
-                        .map((url: string, index: number) => (
-                          <MediaLink
-                            key={index}
-                            href={revaApi.files.linkFor(url)}
-                            className="flex items-center gap-2 p-2 text-sm text-[#008cff] hover:text-[#032740] hover:bg-[#008cff]/10 rounded-md transition-colors"
-                          >
-                            <ArrowDownTrayIcon className="h-3 w-3" />
-                            <span className="truncate">
-                              {url
-                                .split("/")
-                                .pop()
-                                ?.replace(/_/g, " ")
-                                .replace(".pdf", "") || `Document ${index + 1}`}
-                            </span>
-                          </MediaLink>
-                        ))}
-                      {request.documentsUrls.length > 4 && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 col-span-full">
-                          +{request.documentsUrls.length - 4} more documents
-                        </div>
-                      )}
-                    </div>
-                  </div>
+          if (view === "list") {
+            return (
+              <li
+                key={request.id}
+                className={cn(
+                  "rounded-xl border bg-white px-4 py-3 transition-shadow hover:shadow-md dark:bg-surface",
+                  request?.deleted
+                    ? "border-red-200 bg-red-50/40"
+                    : "border-border"
                 )}
-
-                {/* Report Status */}
-                <div className="border-t pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {request.report ? (
-                        request.report?.isApproved ? (
-                          <Badge style={revaStatusBadgeStyle("success")}>
-                            <CheckCircleIcon className="h-3 w-3 mr-1" />
-                            Report Approved
-                          </Badge>
-                        ) : (
-                          <Badge style={revaStatusBadgeStyle("warning")}>
-                            <ClockIcon className="h-3 w-3 mr-1" />
-                            Report Under Review
-                          </Badge>
-                        )
-                      ) : (
-                        <Badge style={revaStatusBadgeStyle("error")}>
-                          <ExclamationCircleIcon className="h-3 w-3 mr-1" />
-                          No Report
-                        </Badge>
+              >
+                <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)_6.5rem_11rem_26rem] xl:items-center">
+                  <div className="min-w-0">
+                    <p className="line-clamp-2 text-sm font-semibold text-foreground">
+                      {heading}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {oneTime ? "One-time" : "Regular"} ·{" "}
+                      <span className="font-mono">{request.reference}</span>
+                      {request.lga ? ` · ${request.lga}` : ""}
+                      {documents.length > 0
+                        ? ` · ${documents.length} ${documents.length === 1 ? "document" : "documents"}`
+                        : ""}
+                    </p>
+                  </div>
+                  <div className="flex min-w-0 items-center gap-2.5 text-sm">
+                    <Avatar name={requester.name} color={kindColor} />
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">
+                        {requester.name}
+                      </p>
+                      {requester.email && (
+                        <p className="truncate text-xs text-muted-foreground">
+                          {requester.email}
+                        </p>
                       )}
                     </div>
-
+                  </div>
+                  <p
+                    className="text-sm font-semibold"
+                    style={{ color: REVA_COLORS.primary.light }}
+                  >
+                    {formatCurrency(request.totalCost)}
+                  </p>
+                  <p
+                    className={cn(
+                      "text-xs whitespace-nowrap",
+                      overdue && "font-medium"
+                    )}
+                    style={
+                      overdue ? { color: REVA_COLORS.status.error } : undefined
+                    }
+                  >
+                    <span className="text-muted-foreground">
+                      {overdue ? "Was due " : "Due "}
+                    </span>
+                    {format(due, "dd MMM, hh:mm a")}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 sm:col-span-2 xl:col-span-1 xl:justify-end">
+                    {request.status && (
+                      <StatusPill tone={toneForStatus(request.status)}>
+                        {request.status}
+                      </StatusPill>
+                    )}
+                    {request.paymentStatus && (
+                      <StatusPill tone={toneForPayment(request.paymentStatus)}>
+                        {request.paymentStatus}
+                      </StatusPill>
+                    )}
+                    {report ? (
+                      report?.isApproved ? (
+                        <StatusPill tone="success">Approved</StatusPill>
+                      ) : (
+                        <StatusPill tone="warning">In review</StatusPill>
+                      )
+                    ) : (
+                      <StatusPill tone="error">No report</StatusPill>
+                    )}
                     <Button asChild size="sm" variant="secondary">
                       <Link
                         href={`/reva-restricted/dashboard/details?reference=${request.reference}`}
                       >
-                        <EyeIcon className="h-4 w-4 mr-2" />
-                        View Details
+                        <EyeIcon className="mr-2 h-4 w-4" />
+                        View
                       </Link>
                     </Button>
                   </div>
                 </div>
-
-                {/* Status Messages */}
-                {request.statusMessage && (
-                  <div
-                    className="rounded-lg p-3 border"
+                {(request.statusMessage || request.error) && (
+                  <p
+                    className="mt-2 text-xs"
                     style={{
-                      backgroundColor: `${REVA_COLORS.primary.light}0D`,
-                      borderColor: `${REVA_COLORS.primary.light}33`,
+                      color: request.error
+                        ? REVA_COLORS.status.error
+                        : REVA_COLORS.primary.main,
                     }}
                   >
-                    <p
-                      className="text-sm"
-                      style={{ color: REVA_COLORS.primary.main }}
-                    >
-                      {request.statusMessage}
-                    </p>
-                  </div>
+                    {request.error || request.statusMessage}
+                  </p>
                 )}
+              </li>
+            );
+          }
 
-                {/* Error Messages */}
-                {request.error && (
-                  <div
-                    className="rounded-lg p-3 border"
-                    style={{
-                      backgroundColor: `${REVA_COLORS.status.error}0D`,
-                      borderColor: `${REVA_COLORS.status.error}33`,
-                    }}
-                  >
-                    <p
-                      className="text-sm"
-                      style={{ color: REVA_COLORS.status.error }}
-                    >
-                      {request.error}
-                    </p>
-                  </div>
+          return (
+            <li
+              key={request.id}
+              className={cn(
+                "flex flex-col rounded-xl border bg-white p-5 transition-shadow hover:shadow-md dark:bg-surface",
+                request?.deleted
+                  ? "border-red-200 bg-red-50/40"
+                  : "border-border"
+              )}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className="rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
+                  style={{
+                    backgroundColor: `${kindColor}1A`,
+                    color: kindColor,
+                  }}
+                >
+                  {oneTime ? "One-time" : "Regular"}
+                </span>
+                {request.status && (
+                  <StatusPill tone={toneForStatus(request.status)}>
+                    {request.status}
+                  </StatusPill>
                 )}
-              </CardContent>
-            </Card>
+                {request.paymentStatus && (
+                  <StatusPill tone={toneForPayment(request.paymentStatus)}>
+                    {request.paymentStatus}
+                  </StatusPill>
+                )}
+                {request.deleted && (
+                  <StatusPill tone="error">Deleted</StatusPill>
+                )}
+              </div>
+
+              <h3 className="mt-3 line-clamp-2 text-base font-semibold leading-snug text-foreground">
+                {heading}
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                <span className="font-mono">{request.reference}</span>
+                {request.lga ? ` · ${request.lga}` : ""}
+                {request.parcelId ? ` · Parcel ${request.parcelId}` : ""}
+              </p>
+
+              <dl className="mt-4 grid grid-cols-1 gap-x-4 gap-y-3 border-t border-border pt-4 sm:grid-cols-3">
+                <Fact label="Requester">
+                  <span className="flex items-start gap-2.5">
+                    <Avatar name={requester.name} color={kindColor} />
+                    <span className="min-w-0">
+                      <span className="block font-medium">
+                        {requester.name}
+                      </span>
+                      {requester.email && (
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {requester.email}
+                        </span>
+                      )}
+                      {requester.phone && (
+                        <span className="block text-xs text-muted-foreground">
+                          {requester.phone}
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                </Fact>
+                <Fact label="Fee">
+                  <span
+                    className="text-base font-semibold"
+                    style={{ color: REVA_COLORS.primary.light }}
+                  >
+                    {formatCurrency(request.totalCost)}
+                  </span>
+                </Fact>
+                <Fact label={overdue ? "Was due" : "Due"}>
+                  <span
+                    className={cn(overdue && "font-medium")}
+                    style={
+                      overdue ? { color: REVA_COLORS.status.error } : undefined
+                    }
+                  >
+                    {format(due, "dd MMM yyyy, hh:mm a")}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {request.updatedAt ? "Updated" : "Created"}{" "}
+                    {format(referenceDate(request), "dd MMM yyyy")}
+                  </span>
+                </Fact>
+              </dl>
+
+              {documents.length > 0 && (
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Documents
+                  </span>
+                  {documents.slice(0, 3).map((url, index) => (
+                    <MediaLink
+                      key={index}
+                      href={revaApi.files.linkFor(url)}
+                      className="inline-flex max-w-[11rem] items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs text-foreground transition-colors hover:bg-surface-muted"
+                    >
+                      <DocumentTextIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="truncate">
+                        {documentLabel(url, index)}
+                      </span>
+                    </MediaLink>
+                  ))}
+                  {documents.length > 3 && (
+                    <span className="text-xs text-muted-foreground">
+                      +{documents.length - 3} more
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {request.statusMessage && (
+                <p
+                  className="mt-4 rounded-lg border px-3 py-2 text-sm"
+                  style={{
+                    backgroundColor: `${REVA_COLORS.primary.light}0D`,
+                    borderColor: `${REVA_COLORS.primary.light}33`,
+                    color: REVA_COLORS.primary.main,
+                  }}
+                >
+                  {request.statusMessage}
+                </p>
+              )}
+              {request.error && (
+                <p
+                  className="mt-4 rounded-lg border px-3 py-2 text-sm"
+                  style={{
+                    backgroundColor: `${REVA_COLORS.status.error}0D`,
+                    borderColor: `${REVA_COLORS.status.error}33`,
+                    color: REVA_COLORS.status.error,
+                  }}
+                >
+                  {request.error}
+                </p>
+              )}
+
+              <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+                {report ? (
+                  report?.isApproved ? (
+                    <StatusPill tone="success">Report approved</StatusPill>
+                  ) : (
+                    <StatusPill tone="warning">Report under review</StatusPill>
+                  )
+                ) : (
+                  <StatusPill tone="error">No report</StatusPill>
+                )}
+                <Button asChild size="sm" variant="secondary">
+                  <Link
+                    href={`/reva-restricted/dashboard/details?reference=${request.reference}`}
+                  >
+                    <EyeIcon className="mr-2 h-4 w-4" />
+                    View details
+                  </Link>
+                </Button>
+              </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 };

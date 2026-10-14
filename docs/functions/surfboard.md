@@ -49,6 +49,8 @@ colocated under `app/(projects)/(surfboard)/`.
 | File        | Description                                                           |
 | ----------- | --------------------------------------------------------------------- |
 | `routes.ts` | Role → allowed-route map, shared across the surveyor/MDA/admin shells |
+| `serverPanel.ts` | `getInitialSurfboardPanel()`: reads the surveyor's name and subscription state on the server (same two lookups as `GET /api/v1/surfboard/subscription/user-and-active`) for the dashboard route layout; null on no session or any failure |
+| `panelInitial.ts` | Pure shape of that answer (`buildSurfboardPanelInitial`): `{ user: {firstName, family_name, email, picture} \| null, hasSubscriptionAccess }`, nothing else |
 
 ## `surfboard/hooks/`
 
@@ -60,7 +62,7 @@ colocated under `app/(projects)/(surfboard)/`.
 
 | File                           | Description                                                                                                                                                                                                                                      |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `surfboardUserPanelLayout.tsx` | Surveyor dashboard shell layout (navbar + sidebar composition). Sidebar passes `railBackground={SURFBOARD_GRADIENTS.hero}`. Mounts `AnnouncementModal` once, which fetches the current active modal-announcement notification on app-shell mount |
+| `surfboardUserPanelLayout.tsx` | Surveyor dashboard shell layout (navbar + sidebar composition). Sidebar passes `railBackground={SURFBOARD_GRADIENTS.hero}`. Takes `initial` from the route layout (server-read name and subscription), so it draws on the first paint; without it, it checks in the browser behind `surfboard/components/SurfboardLoading.tsx` (layout skeleton). Mounts `AnnouncementModal` once, which fetches the current active modal-announcement notification on app-shell mount |
 
 ## `surfboard/pdf-worker/` — standalone Node PDF renderer
 

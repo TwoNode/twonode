@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,9 +18,6 @@ import {
   Mail,
   Phone,
   Calendar,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
   Map,
   Home,
   FileCheck,
@@ -31,6 +27,11 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { MediaLink } from "@/components/media";
 import { revaApi } from "@/reva/apiClient";
+import {
+  StatusPill,
+  toneForPayment,
+  toneForStatus,
+} from "../../components/requestUi";
 
 // Format currency helper
 const formatCurrency = (amount: number | string | null | undefined): string => {
@@ -80,7 +81,6 @@ interface OneTimeRequestViewProps {
 export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
   const isReportReady = request?.report?.isApproved === true;
   const isProcessing = request.status === "Processing";
-  const isCompleted = request.status === "Completed";
   const isPaid = request.paymentStatus === "Paid";
 
   // Format dates
@@ -88,51 +88,29 @@ export function OneTimeRequestView({ request }: OneTimeRequestViewProps) {
   const updatedAt = formatDate(request.updatedAt);
   const totalCost = formatCurrency(request.totalCost);
 
-  // Get status badge variant and icon
-  const getStatusConfig = () => {
-    if (isCompleted)
-      return {
-        variant: "default" as const,
-        icon: <CheckCircle2 className="h-4 w-4 mr-2" />,
-      };
-    if (isProcessing)
-      return {
-        variant: "secondary" as const,
-        icon: <Clock className="h-4 w-4 mr-2" />,
-      };
-    return {
-      variant: "outline" as const,
-      icon: <AlertCircle className="h-4 w-4 mr-2" />,
-    };
-  };
-
-  const { variant: statusVariant, icon: statusIcon } = getStatusConfig();
-
   return (
     <div className="space-y-6">
-      {/* Header with Reference and Status */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Verification Request
-          </h1>
-          <p className="text-muted-foreground">
-            Reference: {request.reference}
+      {/* Summary: what the request is and where it stands */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            {request.address || "Verification Request"}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Requested by {request.requester}
+            {request.lga ? ` · ${request.lga}` : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant={statusVariant} className="text-sm h-8 px-3">
-            <div className="flex items-center">
-              {statusIcon}
-              {request.status}
-            </div>
-          </Badge>
-          <Badge
-            variant={isPaid ? "default" : ("destructive" as const)}
-            className="h-8 px-3"
-          >
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusPill tone={toneForStatus(request.status)}>
+            {request.status}
+          </StatusPill>
+          <StatusPill tone={toneForPayment(request.paymentStatus)}>
             {request.paymentStatus}
-          </Badge>
+          </StatusPill>
+          {isReportReady && (
+            <StatusPill tone="success">Report approved</StatusPill>
+          )}
         </div>
       </div>
 
