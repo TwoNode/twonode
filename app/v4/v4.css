@@ -4873,3 +4873,25 @@ button {
     flex-basis: 100%;
   }
 }
+
+/* Insight articles: their titles run long, so the hero heading is smaller than on /our-story */
+.story-hero h1.insight-title {
+  font-size: clamp(34px, 4.4vw, 54px);
+  line-height: 1.18;
+  letter-spacing: -1.1px;
+  max-width: 820px;
+  text-wrap: balance;
+}
+.story-lede.insight-lede {
+  font-size: 16px;
+  margin: 24px 0 34px;
+}
+@media (max-width: 680px) {
+  .story-hero h1.insight-title {
+    font-size: clamp(30px, 8.6vw, 38px);
+    letter-spacing: -0.8px;
+  }
+  .story-lede.insight-lede {
+    font-size: 14px;
+  }
+}
