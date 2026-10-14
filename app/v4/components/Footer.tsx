@@ -131,7 +131,21 @@ export function Footer() {
         <div className="vf-bottom">
           <span>© {new Date().getFullYear()} TwoNode Technologies Ltd.</span>
           <span>RC NO.: 7742902 · Lagos · Abuja, Nigeria</span>
-          <a href="#top">Back to top ↑</a>
+          <a className="vf-top" href="#top" aria-label="Back to top">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 18 18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M9 15V3M3.5 8.5 9 3l5.5 5.5" />
+            </svg>
+          </a>
         </div>
       </div>
     </footer>
