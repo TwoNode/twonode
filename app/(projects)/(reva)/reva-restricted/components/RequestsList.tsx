@@ -10,7 +10,9 @@ import { MediaLink } from "@/components/media";
 import { revaApi } from "@/reva/apiClient";
 import { cn } from "@/lib/utils";
 import {
+  Avatar,
   Fact,
+  KIND_COLOR,
   StatusPill,
   documentLabel,
   toneForPayment,
@@ -141,6 +143,7 @@ const RequestList = ({
         {requests.map((request) => {
           const requester = requesterOf(request);
           const oneTime = isOneTime(request);
+          const kindColor = oneTime ? KIND_COLOR.oneTime : KIND_COLOR.regular;
           const due = addDays(referenceDate(request), 1);
           // A finished request is not overdue, whatever its date.
           const finished =
@@ -179,15 +182,18 @@ const RequestList = ({
                         : ""}
                     </p>
                   </div>
-                  <div className="min-w-0 text-sm">
-                    <p className="truncate font-medium text-foreground">
-                      {requester.name}
-                    </p>
-                    {requester.email && (
-                      <p className="truncate text-xs text-muted-foreground">
-                        {requester.email}
+                  <div className="flex min-w-0 items-center gap-2.5 text-sm">
+                    <Avatar name={requester.name} color={kindColor} />
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">
+                        {requester.name}
                       </p>
-                    )}
+                      {requester.email && (
+                        <p className="truncate text-xs text-muted-foreground">
+                          {requester.email}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <p
                     className="text-sm font-semibold"
@@ -266,7 +272,13 @@ const RequestList = ({
               )}
             >
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-md border border-border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                <span
+                  className="rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
+                  style={{
+                    backgroundColor: `${kindColor}1A`,
+                    color: kindColor,
+                  }}
+                >
                   {oneTime ? "One-time" : "Regular"}
                 </span>
                 {request.status && (
@@ -295,17 +307,24 @@ const RequestList = ({
 
               <dl className="mt-4 grid grid-cols-1 gap-x-4 gap-y-3 border-t border-border pt-4 sm:grid-cols-3">
                 <Fact label="Requester">
-                  <span className="block font-medium">{requester.name}</span>
-                  {requester.email && (
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {requester.email}
+                  <span className="flex items-start gap-2.5">
+                    <Avatar name={requester.name} color={kindColor} />
+                    <span className="min-w-0">
+                      <span className="block font-medium">
+                        {requester.name}
+                      </span>
+                      {requester.email && (
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {requester.email}
+                        </span>
+                      )}
+                      {requester.phone && (
+                        <span className="block text-xs text-muted-foreground">
+                          {requester.phone}
+                        </span>
+                      )}
                     </span>
-                  )}
-                  {requester.phone && (
-                    <span className="block text-xs text-muted-foreground">
-                      {requester.phone}
-                    </span>
-                  )}
+                  </span>
                 </Fact>
                 <Fact label="Fee">
                   <span
