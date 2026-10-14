@@ -6,7 +6,7 @@ import SearchFilters, {
   SearchFilters as SearchFiltersType,
 } from "../../components/SearchFilters";
 import { Pagination } from "@/components/ui/pagination";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RequestTabs } from "../../components/RequestTabs";
 import {
   RequestStatCards,
   type StatCard,
@@ -308,30 +308,27 @@ const AllRequestsWithReportClient: React.FC<
       label: "With a report",
       value: String(summary.total),
       hint: `${summary.oneTime} one-time · ${summary.regular} regular`,
-      tab: "all",
+      key: "all",
     },
     {
       id: "review",
       label: "In review",
       value: String(summary.inReview),
       hint: "Awaiting approval",
-      tone: "warning",
-      tab: "review",
+      key: "review",
     },
     {
       id: "approved",
       label: "Approved",
       value: String(summary.approved),
       hint: "Report approved",
-      tone: "success",
-      tab: "approved",
+      key: "approved",
     },
     {
       id: "unpaid",
       label: "Unpaid",
       value: String(summary.unpaid),
       hint: "Waiting for payment",
-      tone: "info",
     },
     {
       id: "fees",
@@ -352,7 +349,11 @@ const AllRequestsWithReportClient: React.FC<
 
   return (
     <div className="mx-auto flex flex-col p-6 max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-6xl">
-      <RequestStatCards cards={cards} activeTab={tab} onSelectTab={setTab} />
+      <RequestStatCards
+        cards={cards}
+        activeKey={tab}
+        onSelect={(k) => setTab(k as RequestTab)}
+      />
 
       <SearchFilters
         onSearch={handleSearch}
@@ -362,18 +363,7 @@ const AllRequestsWithReportClient: React.FC<
       />
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as RequestTab)}>
-          <TabsList className="h-auto flex-wrap justify-start gap-1">
-            {tabs.map((t) => (
-              <TabsTrigger key={t.id} value={t.id} className="gap-2">
-                {t.label}
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {t.count}
-                </span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <RequestTabs tabs={tabs} value={tab} onChange={setTab} />
         <RequestViewToggle view={view} onChange={setView} />
       </div>
 

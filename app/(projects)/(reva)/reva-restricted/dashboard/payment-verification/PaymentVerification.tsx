@@ -45,6 +45,11 @@ import {
   revaStatusBadgeStyle,
 } from "@/reva/colors";
 import { Pagination } from "@/components/ui/pagination";
+import {
+  RequestStatCards,
+  type StatCard,
+} from "../../components/RequestStatCards";
+import { StatusPill } from "../../components/requestUi";
 
 interface Request {
   id: string;
@@ -297,13 +302,9 @@ export function PaymentVerification() {
     } as const;
 
     return (
-      <Badge
-        style={revaStatusBadgeStyle(
-          tones[status as keyof typeof tones] || "info"
-        )}
-      >
+      <StatusPill tone={tones[status as keyof typeof tones] || "info"}>
         {status}
-      </Badge>
+      </StatusPill>
     );
   };
 
@@ -316,13 +317,56 @@ export function PaymentVerification() {
     page * pageSize
   );
 
-  const getEnvironmentBadge = (isLive: boolean) => {
-    return (
-      <Badge style={revaStatusBadgeStyle(isLive ? "error" : "info")}>
-        {isLive ? "Live" : "Test"}
-      </Badge>
-    );
-  };
+  const getEnvironmentBadge = (isLive: boolean) => (
+    <StatusPill tone={isLive ? "error" : "info"}>
+      {isLive ? "Live" : "Test"}
+    </StatusPill>
+  );
+
+  const count = (status: string) =>
+    requests.filter((r) => r.paymentStatus === status).length;
+  const cards: StatCard[] = [
+    {
+      id: "pay-total",
+      label: "All requests",
+      value: String(requests.length),
+      hint: "Every payment on record",
+      key: "all",
+    },
+    {
+      id: "pay-paid",
+      label: "Paid",
+      value: String(count("Paid")),
+      hint: "Confirmed with Paystack",
+      key: "Paid",
+    },
+    {
+      id: "pay-unpaid",
+      label: "Unpaid",
+      value: String(count("Unpaid")),
+      hint: "Waiting to be verified",
+      key: "Unpaid",
+    },
+    {
+      id: "pay-processing",
+      label: "Processing",
+      value: String(count("Processing")),
+      hint: "Payment in progress",
+      key: "Processing",
+    },
+    {
+      id: "pay-live",
+      label: "Live",
+      value: String(requests.filter((r) => r.isLive).length),
+      hint: "Real payments",
+    },
+    {
+      id: "pay-test",
+      label: "Test",
+      value: String(requests.filter((r) => !r.isLive).length),
+      hint: "Test-mode payments",
+    },
+  ];
 
   if (loading) {
     return (
@@ -383,6 +427,12 @@ export function PaymentVerification() {
           </Button>
         </div>
       </div>
+
+      <RequestStatCards
+        cards={cards}
+        activeKey={statusFilter}
+        onSelect={setStatusFilter}
+      />
 
       {/* Filters */}
       <Card>
@@ -484,7 +534,7 @@ export function PaymentVerification() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-surface-muted hover:bg-surface-muted">
                   <TableHead>Reference</TableHead>
                   <TableHead>User</TableHead>
                   <TableHead>Address</TableHead>
