@@ -10,6 +10,7 @@ import {
 import { getOrCreatePaystackPlan } from "@/surfboard/services/paystackSubscriptionService";
 import { ApiError, SubscriptionRequiredError } from "@/lib/api/errors";
 import { isPaystackLive } from "@/lib/paystackMode";
+import { sendSubscriptionThanks } from "@/surfboard/services/subscriptionThanksService";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/subscriptionActions.ts.
@@ -142,7 +143,7 @@ export type ApplyPaymentResult = {
  *   `currentEnd` and each extend from it). Locks are taken in that fixed
  *   order, so they can't deadlock.
  */
-export async function applyPaymentPeriod(args: {
+async function applyPaymentPeriodCore(args: {
   userId: string;
   reference: string;
   eventType: PaymentEventType;
@@ -246,6 +247,19 @@ export async function applyPaymentPeriod(args: {
     // other.
     { maxWait: 10_000, timeout: 20_000 }
   ) as Promise<ApplyPaymentResult>;
+}
+
+/**
+ * applyPaymentPeriodCore (above) plus the thank-you email: a payment that was
+ * actually applied (not a repeat of one already credited) thanks the user once.
+ * Not awaited and never fails the payment.
+ */
+export async function applyPaymentPeriod(
+  args: Parameters<typeof applyPaymentPeriodCore>[0]
+): Promise<ApplyPaymentResult> {
+  const result = await applyPaymentPeriodCore(args);
+  if (result.status === "applied") void sendSubscriptionThanks(args.userId);
+  return result;
 }
 
 type PlanPayment = {
