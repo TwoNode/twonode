@@ -18,7 +18,7 @@ export function Footer() {
       <div className="vf-inner">
         <div className="vf-grid">
           <div className="vf-brand">
-            <Link href="/v4" aria-label="TwoNode home">
+            <Link href="/v2" aria-label="TwoNode home">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 className="vf-logo"
@@ -33,7 +33,7 @@ export function Footer() {
               <br />
               Build what it needs.
             </p>
-            <Link className="vf-cta" href="/v4/contact">
+            <Link className="vf-cta" href="/v2/contact">
               Let&apos;s talk <span>↗</span>
             </Link>
             <ul className="vf-socials" aria-label="Social links">
@@ -51,13 +51,13 @@ export function Footer() {
             <h2>Industries</h2>
             <ul>
               <li>
-                <Link href="/v4/industries/surveying-geospatial">
+                <Link href="/v2/industries/surveying-geospatial">
                   Surveying &amp; geospatial
                 </Link>
                 <span className="status status-active">Active</span>
               </li>
               <li>
-                <Link href="/v4/industries/real-estate">Real estate</Link>
+                <Link href="/v2/industries/real-estate">Real estate</Link>
                 <span className="status status-next">Next</span>
               </li>
             </ul>
@@ -102,13 +102,13 @@ export function Footer() {
               <h2>Company</h2>
               <ul>
                 <li>
-                  <Link href="/v4/our-story">Our story</Link>
+                  <Link href="/v2/our-story">Our story</Link>
                 </li>
                 <li>
-                  <Link href="/v4/insights">Insights</Link>
+                  <Link href="/v2/insights">Insights</Link>
                 </li>
                 <li>
-                  <Link href="/v4/contact">Contact</Link>
+                  <Link href="/v2/contact">Contact</Link>
                 </li>
               </ul>
             </nav>
