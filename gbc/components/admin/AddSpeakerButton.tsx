@@ -77,7 +77,8 @@ export function AddSpeakerButton() {
       if (photoFile) {
         const uploadResult = await gbcApi.uploads.file(
           "speaker-photo",
-          photoFile
+          photoFile,
+          defaultEdition || undefined
         );
 
         if (uploadResult.success && uploadResult.data) {

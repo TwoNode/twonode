@@ -76,7 +76,11 @@ export function AddSponsorButton({ tiers }: { tiers: SponsorTier[] }) {
         return;
       }
 
-      const uploadResult = await gbcApi.uploads.file("sponsor-logo", logoFile);
+      const uploadResult = await gbcApi.uploads.file(
+        "sponsor-logo",
+        logoFile,
+        defaultEdition || undefined
+      );
       if (!uploadResult.success || !uploadResult.data) {
         toast.error("Failed to upload logo");
         return;

@@ -4,11 +4,9 @@
  *
  * - QR codes are private: `private/gbc/<edition>/qrcodes/…`, read through a
  *   signed link only.
- * - Everything else still goes to the old public `GBC2/<folder>/…` layout until
- *   the public images move to `public/gbc/<edition>/…`.
+ * - Gallery, speaker and logo images are public: `public/gbc/<edition>/<folder>/…`.
+ *   Files uploaded before this layout stay under the old `GBC2/<folder>/…`.
  */
-
-const OLD_PUBLIC_PREFIX = "GBC2";
 
 function safeSegment(value: string): string {
   const cleaned = value.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/^\.+/, "");
@@ -40,17 +38,20 @@ export function gbcQrCodeKey(
   )}`;
 }
 
-/** Key for the public GBC files that have not moved yet (gallery, speakers, logos). */
+/** Key for a public GBC file (gallery, speakers, logos): grouped by edition and folder. */
 export function gbcPublicKey(
-  folder: string | undefined,
+  edition: string,
+  folder: string,
   originalName: string,
   now?: number,
   random?: string
 ): string {
-  const fileName = gbcFileName(originalName, now, random);
-  return folder
-    ? `${OLD_PUBLIC_PREFIX}/${folder}/${fileName}`
-    : `${OLD_PUBLIC_PREFIX}/${fileName}`;
+  const path = folder.split("/").map(safeSegment).join("/");
+  return `public/gbc/${safeSegment(edition)}/${path}/${gbcFileName(
+    originalName,
+    now,
+    random
+  )}`;
 }
 
 /** The stored key behind a ticket's QR code: the key column, else the key inside the old public URL. */

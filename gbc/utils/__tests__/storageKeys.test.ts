@@ -17,11 +17,26 @@ describe("gbcQrCodeKey", () => {
 });
 
 describe("gbcPublicKey", () => {
-  it("keeps the old public GBC2 layout for gallery, speakers and logos", () => {
-    expect(gbcPublicKey("gallery", "Photo One.JPG", 5, "r")).toBe(
-      "GBC2/gallery/5-r-photo_one.jpg"
+  it("puts gallery, speakers and logos under the public, per-edition prefix", () => {
+    expect(gbcPublicKey("2.0", "gallery", "Photo One.JPG", 5, "r")).toBe(
+      "public/gbc/2.0/gallery/5-r-photo_one.jpg"
     );
-    expect(gbcPublicKey(undefined, "a.png", 5, "r")).toBe("GBC2/5-r-a.png");
+    expect(gbcPublicKey("3.0", "logos/sponsors", "a.png", 5, "r")).toBe(
+      "public/gbc/3.0/logos/sponsors/5-r-a.png"
+    );
+  });
+
+  it("cannot be pushed out of public/gbc by the edition, folder or file name", () => {
+    const key = gbcPublicKey(
+      "../../private",
+      "../surfboard/x",
+      "../../a.png",
+      1,
+      "r"
+    );
+    expect(key.startsWith("public/gbc/")).toBe(true);
+    expect(key.split("/")).not.toContain("..");
+    expect(key.includes("private/gbc")).toBe(false);
   });
 });
 

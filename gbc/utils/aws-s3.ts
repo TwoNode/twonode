@@ -120,7 +120,9 @@ interface UploadOptions {
   fileName: string;
   contentType: string;
   folder?: string;
-  /** Full key, when the file does not belong in the old public `GBC2/<folder>/` layout (QR codes). */
+  /** Edition the file belongs to; needed for a public file when no full `key` is given. */
+  edition?: string;
+  /** Full key, when the file does not belong under `public/gbc/<edition>/<folder>/` (QR codes). */
   key?: string;
   generateThumbnail?: boolean;
 }
@@ -139,14 +141,18 @@ export async function uploadToS3(
   options: UploadOptions
 ): Promise<UploadResult> {
   try {
-    const { file, fileName, contentType, folder, generateThumbnail } = options;
+    const { file, fileName, contentType, folder, edition, generateThumbnail } =
+      options;
 
     if (!BUCKET_NAME) {
       throw new Error("S3 bucket name is not configured");
     }
 
     // Generate unique file name
-    const key = options.key ?? gbcPublicKey(folder, fileName);
+    if (!options.key && !(edition && folder)) {
+      throw new Error("A public GBC upload needs an edition and a folder");
+    }
+    const key = options.key ?? gbcPublicKey(edition!, folder!, fileName);
 
     console.log("Uploading to S3:", {
       bucket: BUCKET_NAME,
@@ -287,7 +293,8 @@ export async function getSignedS3Url(
 export async function uploadLogo(
   file: Buffer,
   fileName: string,
-  type: "sponsor" | "partner"
+  type: "sponsor" | "partner",
+  edition: string
 ): Promise<UploadResult> {
   // Optimize image
   const resizedImage = processImageInside(file, 400, 400);
@@ -299,6 +306,7 @@ export async function uploadLogo(
     fileName,
     contentType: "image/png",
     folder: `logos/${type}s`,
+    edition,
   });
 }
 
@@ -307,7 +315,8 @@ export async function uploadLogo(
  */
 export async function uploadSpeakerPhoto(
   file: Buffer,
-  fileName: string
+  fileName: string,
+  edition: string
 ): Promise<UploadResult> {
   // Optimize image
   const resizedImage = processImageCover(file, 500, 500);
@@ -319,6 +328,7 @@ export async function uploadSpeakerPhoto(
     fileName,
     contentType: "image/jpeg",
     folder: "speakers",
+    edition,
   });
 }
 
@@ -328,7 +338,8 @@ export async function uploadSpeakerPhoto(
 export async function uploadGalleryMedia(
   file: Buffer,
   fileName: string,
-  contentType: string
+  contentType: string,
+  edition: string
 ): Promise<UploadResult> {
   const isImage = contentType.startsWith("image/");
 
@@ -343,6 +354,7 @@ export async function uploadGalleryMedia(
       fileName,
       contentType: "image/jpeg",
       folder: "gallery",
+      edition,
       generateThumbnail: true,
     });
   }
@@ -353,6 +365,7 @@ export async function uploadGalleryMedia(
     fileName,
     contentType,
     folder: "gallery",
+    edition,
   });
 }
 
@@ -396,7 +409,8 @@ export async function getFileSize(key: string): Promise<number> {
 export async function uploadFromBase64(
   base64: string,
   fileName: string,
-  folder?: string
+  folder?: string,
+  edition?: string
 ): Promise<UploadResult> {
   // Extract content type and data
   const matches = base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
@@ -414,6 +428,7 @@ export async function uploadFromBase64(
     fileName,
     contentType,
     folder,
+    edition,
   });
 }
 
@@ -426,6 +441,7 @@ export async function bulkUpload(
     fileName: string;
     contentType: string;
     folder?: string;
+    edition?: string;
   }>
 ): Promise<UploadResult[]> {
   try {
