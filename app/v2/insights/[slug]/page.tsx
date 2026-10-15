@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { PageShell } from "../../components/PageShell";
+import { ArticleStepNav } from "../../components/ArticleStepNav";
 import { getInsight, insights } from "../../data/insights";
 
 export function generateStaticParams() {
@@ -15,10 +17,15 @@ export async function generateMetadata({
   const { slug } = await params;
   const post = getInsight(slug);
   if (!post) return {};
-  return { title: `${post.title} — TwoNode`, description: post.excerpt };
+  return {
+    title: `${post.title} — TwoNode Technologies`,
+    description: post.excerpt,
+  };
 }
 
-export default async function InsightPage({
+const pad = (n: number) => String(n).padStart(2, "0");
+
+export default async function V4InsightPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
@@ -28,31 +35,74 @@ export default async function InsightPage({
   if (!post) notFound();
 
   return (
-    <article className="mx-auto max-w-2xl px-6 py-20 sm:px-8">
-      <Link
-        href="/v2/insights"
-        className="text-sm opacity-60 hover:opacity-100"
-      >
-        ← Insights
-      </Link>
-      <span className="mt-6 block text-xs uppercase tracking-widest opacity-50">
-        {post.category}
-      </span>
-      <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl font-medium leading-tight sm:text-5xl">
-        {post.title}
-      </h1>
-      <time className="mt-4 block text-sm opacity-50">
-        {new Date(post.date).toLocaleDateString("en-US", {
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        })}
-      </time>
-      <div className="mt-10 space-y-5 text-lg leading-relaxed opacity-85">
-        {post.body.map((para, i) => (
-          <p key={i}>{para}</p>
-        ))}
-      </div>
-    </article>
+    <PageShell current="insights">
+      <section className="story-hero section-wrap">
+        <p className="eyebrow">
+          <Link href="/v4/insights">← Insights</Link>
+        </p>
+        <h1 className="insight-title">{post.title}</h1>
+        <p className="story-lede insight-lede">{post.excerpt}</p>
+        <div className="story-hero-note">
+          <span className="tiny-line"></span>
+          <span>
+            {post.category} ·{" "}
+            {new Date(post.date + "T00:00:00Z").toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+              timeZone: "UTC",
+            })}
+          </span>
+        </div>
+      </section>
+
+      <section className="story-body">
+        <div className="section-wrap story-content">
+          <aside className="story-index">
+            <span>IN THIS ARTICLE</span>
+            {post.sections.map((s, i) => (
+              <a key={s.id} href={`#${s.id}`}>
+                {pad(i + 1)} / {s.label}
+              </a>
+            ))}
+          </aside>
+          <div className="story-article">
+            <section id="intro">
+              {post.intro.map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
+            </section>
+            {post.sections.map((s, i) => (
+              <section key={s.id} id={s.id}>
+                <p className="eyebrow">
+                  {pad(i + 1)} / {s.label.toUpperCase()}
+                </p>
+                <h2>{s.heading}</h2>
+                {s.paragraphs.map((para, j) => (
+                  <p key={j}>{para}</p>
+                ))}
+              </section>
+            ))}
+          </div>
+        </div>
+      </section>
+      <ArticleStepNav ids={["intro", ...post.sections.map((s) => s.id)]} />
+      <section className="story-cta">
+        <div className="section-wrap story-cta-inner">
+          <p className="eyebrow">THE WORK CONTINUES</p>
+          <h2>There is more work to do.</h2>
+          <p>
+            More problems to understand. More solutions to build. More
+            connections to make.
+          </p>
+          <a
+            className="button button-light"
+            href="mailto:info@twonodetechnologies.com"
+          >
+            Build with TwoNode <span>↗</span>
+          </a>
+        </div>
+      </section>
+    </PageShell>
   );
 }

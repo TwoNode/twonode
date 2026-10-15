@@ -7,8 +7,8 @@
   --paper: #f7f8fc;
   --line: #e4e8f2;
   --white: #fff;
-  --font: "DM Sans", system-ui, sans-serif;
-  --display: "Manrope", "DM Sans", system-ui, sans-serif;
+  --font: var(--font-bricolage), system-ui, sans-serif;
+  --display: var(--font-sora), var(--font-bricolage), system-ui, sans-serif;
 }
 * {
   box-sizing: border-box;
@@ -147,19 +147,22 @@ button {
 .story-hero h1 {
   font-family: var(--display);
   font-weight: 600;
-  letter-spacing: -3.8px;
+  letter-spacing: -1.9px;
   font-size: clamp(48px, 5.5vw, 72px);
   line-height: 1.1;
   margin: 0;
   color: var(--navy);
-  max-width: 630px;
+  max-width: 700px;
 }
 .hero h1 > span:not(.w),
-.story-hero h1 > span:not(.w),
+.story-hero h1 > span:not(.w) {
+  color: var(--blue);
+}
 .section-heading h2 > span:not(.w),
 .origin-copy h2 > span:not(.w),
 .work-heading h2 > span:not(.w),
 .contact-section h2 > span:not(.w) {
+  display: block;
   color: var(--blue);
 }
 .hero-lede {
@@ -410,7 +413,7 @@ button {
 }
 .intro-grid h2 {
   font: 600 clamp(27px, 3vw, 39px)/1.25 var(--display);
-  letter-spacing: -1.6px;
+  letter-spacing: -0.8px;
   color: var(--navy);
   margin: 0 0 14px;
 }
@@ -429,7 +432,7 @@ button {
 .origin-copy h2,
 .contact-section h2 {
   font: 600 clamp(37px, 4vw, 53px)/1.2 var(--display);
-  letter-spacing: -2.4px;
+  letter-spacing: -1.2px;
   color: var(--navy);
   margin: 0;
 }
@@ -642,7 +645,7 @@ button {
 }
 .origin-copy h2 {
   font-size: clamp(34px, 3.6vw, 45px);
-  letter-spacing: -2px;
+  letter-spacing: -1px;
 }
 .origin-copy > p:not(.eyebrow) {
   font-size: 13px;
@@ -975,7 +978,7 @@ button {
   position: relative;
   z-index: 2;
   font: 800 29px/0.92 var(--display);
-  letter-spacing: -1.8px;
+  letter-spacing: -0.9px;
   color: #111b3b;
 }
 .gbc-title span {
@@ -1108,11 +1111,12 @@ button {
 }
 .belief-inner h2 {
   font: 600 clamp(42px, 5.2vw, 68px)/1.13 var(--display);
-  letter-spacing: -3px;
+  letter-spacing: -1.5px;
   margin: 0;
   max-width: 780px;
 }
 .belief-inner h2 > span:not(.w) {
+  display: block;
   color: #7fa2ff;
 }
 .belief-inner > p:not(.eyebrow) {
@@ -1299,7 +1303,7 @@ button {
 }
 .story-article h2 {
   font: 600 clamp(30px, 3.8vw, 43px)/1.25 var(--display);
-  letter-spacing: -1.8px;
+  letter-spacing: -0.9px;
   color: var(--navy);
   margin: 0 0 23px;
 }
@@ -1382,7 +1386,7 @@ button {
 }
 .story-cta h2 {
   font: 600 clamp(38px, 5vw, 58px)/1.15 var(--display);
-  letter-spacing: -2px;
+  letter-spacing: -1px;
   margin: 0;
 }
 .story-cta p:not(.eyebrow) {
@@ -1401,7 +1405,7 @@ button {
   }
   .hero h1 {
     font-size: 55px;
-    letter-spacing: -2.8px;
+    letter-spacing: -1.4px;
   }
   .hero-art {
     height: 400px;
@@ -1506,7 +1510,7 @@ button {
   }
   .hero h1 {
     font-size: clamp(45px, 12vw, 63px);
-    letter-spacing: -2.9px;
+    letter-spacing: -1.4px;
     line-height: 1.09;
   }
   .hero-lede {
@@ -1589,7 +1593,7 @@ button {
   .origin-copy h2,
   .contact-section h2 {
     font-size: 39px;
-    letter-spacing: -1.8px;
+    letter-spacing: -0.9px;
   }
   .section-heading > p:not(.eyebrow) {
     font-size: 13px;
@@ -1668,7 +1672,7 @@ button {
   }
   .belief-inner h2 {
     font-size: 44px;
-    letter-spacing: -2px;
+    letter-spacing: -1px;
   }
   .belief-inner > p:not(.eyebrow) {
     font-size: 13px;
@@ -1715,7 +1719,7 @@ button {
   }
   .story-hero h1 {
     font-size: clamp(45px, 12vw, 66px);
-    letter-spacing: -2.8px;
+    letter-spacing: -1.4px;
   }
   .story-lede {
     font-size: 15px;
@@ -1746,7 +1750,7 @@ button {
   }
   .story-article h2 {
     font-size: 32px;
-    letter-spacing: -1.2px;
+    letter-spacing: -0.6px;
   }
   .story-article p:not(.eyebrow) {
     font-size: 13px;
@@ -2371,8 +2375,8 @@ button {
   display: inline-block;
   overflow: hidden;
   vertical-align: top;
-  padding: 0.06em 0.08em 0.14em 0;
-  margin: -0.06em -0.08em -0.14em 0;
+  padding: 0.08em 0.08em 0.26em 0;
+  margin: -0.08em -0.08em -0.26em 0;
 }
 .split-title .w > span {
   display: inline-block;
@@ -4292,7 +4296,7 @@ button {
 .stat strong {
   display: block;
   font: 600 clamp(46px, 5.4vw, 72px)/1 var(--display);
-  letter-spacing: -3px;
+  letter-spacing: -1.5px;
   color: var(--navy);
   font-variant-numeric: tabular-nums;
 }
@@ -4339,5 +4343,695 @@ button {
   }
   .proof-foot {
     margin-top: 32px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   v4 edits (TASK-0009): changes made on top of the ported prototype.
+   --------------------------------------------------------------------------- */
+
+/* Real TwoNode logo instead of the prototype's placeholder mark */
+.brand-logo {
+  display: block;
+  height: 32px;
+  width: auto;
+}
+.brand-footer .brand-logo {
+  height: 28px;
+}
+
+/* Text floor: nothing under 12px (the prototype used 9-11px for labels) */
+.eyebrow,
+.eyebrow-cat,
+.hero-foot > span,
+.art-caption,
+.principle-top > span,
+.plan-caption,
+.hero-bottom span,
+.footer-bottom > span,
+.footer-bottom > a {
+  font-size: 12px;
+}
+.text-link,
+.footer-links > a {
+  font-size: 13px;
+}
+
+/* Touch targets: links and buttons at least 44px high where a finger is used */
+.footer-links > a,
+.footer-bottom > a,
+.contact-line a,
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+@media (pointer: coarse) {
+  .nav a,
+  .nav-cta,
+  .menu-toggle {
+    min-height: 44px;
+  }
+  .menu-toggle {
+    min-width: 44px;
+  }
+}
+
+/* Same floor where the original rules were more specific */
+.work-card-copy .eyebrow,
+.story-hero-note span,
+.story-index span {
+  font-size: 12px;
+}
+.work-card-copy .text-link,
+.story-index a {
+  font-size: 13px;
+}
+.story-index a {
+  display: block;
+  padding-block: 12px;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* ---------------------------------------------------------------------------
+   v4: status chips, inner pages (contact, insights, industries), new footer
+   --------------------------------------------------------------------------- */
+
+/* Active / Next: quiet outlined labels, no dots or tinted pills.
+   Solid border = live, dashed border = coming. */
+.status {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  vertical-align: 1px;
+  background: transparent;
+}
+.status-active {
+  color: var(--navy);
+}
+.status-next {
+  color: #6f7893;
+  border-style: dashed;
+}
+
+/* Inner pages: stacked rows under a story-style hero */
+.v4-rows {
+  padding-block: 12px 96px;
+}
+.v4-row {
+  display: grid;
+  gap: 12px;
+  padding: 36px 0;
+  border-top: 1px solid var(--line);
+  max-width: 760px;
+}
+.v4-row:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.v4-row h2 {
+  font-family: var(--display);
+  font-size: clamp(22px, 2.6vw, 30px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--navy);
+  margin: 0;
+}
+.v4-row h2 a:hover {
+  color: var(--blue);
+}
+.v4-plain {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.v4-big-link {
+  font-family: var(--display);
+  font-size: clamp(22px, 3vw, 34px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--navy);
+  overflow-wrap: anywhere;
+}
+.v4-big-link:hover {
+  color: var(--blue);
+}
+.v4-post .text-link {
+  justify-self: start;
+}
+.v4-prose {
+  max-width: 680px;
+  padding-top: 24px;
+  display: grid;
+  gap: 20px;
+}
+.v4-prose p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.8;
+  color: #3b4460;
+}
+
+/* Footer */
+.vf {
+  position: relative;
+  overflow: hidden;
+  background: var(--navy);
+  color: #c9d2ee;
+  padding: 72px 0 0;
+  isolation: isolate;
+}
+.vf:before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--violet), #7fa2ff);
+}
+.vf:after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -120px;
+  top: -140px;
+  width: 560px;
+  height: 560px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(6, 81, 251, 0.35),
+    rgba(6, 81, 251, 0) 68%
+  );
+}
+.vf-inner {
+  width: min(1160px, calc(100% - 64px));
+  margin-inline: auto;
+}
+.vf-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 1.25fr 0.8fr 1.3fr;
+  gap: 48px;
+  padding-bottom: 56px;
+}
+.vf-logo {
+  display: block;
+  height: 30px;
+  width: auto;
+  filter: brightness(0) invert(1);
+}
+.vf-tagline {
+  margin: 22px 0 24px;
+  font-family: var(--display);
+  font-size: 22px;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.vf-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 700;
+  transition:
+    transform 0.25s,
+    box-shadow 0.25s;
+}
+.vf-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(6, 81, 251, 0.45);
+}
+.vf-socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 26px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.vf-socials a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(201, 210, 238, 0.28);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #dbe5ff;
+  transition:
+    border-color 0.25s,
+    background 0.25s;
+}
+.vf-socials a:hover {
+  border-color: #7fa2ff;
+  background: rgba(127, 162, 255, 0.12);
+}
+.vf-col h2 {
+  margin: 0 0 18px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7fa2ff;
+}
+.vf-col h2.vf-reach {
+  margin-top: 34px;
+}
+.vf-col ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vf-col li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.vf-col a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #e6ecff;
+  transition: color 0.2s;
+}
+.vf-col a:hover,
+.vf-col a:focus-visible {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+/* Footer status tags: quiet outlined labels. Solid border = live, dashed = coming. */
+.vf .status {
+  margin-left: 0;
+  padding: 2px 7px;
+  border: 1px solid rgba(219, 229, 255, 0.5);
+  border-radius: 3px;
+  background: transparent;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  color: #dbe5ff;
+}
+.vf .status:before {
+  content: none;
+}
+.vf .status-active {
+  color: #dbe5ff;
+  background: transparent;
+}
+.vf .status-next {
+  color: #93a0c8;
+  background: transparent;
+  border-color: rgba(147, 160, 200, 0.55);
+  border-style: dashed;
+}
+.vf-bottom {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 22px 0 26px;
+  border-top: 1px solid rgba(201, 210, 238, 0.16);
+  font-size: 13px;
+  color: #93a0c8;
+}
+.vf-bottom a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #dbe5ff;
+  font-weight: 600;
+}
+.vf-bottom a:hover {
+  color: #fff;
+}
+@media (max-width: 960px) {
+  .vf-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px 32px;
+  }
+  .vf-brand {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 560px) {
+  .vf {
+    padding-top: 56px;
+  }
+  .vf-inner {
+    width: calc(100% - 40px);
+  }
+  .vf-grid {
+    grid-template-columns: 1fr;
+  }
+  .vf-bottom {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+.vf-col li {
+  flex-wrap: nowrap;
+}
+.vf-col a[href^="mailto:"] {
+  overflow-wrap: anywhere;
+}
+@media (min-width: 961px) {
+  .vf-col a[href^="mailto:"] {
+    font-size: 14px;
+    white-space: nowrap;
+  }
+}
+
+/* Count-up number inside .stat strong keeps the big-number style */
+.stat strong b {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+/* ---------------------------------------------------------------------------
+   v4 responsive pass (TASK-0010): tablet (681-960px) and phone layout fixes
+   --------------------------------------------------------------------------- */
+
+/* Tablet: the hero stacks (the two-column hero left a tiny art panel and a
+   lot of dead space), and the art gets a proper size. */
+@media (min-width: 681px) and (max-width: 960px) {
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .hero-art {
+    width: 100%;
+    height: 380px;
+    margin-top: 28px;
+  }
+  .hero h1 {
+    font-size: clamp(56px, 8.4vw, 68px);
+  }
+
+  /* Work cards: one per row, art beside the copy, instead of three cramped columns */
+  .work-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .work-card {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    align-items: stretch;
+  }
+  .work-card .product-art {
+    height: 100%;
+    min-height: 230px;
+  }
+  .work-card-copy {
+    padding: 26px 24px;
+  }
+  .work-card-copy h3 {
+    font-size: 21px;
+  }
+}
+
+/* Tablet and below: the "Our work" heading and its paragraph stack, so the
+   heading no longer wraps one word per line. */
+@media (max-width: 900px) {
+  .work-heading {
+    display: block;
+  }
+  .work-heading > p {
+    margin-top: 18px;
+    max-width: 560px;
+  }
+}
+
+/* Footer: three columns on tablet, brand across the top */
+@media (min-width: 561px) and (max-width: 960px) {
+  .vf-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 40px 28px;
+  }
+  .vf-brand {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Phone: a shorter hero art panel (the network only fills a small part of it) */
+@media (max-width: 680px) {
+  .hero-art {
+    height: 270px;
+  }
+}
+
+/* Footer email: smaller in the narrower tablet columns so it stays on one line */
+@media (min-width: 561px) and (max-width: 960px) {
+  .vf-col a[href^="mailto:"] {
+    font-size: 13px;
+  }
+}
+
+/* Touch and phone: footer links reach the 44px target size */
+@media (pointer: coarse), (max-width: 680px) {
+  .vf-col a,
+  .vf-socials a,
+  .vf-brand > a {
+    min-height: 44px;
+  }
+  .vf-brand > a {
+    display: inline-flex;
+    align-items: center;
+  }
+  .vf-col ul {
+    gap: 0;
+  }
+}
+
+/* Phone footer: shorter. Products and Company sit side by side, tighter spacing. */
+@media (max-width: 560px) {
+  .vf {
+    padding-top: 40px;
+  }
+  .vf-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 20px;
+    padding-bottom: 24px;
+  }
+  .vf-brand,
+  .vf-col-industries,
+  .vf-col-contact {
+    grid-column: 1 / -1;
+  }
+  .vf-col-group {
+    display: contents;
+  }
+  .vf-tagline {
+    margin: 14px 0 16px;
+    font-size: 20px;
+  }
+  .vf-socials {
+    margin-top: 14px;
+    gap: 8px;
+  }
+  .vf-col h2 {
+    margin-bottom: 2px;
+  }
+  .vf-col h2.vf-reach {
+    margin-top: 0;
+  }
+  .vf-bottom {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 0 16px;
+    padding: 12px 0 16px;
+  }
+  .vf-bottom span:nth-child(2) {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
+
+/* Insight articles: their titles run long, so the hero heading is smaller than on /our-story */
+.story-hero h1.insight-title {
+  font-size: clamp(34px, 4.4vw, 54px);
+  line-height: 1.18;
+  letter-spacing: -1.1px;
+  max-width: 820px;
+  text-wrap: balance;
+}
+.story-lede.insight-lede {
+  font-size: 16px;
+  margin: 24px 0 34px;
+}
+@media (max-width: 680px) {
+  .story-hero h1.insight-title {
+    font-size: clamp(30px, 8.6vw, 38px);
+    letter-spacing: -0.8px;
+  }
+  .story-lede.insight-lede {
+    font-size: 14px;
+  }
+}
+
+/* Phones: a tighter hero so the animation starts higher on the first screen */
+@media (max-width: 680px) {
+  .hero {
+    padding-top: 36px;
+  }
+  .hero .eyebrow {
+    margin-bottom: 14px;
+  }
+  .hero h1 {
+    font-size: clamp(36px, 10.2vw, 46px);
+    letter-spacing: -1.1px;
+    line-height: 1.07;
+  }
+  .hero-lede {
+    margin: 14px 0 18px;
+    line-height: 1.65;
+  }
+  .hero-actions {
+    gap: 16px;
+  }
+  .hero-actions .button {
+    padding: 10px 13px;
+    gap: 18px;
+  }
+  .hero-foot {
+    margin-top: 20px;
+  }
+  .hero-art {
+    margin-top: 16px;
+  }
+}
+
+/* Footer: back to top is an arrow only */
+.vf-bottom a.vf-top {
+  justify-content: center;
+  width: 44px;
+  border: 1px solid rgba(201, 210, 238, 0.28);
+  border-radius: 50%;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+}
+.vf-bottom a.vf-top:hover,
+.vf-bottom a.vf-top:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(219, 229, 255, 0.6);
+  transform: translateY(-2px);
+}
+.vf-bottom a.vf-top:focus-visible {
+  outline: 2px solid #dbe5ff;
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vf-bottom a.vf-top {
+    transition: none;
+  }
+  .vf-bottom a.vf-top:hover,
+  .vf-bottom a.vf-top:focus-visible {
+    transform: none;
+  }
+}
+
+/* Insight articles on phones: back and forward arrows between sections */
+.step-nav {
+  display: none;
+}
+@media (max-width: 680px) {
+  .step-nav {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 15;
+    display: flex;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 999px;
+    background: var(--navy);
+    box-shadow: 0 8px 24px rgba(0, 11, 61, 0.28);
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+    transition:
+      opacity 0.25s,
+      transform 0.25s;
+  }
+  .step-nav.is-visible {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  .step-nav button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      opacity 0.2s;
+  }
+  .step-nav button:hover:not(:disabled),
+  .step-nav button:focus-visible {
+    background: rgba(255, 255, 255, 0.14);
+  }
+  .step-nav button:focus-visible {
+    outline: 2px solid #dbe5ff;
+    outline-offset: 1px;
+  }
+  .step-nav button:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+  .step-nav svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+@media (max-width: 680px) and (prefers-reduced-motion: reduce) {
+  .step-nav {
+    transition: none;
+    transform: none;
   }
 }
