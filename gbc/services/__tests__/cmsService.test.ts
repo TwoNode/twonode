@@ -205,6 +205,48 @@ describe("upload validators", () => {
   });
 });
 
+describe("upload edition folder", () => {
+  it("uses the edition the admin chose", async () => {
+    await uploadSponsorLogo(Buffer.from("x"), "f.png", "image/png", 100, "3.0");
+    expect(mockAwsS3.uploadLogo).toHaveBeenCalledWith(
+      expect.anything(),
+      "f.png",
+      "sponsor",
+      "3.0"
+    );
+  });
+
+  it("falls back to the active edition, then to 2.0", async () => {
+    mockPrisma.gBCEdition.findFirst.mockResolvedValueOnce({
+      key: "4.0",
+      name: "GBC 4.0",
+      theme: "t",
+      subTheme: "s",
+      venue: "v",
+      startDate: new Date("2028-01-01"),
+      endDate: new Date("2028-01-02"),
+      status: "ACTIVE",
+      ticketPrefix: "GBC4",
+    });
+    await uploadGalleryMediaSvc(Buffer.from("x"), "p.jpg", "image/jpeg", 100);
+    expect(mockAwsS3.uploadGalleryMedia).toHaveBeenLastCalledWith(
+      expect.anything(),
+      "p.jpg",
+      "image/jpeg",
+      "4.0"
+    );
+
+    mockPrisma.gBCEdition.findFirst.mockResolvedValueOnce(null);
+    await uploadGalleryMediaSvc(Buffer.from("x"), "q.jpg", "image/jpeg", 100);
+    expect(mockAwsS3.uploadGalleryMedia).toHaveBeenLastCalledWith(
+      expect.anything(),
+      "q.jpg",
+      "image/jpeg",
+      "2.0"
+    );
+  });
+});
+
 describe("deleteFile / deleteFiles", () => {
   it("delegates single-key delete to deleteFromS3", async () => {
     await deleteFile("k1");
