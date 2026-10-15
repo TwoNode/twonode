@@ -35,7 +35,7 @@ export default async function V4IndustryPage({
     <PageShell current="industry">
       <section className="story-hero section-wrap">
         <p className="eyebrow">
-          <Link href="/v4#work">← Our work</Link>
+          <Link href="/v2#work">← Our work</Link>
           <span
             className={`status ${industry.status === "active" ? "status-active" : "status-next"}`}
           >
