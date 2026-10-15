@@ -35,10 +35,10 @@ export default function V4InsightsPage() {
               <span className="eyebrow-cat">{fmt(post.date)}</span>
             </p>
             <h2>
-              <Link href={`/v2/insights/${post.slug}`}>{post.title}</Link>
+              <Link href={`/insights/${post.slug}`}>{post.title}</Link>
             </h2>
             <p className="v4-plain">{post.excerpt}</p>
-            <Link className="text-link" href={`/v2/insights/${post.slug}`}>
+            <Link className="text-link" href={`/insights/${post.slug}`}>
               Read article <span>↗</span>
             </Link>
           </article>

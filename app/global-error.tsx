@@ -5,7 +5,7 @@ import Link from "next/link";
 
 /**
  * Last-resort fallback only — catches errors thrown before any root-layout
- * group (app/(main), app/(noPopUp), app/(projects), app/v2 — see their own
+ * group (app/(site), app/(legacy), app/(noPopUp), app/(projects) — see their own
  * error.tsx, backed by components/ErrorFallback.tsx) has a chance to mount.
  * This is the one file allowed to render its own <html>/<body>: the
  * `global-error` filename is what makes Next.js treat it as a full root

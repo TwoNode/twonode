@@ -62,15 +62,49 @@ const sora = localFont({
   display: "swap",
 });
 
-// /v2 is a faithful port of the static prototype (out/twonode-website). It is
-// a draft: kept out of search until the content is reviewed (TASK-0008).
 export const metadata: Metadata = {
-  robots: { index: false, follow: false },
+  title: "TwoNode Technologies - The Platform for Industry Based GIS Solutions",
+  description:
+    "TwoNode Technologies: Real-time asset tracking and monitoring for industry-based GIS solutions and electric grid visualization.",
+  keywords:
+    "twonode, twonode-technologies, GIS, innovative_GIS_solution, Industry, tech, technology, technologies, limited",
+  publisher: "TwoNode Technologies",
+  authors: [{ name: "TwoNode Technologies" }],
+  creator: "TwoNode Technologies",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://twonode.tech"
+  ),
+  openGraph: {
+    title:
+      "TwoNode Technologies - The Platform for Industry Based GIS Solutions",
+    description:
+      "TwoNode Technologies: Real-time asset tracking and monitoring for industry-based GIS solutions and electric grid visualization.",
+    url: "/",
+    siteName: "TwoNode Technologies",
+    locale: "en_US",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon-16x16.png",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = { themeColor: "#000b3d" };
 
-export default function V4Layout({
+export default function SiteLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (

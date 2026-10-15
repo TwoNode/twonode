@@ -33,7 +33,7 @@ export default function V4HomePage() {
               <a className="button button-primary" href="#work">
                 Explore our work <span>↘</span>
               </a>
-              <Link className="text-link" href="/v2/our-story">
+              <Link className="text-link" href="/our-story">
                 Get to know us <span>↗</span>
               </Link>
             </div>
@@ -198,7 +198,7 @@ export default function V4HomePage() {
                 What else could work better if the right people, information and
                 systems were connected?
               </blockquote>
-              <Link className="text-link" href="/v2/our-story">
+              <Link className="text-link" href="/our-story">
                 Read our story <span>↗</span>
               </Link>
             </div>
@@ -439,7 +439,7 @@ export default function V4HomePage() {
               We are starting with the problems we know, learning from the
               people closest to them, and building toward what is possible.
             </p>
-            <Link className="button button-light" href="/v2/our-story">
+            <Link className="button button-light" href="/our-story">
               More about TwoNode <span>↗</span>
             </Link>
             <div className="belief-decoration" aria-hidden="true">
