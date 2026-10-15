@@ -71,7 +71,8 @@ export function EditSpeakerModal({ speaker }: EditSpeakerModalProps) {
       if (photoFile) {
         const uploadResult = await gbcApi.uploads.file(
           "speaker-photo",
-          photoFile
+          photoFile,
+          selectedEdition || undefined
         );
 
         if (uploadResult.success && uploadResult.data) {

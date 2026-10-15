@@ -36,8 +36,20 @@ export const POST = withAuth<GBCRole>(
     if (!(file instanceof File))
       throw new ValidationError({ file: "No file provided" });
 
+    const editionField = formData.get("edition");
+    const edition =
+      typeof editionField === "string" && editionField.trim()
+        ? editionField.trim()
+        : undefined;
+
     const buffer = Buffer.from(await file.arrayBuffer());
-    const data = await uploader(buffer, file.name, file.type, file.size);
+    const data = await uploader(
+      buffer,
+      file.name,
+      file.type,
+      file.size,
+      edition
+    );
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.GBC, roles: [GBCRole.ADMIN, GBCRole.SUPERADMIN] }

@@ -82,7 +82,8 @@ export function EditGalleryModal({ item }: EditGalleryModalProps) {
       if (mediaFile) {
         const uploadResult = await gbcApi.uploads.file(
           "gallery-media",
-          mediaFile
+          mediaFile,
+          edition || undefined
         );
 
         if (!uploadResult.success || !uploadResult.data) {

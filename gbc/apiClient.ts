@@ -532,9 +532,10 @@ export const gbcApi = {
   },
 
   uploads: {
-    file: (kind: UploadKind, file: File) => {
+    file: (kind: UploadKind, file: File, edition?: string) => {
       const formData = new FormData();
       formData.append("file", file);
+      if (edition) formData.append("edition", edition);
       return formFetch<UploadResult>(`${BASE}/admin/uploads/${kind}`, formData);
     },
 
