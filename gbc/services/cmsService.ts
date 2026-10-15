@@ -22,6 +22,11 @@ async function resolveEdition(edition?: string): Promise<string | undefined> {
   return active?.key;
 }
 
+/** The edition folder a new public upload goes into: the one named, else the active one, else 2.0. */
+async function uploadEdition(edition?: string): Promise<string> {
+  return (await resolveEdition(edition)) ?? "2.0";
+}
+
 /**
  * Migrated from gallery-actions.ts + sponsor-actions.ts + speaker-actions.ts
  * + upload-actions.ts (minus dead partners-actions.ts — sponsor-actions.ts's
@@ -358,37 +363,41 @@ export async function uploadSponsorLogo(
   file: Buffer,
   fileName: string,
   contentType: string,
-  size: number
+  size: number,
+  edition?: string
 ) {
   assertUploadValid(contentType, size, IMAGE_TYPES, LOGO_MAX_SIZE, "5MB");
-  return uploadLogo(file, fileName, "sponsor");
+  return uploadLogo(file, fileName, "sponsor", await uploadEdition(edition));
 }
 
 export async function uploadPartnerLogo(
   file: Buffer,
   fileName: string,
   contentType: string,
-  size: number
+  size: number,
+  edition?: string
 ) {
   assertUploadValid(contentType, size, IMAGE_TYPES, LOGO_MAX_SIZE, "5MB");
-  return uploadLogo(file, fileName, "partner");
+  return uploadLogo(file, fileName, "partner", await uploadEdition(edition));
 }
 
 export async function uploadSpeakerPhotoFile(
   file: Buffer,
   fileName: string,
   contentType: string,
-  size: number
+  size: number,
+  edition?: string
 ) {
   assertUploadValid(contentType, size, IMAGE_TYPES, LOGO_MAX_SIZE, "5MB");
-  return uploadSpeakerPhoto(file, fileName);
+  return uploadSpeakerPhoto(file, fileName, await uploadEdition(edition));
 }
 
 export async function uploadGalleryMedia(
   file: Buffer,
   fileName: string,
   contentType: string,
-  size: number
+  size: number,
+  edition?: string
 ) {
   const isVideo = contentType.startsWith("video/");
   if (!contentType.startsWith("image/") && !isVideo) {
@@ -400,7 +409,12 @@ export async function uploadGalleryMedia(
       file: `File size must be less than ${isVideo ? "100MB" : "10MB"}`,
     });
   }
-  return uploadGalleryMediaToS3(file, fileName, contentType);
+  return uploadGalleryMediaToS3(
+    file,
+    fileName,
+    contentType,
+    await uploadEdition(edition)
+  );
 }
 
 export async function deleteFile(key: string) {

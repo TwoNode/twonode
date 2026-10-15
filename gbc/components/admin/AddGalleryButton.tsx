@@ -81,7 +81,8 @@ export function AddGalleryButton() {
 
       const uploadResult = await gbcApi.uploads.file(
         "gallery-media",
-        mediaFile
+        mediaFile,
+        edition || undefined
       );
 
       if (!uploadResult.success || !uploadResult.data) {

@@ -71,7 +71,8 @@ export function EditSponsorModal({ sponsor, tiers }: EditSponsorModalProps) {
       if (logoFile) {
         const uploadResult = await gbcApi.uploads.file(
           "sponsor-logo",
-          logoFile
+          logoFile,
+          selectedEdition || undefined
         );
         if (!uploadResult.success || !uploadResult.data) {
           toast.error("Failed to upload new logo");

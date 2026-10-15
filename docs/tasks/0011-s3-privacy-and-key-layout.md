@@ -76,7 +76,7 @@ Decision (roji-tech, 2026-10-12): red copy key is `surfboard/<userId>/redcopy/<p
 
 ### Phase 3: GBC key layout
 
-- [ ] New GBC uploads go to `public/gbc/<edition>/{gallery,speakers,logos}/…` and `private/gbc/<edition>/qrcodes/…` (`gbc/utils/aws-s3.ts`; key builders in `gbc/utils/storageKeys.ts`). QR codes done 2026-10-13 (PR for `feat/gbc-private-qr`); gallery, speakers and logos still use `GBC2/<folder>/`.
+- [ ] (Code done 2026-10-15, branch `feat/gbc-public-key-layout`: new gallery, speaker and logo uploads take the edition and go to `public/gbc/<edition>/…`. **Do not merge until policy v3 is applied**: the bucket policy allows public read on `GBC2/*` only, so new images would 403 on the public GBC pages. Order: paste `out/aws/bucket-policy-v3-DRAFT-gbc-public.json`, check, then merge and promote.) New GBC uploads go to `public/gbc/<edition>/{gallery,speakers,logos}/…` and `private/gbc/<edition>/qrcodes/…` (`gbc/utils/aws-s3.ts`; key builders in `gbc/utils/storageKeys.ts`). QR codes done 2026-10-13 (PR for `feat/gbc-private-qr`); gallery, speakers and logos still use `GBC2/<folder>/`.
 - [x] Sign ticket QR links on the "my ticket" and payment-success pages and in the `tickets/lookup` and `payments/verify` responses (done 2026-10-13, PR for `feat/gbc-private-qr`); also gated the public `tickets/[ticketNumber]` route (I-028). Still to do: move the old `GBC2/qrcodes/*` files (group B), then drop them from the policy (v2). Old `GBC2/{gallery,speakers,logos}/*` stay public.
 - [ ] Final policy: `public/*` plus the old `GBC2/` public folders. Verify the public GBC pages by eye.
 
