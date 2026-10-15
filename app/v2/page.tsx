@@ -354,7 +354,20 @@ export default function V4HomePage() {
                   <br />
                   <span>BUILDERS</span>
                   <br />
-                  CONFERENCE<span className="gbc-star">✳</span>
+                  CONFERENCE
+                  <span className="gbc-star" aria-hidden="true">
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="1em"
+                      height="1em"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    >
+                      <path d="M12 3v18M3 12h18M5.64 5.64l12.72 12.72M5.64 18.36l12.72-12.72" />
+                    </svg>
+                  </span>
                 </div>
                 <div className="gbc-people">
                   <span className="person p1"></span>
