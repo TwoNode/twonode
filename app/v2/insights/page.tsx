@@ -1,52 +1,49 @@
-import Link from "next/link";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { PageShell } from "../components/PageShell";
 import { insights } from "../data/insights";
 
-export const metadata: Metadata = { title: "Insights — TwoNode" };
+export const metadata: Metadata = {
+  title: "Behind the Build — TwoNode Technologies",
+  description:
+    "Industry observations, product stories, and lessons from building documented as we learn them.",
+};
 
-export default function InsightsPage() {
+const fmt = (iso: string) =>
+  new Date(iso + "T00:00:00Z").toLocaleDateString("en-GB", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+export default function V4InsightsPage() {
   return (
-    <div className="mx-auto max-w-3xl px-6 py-20 sm:px-8">
-      <p className="text-sm uppercase tracking-[0.2em] opacity-60">
-        Inside TwoNode
-      </p>
-      <h1 className="mt-3 font-(family-name:--font-display) text-4xl font-medium sm:text-5xl">
-        Behind the Build.
-      </h1>
-      <p className="mt-6 max-w-xl leading-relaxed opacity-75">
-        Industry observations, product stories, and lessons from building
-        documented as we learn them.
-      </p>
-
-      <div
-        className="mt-16 divide-y"
-        style={{ borderColor: "var(--v2-border)" }}
-      >
+    <PageShell current="insights">
+      <section className="story-hero section-wrap">
+        <p className="eyebrow">
+          <span className="eyebrow-dot"></span> INSIDE TWONODE
+        </p>
+        <h1>
+          Behind the <span>Build.</span>
+        </h1>
+      </section>
+      <section className="section-wrap v4-rows">
         {insights.map((post) => (
-          <Link
-            key={post.slug}
-            href={`/v2/insights/${post.slug}`}
-            className="group block border-t py-8"
-            style={{ borderColor: "var(--v2-border)" }}
-          >
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <span className="text-xs uppercase tracking-widest opacity-50">
-                {post.category}
-              </span>
-              <time className="text-xs opacity-50">
-                {new Date(post.date).toLocaleDateString("en-US", {
-                  month: "long",
-                  year: "numeric",
-                })}
-              </time>
-            </div>
-            <h2 className="mt-3 font-(family-name:--font-display) text-2xl font-medium group-hover:opacity-70">
-              {post.title}
+          <article className="v4-row v4-post" key={post.slug}>
+            <p className="eyebrow">
+              {post.category.toUpperCase()}
+              <span className="eyebrow-cat">{fmt(post.date)}</span>
+            </p>
+            <h2>
+              <Link href={`/v4/insights/${post.slug}`}>{post.title}</Link>
             </h2>
-            <p className="mt-2 leading-relaxed opacity-75">{post.excerpt}</p>
-          </Link>
+            <p className="v4-plain">{post.excerpt}</p>
+            <Link className="text-link" href={`/v4/insights/${post.slug}`}>
+              Read article <span>↗</span>
+            </Link>
+          </article>
         ))}
-      </div>
-    </div>
+      </section>
+    </PageShell>
   );
 }

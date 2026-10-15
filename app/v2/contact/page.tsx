@@ -1,55 +1,52 @@
 import type { Metadata } from "next";
+import { PageShell } from "../components/PageShell";
 
-export const metadata: Metadata = { title: "Contact — TwoNode" };
+export const metadata: Metadata = {
+  title: "Contact — TwoNode Technologies",
+  description:
+    "Whether you want to work with TwoNode or join us in building, the fastest way to reach us is directly.",
+};
 
-/**
- * No form submission wired up in this pass — the existing site's contact
- * form (components/ReachOutToUs.tsx) isn't a drop-in fit for /v2's design
- * language, and building a new backend endpoint is out of scope here.
- * Direct contact channels only; revisit if /v2 gets promoted.
- */
-export default function ContactPage() {
+export default function V4ContactPage() {
   return (
-    <div className="mx-auto max-w-2xl px-6 py-20 sm:px-8">
-      <p className="text-sm uppercase tracking-[0.2em] opacity-60">
-        Build with us
-      </p>
-      <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl font-medium sm:text-5xl">
-        Let&apos;s talk about your industry.
-      </h1>
-      <p className="mt-6 max-w-lg text-lg leading-relaxed opacity-80">
-        Whether you want to work with TwoNode or join us in building, the
-        fastest way to reach us is directly.
-      </p>
-
-      <div className="mt-14 grid gap-8 sm:grid-cols-2">
-        <div>
-          <h2 className="text-sm font-medium uppercase tracking-widest opacity-60">
-            Email
-          </h2>
+    <PageShell current="contact">
+      <section className="story-hero section-wrap">
+        <p className="eyebrow">
+          <span className="eyebrow-dot"></span> BUILD WITH US
+        </p>
+        <h1>
+          Let&apos;s talk about <span>your industry.</span>
+        </h1>
+        <p className="story-lede">
+          Whether you want to work with TwoNode or join us in building, the
+          fastest way to reach us is directly.
+        </p>
+      </section>
+      <section className="section-wrap v4-rows">
+        <div className="v4-row">
+          <p className="eyebrow">EMAIL</p>
           <a
-            href="mailto:info@twonodetechnologies.com"
-            className="mt-2 block text-lg hover:opacity-70"
+            className="v4-big-link"
+            href="mailto:info@twonodetechnologies.com?subject=Let's%20talk%20about%20an%20industry%20problem"
           >
             info@twonodetechnologies.com
           </a>
         </div>
-        <div>
-          <h2 className="text-sm font-medium uppercase tracking-widest opacity-60">
-            Phone
-          </h2>
-          <a
-            href="tel:+2349160002740"
-            className="mt-2 block text-lg hover:opacity-70"
-          >
-            (+234) 916-0002-740
+        <div className="v4-row">
+          <p className="eyebrow">PHONE</p>
+          <a className="v4-big-link" href="tel:+2349160002740">
+            +234 916 0002 740
           </a>
         </div>
-      </div>
-
-      <p className="mt-16 text-xs uppercase tracking-widest opacity-40">
-        RC NO.: 7742902
-      </p>
-    </div>
+        <div className="v4-row">
+          <p className="eyebrow">COMPANY</p>
+          <p className="v4-plain">
+            TwoNode Technologies Ltd. · RC NO.: 7742902
+            <br />
+            58 Kudirat Abiola way, Oregun, Lagos State, Nigeria.
+          </p>
+        </div>
+      </section>
+    </PageShell>
   );
 }
