@@ -15,5 +15,5 @@ export const proof = {
     { value: 11000, label: "survey beacons" },
   ],
   places: ["Lagos", "Ogun", "Ondo", "Oyo", "FCT"],
-  since: 2025,
+  since: 2021,
 } as const;
