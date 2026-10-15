@@ -62,7 +62,7 @@ const sora = localFont({
   display: "swap",
 });
 
-// /v4 is a faithful port of the static prototype (out/twonode-website). It is
+// /v2 is a faithful port of the static prototype (out/twonode-website). It is
 // a draft: kept out of search until the content is reviewed (TASK-0008).
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
