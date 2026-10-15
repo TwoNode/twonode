@@ -61,28 +61,49 @@ interface BatchSubmissionModalProps {
   onRemovePlan?: (planId: string) => void;
 }
 
-/** The route answers bad input with "Invalid request" and puts the field messages in `details` (Zod's format()); show those instead. */
+/** The route answers bad input with "Invalid request" and puts the field messages in `details` (Zod's format or custom object); show those instead. */
 function describeValidationFailure(res: {
   error?: string;
   code?: string;
   details?: unknown;
 }): string | undefined {
-  if (res.code !== "VALIDATION_ERROR" || typeof res.details !== "object") {
-    return res.error;
+  if (!res || typeof res !== "object") return undefined;
+  if (typeof res.details === "string" && res.details.trim()) {
+    return res.details;
   }
-  const messages: string[] = [];
-  const walk = (node: unknown, path: string) => {
-    if (!node || typeof node !== "object") return;
-    for (const [key, value] of Object.entries(node)) {
-      if (key === "_errors" && Array.isArray(value)) {
-        for (const m of value) messages.push(path ? `${path}: ${m}` : `${m}`);
-      } else {
-        walk(value, path ? `${path}.${key}` : key);
+  if (typeof res.details === "object" && res.details !== null) {
+    const messages: string[] = [];
+    const walk = (node: unknown, path: string) => {
+      if (!node) return;
+      if (typeof node === "string") {
+        messages.push(path ? `${path}: ${node}` : node);
+        return;
       }
-    }
-  };
-  walk(res.details, "");
-  return messages[0] || res.error;
+      if (Array.isArray(node)) {
+        for (const item of node) {
+          if (typeof item === "string") {
+            messages.push(path ? `${path}: ${item}` : item);
+          } else {
+            walk(item, path);
+          }
+        }
+        return;
+      }
+      if (typeof node === "object") {
+        for (const [key, value] of Object.entries(node)) {
+          if (key === "_errors" && Array.isArray(value)) {
+            for (const m of value)
+              messages.push(path ? `${path}: ${m}` : `${m}`);
+          } else {
+            walk(value, path ? `${path}.${key}` : key);
+          }
+        }
+      }
+    };
+    walk(res.details, "");
+    if (messages.length > 0) return messages[0];
+  }
+  return res.error;
 }
 
 export function BatchSubmissionModal({
@@ -163,7 +184,11 @@ export function BatchSubmissionModal({
       // 1. Download S3 PDF as Base64 to bypass CORS
       const dlRes = await surfboardApi.recordCopy.downloadPdf(plan.id);
       if (!dlRes.success) {
-        throw new Error(dlRes.error || "Failed to download PDF from server.");
+        throw new Error(
+          describeValidationFailure(dlRes) ||
+            dlRes.error ||
+            "Failed to download PDF from server."
+        );
       }
 
       // 2. Load PDF.js client-side from CDNJS
@@ -427,6 +452,7 @@ export function BatchSubmissionModal({
       if (!saveRes.success) {
         throw new Error(
           describeValidationFailure(saveRes) ||
+            saveRes.error ||
             "Failed to save verification result to database."
         );
       }
