@@ -43,7 +43,7 @@ export default function V4ContactPage() {
           <p className="v4-plain">
             TwoNode Technologies Ltd. · RC NO.: 7742902
             <br />
-            Lagos · Abuja, Nigeria
+            58 Kudirat Abiola way, Oregun, Lagos State, Nigeria.
           </p>
         </div>
       </section>
