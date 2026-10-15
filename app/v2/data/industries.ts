@@ -23,7 +23,7 @@ export interface Industry {
 
 /**
  * Seeded with the two industries named in the TwoNode Website PRB
- * (out/TwoNode Website.pdf). Adding a third industry later is a matter of
+ * (TwoNode Website PRB). Adding a third industry later is a matter of
  * appending an entry here — the Industries section and the [slug] detail
  * page are both fully data-driven off this file, per the brief's "Future
  * Industries" requirement (no structural rework needed to add one).
