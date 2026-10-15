@@ -13,11 +13,15 @@ import { CarouselImageSlider } from "@/components/CarouselImageSlider";
 import { OurGallery } from "@/components/OurGallery";
 import { Revolutionizing } from "@/components/Revolutionizing";
 import { DemystifyingGIS } from "@/components/DemystifyingGIS";
-import { BLOGS } from "./featurednews/FeaturedNews";
+import { notFound } from "next/navigation";
+import { BLOGS } from "../featurednews/FeaturedNews";
 import Image from "next/image";
 import Link from "next/link";
 
+// Preserved for history/reference, but rendered completely inaccessible (404) per maintainer requirement.
 export default function Home() {
+  notFound();
+
   const GbcData = BLOGS.slice(0, 4).map((blog, index) => ({
     number: index + 1,
     title: blog.title,

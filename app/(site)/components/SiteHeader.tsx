@@ -34,7 +34,7 @@ export function SiteHeader({ current }: { current: V4Section }) {
 
   return (
     <header className="site-header">
-      <Link className="brand" href="/v2" aria-label="TwoNode home">
+      <Link className="brand" href="/" aria-label="TwoNode home">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="brand-logo"
@@ -66,24 +66,24 @@ export function SiteHeader({ current }: { current: V4Section }) {
           </>
         ) : (
           <>
-            <Link href="/v2#approach" onClick={close}>
+            <Link href="/#approach" onClick={close}>
               Our approach
             </Link>
-            <Link href="/v2#work" onClick={close}>
+            <Link href="/#work" onClick={close}>
               Our work
             </Link>
           </>
         )}
         <Link
           className={current === "story" ? "active" : undefined}
-          href="/v2/our-story"
+          href="/our-story"
           onClick={close}
         >
           Our story
         </Link>
         <Link
           className={current === "insights" ? "active" : undefined}
-          href="/v2/insights"
+          href="/insights"
           onClick={close}
         >
           Insights
@@ -93,7 +93,7 @@ export function SiteHeader({ current }: { current: V4Section }) {
             Let&apos;s talk <span>↗</span>
           </a>
         ) : (
-          <Link className="nav-cta" href="/v2/contact" onClick={close}>
+          <Link className="nav-cta" href="/contact" onClick={close}>
             Let&apos;s talk <span>↗</span>
           </Link>
         )}
