@@ -28,11 +28,18 @@ export function loginUrlWithReturn(
 
 /** True for a path on this site (`/a/b?c=d`), never a full URL or a `//host` link. */
 export function isSafeReturnPath(value: string | null | undefined): boolean {
-  return (
-    typeof value === "string" &&
-    value.startsWith("/") &&
-    !value.startsWith("//") &&
-    !value.includes("\\") &&
-    value.length <= 2048
-  );
+  if (typeof value !== "string" || value.length > 2048) return false;
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return false;
+
+  try {
+    const decoded = decodeURIComponent(value);
+    if (!decoded.startsWith("/") || decoded.startsWith("//") || decoded.includes("\\")) {
+      return false;
+    }
+    if (/^\/\s/.test(decoded)) return false;
+  } catch {
+    return false;
+  }
+
+  return true;
 }

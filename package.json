@@ -17,6 +17,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:load": "node scripts/load-stress-benchmark.mjs",
+    "test:mutation": "node scripts/mutation-test.mjs",
     "prisma:generate": "npx prisma generate",
     "prisma:push": "npx prisma db push",
     "prisma:studio": "npx prisma studio",

@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { revaApi } from "@/reva/apiClient";
 import Bowser from "bowser";
-import PaystackPop from "@paystack/inline-js";
 
 import {
   AlertDialog,
@@ -691,7 +690,7 @@ const RevaDueDiligenceForm: React.FC = () => {
 
     revaApi.oneTimeProperties
       .submit(formData)
-      .then((result) => {
+      .then(async (result) => {
         if (!result.success) {
           notifyError(result.error || "Error saving form data");
           throw new Error(result.error);
@@ -705,7 +704,8 @@ const RevaDueDiligenceForm: React.FC = () => {
         const reference = result.data.property?.reference;
 
         if (accessCode && reference) {
-          const popup = new PaystackPop() as any;
+          const PaystackPop = (await import("@paystack/inline-js")).default;
+          const popup = new (PaystackPop as any)();
 
           // Define your callbacks object
           const callbacks = {
