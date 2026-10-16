@@ -72,6 +72,21 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 
 ---
 
+## Planned Session Batch: TASK-0014 — Cloudflare R2 Zero-Downtime Migration
+
+**Batch Reference:** [TASK-0014](./0014-cloudflare-r2-migration.md)  
+**Active Branch:** `chore/r2-migration`  
+**Status:** `Planned`. ADR-0016 Proposed. Blueprint written 2026-10-16. Eliminates AWS S3 egress liability ($0.09/GB) and drops storage costs to $0.00/mo under R2's 10 GB free tier. 6 phases: R2 bucket setup, Super Slurper bulk copy, Sippy lazy fallback, Staging verification, Vercel production cutover, 30-day S3 warm standby.
+
+- [ ] **Phase 1: R2 bucket & credentials:** create `twonode-store`, apply CORS JSON, configure custom domain, generate API token. _(Waiting on: roji-tech go)_
+- [ ] **Phase 2: Super Slurper bulk migration:** direct cloud-to-cloud copy of all 7,344 objects (~3.69 GB); enable Sippy lazy fallback.
+- [ ] **Phase 3: Migration audit:** verify counts, sizes, and headers; confirm private files return 403 anonymously.
+- [ ] **Phase 4: Staging verification:** set `STORAGE_PROVIDER=r2` on preview/staging; test Surfboard CAD/PDF, REVA reports, and GBC tickets.
+- [ ] **Phase 5: Production cutover:** update Vercel prod env vars, deploy, run smoke tests.
+- [ ] **Phase 6: 30-day warm standby & decommissioning:** lock S3 to read-only; decommission S3 after 30 days of zero issues.
+
+---
+
 ## Planned Session Batch: TASK-0012 — OSSG integration and the red copy flow
 
 **Batch Reference:** [TASK-0012](./0012-ossg-integration-and-red-copy.md)  
