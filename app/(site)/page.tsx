@@ -298,7 +298,7 @@ export default function V4HomePage() {
                 </p>
                 <a
                   className="text-link"
-                  href="https://www.twonodetechnologies.com/surfboard"
+                  href="/surfboard"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -339,7 +339,7 @@ export default function V4HomePage() {
                 </p>
                 <a
                   className="text-link"
-                  href="https://www.twonodetechnologies.com/reva"
+                  href="/reva"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -396,7 +396,7 @@ export default function V4HomePage() {
                 </p>
                 <a
                   className="text-link"
-                  href="https://www.twonodetechnologies.com/gbc/gallery"
+                  href="/gbc/gallery"
                   target="_blank"
                   rel="noreferrer"
                 >
