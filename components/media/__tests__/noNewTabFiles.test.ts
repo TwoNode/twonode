@@ -76,10 +76,6 @@ const REVIEWED: Record<string, { count: number; reason: string }> = {
     count: 1,
     reason: "Google Maps",
   },
-  "app/(projects)/(surfboard)/surfboard/page.tsx": {
-    count: 1,
-    reason: "company website",
-  },
   "app/(projects)/(surfboard)/surfboardplan/[id]/PublicSurfPlan.tsx": {
     count: 1,
     reason: "Google Maps",
