@@ -27,7 +27,6 @@ import {
   SUBSCRIPTION_PLANS,
   type PlanId,
 } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
-import PaystackPop from "@paystack/inline-js";
 import { surfboardApi } from "@/surfboard/apiClient";
 import SubscriptionAdminFAB from "./SubscriptionAdminFAB";
 
@@ -224,7 +223,8 @@ export default function SubscriptionManager() {
         metadata,
       } = result.data;
 
-      const paystack = new PaystackPop();
+      const PaystackPop = (await import("@paystack/inline-js")).default;
+      const paystack = new (PaystackPop as any)();
       paystack.newTransaction({
         key: publicKey,
         reference,
@@ -315,7 +315,8 @@ export default function SubscriptionManager() {
         metadata,
       } = result.data;
 
-      const paystack = new PaystackPop();
+      const PaystackPop = (await import("@paystack/inline-js")).default;
+      const paystack = new (PaystackPop as any)();
       paystack.newTransaction({
         key: publicKey,
         reference,

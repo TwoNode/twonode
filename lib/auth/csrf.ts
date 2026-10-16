@@ -10,7 +10,11 @@ export function validateCSRF(req: NextRequest): boolean {
     // "Origin: null", which isn't a parseable URL — reject it rather than
     // letting new URL() throw into a 500.
     try {
-      return new URL(origin).host === host;
+      const parsed = new URL(origin);
+      return (
+        (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+        parsed.host === host
+      );
     } catch {
       return false;
     }
@@ -20,7 +24,11 @@ export function validateCSRF(req: NextRequest): boolean {
   const referer = req.headers.get("referer");
   if (referer) {
     try {
-      return new URL(referer).host === host;
+      const parsed = new URL(referer);
+      return (
+        (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+        parsed.host === host
+      );
     } catch {
       return false;
     }

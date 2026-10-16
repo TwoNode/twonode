@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Bowser from "bowser";
-import PaystackPop from "@paystack/inline-js";
 
 import {
   AlertDialog,
@@ -675,7 +674,7 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
 
       revaApi.properties
         .submit(formData)
-        .then((result) => {
+        .then(async (result) => {
           if (!result.success) {
             notifyError(result.error || "Error saving form data");
             throw new Error(result.error);
@@ -689,7 +688,8 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
           const reference = result.data.property?.reference;
 
           if (accessCode && reference) {
-            const popup = new PaystackPop() as any;
+            const PaystackPop = (await import("@paystack/inline-js")).default;
+            const popup = new (PaystackPop as any)();
 
             // Define your callbacks object
             const callbacks = {
