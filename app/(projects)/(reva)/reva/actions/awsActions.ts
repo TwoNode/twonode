@@ -49,29 +49,6 @@ function extractS3KeyFromUrl(url: string): string {
   return url.substring(idx + BUCKET_HOST.length);
 }
 
-export async function uploadToS3(formData: FormData) {
-  const files = formData.getAll("file") as File[];
-
-  if (files.length === 0) throw new Error("No file(s) provided");
-
-  for (const file of files) {
-    const buffer = Buffer.from(await file.arrayBuffer());
-
-    const uniqueSuffix = `${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2, 15)}`;
-    const key = `uploads/${uniqueSuffix}-${file.name}`;
-
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key,
-        Body: buffer,
-        ContentType: file.type,
-      })
-    );
-  }
-}
 
 export async function uploadToS3FromServer(
   files: File[],

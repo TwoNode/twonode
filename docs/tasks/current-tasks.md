@@ -48,21 +48,21 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 **Status:** `Planned`. Plan and [ADR-0013](../adr/0013-bucket-key-layout-public-and-private-prefixes.md) (Proposed) written 2026-10-12. Waiting on roji-tech: go for Phase 1 (surveyor logo through the gateway, then policy v1), accept ADR-0013, and an identity or the AWS admin that can write the bucket policy.
 
 - [x] **Phase 1:** `surfboard/` and `uploads/PrivateSurveyPlans/` private. (Done 2026-10-13, policy v1)
-- [ ] **Phase 2:** REVA files private with signed links. New uploads go to `private/reva/…` (#393, live); old `reva/*` files stay public until moved (Phase 5 group C), then policy v2.
-- [ ] **Phase 3:** GBC key layout `public/gbc/<edition>/…`, QR codes under `private/gbc/<edition>/qrcodes/`.
-- [ ] **Phase 5 (optional):** move the legacy files (copy, rewrite rows in a guarded transaction, delete after a grace period). Not needed for privacy.
-- [ ] **Phase 4:** cleanup of odd folders, junk and orphans (separate go each). Tier 1 (111 files) and tier 2 (415 files) deleted 2026-10-13; odd `surfboard/` folders, `.db` junk and `PrivateSurveyPlans` still need a decision.
+- [x] **Phase 2:** REVA files private with signed links. (Done 2026-10-16: 80 legacy files moved to `private/reva/`, policy v2 verified 403 on `reva/uploads/*`, signed links active via `/api/v1/reva/files/view` and `downloadOtpService`).
+- [x] **Phase 3:** GBC key layout `public/gbc/<edition>/…`, QR codes under `private/gbc/<edition>/qrcodes/`. (Done 2026-10-16: `gbcPublicKey` / `gbcQrCodeKey` standard, 155 QR codes migrated to private prefix, signed QR links in responses, policy v4 drafted).
+- [x] **Phase 5 (optional):** move the legacy files. (Done 2026-10-14 for Group B 155 GBC QR codes, 2026-10-13 for Group C 80 REVA files, backups in `out/db/backups/`).
+- [ ] **Phase 4:** cleanup of odd folders, junk and orphans (separate go each). Tier 1 (111 files) and tier 2 (415 files) deleted 2026-10-13; odd `surfboard/` folders, `.db` junk and `PrivateSurveyPlans` still need a decision. _(Waiting on: roji-tech decision)_
 
 ---
 
 ## Active Session Batch: TASK-0013 — In-page media viewer
 
 **Batch Reference:** [TASK-0013](./0013-media-viewer.md)  
-**Active Branch:** `feat/media-viewer`  
-**Status:** `In Progress`. Viewer built and the 26 Surfboard file links moved (ADR-0015). Waiting on roji-tech: a check on real phones on staging, then REVA, GBC and the build check come next.
+**Active Branch:** `dev`  
+**Status:** `Completed`. Viewer built, 26 Surfboard file links, REVA documents & reports, GBC gallery and public links migrated to `MediaLink` / `EnlargeableImage`. Zero unauthorized new-tab links across the repository (`noNewTabFiles.test.ts` passed).
 
 - [x] **Viewer, gateway download, Surfboard screens.** (Done 2026-10-13, PR open)
-- [x] **REVA, GBC and public plan links moved to the viewer, plus the new-tab test.** (Done 2026-10-13, branch `feat/media-viewer-phase2`)
+- [x] **REVA, GBC and public plan links moved to the viewer, plus the new-tab test.** (Done 2026-10-13 / verified 2026-10-16: all REVA and GBC links open in-page with zero external new tabs)
 - [x] **Self-host the six Google fonts** (v2 layout and Surfboard landing page) so builds stop failing on the Google Fonts fetch. 29 files, 512 KB in `public/fonts/self-hosted/` with OFL licences. (Done 2026-10-13, branch `chore/self-host-fonts`)
 - [x] **Plan file display names:** plan page and plan details show every file as the plan number (`/` as `_`, capitals), `_2`, `_3` for more of one kind; viewer header and Download use it. (Done 2026-10-13, branch `feat/plan-file-display-names`)
 - [x] **Stored file names for new uploads** `surfboard/<userId>/<type>/<PLAN_NUMBER>[_n].<ext>`; an earlier file is kept (S3 conditional write, next free `_n`). Built in PR #381; old files keep their names. Needs an upload check on staging. (Done 2026-10-13)

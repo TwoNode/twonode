@@ -71,4 +71,19 @@ describe("GET /api/v1/reva/files/view", () => {
     await get("reva/uploads/a.pdf", "&download=1&name=report.pdf");
     expect(mocks.sign).toHaveBeenLastCalledWith("reva/uploads/a.pdf", 300, { downloadName: "report.pdf" });
   });
+
+  it("signs private/reva/ keys for admins and requesters", async () => {
+    mocks.session = { sub: "a1", role: "ADMIN" };
+    const res = await get("private/reva/REVA_123/17-report.pdf");
+    expect(res.status).toBe(307);
+    expect(mocks.sign).toHaveBeenCalledWith("private/reva/REVA_123/17-report.pdf", 300, { downloadName: undefined });
+
+    mocks.session = { sub: "user-1", role: "USER" };
+    mocks.findMany.mockResolvedValue([
+      { site_images: ["https://b.s3.x.amazonaws.com/private/reva/REVA_123/site1.jpg"] },
+    ]);
+    const userRes = await get("private/reva/REVA_123/site1.jpg");
+    expect(userRes.status).toBe(307);
+    expect(mocks.sign).toHaveBeenCalledWith("private/reva/REVA_123/site1.jpg", 300, { downloadName: undefined });
+  });
 });
