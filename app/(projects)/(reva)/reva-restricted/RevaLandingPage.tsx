@@ -175,7 +175,7 @@ const RevaLandingPage: FC = () => {
       </section>
 
       <div className="p-10 bg-black bg-linear-to-r from-blue-800 to-gray-900 text-white">
-        <div className="p-10 gap-6 lg:basis-1/2 max-h-[642px] flex justify-center items-center bg-transparent">
+        <div className="p-10 gap-6 lg:basis-1/2 max-h-160.5 flex justify-center items-center bg-transparent">
           <Carousel
             centerMode={true}
             centerSlidePercentage={100}
@@ -190,17 +190,17 @@ const RevaLandingPage: FC = () => {
             showThumbs={false}
             stopOnHover={false}
             swipeable={true}
-            className="gap-6 lg:w-full max-w-[530px] max-h-[642px] bg-black/opacity-20 rounded-lg mt-6 lg:mt-0 flex items-center"
+            className="gap-6 lg:w-full max-w-132.5 max-h-160.5 bg-black/opacity-20 rounded-lg mt-6 lg:mt-0 flex items-center"
           >
             {reportPreview.map((item, ind) => (
               <div
                 key={ind}
-                className="p-6 w-full flex flex-col lg:flex-row lg:items-center lg:justify-center gap-[50px] 2xl:gap-[70px]"
+                className="p-6 w-full flex flex-col lg:flex-row lg:items-center lg:justify-center gap-12.5 2xl:gap-17.5"
               >
                 <img
                   src={item?.img}
                   className="w-full h-auto lg:h-full object-cover rounded-lg"
-                  alt="GIS Solutions"
+                  alt="Due Diligence Report Preview"
                 />
               </div>
             ))}
