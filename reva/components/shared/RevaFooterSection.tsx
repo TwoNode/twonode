@@ -46,6 +46,14 @@ export const RevaFooterSection = ({
           className="text-lg"
           dangerouslySetInnerHTML={{ __html: defaultCopyrightText }}
         />
+        <div className="mt-3 text-sm text-slate-400">
+          <Link
+            href="/"
+            className="text-cyan-400 hover:text-cyan-300 transition-colors underline underline-offset-4"
+          >
+            Powered by TwoNode Technologies
+          </Link>
+        </div>
       </footer>
     </>
   );

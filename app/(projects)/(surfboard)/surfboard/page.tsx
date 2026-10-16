@@ -14,24 +14,56 @@ const THEME_STORAGE_KEY = "twonodes-theme";
 // Self-hosted (latin) so a build never depends on fetching from Google Fonts.
 const sora = localFont({
   src: [
-    { path: "../../../../public/fonts/self-hosted/sora-latin-500-normal.woff2", weight: "500", style: "normal" },
-    { path: "../../../../public/fonts/self-hosted/sora-latin-600-normal.woff2", weight: "600", style: "normal" },
-    { path: "../../../../public/fonts/self-hosted/sora-latin-700-normal.woff2", weight: "700", style: "normal" },
-    { path: "../../../../public/fonts/self-hosted/sora-latin-800-normal.woff2", weight: "800", style: "normal" },
+    {
+      path: "../../../../public/fonts/self-hosted/sora-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../../../public/fonts/self-hosted/sora-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../../../public/fonts/self-hosted/sora-latin-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../../../public/fonts/self-hosted/sora-latin-800-normal.woff2",
+      weight: "800",
+      style: "normal",
+    },
   ],
   variable: "--font-sora",
 });
 const plexSans = localFont({
   src: [
-    { path: "../../../../public/fonts/self-hosted/ibm-plex-sans-latin-400-normal.woff2", weight: "400", style: "normal" },
-    { path: "../../../../public/fonts/self-hosted/ibm-plex-sans-latin-500-normal.woff2", weight: "500", style: "normal" },
-    { path: "../../../../public/fonts/self-hosted/ibm-plex-sans-latin-600-normal.woff2", weight: "600", style: "normal" },
+    {
+      path: "../../../../public/fonts/self-hosted/ibm-plex-sans-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../../../public/fonts/self-hosted/ibm-plex-sans-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../../../public/fonts/self-hosted/ibm-plex-sans-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
   ],
   variable: "--font-plex-sans",
 });
 const plexMono = localFont({
   src: [
-    { path: "../../../../public/fonts/self-hosted/ibm-plex-mono-latin-500-normal.woff2", weight: "500", style: "normal" },
+    {
+      path: "../../../../public/fonts/self-hosted/ibm-plex-mono-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
   ],
   variable: "--font-plex-mono",
 });
@@ -979,13 +1011,7 @@ export default function SurfboardLandingPage() {
             <h4>Company</h4>
             <ul>
               <li>
-                <a
-                  href="https://www.twonodetechnologies.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  TwoNode Technologies
-                </a>
+                <Link href="/">TwoNode Technologies</Link>
               </li>
               <li>
                 <Link href="/surfboard/badge">Badge Video</Link>
