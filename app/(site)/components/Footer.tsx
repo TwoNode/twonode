@@ -68,7 +68,7 @@ export function Footer() {
             <ul>
               <li>
                 <a
-                  href="https://www.twonodetechnologies.com/surfboard"
+                  href="/surfboard"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -77,7 +77,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://www.twonodetechnologies.com/reva"
+                  href="/reva"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -86,7 +86,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://www.twonodetechnologies.com/gbc"
+                  href="/gbc"
                   target="_blank"
                   rel="noreferrer"
                 >
