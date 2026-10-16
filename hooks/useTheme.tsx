@@ -22,19 +22,20 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function getInitialTheme(): Theme {
-  if (typeof document !== "undefined") {
-    // The blocking script in the root layout already applied the class
-    // before hydration — read it back so React doesn't flash/disagree.
-    if (document.documentElement.classList.contains("dark")) return "dark";
-  }
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "light" || stored === "dark") return stored;
+    if (stored === "dark") return "dark";
+    if (stored === "light") return "light";
   } catch {
     // localStorage unavailable (private mode, disabled) — fall through.
   }
   if (typeof window !== "undefined" && window.matchMedia) {
     return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  }
+  if (typeof document !== "undefined") {
+    return document.documentElement.classList.contains("dark")
       ? "dark"
       : "light";
   }
@@ -51,6 +52,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
+
+  // If the user hasn't explicitly set a preference, follow system changes live
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored !== "light" && stored !== "dark") {
+          setThemeState(e.matches ? "dark" : "light");
+        }
+      } catch {
+        setThemeState(e.matches ? "dark" : "light");
+      }
+    };
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next);
@@ -96,7 +115,11 @@ export const THEME_INIT_SCRIPT = `
     if (t !== "light" && t !== "dark") {
       t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
-    if (t === "dark") document.documentElement.classList.add("dark");
+    if (t === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   } catch (e) {}
 })();
 `;

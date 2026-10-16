@@ -29,8 +29,10 @@ import {
   MapPin as Pin,
   FileSpreadsheet,
   MessageSquare,
+  Search,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { SecureDownloadDialog } from "@/reva/components/SecureDownloadDialog";
 
 // Reva colors
@@ -121,14 +123,27 @@ export async function OneTimeRequest({ data }: PageProps) {
                 Property Verification
               </span>
             </div>
-            <div className="hidden md:block">
-              <Button
-                variant="ghost"
-                className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10"
-              >
-                <Home className="h-4 w-4 mr-2" />
-                Back to Home
-              </Button>
+            <div className="flex items-center gap-2">
+              <Link href="/reva/onetimerequest">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs text-gray-700 dark:text-gray-300"
+                >
+                  <Search className="h-3.5 w-3.5 mr-1.5" />
+                  Look Up Another
+                </Button>
+              </Link>
+              <Link href="/reva">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10"
+                >
+                  <Home className="h-3.5 w-3.5 mr-1.5" />
+                  Back to Home
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

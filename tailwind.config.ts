@@ -7,6 +7,9 @@ const config = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    "./reva/**/*.{js,ts,jsx,tsx,mdx}",
+    "./surfboard/**/*.{js,ts,jsx,tsx,mdx}",
+    "./gbc/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   prefix: "",
   theme: {

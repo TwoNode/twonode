@@ -59,6 +59,7 @@ button {
   letter-spacing: -0.7px;
   font-size: 19px;
   color: var(--navy);
+  flex-shrink: 0;
 }
 .brand-light {
   font-weight: 500;
@@ -88,10 +89,16 @@ button {
 .nav {
   display: flex;
   align-items: center;
-  gap: 34px;
+  gap: clamp(16px, 2.4vw, 34px);
   font-size: 13px;
   color: #4d5671;
   font-weight: 600;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.nav > a {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .nav > a:not(.nav-cta):hover,
 .nav > a.active {
@@ -105,6 +112,8 @@ button {
   display: flex;
   gap: 16px;
   align-items: center;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .nav-cta span {
   font-size: 16px;
@@ -1452,16 +1461,14 @@ button {
     gap: 40px;
   }
 }
-@media (max-width: 680px) {
-  .section-wrap {
-    width: calc(100% - 40px);
-  }
+@media (max-width: 920px) {
   .site-header {
     height: 70px;
     padding: 0 20px;
   }
   .brand {
     font-size: 17px;
+    flex-shrink: 0;
   }
   .brand-light {
     display: none;
@@ -1505,6 +1512,11 @@ button {
     margin-top: 8px;
     justify-content: space-between;
     padding: 13px 15px;
+  }
+}
+@media (max-width: 680px) {
+  .section-wrap {
+    width: calc(100% - 40px);
   }
   .hero {
     display: flex;

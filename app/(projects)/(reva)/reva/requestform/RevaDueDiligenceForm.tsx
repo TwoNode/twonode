@@ -39,6 +39,27 @@ import {
 import Link from "next/link";
 import { removeIdPrefix } from "@/utils/removeIDFromParcel";
 import { DashboardLoadingSpinner } from "@/components/ui/loading-spinner";
+import {
+  MapPin,
+  User,
+  Mail,
+  FileText,
+  Camera,
+  RotateCcw,
+  Compass,
+  ArrowRight,
+  ShieldCheck,
+  CheckCircle2,
+  AlertCircle,
+  FileCheck,
+  Sparkles,
+  Lock,
+  Edit3,
+  DollarSign,
+  MessageSquare,
+  Layers,
+  Search,
+} from "lucide-react";
 
 const notifyError = (msg: string) => toast.error(msg);
 const notifySuccess = (msg: string) => toast.success(msg);
@@ -815,442 +836,615 @@ const RevaDueDiligenceForm: React.FC = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {!showReview ? (
-        <div className="mx-auto bg-white dark:bg-surface p-8 rounded-2xl shadow-2xl w-full max-w-lg">
-          <h2 className="text-3xl font-extrabold text-blue-700 mb-4 text-center">
-            REVA Due Diligence Request
-          </h2>
-
-          <form
-            className="space-y-6"
-            encType="multipart/form-data"
-            onSubmit={handleSubmit}
-          >
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Requester Name
-              </label>
-
-              <Input
-                type="text"
-                value={requester}
-                onChange={(e) => setRequester(e.target.value)}
-                placeholder="Enter your name"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Email
-              </label>
-
-              <Input
-                type="email"
-                autoComplete="on"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onBlur={() => {
-                  if (!email) {
-                    notifyError("Email is required");
-                    return false;
-                  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    notifyError("Invalid email format");
-                  }
-                }}
-                placeholder="Enter your email"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Property Address
-              </label>
-              <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
-                <Input
-                  id="address"
-                  type="text"
-                  // value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Enter the property address"
-                  ref={addrRef}
-                  required
-                />
-              </Autocomplete>
-
-              <p
-                className="info-text text-sm font-light p-1"
-                style={{ lineHeight: "12px" }}
-              >
-                if address isn't available and you're at the property, tap{" "}
-                <span className="inline-block py-1 px-1 mx-0.5 text-xs whitespace-nowrap bg-slate-100 dark:bg-white/10 rounded-sm">
-                  Use My Location.
-                </span>{" "}
-                We'll use your accurate location.
-              </p>
-
-              <div className="flex gap-5 justify-between">
-                <div className="mt-2">
-                  <Button
-                    onClick={useMyLocation}
-                    ref={useMyLocationRef}
-                    className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
-                  >
-                    {locationButtonText}
-                  </Button>
-                </div>
-
-                <Button
-                  onClick={clearAddress}
-                  className="mt-2 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300"
-                >
-                  Clear Address
-                </Button>
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {!showReview ? (
+          <div>
+            {/* Kicker & Title Header */}
+            <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/10 dark:bg-cyan-950/70 border border-cyan-500/20 dark:border-cyan-500/30 text-cyan-700 dark:text-cyan-300 text-xs font-semibold mb-4 shadow-xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                <span>Executive Geospatial Due Diligence</span>
               </div>
-            </div>
-
-            <GoogleMap
-              mapContainerStyle={containerStyle}
-              center={location || center}
-              zoom={location ? 18 : 12}
-              onLoad={(map) => {
-                mapRef.current = map;
-                if (location) {
-                  map.setCenter(location);
-                }
-              }}
-              onClick={handleMapClick}
-            >
-              {location && <Marker position={location} />}
-            </GoogleMap>
-
-            <div
-              id="parcelInfo"
-              className={`mt-5 p-4 border rounded-lg ${
-                location ? "bg-green-50 border-green-200" : "hidden"
-              }`}
-            >
-              <h3 className="mb-2 text-lg font-semibold text-green-700">
-                Parcel Information
-              </h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                <strong>Parcel ID:</strong>{" "}
-                <span id="parcelId" className="text-gray-900 dark:text-white">
-                  {location ? parcelId : "-"}
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                Request a Structured{" "}
+                <span className="bg-linear-to-r from-blue-600 via-cyan-600 to-sky-500 dark:from-cyan-400 dark:via-sky-300 dark:to-blue-400 bg-clip-text text-transparent">
+                  Land Audit
                 </span>
+              </h1>
+              <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto">
+                Enter your property location, upload boundary survey documents,
+                and receive a verified cadastral due diligence finding delivered
+                digitally.
               </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Location (Lat, Lng)
-              </label>
-              <Input
-                type="text"
-                value={location ? `${location.lat}, ${location.lng}` : ""}
-                disabled
-                readOnly
-                placeholder="Auto-generated location"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Local Government Area (LGA)
-              </label>
-              <Input
-                type="text"
-                value={lga}
-                disabled
-                readOnly
-                placeholder="Auto-generated LGA"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Supporting Documents
-              </label>
-              <Input
-                type="file"
-                multiple
-                required
-                onChange={handleFileChange}
-                ref={filesRef}
-                // accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                className="mb-2"
-              />
-
-              {fileNames.length > 0 && (
-                <div className="p-1 flex flex-col max-w-full border border-blue-100 overflow-x-hidden">
-                  {fileNames.map((name, index) => (
-                    <p
-                      key={index}
-                      className="text-sm text-blue-600 text-ellipsis"
-                    >
-                      {name}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Site Images <span className="text-red-500">*</span>
-              </label>
-              <Input
-                type="file"
-                multiple
-                required
-                onChange={handleSiteImagesChange}
-                ref={siteImagesRef}
-                accept="image/*"
-                // accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                className="mb-2"
-              />
-
-              {siteImageNames.length > 0 && (
-                <div className="p-1 flex flex-col max-w-full border border-blue-100 overflow-x-hidden">
-                  {siteImageNames.map((name, index) => (
-                    <p
-                      key={index}
-                      className="text-sm text-blue-600 text-ellipsis"
-                    >
-                      {name}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {isLocationFromGPS && locationAccuracy !== null && (
-              <div className="p-3 rounded-md border bg-blue-50 border-blue-200">
-                <p className="text-sm text-blue-700">
-                  <strong>Location Accuracy:</strong> {locationAccuracy}m
-                  {locationAccuracy > 10 && (
-                    <span className="text-red-600 ml-2">
-                      ⚠️ Accuracy may be too low for submission
-                    </span>
-                  )}
-                </p>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Additional Comments
-              </label>
-              <Textarea
-                placeholder="Enter any additional comments"
-                onChange={(e) => setComments(e.target.value)}
-                value={comments}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Total Cost (NGN)
-              </label>
-              <Input
-                type="text"
-                value={totalCost.toLocaleString("en-NG", {
-                  style: "currency",
-                  currency: "NGN",
-                })}
-                disabled
-                readOnly
-                placeholder="Auto-calculated total cost"
-                required
-              />
-            </div>
-
-            <Button
-              onClick={handleReview}
-              type="button"
-              className="w-full bg-blue-600 text-white py-3 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300"
+            <form
+              className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+              encType="multipart/form-data"
+              onSubmit={handleSubmit}
             >
-              Proceed to Review
-            </Button>
-          </form>
-        </div>
-      ) : (
-        <div className="mx-auto bg-white dark:bg-surface p-8 rounded-2xl shadow-2xl w-full max-w-lg">
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-6 text-center">
-            Review Your Details
-          </h2>
-
-          <div className="space-y-4">
-            <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">
-                Email:
-              </span>
-              <span className="text-gray-800 dark:text-gray-200 font-semibold">
-                {email}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">
-                Requester Name:
-              </span>
-              <span className="text-gray-800 dark:text-gray-200 font-semibold">
-                {requester}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">
-                Property Address:
-              </span>
-              <span className="text-gray-800 dark:text-gray-200 font-semibold">
-                {address}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">
-                Location:
-              </span>
-              <span className="text-gray-800 dark:text-gray-200 font-semibold">
-                {location ? `${location.lat}, ${location.lng}` : "Not set"}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">
-                Parcel ID:
-              </span>
-              <span className="text-gray-800 dark:text-gray-200 font-semibold">
-                {parcelId}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">
-                LGA:
-              </span>
-              <span className="text-gray-800 dark:text-gray-200 font-semibold">
-                {lga}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center border-b pb-2 gap-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">
-                Files:
-              </span>
-              <div className="text-gray-800 dark:text-gray-200 font-semibold overflow-hidden">
-                <div className="flex flex-col">
-                  {fileNames.map((name, index) => (
-                    <span
-                      key={index}
-                      className="text-gray-800 dark:text-gray-200 font-semibold text-ellipsis border-b-2 border-gray-200 dark:border-white/10"
-                    >
-                      {name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center border-b pb-2 gap-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">
-                Site Images:
-              </span>
-              <div className="text-gray-800 dark:text-gray-200 font-semibold overflow-hidden">
-                <div className="flex flex-col">
-                  {siteImageNames.map((name, index) => (
-                    <span
-                      key={index}
-                      className="text-gray-800 dark:text-gray-200 font-semibold text-ellipsis border-b-2 border-gray-200 dark:border-white/10"
-                    >
-                      {name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">
-                Total Cost:
-              </span>
-              <span className="font-semibold text-xl text-blue-600">
-                {totalCost.toLocaleString("en-NG", {
-                  style: "currency",
-                  currency: "NGN",
-                })}
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={hasAcceptedPrivacyTerms}
-                onChange={(e) =>
-                  setHasAcceptedPrivacyTerms(!hasAcceptedPrivacyTerms)
-                }
-                required
-                className="form-checkbox h-5 w-5 text-blue-600"
-              />
-
-              <span className="text-sm text-gray-700 dark:text-gray-300 justify-normal">
-                I have read and agreed to the{" "}
-                <Link
-                  href="#"
-                  className="text-blue-600 underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setOpenPrivacyModal(!openPrivacyModal);
-                  }}
-                >
-                  Terms of Use and Privacy and Policy.
-                </Link>{" "}
-              </span>
-            </label>
-          </div>
-
-          <div className="mt-6 space-y-4">
-            <AlertDialog>
-              <AlertDialogTrigger className="w-full">
-                <Button className="w-full bg-blue-600 text-white py-3 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300 text-center font-semibold">
-                  Confirm & Pay
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    Are you sure you want to proceed?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Please confirm that all the details you provided are correct
-                    before proceeding to payment.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <div onClick={handleSubmit}>
-                    <AlertDialogAction className="bg-blue-600 w-full">
-                      Continue
-                    </AlertDialogAction>
+              {/* LEFT COLUMN: Form Inputs (7 cols on lg) */}
+              <div className="lg:col-span-7 space-y-6">
+                {/* 1. Requester Identity */}
+                <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-cyan-500/20 rounded-2xl p-6 sm:p-7 shadow-xl shadow-slate-200/50 dark:shadow-xl">
+                  <div className="flex items-center gap-3 mb-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                        Requester Identification
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Official contact details for report delivery and status
+                        alerts
+                      </p>
+                    </div>
                   </div>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
 
-            <Button
-              onClick={handleEdit}
-              className="w-full bg-gray-600 text-white py-3 rounded-lg shadow-lg hover:bg-gray-700 transition duration-300"
-            >
-              Edit Details
-            </Button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                        Requester Name{" "}
+                        <span className="text-blue-600 dark:text-cyan-400">
+                          *
+                        </span>
+                      </label>
+                      <Input
+                        type="text"
+                        value={requester}
+                        onChange={(e) => setRequester(e.target.value)}
+                        placeholder="e.g. Adebayo Ogunlesi"
+                        className="h-11 bg-slate-50 dark:bg-slate-950/70 border-slate-300 dark:border-slate-700/80 focus:border-blue-500 dark:focus:border-cyan-400 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-sm"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                        Email Address{" "}
+                        <span className="text-blue-600 dark:text-cyan-400">
+                          *
+                        </span>
+                      </label>
+                      <Input
+                        type="email"
+                        autoComplete="on"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        onBlur={() => {
+                          if (!email) {
+                            notifyError("Email is required");
+                            return false;
+                          } else if (
+                            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+                          ) {
+                            notifyError("Invalid email format");
+                          }
+                        }}
+                        placeholder="name@example.com"
+                        className="h-11 bg-slate-50 dark:bg-slate-950/70 border-slate-300 dark:border-slate-700/80 focus:border-blue-500 dark:focus:border-cyan-400 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-sm"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Property Location & Geocoding */}
+                <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-cyan-500/20 rounded-2xl p-6 sm:p-7 shadow-xl shadow-slate-200/50 dark:shadow-xl">
+                  <div className="flex items-center gap-3 mb-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                        Property Address & Cadastral Geocoding
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Search address or pinpoint coordinates on the map
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                        Property Address or Landmark{" "}
+                        <span className="text-blue-600 dark:text-cyan-400">
+                          *
+                        </span>
+                      </label>
+                      <Autocomplete
+                        onLoad={onLoad}
+                        onPlaceChanged={onPlaceChanged}
+                      >
+                        <Input
+                          id="address"
+                          type="text"
+                          onChange={(e) => setAddress(e.target.value)}
+                          placeholder="Type street name, estate, or area..."
+                          ref={addrRef}
+                          className="h-11 bg-slate-50 dark:bg-slate-950/70 border-slate-300 dark:border-slate-700/80 focus:border-blue-500 dark:focus:border-cyan-400 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-sm"
+                          required
+                        />
+                      </Autocomplete>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2.5 justify-between items-stretch sm:items-center">
+                      <Button
+                        type="button"
+                        onClick={useMyLocation}
+                        ref={useMyLocationRef}
+                        className="h-10 bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-500/30 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-xs"
+                      >
+                        <Compass className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                        <span>{locationButtonText}</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        onClick={clearAddress}
+                        variant="outline"
+                        className="h-10 bg-slate-100 dark:bg-slate-950/50 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700/80 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Clear Address</span>
+                      </Button>
+                    </div>
+
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                      💡{" "}
+                      <strong className="text-slate-700 dark:text-slate-300">
+                        Tip:
+                      </strong>{" "}
+                      If the property is in a newly opened layout or lacks an
+                      official street name, tap{" "}
+                      <span className="text-cyan-700 dark:text-cyan-300 font-semibold">
+                        &apos;Use My Location&apos;
+                      </span>{" "}
+                      while at the parcel, or click directly on the interactive
+                      map to drop a pinpoint.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 3. Supporting Documents & Site Images */}
+                <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-cyan-500/20 rounded-2xl p-6 sm:p-7 shadow-xl shadow-slate-200/50 dark:shadow-xl space-y-6">
+                  <div className="flex items-center gap-3 mb-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                        Supporting Documents & Evidence
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Upload surveyor plan, title deeds, and on-site photos
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Supporting Documents */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        Survey Plan / Title Deeds{" "}
+                        <span className="text-blue-600 dark:text-cyan-400">
+                          *
+                        </span>
+                      </label>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {fileNames.length} file(s) selected
+                      </span>
+                    </div>
+                    <Input
+                      type="file"
+                      multiple
+                      required
+                      onChange={handleFileChange}
+                      ref={filesRef}
+                      className="h-11 bg-slate-50 dark:bg-slate-950/70 border-slate-300 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 rounded-xl text-xs cursor-pointer file:bg-cyan-100 dark:file:bg-cyan-950/70 file:text-cyan-800 dark:file:text-cyan-300 file:border-cyan-300 dark:file:border-cyan-500/30 file:rounded-lg file:mr-3 file:text-xs"
+                    />
+                    {fileNames.length > 0 && (
+                      <div className="mt-2.5 flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 max-h-28 overflow-y-auto">
+                        {fileNames.map((name, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-500/30 text-[11px] text-cyan-800 dark:text-cyan-200 truncate max-w-xs"
+                          >
+                            <FileCheck className="w-3 h-3 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                            <span className="truncate">{name}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Site Images */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        Site Images{" "}
+                        <span className="text-blue-600 dark:text-cyan-400">
+                          *
+                        </span>
+                      </label>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {siteImageNames.length} image(s) selected
+                      </span>
+                    </div>
+                    <Input
+                      type="file"
+                      multiple
+                      required
+                      onChange={handleSiteImagesChange}
+                      ref={siteImagesRef}
+                      accept="image/*"
+                      className="h-11 bg-slate-50 dark:bg-slate-950/70 border-slate-300 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 rounded-xl text-xs cursor-pointer file:bg-cyan-100 dark:file:bg-cyan-950/70 file:text-cyan-800 dark:file:text-cyan-300 file:border-cyan-300 dark:file:border-cyan-500/30 file:rounded-lg file:mr-3 file:text-xs"
+                    />
+                    {siteImageNames.length > 0 && (
+                      <div className="mt-2.5 flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 max-h-28 overflow-y-auto">
+                        {siteImageNames.map((name, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-500/30 text-[11px] text-blue-800 dark:text-blue-200 truncate max-w-xs"
+                          >
+                            <Camera className="w-3 h-3 text-blue-600 dark:text-cyan-400 shrink-0" />
+                            <span className="truncate">{name}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 4. Comments */}
+                <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-cyan-500/20 rounded-2xl p-6 sm:p-7 shadow-xl shadow-slate-200/50 dark:shadow-xl">
+                  <div className="flex items-center gap-3 mb-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+                      <MessageSquare className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                        Special Instructions or Beacon Notes
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Optional notes for our spatial audit team
+                      </p>
+                    </div>
+                  </div>
+                  <Textarea
+                    placeholder="Enter details regarding beacon numbers, known access corridors, seller claims, or specific encumbrance checks..."
+                    onChange={(e) => setComments(e.target.value)}
+                    value={comments}
+                    className="bg-slate-50 dark:bg-slate-950/70 border-slate-300 dark:border-slate-700/80 focus:border-blue-500 dark:focus:border-cyan-400 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-sm min-h-22.5"
+                  />
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: Map & Cadastral Intelligence (5 cols on lg, sticky) */}
+              <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+                {/* Interactive Map Viewport Card */}
+                <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-cyan-500/25 rounded-2xl p-5 shadow-xl shadow-slate-200/50 dark:shadow-2xl overflow-hidden">
+                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-2 w-2 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
+                      </span>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Cadastral Viewport
+                      </h3>
+                    </div>
+                    <span className="text-[11px] text-cyan-600 dark:text-cyan-300 font-mono font-semibold">
+                      {location
+                        ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(
+                            4
+                          )}`
+                        : "Click map to pin"}
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 relative shadow-inner">
+                    <GoogleMap
+                      mapContainerStyle={{
+                        width: "100%",
+                        height: "320px",
+                        borderRadius: "12px",
+                      }}
+                      center={location || center}
+                      zoom={location ? 18 : 12}
+                      onLoad={(map) => {
+                        mapRef.current = map;
+                        if (location) map.setCenter(location);
+                      }}
+                      onClick={handleMapClick}
+                    >
+                      {location && <Marker position={location} />}
+                    </GoogleMap>
+                  </div>
+
+                  <p className="mt-3 text-[11px] text-slate-500 dark:text-slate-400 text-center">
+                    🎯 Tap anywhere on the map to pin exact parcel centroid
+                  </p>
+
+                  {isLocationFromGPS && locationAccuracy !== null && (
+                    <div
+                      className={`mt-2.5 p-2.5 rounded-lg border text-xs flex items-center justify-between ${
+                        locationAccuracy <= 10
+                          ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
+                          : "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-500/30 text-amber-800 dark:text-amber-300"
+                      }`}
+                    >
+                      <span>
+                        GPS Accuracy: <strong>±{locationAccuracy}m</strong>
+                      </span>
+                      {locationAccuracy > 10 && (
+                        <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
+                          ⚠️ Low accuracy
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Cadastral Intelligence & Pricing Panel */}
+                <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-cyan-500/25 rounded-2xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-2xl space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800">
+                    Cadastral Audit Summary
+                  </h4>
+
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                      <span className="text-slate-500 dark:text-slate-400 block text-[11px] uppercase tracking-wider">
+                        LGA Jurisdiction
+                      </span>
+                      <span className="font-bold text-cyan-600 dark:text-cyan-300 text-sm mt-0.5 block truncate">
+                        {lga}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                      <span className="text-slate-500 dark:text-slate-400 block text-[11px] uppercase tracking-wider">
+                        Parcel ID
+                      </span>
+                      <span className="font-bold text-slate-900 dark:text-white text-sm mt-0.5 block truncate">
+                        {parcelId}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                        Due Diligence Audit Fee
+                      </span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500">
+                        Calculated by LGA schedule
+                      </span>
+                    </div>
+                    <span className="text-2xl font-black text-transparent bg-linear-to-r from-blue-600 to-cyan-500 dark:from-cyan-300 dark:to-blue-400 bg-clip-text">
+                      {totalCost.toLocaleString("en-NG", {
+                        style: "currency",
+                        currency: "NGN",
+                      })}
+                    </span>
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={handleReview}
+                    className="w-full h-12 rounded-xl bg-linear-to-r from-blue-600 via-cyan-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold text-base shadow-xl shadow-cyan-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>Proceed to Review</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-4 text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                      Encrypted Checkout
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                      Paystack Verified
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </form>
           </div>
-        </div>
-      )}
+        ) : (
+          /* REVIEW MODE: Executive Dossier Confirmation */
+          <div className="max-w-2xl mx-auto bg-white dark:bg-slate-900/90 backdrop-blur-2xl border border-slate-200 dark:border-cyan-500/30 rounded-2xl p-6 sm:p-10 shadow-2xl">
+            <div className="text-center mb-8 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-50 dark:bg-cyan-950/70 border border-cyan-200 dark:border-cyan-500/30 text-cyan-800 dark:text-cyan-300 text-xs font-semibold mb-3">
+                <FileCheck className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                <span>Step 2 of 2: Order Dossier & Payment</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                Review Your Request Details
+              </h2>
+              <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+                Please verify all cadastral parameters and requester information
+                before proceeding to secure payment.
+              </p>
+            </div>
+
+            <div className="space-y-4 text-xs sm:text-sm">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">
+                  Requester Name:
+                </span>
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  {requester}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">
+                  Email Address:
+                </span>
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  {email}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex justify-between items-start gap-4">
+                <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">
+                  Property Address:
+                </span>
+                <span className="font-semibold text-slate-900 dark:text-white text-right">
+                  {address}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                  <span className="text-slate-500 dark:text-slate-400 block text-[11px] uppercase tracking-wider">
+                    LGA Jurisdiction
+                  </span>
+                  <span className="font-bold text-cyan-600 dark:text-cyan-300 text-sm mt-0.5 block">
+                    {lga}
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                  <span className="text-slate-500 dark:text-slate-400 block text-[11px] uppercase tracking-wider">
+                    Parcel Identifier
+                  </span>
+                  <span className="font-bold text-slate-900 dark:text-white text-sm mt-0.5 block">
+                    {parcelId}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">
+                  Coordinates:
+                </span>
+                <span className="font-mono text-cyan-600 dark:text-cyan-300 text-xs font-semibold">
+                  {location
+                    ? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
+                    : "Not set"}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex justify-between items-start gap-4">
+                <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">
+                  Supporting Files:
+                </span>
+                <span className="font-medium text-slate-700 dark:text-slate-200 text-right">
+                  {fileNames.length} document(s) attached
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex justify-between items-start gap-4">
+                <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">
+                  Site Images:
+                </span>
+                <span className="font-medium text-slate-700 dark:text-slate-200 text-right">
+                  {siteImageNames.length} photo(s) attached
+                </span>
+              </div>
+
+              {comments && (
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                  <span className="text-slate-500 dark:text-slate-400 block text-xs font-medium mb-1">
+                    Reviewer Instructions:
+                  </span>
+                  <p className="text-slate-700 dark:text-slate-300 text-xs leading-relaxed">
+                    {comments}
+                  </p>
+                </div>
+              )}
+
+              <div className="p-4 rounded-xl bg-cyan-50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-500/30 flex justify-between items-center">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  Total Due Diligence Fee:
+                </span>
+                <span className="text-2xl font-black text-cyan-600 dark:text-cyan-300">
+                  {totalCost.toLocaleString("en-NG", {
+                    style: "currency",
+                    currency: "NGN",
+                  })}
+                </span>
+              </div>
+            </div>
+
+            {/* Privacy Agreement */}
+            <div className="mt-6 p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hasAcceptedPrivacyTerms}
+                  onChange={(e) =>
+                    setHasAcceptedPrivacyTerms(!hasAcceptedPrivacyTerms)
+                  }
+                  required
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-cyan-600 focus:ring-cyan-400 focus:ring-offset-0"
+                />
+                <span className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  I have read and agreed to the{" "}
+                  <Link
+                    href="#"
+                    className="text-blue-600 dark:text-cyan-400 hover:underline font-medium"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOpenPrivacyModal(!openPrivacyModal);
+                    }}
+                  >
+                    Terms of Use and Privacy Policy
+                  </Link>
+                  . I understand that due diligence findings are compiled based
+                  on statutory cadastral records.
+                </span>
+              </label>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-6 space-y-3">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button className="w-full h-12 bg-linear-to-r from-blue-600 via-cyan-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold text-base rounded-xl shadow-xl shadow-cyan-500/25 transition-all cursor-pointer">
+                    Confirm & Proceed to Payment
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-cyan-500/30 text-slate-800 dark:text-slate-100">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-slate-900 dark:text-white text-lg font-bold">
+                      Proceed to Secure Paystack Checkout?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-slate-600 dark:text-slate-300 text-sm">
+                      Please confirm all property parameters and contact details
+                      are accurate before completing your transaction.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white border-slate-200 dark:border-slate-700">
+                      Cancel
+                    </AlertDialogCancel>
+                    <div onClick={handleSubmit}>
+                      <AlertDialogAction className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold">
+                        Continue to Payment
+                      </AlertDialogAction>
+                    </div>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <Button
+                type="button"
+                onClick={handleEdit}
+                variant="outline"
+                className="w-full h-11 bg-slate-100 hover:bg-slate-200 dark:bg-slate-950/60 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700/80 font-medium rounded-xl text-sm transition-all cursor-pointer"
+              >
+                ← Edit Details
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 };
@@ -1267,13 +1461,13 @@ const PrivacyPolicyModal = ({
   return (
     <div className="mt-4">
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl bg-slate-900 border border-cyan-500/30 text-slate-200">
           <DialogHeader>
-            <DialogTitle className="text-3xl font-extrabold text-blue-700 text-center">
+            <DialogTitle className="text-2xl sm:text-3xl font-extrabold text-white text-center">
               Privacy Policy & Terms and Conditions
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-6 text-gray-700 dark:text-gray-300 overflow-y-auto max-h-[70vh]">
+          <div className="space-y-6 text-slate-300 overflow-y-auto max-h-[70vh] pr-2">
             {/* --- Privacy Policy --- */}
             <section>
               <h2 className="text-2xl font-bold mb-2">Privacy Policy</h2>
