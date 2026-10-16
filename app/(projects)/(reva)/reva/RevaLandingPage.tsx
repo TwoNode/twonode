@@ -155,55 +155,55 @@ const RevaLandingPage: FC = () => {
     },
   ];
 
-  // Report preview items from original page (retained 100%)
+  // Due diligence report preview items (sample real estate report pages)
   const reportPreview = [
     {
       number: 1,
-      title: "Survey Data Management",
-      desc: "Renders Surveyor's data in a manner that provides easy access, management and data-driven insight.",
+      title: "Executive Due Diligence Dossier",
+      desc: "Official cover and executive summary displaying verified property address, centroid coordinates, administrative LGA boundaries, and client specifications.",
       img: "/reva/preview/reva1.jpg",
-      tag: "Survey Intelligence",
-      icon: Compass,
+      tag: "Cover & Executive Summary",
+      icon: FileCheck,
     },
     {
       number: 2,
-      title: "Oil and Gas ROW and Utility Asset Network Management",
-      desc: "Keep track of all your assets, from pipelines to valve pits, metering stations, place markers, ensuring they are always up-to-date, accurately mapped, and accessible real-time with a mobile app.",
+      title: "Title Investigation & Registry Deed Lineage",
+      desc: "Validates registered instruments and volume/page lodgments at the Lands Bureau, charting the full chain-of-title ownership flow from native land roots to current deed holders.",
       img: "/reva/preview/reva2.jpg",
-      tag: "Asset Pipeline Tracking",
-      icon: Zap,
+      tag: "Lands Bureau Verification",
+      icon: ShieldCheck,
     },
     {
       number: 3,
-      title: "Electric Utility Network Management",
-      desc: "Visualize your entire electric grid in real-time, allowing for better monitoring and control of your assets.",
+      title: "Surveyor General Framework & Ortho Imagery",
+      desc: "Validates survey beacon positions to a 99.99% match on the Lagos State Coordinate Framework (Vector 04) with high-resolution aerial orthophoto boundary overlays.",
       img: "/reva/preview/reva3.jpg",
-      tag: "Grid Visualization",
-      icon: Zap,
+      tag: "Cadastral Verification",
+      icon: Compass,
     },
     {
       number: 4,
-      title: "Telecommunication Asset in Real-Time",
-      desc: "Visualize your entire telecommunication asset in real-time, allowing for better monitoring and control of your assets.",
+      title: "Government Acquisition & Setback Charting",
+      desc: "Audits state acquisition overlays, drainage canal setback lines, road widening reserves, and public infrastructure right-of-way commitments.",
       img: "/reva/preview/reva4.jpg",
-      tag: "Telecom Infrastructure",
-      icon: Radio,
+      tag: "Acquisition & Setback Check",
+      icon: MapIcon,
     },
     {
       number: 5,
-      title: "Electric Utility Network Management",
-      desc: "Visualize your entire electric grid in real-time, allowing for better monitoring and control of your assets.",
+      title: "Historical Survey Records & Archival Audit",
+      desc: "Performs a descending chronological audit of prior lodged survey plans at the Surveyor General's office dating back decades to verify historical beacon lineages.",
       img: "/reva/preview/reva5.jpg",
-      tag: "Distribution & Substations",
-      icon: Zap,
+      tag: "Historical Records Audit",
+      icon: History,
     },
     {
       number: 6,
-      title: "Telecommunication Asset in Real-Time",
-      desc: "Visualize your entire telecommunication asset in real-time, allowing for better monitoring and control of your assets.",
+      title: "Physical Planning & Building Approval Audit",
+      desc: "Verifies master plan zoning compliance (e.g., residential land use) and authenticates statutory building plan approval numbers issued by planning authorities.",
       img: "/reva/preview/reva6.jpg",
-      tag: "Fiber & Tower Coverage",
-      icon: Radio,
+      tag: "Zoning & Building Approval",
+      icon: Layers,
     },
   ];
 
@@ -217,7 +217,7 @@ const RevaLandingPage: FC = () => {
   }, [isAutoPlaying, reportPreview.length]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#020b18] text-slate-800 dark:text-slate-100 font-sans selection:bg-cyan-500 selection:text-white transition-colors duration-300">
+    <div className="min-h-screen overflow-x-clip bg-slate-50 dark:bg-[#020b18] text-slate-800 dark:text-slate-100 font-sans selection:bg-cyan-500 selection:text-white transition-colors duration-300">
       {/* =========================================================================
           1. TOP NAVIGATION BAR (GLASSMORPHIC & RESPONSIVE WITH CLICK OUTSIDE)
       ========================================================================= */}
@@ -289,7 +289,7 @@ const RevaLandingPage: FC = () => {
                 href="#report-preview"
                 className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap"
               >
-                GIS Solutions
+                Report Preview
               </Link>
             </nav>
 
@@ -374,7 +374,7 @@ const RevaLandingPage: FC = () => {
               onClick={() => setMobileMenuOpen(false)}
               className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-cyan-400 text-base font-medium py-1"
             >
-              GIS Solutions & Preview
+              Report Preview
             </Link>
 
             <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-3">
@@ -950,7 +950,7 @@ const RevaLandingPage: FC = () => {
       </section>
 
       {/* =========================================================================
-          7. GIS SOLUTIONS & REPORT PREVIEW SHOWCASE (INTERACTIVE CAROUSEL)
+          7. DUE DILIGENCE REPORT PREVIEW (INTERACTIVE CAROUSEL)
       ========================================================================= */}
       <section
         id="report-preview"
@@ -958,16 +958,18 @@ const RevaLandingPage: FC = () => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 dark:bg-blue-950/60 border border-blue-500/20 dark:border-blue-500/30 text-blue-700 dark:text-blue-300 text-xs font-semibold uppercase tracking-wider mb-4">
-              <Zap className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              Geospatial Intelligence In Action
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 dark:bg-cyan-950/60 border border-cyan-500/20 dark:border-cyan-500/30 text-cyan-700 dark:text-cyan-300 text-xs font-semibold uppercase tracking-wider mb-4">
+              <FileCheck className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+              Verified Deliverables In Action
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              GIS Solutions & Report Previews
+              Due Diligence Report Preview
             </h2>
             <p className="mt-4 text-base sm:text-lg text-slate-600 dark:text-slate-400">
-              Explore the rich asset tracking, utility mapping, and survey
-              management capabilities powering the REVA ecosystem.
+              Inspect actual sample pages from a certified REVA due diligence
+              report — including root-of-title investigation, cadastral beacon
+              verification, government acquisition charting, and physical planning
+              approval.
             </p>
           </div>
 
@@ -994,7 +996,7 @@ const RevaLandingPage: FC = () => {
 
                   {/* Slide Counter Overlay */}
                   <div className="absolute bottom-4 left-4 px-3 py-1 rounded-full bg-white/90 dark:bg-slate-950/80 backdrop-blur-md border border-slate-200 dark:border-slate-700 text-xs font-mono text-cyan-700 dark:text-cyan-300">
-                    Preview {activeSlide + 1} of {reportPreview.length}
+                    Page {activeSlide + 1} of {reportPreview.length}
                   </div>
                 </div>
               </div>
@@ -1019,7 +1021,7 @@ const RevaLandingPage: FC = () => {
                 {/* Thumbnails / Slide Indicators */}
                 <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
                   <div className="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">
-                    Select a Solution Preview:
+                    Select a Report Page:
                   </div>
                   <div className="grid grid-cols-6 gap-2">
                     {reportPreview.map((item, idx) => (
@@ -1133,11 +1135,11 @@ const RevaLandingPage: FC = () => {
       {/* =========================================================================
           9. COMPREHENSIVE FOOTER
       ========================================================================= */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-slate-100/90 dark:bg-[#010813] text-slate-600 dark:text-slate-400 text-sm transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-slate-100/90 dark:bg-[#010813] text-slate-600 dark:text-slate-400 text-sm transition-colors overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 lg:py-16">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10 lg:gap-10 mb-8 sm:mb-12">
             {/* Brand Column */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2 space-y-3 sm:space-y-4">
               <Link href="/reva" className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-white p-1 flex items-center justify-center shadow-xs">
                   <Image
@@ -1161,14 +1163,14 @@ const RevaLandingPage: FC = () => {
 
             {/* Quick Links */}
             <div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4 whitespace-nowrap">
                 Navigation
               </h4>
               <ul className="space-y-2.5 text-sm">
                 <li>
                   <Link
                     href="#about"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap inline-block"
                   >
                     About REVA
                   </Link>
@@ -1176,7 +1178,7 @@ const RevaLandingPage: FC = () => {
                 <li>
                   <Link
                     href="#why-reva"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap inline-block"
                   >
                     Why Choose REVA
                   </Link>
@@ -1184,7 +1186,7 @@ const RevaLandingPage: FC = () => {
                 <li>
                   <Link
                     href="#features"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap inline-block"
                   >
                     Core Features
                   </Link>
@@ -1192,7 +1194,7 @@ const RevaLandingPage: FC = () => {
                 <li>
                   <Link
                     href="#how-it-works"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap inline-block"
                   >
                     How It Works
                   </Link>
@@ -1200,9 +1202,9 @@ const RevaLandingPage: FC = () => {
                 <li>
                   <Link
                     href="#report-preview"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap inline-block"
                   >
-                    GIS Solutions
+                    Report Preview
                   </Link>
                 </li>
               </ul>
@@ -1210,14 +1212,14 @@ const RevaLandingPage: FC = () => {
 
             {/* Portals */}
             <div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4 whitespace-nowrap">
                 Portals & Actions
               </h4>
               <ul className="space-y-2.5 text-sm">
                 <li>
                   <Link
                     href="/reva/requestform"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap inline-block"
                   >
                     Request a Report
                   </Link>
@@ -1225,7 +1227,7 @@ const RevaLandingPage: FC = () => {
                 <li>
                   <Link
                     href="/reva/onetimerequest"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap inline-block"
                   >
                     Track One-Time Request
                   </Link>
@@ -1233,7 +1235,7 @@ const RevaLandingPage: FC = () => {
                 <li>
                   <Link
                     href="/reva/login"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap inline-block"
                   >
                     User Login
                   </Link>
@@ -1241,7 +1243,7 @@ const RevaLandingPage: FC = () => {
                 <li>
                   <Link
                     href="/reva/dashboard"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap inline-block"
                   >
                     Client Dashboard
                   </Link>
@@ -1249,7 +1251,7 @@ const RevaLandingPage: FC = () => {
                 <li>
                   <Link
                     href="/reva-restricted/login"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap inline-block"
                   >
                     Admin Portal
                   </Link>
@@ -1259,23 +1261,23 @@ const RevaLandingPage: FC = () => {
 
             {/* Corporate Links */}
             <div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4 whitespace-nowrap">
                 TwoNode
               </h4>
               <ul className="space-y-2.5 text-sm">
                 <li>
                   <Link
                     href="/"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors font-medium text-slate-800 dark:text-slate-200 flex items-center gap-1.5"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors font-medium text-slate-800 dark:text-slate-200 flex items-center gap-1.5 whitespace-nowrap"
                   >
                     TwoNode Corporate Home
-                    <ArrowUpRight className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+                    <ArrowUpRight className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400 shrink-0" />
                   </Link>
                 </li>
                 <li>
                   <Link
                     href="/our-story"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap inline-block"
                   >
                     Our Story
                   </Link>
@@ -1283,7 +1285,7 @@ const RevaLandingPage: FC = () => {
                 <li>
                   <Link
                     href="/insights"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap inline-block"
                   >
                     Insights & Articles
                   </Link>
@@ -1291,7 +1293,7 @@ const RevaLandingPage: FC = () => {
                 <li>
                   <Link
                     href="/contact"
-                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
+                    className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors whitespace-nowrap inline-block"
                   >
                     Contact Us
                   </Link>
@@ -1301,21 +1303,21 @@ const RevaLandingPage: FC = () => {
           </div>
 
           {/* Bottom Copyright Strip */}
-          <div className="pt-8 border-t border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-            <p>
+          <div className="pt-6 sm:pt-8 border-t border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-center sm:text-left">
+            <p className="text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm sm:max-w-none">
               © 2026 REVA by TwoNode Technologies Limited. All rights reserved.
             </p>
-            <div className="flex items-center gap-6 text-slate-500">
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-slate-500">
               <Link
                 href="/reva/requestform"
-                className="hover:text-slate-700 dark:hover:text-slate-400"
+                className="hover:text-slate-700 dark:hover:text-slate-400 whitespace-nowrap"
               >
                 Terms of Request
               </Link>
               <span>•</span>
               <Link
                 href="/contact"
-                className="hover:text-slate-700 dark:hover:text-slate-400"
+                className="hover:text-slate-700 dark:hover:text-slate-400 whitespace-nowrap"
               >
                 Support & Inquiries
               </Link>
