@@ -4,14 +4,15 @@ Everything here is a **plan or a proposal, not built and not committed.** This p
 
 ## The list
 
-| Plan                                                                                    | Area         | Status                                               | Read                                                                                       |
-| :-------------------------------------------------------------------------------------- | :----------- | :--------------------------------------------------- | :----------------------------------------------------------------------------------------- |
-| **Backend roadmap**: Next.js now, NestJS later, Go much later                           | Backend      | Plan, no dates, gated                                | [`backend/roadmap.md`](./backend/roadmap.md)                                               |
-| **Mobile app roadmap**: what the app needs from the backend at each stage               | Mobile       | Plan, no dates                                       | [`mobile/roadmap.md`](./mobile/roadmap.md)                                                 |
-| **Surfboard Mobile App**: brief evaluation and engineering plan                         | Mobile       | Proposal, no mobile code exists                      | [`mobile/surfboard-mobile-app-evaluation.md`](./mobile/surfboard-mobile-app-evaluation.md) |
-| **Mobile feasibility**: backend readiness for the app (cookie-only auth is the blocker) | Mobile       | Analysis                                             | [`mobile/surfboard-mobile-feasibility.md`](./mobile/surfboard-mobile-feasibility.md)       |
-| **Surfboard Association Subscription**: evaluation and recommended design               | Surfboard    | Proposal, the association feature is not implemented | [`surfboard/association-subscription.md`](./surfboard/association-subscription.md)         |
-| **Nigeria Digital Postcode API** (NIPOST): address lookup integration                   | Integrations | Research, nothing implemented                        | [`integrations/nigeria-postcode-api.md`](./integrations/nigeria-postcode-api.md)           |
+| Plan                                                                                    | Area         | Status                                               | Read                                                                                                                                                                                  |
+| :-------------------------------------------------------------------------------------- | :----------- | :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Backend roadmap**: Next.js now, NestJS later, Go much later                           | Backend      | Plan, no dates, gated                                | [`backend/roadmap.md`](./backend/roadmap.md)                                                                                                                                          |
+| **Mobile app roadmap**: what the app needs from the backend at each stage               | Mobile       | Plan, no dates                                       | [`mobile/roadmap.md`](./mobile/roadmap.md)                                                                                                                                            |
+| **Surfboard Mobile App**: brief evaluation and engineering plan                         | Mobile       | Proposal, no mobile code exists                      | [`mobile/surfboard-mobile-app-evaluation.md`](./mobile/surfboard-mobile-app-evaluation.md)                                                                                            |
+| **Mobile feasibility**: backend readiness for the app (cookie-only auth is the blocker) | Mobile       | Analysis                                             | [`mobile/surfboard-mobile-feasibility.md`](./mobile/surfboard-mobile-feasibility.md)                                                                                                  |
+| **Surfboard Association Subscription**: evaluation and recommended design               | Surfboard    | Proposal, the association feature is not implemented | [`surfboard/association-subscription.md`](./surfboard/association-subscription.md)                                                                                                    |
+| **Cloudflare R2 storage migration**: zero-egress storage, two-bucket design             | Storage      | Proposal, paused, nothing provisioned                | [`adr/0016-storage-provider-evaluation-and-r2-migration.md`](./adr/0016-storage-provider-evaluation-and-r2-migration.md), [findings](./tasks/0014-r2-research-findings-2026-10-18.md) |
+| **Nigeria Digital Postcode API** (NIPOST): address lookup integration                   | Integrations | Research, nothing implemented                        | [`integrations/nigeria-postcode-api.md`](./integrations/nigeria-postcode-api.md)                                                                                                      |
 
 ## How they depend on each other
 
@@ -31,7 +32,8 @@ Everything here is a **plan or a proposal, not built and not committed.** This p
 
 ## Open decisions that block the plans
 
-- Map and geocoding providers, and the tile licensing risk on the current web map.
+- Map and geocoding providers. The ArcGIS map was removed (the spatial page shows Coming Soon); the plan is MapLibre with the `nigeria_ward_admin_boundaries` table, and tile licensing still has to be settled before a map returns.
+- R2: how to serve public GBC images (separate media domain, app route, or stay on S3) and whether the main domain's DNS may move.
 - Whether the mobile app gets offline reads (the brief does not ask for them).
 - Whether physical-copy submission needs an active subscription on mobile.
 - Who owns database migrations once a second service writes data ([`backend/roadmap.md`](./backend/roadmap.md) §2.5).

@@ -104,7 +104,7 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 **Status:** Scrapped by decision / superseded 2026-10-15: `/v3` and `/v4` were removed; the site is at the root under `app/(site)/`. Original note: `/v3` is left as is. In `/v4`: real logo, 12px text, 44px tap targets, hard-coded proof numbers, contact / insights / industry pages, Active/Next chips, new footer. Waiting on roji-tech: survey plan photo, phone number, real insight copy.
 
 - [x] **Create `/v4` and apply defect fixes (logo, text size, tap targets).** (Done 2026-10-11)
-- [ ] **Content decisions and remaining edits.** Listed in TASK-0009. _(Waiting on: roji-tech)_
+- [x] **Content decisions and remaining edits.** Scrapped by decision 2026-10-15: `/v4` was moved to the root site under `app/(site)/`; TASK-0009 is superseded.
 
 ---
 
@@ -115,7 +115,7 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 **Status:** Scrapped by decision / superseded 2026-10-15: `/v3` was removed. Original note: Port done and verified on branch `feat/v3-prototype-port`, PR open. No edits to the design yet. Waiting on roji-tech: proof numbers, survey plan photo, phone number.
 
 - [x] **Port `out/twonode-website` to `/v3` and `/v3/our-story`, as is.** Same page heights as the prototype, under 1.3% pixel difference, tsc clean, 873/873 tests. (Done 2026-10-11)
-- [ ] **Content and design decisions before it can go public.** Listed in TASK-0008. _(Waiting on: roji-tech)_
+- [x] **Content and design decisions before it can go public.** Scrapped by decision 2026-10-15: `/v3` was removed; TASK-0008 is superseded.
 
 ---
 

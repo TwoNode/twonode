@@ -6,6 +6,8 @@
 - **Related:** [ADR-0012](./0012-multi-provider-storage-and-surveyor-file-privacy.md), [ADR-0013](./0013-bucket-key-layout-public-and-private-prefixes.md), [TASK-0011](../tasks/0011-s3-privacy-and-key-layout.md), `lib/storage/providers/cloudflare-r2.ts`, `lib/storage/providers/imagekit.ts`
 - **Enforced by:** `lib/storage/` multi-provider abstraction, `STORAGE_PROVIDER` environment variable, and Vitest storage test suite (`115/115` test files passing).
 
+> **Corrections (2026-10-18):** see [R2 research findings](../tasks/0014-r2-research-findings-2026-10-18.md). R2 public access is per bucket, so the private data must live in a private bucket with no custom domain, and any public serving needs a separate public bucket or another route. A custom domain also needs the domain as a Cloudflare zone (the main domain is on Vercel nameservers), so the `storage.twonodetechnologies.com` plan is on hold. Status stays Proposed.
+
 ## Context
 
 1. **Current S3 Baseline & Inventory Audit (2026-10-14):**
