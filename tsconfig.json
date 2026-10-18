@@ -40,5 +40,5 @@
     "app/(projects)/(GBC)/gbc/tickets_",
     "app/(projects)/(GBC)/gbc/tickets/success"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "scripts/generate-storage-summary-pdf.tsx"]
 }
