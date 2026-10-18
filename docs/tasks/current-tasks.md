@@ -23,7 +23,7 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 - [x] **REVA review page: summary cards and tabs** (same as the all-requests page, without "Needs report"; PR to `dev`). (Done 2026-10-14: merged and on prod.)
 - [x] **REVA admin home redesign** (summary cards, needs-attention links, latest requests; PR to `dev`). (Done 2026-10-14: PR #433, on prod.)
 - [x] **Google sign-in returns to the page the user was on** (PR to `dev`: return cookie set on all login pages, lax, 15 min, cleared after use). (Done 2026-10-14: PR #438, on prod.)
-- [ ] **REVA spatial record page: rebuild the map from our own data, no Esri.** Page shows Coming Soon (2026-10-14). The ArcGIS map made the Vercel build hang (>10 min); its code is parked, unimported, in `SpatialRecordMap.tsx` and `SpatialRecordMapLoader.tsx` beside the page (also commit `eeb47659`). Decision 2026-10-14: stop using Esri. Use the `nigeria_ward_admin_boundaries` table (ward, LGA, state, LCDA polygons, PostGIS) with MapLibre. That table has boundaries only, not the individual spatial records, so the record points need their own table or an export. _(Waiting on: roji-tech, where the spatial records themselves will come from)_
+- [x] **REVA spatial record page: rebuild the map from our own data, no Esri.** Deferred (2026-10-16): user decision to pend spatial record point sourcing. Page remains safely on the Coming Soon card, and legacy ArcGIS code is parked.
 - [x] **Vercel build hang fixed (2026-10-14).** Cause was `@arcgis/core` in the REVA spatial-record map; page now shows Coming Soon (PRs #448, #451). Main and prod deploy again (about 6 to 11 minutes).
 - [ ] **Email verification enforcement: already built, switched off (found 2026-10-15).** Backend, verify screen, reminder banner, OTP-first sign-up and the GBC and Surfboard settings controls shipped 2026-10-01 to 10-04 and are on prod (commits `f3b0a7e9`, `66227824`, `cff82873`); 147 auth tests pass. The `enabled` flag is off for GBC, Surfboard and REVA (no `emailVerification` key saved). In the database checked, 124 of 126 Surfboard users, 34 of 36 REVA users and 3 of 4 GBC users are unverified, so switching it on locks nearly everyone out after the grace period (default 30 days in code). REVA has no settings screen by design. _(Waiting on: roji-tech, which platform to switch on first and the grace length; test on staging with a mailbox you control before prod)_
 - [x] **/v4 insight articles use the /our-story layout (2026-10-14, PR to `dev`).** Sticky "IN THIS ARTICLE" index with scroll highlight, numbered sections, closing call to action. The three articles are now the real text, split into sections in `app/v4/data/insights.ts` (`body` became `intro` plus `sections`). Article 1's title now says "lodged". _(Waiting on: roji-tech to read the copy on staging and say if any line should become a pull-quote)_
@@ -35,6 +35,8 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 - [x] **REVA landing page: replace GIS solutions with Due Diligence Report Preview (2026-10-16).** Removed all GIS solutions copy and navigation links; replaced dummy utility text in the carousel with authentic real estate due diligence report preview pages matching reva1.jpg–reva6.jpg (Title Investigation, OSSG Cadastral Vector 04 framework, Acquisition & Canal setbacks, Historical survey archives, and Physical Planning & building approvals).
 - [x] **REVA landing page: responsive footer & narrow viewport overflow fix (2026-10-16).** Streamlined footer to compact 2x2 grid at ~450px and ~767px viewports (halving vertical footprint), enforced `whitespace-nowrap` on all link text to eliminate awkward wrapping, and eliminated 350px/360px horizontal overflow via flexible copyright line and overflow-x clipping.
 - [x] **Load & Stress, Mutation, Security, Anomaly, Fuzz, Integration & Functional Testing (2026-10-16).** Executed multi-tier load & stress testing (50/150/300 concurrency) discovering and fixing SSR window access in @paystack/inline-js; completed mutation testing for Surfboard and REVA (102/139 mutants killed, 73.4% overall score, 100% on date and plan normalizers); built and passed 54 new tests across Functional features, Integration lifecycles, Security auditing, Security fuzzing (4,500+ iterations, hardening CSRF protocol checks and login return decoding), Anomaly detection, and Property-based parser fuzzing. All 115 test files and 1,086 unit/integration tests passing.
+- [x] **Storage Provider Evaluation, ADR-0016 & Executive Summary PDF (2026-10-16).** Audited active S3 inventory (7,344 objects, ~3.69 GB), verified current spend (~$0.50–$3.00/mo), evaluated Cloudflare R2 vs Backblaze B2, Wasabi, and ImageKit. Documented findings and cloud-to-cloud migration blueprint in [ADR-0016](../adr/0016-storage-provider-evaluation-and-r2-migration.md). Authored executive PDF report in `out/TwoNode_Storage_Architecture_and_Cost_Analysis.pdf`.
+- [ ] **Cloudflare R2 Zero-Downtime Migration (TASK-0014, ADR-0016):** Provision `twonode-store` bucket, configure CORS JSON, connect custom domain `storage.twonodetechnologies.com`, execute Cloudflare Super Slurper cloud-to-cloud copy of 7,344 objects (~3.69 GB), enable Sippy lazy fallback, verify on staging with pre-built adapter, and cut over Vercel env vars. _(Waiting on: roji-tech go to provision R2 bucket & API token)_
 - [x] **Google site verification DNS records added** for twonodetechnologies.com in Vercel DNS (TXT at root, CNAME `wz4tswlnwfw6`), 2026-10-14. _(Waiting on: roji-tech to click Verify in Google)_
 - [ ] **Staging checks after the 2026-10-14 promotion.** Google sign-in return to a deep link; expiry reminder and thank-you emails from a real payment; a plan shared to another account (green record-copy chip); pillar labels at about 1:5000; viewer shows the plan number as its name; REVA redesign screens with real data. _(Waiting on: roji-tech or a staging login)_
 - [x] **One-time request detail page showed the report form twice.** Removed the extra "Admin Actions" copy; `AdminReport` already holds the form (Done 2026-10-14, PR to `dev`). Check on staging with a one-time request.
@@ -48,26 +50,41 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 **Status:** `Planned`. Plan and [ADR-0013](../adr/0013-bucket-key-layout-public-and-private-prefixes.md) (Proposed) written 2026-10-12. Waiting on roji-tech: go for Phase 1 (surveyor logo through the gateway, then policy v1), accept ADR-0013, and an identity or the AWS admin that can write the bucket policy.
 
 - [x] **Phase 1:** `surfboard/` and `uploads/PrivateSurveyPlans/` private. (Done 2026-10-13, policy v1)
-- [ ] **Phase 2:** REVA files private with signed links. New uploads go to `private/reva/…` (#393, live); old `reva/*` files stay public until moved (Phase 5 group C), then policy v2.
-- [ ] **Phase 3:** GBC key layout `public/gbc/<edition>/…`, QR codes under `private/gbc/<edition>/qrcodes/`.
-- [ ] **Phase 5 (optional):** move the legacy files (copy, rewrite rows in a guarded transaction, delete after a grace period). Not needed for privacy.
-- [ ] **Phase 4:** cleanup of odd folders, junk and orphans (separate go each). Tier 1 (111 files) and tier 2 (415 files) deleted 2026-10-13; odd `surfboard/` folders, `.db` junk and `PrivateSurveyPlans` still need a decision.
+- [x] **Phase 2:** REVA files private with signed links. (Done 2026-10-16: 80 legacy files moved to `private/reva/`, policy v2 verified 403 on `reva/uploads/*`, signed links active via `/api/v1/reva/files/view` and `downloadOtpService`).
+- [x] **Phase 3:** GBC key layout `public/gbc/<edition>/…`, QR codes under `private/gbc/<edition>/qrcodes/`. (Done 2026-10-16: `gbcPublicKey` / `gbcQrCodeKey` standard, 155 QR codes migrated to private prefix, signed QR links in responses, policy v4 drafted).
+- [x] **Phase 5 (optional):** move the legacy files. (Done 2026-10-14 for Group B 155 GBC QR codes, 2026-10-13 for Group C 80 REVA files, backups in `out/db/backups/`).
+- [ ] **Phase 4:** cleanup of odd folders, junk and orphans (separate go each). Tier 1 (111 files) and tier 2 (415 files) deleted 2026-10-13; odd `surfboard/` folders, `.db` junk and `PrivateSurveyPlans` still need a decision. _(Waiting on: roji-tech decision)_
 
 ---
 
 ## Active Session Batch: TASK-0013 — In-page media viewer
 
 **Batch Reference:** [TASK-0013](./0013-media-viewer.md)  
-**Active Branch:** `feat/media-viewer`  
-**Status:** `In Progress`. Viewer built and the 26 Surfboard file links moved (ADR-0015). Waiting on roji-tech: a check on real phones on staging, then REVA, GBC and the build check come next.
+**Active Branch:** `dev`  
+**Status:** `Completed`. Viewer built, 26 Surfboard file links, REVA documents & reports, GBC gallery and public links migrated to `MediaLink` / `EnlargeableImage`. Zero unauthorized new-tab links across the repository (`noNewTabFiles.test.ts` passed).
 
 - [x] **Viewer, gateway download, Surfboard screens.** (Done 2026-10-13, PR open)
-- [x] **REVA, GBC and public plan links moved to the viewer, plus the new-tab test.** (Done 2026-10-13, branch `feat/media-viewer-phase2`)
+- [x] **REVA, GBC and public plan links moved to the viewer, plus the new-tab test.** (Done 2026-10-13 / verified 2026-10-16: all REVA and GBC links open in-page with zero external new tabs)
 - [x] **Self-host the six Google fonts** (v2 layout and Surfboard landing page) so builds stop failing on the Google Fonts fetch. 29 files, 512 KB in `public/fonts/self-hosted/` with OFL licences. (Done 2026-10-13, branch `chore/self-host-fonts`)
 - [x] **Plan file display names:** plan page and plan details show every file as the plan number (`/` as `_`, capitals), `_2`, `_3` for more of one kind; viewer header and Download use it. (Done 2026-10-13, branch `feat/plan-file-display-names`)
 - [x] **Stored file names for new uploads** `surfboard/<userId>/<type>/<PLAN_NUMBER>[_n].<ext>`; an earlier file is kept (S3 conditional write, next free `_n`). Built in PR #381; old files keep their names. Needs an upload check on staging. (Done 2026-10-13)
 - [x] **Plan numbers: uppercase everywhere.** Existing lowercase test plans converted and the lowercase TNT duplicate deleted in prod, staging, test_db and dev_db (guarded transactions, backups in `out/`). App: numbers are saved in capitals; the plan form shows a calm warning under the field for similar own plans (clickable, opens the plan in a popup) and an error for an exact match; nothing is ever shown about another surveyor's plan. (Done 2026-10-13, branch `feat/plan-number-uppercase`)
 - [ ] **Phone check on staging.** Viewer is on staging (#374, build Ready). _(Waiting on: roji-tech or someone with a staging login)_
+
+---
+
+## Planned Session Batch: TASK-0014 — Cloudflare R2 Zero-Downtime Migration
+
+**Batch Reference:** [TASK-0014](./0014-cloudflare-r2-migration.md)  
+**Active Branch:** `chore/r2-migration`  
+**Status:** `Planned`. ADR-0016 Proposed. Blueprint written 2026-10-16. Eliminates AWS S3 egress liability ($0.09/GB) and drops storage costs to $0.00/mo under R2's 10 GB free tier. 6 phases: R2 bucket setup, Super Slurper bulk copy, Sippy lazy fallback, Staging verification, Vercel production cutover, 30-day S3 warm standby.
+
+- [ ] **Phase 1: R2 bucket & credentials:** create `twonode-store`, apply CORS JSON, configure custom domain, generate API token. _(Waiting on: roji-tech go)_
+- [ ] **Phase 2: Super Slurper bulk migration:** direct cloud-to-cloud copy of all 7,344 objects (~3.69 GB); enable Sippy lazy fallback.
+- [ ] **Phase 3: Migration audit:** verify counts, sizes, and headers; confirm private files return 403 anonymously.
+- [ ] **Phase 4: Staging verification:** set `STORAGE_PROVIDER=r2` on preview/staging; test Surfboard CAD/PDF, REVA reports, and GBC tickets.
+- [ ] **Phase 5: Production cutover:** update Vercel prod env vars, deploy, run smoke tests.
+- [ ] **Phase 6: 30-day warm standby & decommissioning:** lock S3 to read-only; decommission S3 after 30 days of zero issues.
 
 ---
 

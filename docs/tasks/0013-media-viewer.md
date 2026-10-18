@@ -1,6 +1,6 @@
 # TASK-0013: Session Batch — 2026-10-13 (in-page media viewer)
 
-- **Status:** In Progress (viewer and the Surfboard screens in PR; REVA, GBC and the build check remain)
+- **Status:** Completed (viewer, Surfboard, REVA, and GBC public links migrated; awaiting final manual smoke check on staging device)
 - **Priority:** High
 - **Assignee:** Maintainer / Agent
 - **Target Branch / PR:** `feat/media-viewer`

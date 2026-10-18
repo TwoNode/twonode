@@ -34,6 +34,7 @@ Track open integrations, deferred configurations, and operational housekeeping i
 
 - [x] **Update DEPLOYMENT.md database mapping:** Updated `docs/DEPLOYMENT.md` and migration workflow files using environment placeholders (`<prod-db>`, `<staging-db>`, `<local-db>`) in [PR #315](https://github.com/TwoNode/twonode/pull/315) (2026-10-09). _(Assignee: AI & roji-tech)_
 - [ ] **Rotate staging database password:** Staging database password was pasted in chat earlier. Rotate in Neon console and Vercel staging environment variables. _(Assignee: roji-tech)_
+- [ ] **Cloudflare R2 migration (TASK-0014, ADR-0016):** Execute zero-downtime migration of 7,344 objects (~3.69 GB) via Cloudflare Super Slurper + Sippy fallback, configure custom domain `storage.twonodetechnologies.com`, activate pre-built `CloudflareR2StorageAdapter`, and eliminate AWS egress fees. _(Assignee: roji-tech / AI)_
 - [ ] **Complete Kinde configuration on staging:** Staging Kinde credentials and callback URLs are pending configuration. _(Assignee: roji-tech)_
 - [ ] **Web map tile licensing decision:** Surfboard map requests Google tiles. Decide on commercial licensing or alternative tile provider. _(Assignee: roji-tech)_
 - [ ] **Clean up disposable staging test accounts:** Decide whether to keep or prune test accounts created during staging verification on `twonode_staging`. _(Assignee: roji-tech)_
