@@ -110,14 +110,14 @@ flowchart LR
   - Private prefixes: `private/gbc/*` (including `GBC2/qrcodes`).
   - PR #471 / #472 migrated new uploads to `public/gbc/<edition>/…`.
 
-### 3.4 Website Redesign (`/v2`)
+### 3.4 Public Website (root, `app/(site)/`)
 
 - **Core Functionality:** Primary public landing pages, navigation header, footer, insight articles with in-article step navigation, and contact flows.
 - **Key Files:**
-  - App Directory: `app/v2/`
-  - Data: `app/v2/data/insights.ts`
-  - Styling: `app/v2/styles/` and `app/v4.css`
-  - Internal routing: All links within `/v2` must route to `/v2/...` (legacy `/v3` and `/v4` references were removed).
+  - App Directory: `app/(site)/` (the site is served at the root; the `/v2`, `/v3` and `/v4` prefixes no longer exist)
+  - Data: `app/(site)/` insights data; components such as `ArticleStepNav.tsx` and `Footer.tsx` under `app/(site)/components/`
+  - Styling: `app/(site)/v4.css`
+  - Internal routing: links are root-relative (e.g. `/insights/...`, `/our-story`).
   - Cross-platform visual fix: Asterisks/stars must use inline SVGs, not Unicode characters (e.g. `✳` `U+2733`) which render as colored emoji blocks on iOS.
 
 ---
@@ -126,7 +126,7 @@ flowchart LR
 
 ### 4.1 Bucket Policy State (Policy v4 Live)
 
-- S3 Bucket: `twonode-bucket`
+- S3 Bucket: `reva-store` (eu-north-1)
 - **Public Read (`s3:GetObject` allowed anonymously):**
   - `GBC2/gallery/*`
   - `GBC2/speakers/*`
@@ -155,8 +155,8 @@ flowchart LR
 | Feature / Fix                                       | PR / Commit                        | Details                                                                                                                                                                                                                                                                               |
 | --------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Surfboard Record Copy Verification Fix**          | PR #478 (`main`), PR #479 (`prod`) | Fixed `"Verification failed ... Invalid request"` bug. Cause was raw unsigned `fetch` returning 403 on private S3 PDF. Resolved via `getPresignedDownloadUrl` in `downloadPlanPdfAsBase64`, typed 502 `UPSTREAM_FILE_ERROR`, and error extraction in `CertificateBatchSelection.tsx`. |
-| **iOS Emoji Rendering Bug Fix**                     | PR #478 (`main`), PR #479 (`prod`) | Replaced Unicode asterisk `✳` (`U+2733`) on GBC cards with inline SVG in `app/v2/page.tsx` and updated `v4.css` to eliminate the green emoji box on iPhones.                                                                                                                          |
-| **Route Links Cleanup (`/v4` $\rightarrow$ `/v2`)** | PR #476 (`dev`), PR #477 (`main`)  | Updated all internal links across `/v2` pages, navigation header, footer, and insight articles to point to `/v2` instead of `/v4`. Removed dead `/v3` and `/v4` files.                                                                                                                |
+| **iOS Emoji Rendering Bug Fix**                     | PR #478 (`main`), PR #479 (`prod`) | Replaced Unicode asterisk `✳` (`U+2733`) on GBC cards with inline SVG in the site home page (`app/(site)/page.tsx`) and updated `v4.css` to eliminate the green emoji box on iPhones.                                                                                                 |
+| **Route Links Cleanup (`/v4` $\rightarrow$ `/v2`)** | PR #476 (`dev`), PR #477 (`main`)  | Updated all internal links across `/v2` pages, navigation header, footer, and insight articles to point to the root site instead of `/v4`. Removed dead `/v3` and `/v4` files.                                                                                                        |
 | **GBC Public Key Layout**                           | PR #471 (`dev`), PR #472 (`main`)  | Uploads routed to `public/gbc/<edition>/…`; S3 Policy v4 applied and verified live.                                                                                                                                                                                                   |
 | **Vercel Build Hang Resolution**                    | PR #448, #451                      | Replaced heavy `@arcgis/core` import in REVA spatial-record map with a Coming Soon state. Deploys now succeed reliably in 6–11 minutes.                                                                                                                                               |
 | **Surfboard Record Copy Hardening**                 | PR #456                            | Removed misleading "Use as Record Copy" button (survey plan PDF is never the record copy); added numeric validation on verification scores.                                                                                                                                           |
@@ -169,14 +169,14 @@ flowchart LR
 
 ### 6.1 In-Flight Right Now
 
-- **PR #479 ("Promote main to Prod"):**
-  - Status: **OPEN** ([TwoNode/twonode#479](https://github.com/TwoNode/twonode/pull/479)).
-  - Contains: Surfboard S3 presigning fix, iOS emoji fix, and internal `/v2` route updates.
-  - Action required: Await explicit maintainer instruction before merging into `prod`.
+- **PR #479 and the 2026-10-18 promotion:** merged. Prod is at the dev build-fix promotion (#488 → #489 → #490); main and prod deploys succeeded.
+- **Dev build fix (#488):** `scripts/generate-storage-summary-pdf.tsx` (one-off ADR-0016 PDF generator) is excluded from `tsconfig.json`; it had broken Next's type check.
+- **Phone work on the site (2026-10-16 to 10-18):** hero art higher on mobile, footer back-to-top arrow, nav click-outside, article step arrows (`ArticleStepNav`), all merged and live. GBC public key layout (#471/#472) is live.
+- **R2 migration:** ADR-0016 / TASK-0014 are Proposed/Planned; nothing is provisioned. Pre-work: move REVA `awsActions.ts` and GBC `aws-s3.ts` onto `lib/storage`, decide the URL strategy for stored S3 URLs.
 
 ### 6.2 Items Waiting on Maintainer Decisions
 
-1. **Approval to merge PR #479 into `prod`:** Confirm staging verification and trigger production promotion.
+1. ~~Approval to merge PR #479 into `prod`~~ — done.
 2. **Google Site Verification:** Maintainer must click "Verify" in Google Search Console for twonodetechnologies.com (TXT and CNAME records already present in Vercel DNS).
 3. **PROD Record Copy Audit:** Approval to execute read-only audit on production to verify no existing plans have `redCopyFileUrl` identical to their survey plan PDF path.
 4. **REVA Spatial Map Record Source:** Decision on where individual property record coordinate points will be fetched from (boundaries are provided by `nigeria_ward_admin_boundaries`).
