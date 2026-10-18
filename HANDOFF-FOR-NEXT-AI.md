@@ -154,7 +154,7 @@ flowchart LR
 
 - Research refresh: `docs/mobile/association-and-mobile-research-2026-10-18.md`. Detailed designs: `docs/surfboard/association-subscription.md` and `docs/mobile/surfboard-mobile-app-evaluation.md`. Index: `docs/future-plans.md`.
 - **Association:** Phase 0 prerequisites are merged (#261, #262, #263, #273); no association model, role or route exists yet.
-- **Mobile:** the app will be a **new sibling project `twonode-mobile`** at `/home/rojitech/Desktop/CODEC/NextJS/twonode-mobile` (not created yet). The first backend step is bearer-token auth in this repo; the app should start on Expo SDK 58.
+- **Mobile:** the app will be a **new project `twonode-mobile`** at `/home/rojitech/Desktop/CODEC/REACT-NATIVE/twonode-mobile` (not created yet). The first backend step is bearer-token auth in this repo; the app should start on Expo SDK 58.
 
 ---
 

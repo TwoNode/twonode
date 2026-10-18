@@ -4,7 +4,7 @@ Status: **research only. Nothing is built.** This refreshes [`../surfboard/assoc
 
 ## Decisions already made
 
-- The mobile app lives in a **new sibling project, `twonode-mobile`**, next to this repo (`/home/rojitech/Desktop/CODEC/NextJS/twonode-mobile`). It does not exist yet. The backend work it needs stays in this repo.
+- The mobile app lives in a **new project, `twonode-mobile`**, at `/home/rojitech/Desktop/CODEC/REACT-NATIVE/twonode-mobile` (with the maintainer's other React Native projects, not next to this repo). It does not exist yet. The backend work it needs stays in this repo.
 
 ## Association: what changed since 2026-10-04
 
@@ -47,7 +47,7 @@ Status: **research only. Nothing is built.** This refreshes [`../surfboard/assoc
 2. Store accounts: is TwoNode registered as an organisation (D-U-N-S, Apple Developer Program)?
 3. Basemap, satellite imagery and geocoder providers.
 4. Whether physical-copy submission needs an active subscription on mobile, and the definition of "ready for physical submission".
-5. Whether `twonode-mobile` should be added to `Twonode.code-workspace`.
+5. Whether `twonode-mobile` should be added to `Twonode.code-workspace`. (It will be in a different folder from this repo.)
 
 ## Recommended order
 
