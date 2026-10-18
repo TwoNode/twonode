@@ -45,16 +45,18 @@ Safely migrate all 7,344 objects (~3.69 GB) across Surfboard, REVA, and GBC from
 
 - [ ] **1.3. Apply CORS Rules on R2:**
   - In bucket settings (`twonode-store` > **Settings** > **CORS Policy**), add the following JSON policy to allow presigned direct uploads and browser media viewing:
+
   ```json
   [
     {
       "AllowedOrigins": [
         "https://twonodetechnologies.com",
         "https://*.twonodetechnologies.com",
-        "https://*.vercel.app",
-        "http://localhost:3000"
+        "https://<project-preview-domain>.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:3211"
       ],
-      "AllowedMethods": ["GET", "PUT", "HEAD", "POST", "DELETE"],
+      "AllowedMethods": ["GET", "PUT", "HEAD"],
       "AllowedHeaders": ["*"],
       "ExposeHeaders": ["ETag", "Content-Type", "Content-Disposition"],
       "MaxAgeSeconds": 3600
@@ -62,7 +64,7 @@ Safely migrate all 7,344 objects (~3.69 GB) across Surfboard, REVA, and GBC from
   ]
   ```
 
-- [ ] **1.4. Configure Custom Domain & Public Edge:**
+- [ ] **1.4. Configure Custom Domain & Public Edge:** **ON HOLD (2026-10-18).** Do not connect a domain to `twonode-store`: it would make every object public. Public serving needs a separate public bucket and a domain that is a Cloudflare zone. See [findings](./0014-r2-research-findings-2026-10-18.md).
   - Under **Settings** > **Public Access** > **Custom Domains**, click **Connect Domain**.
   - Connect `storage.twonodetechnologies.com` (or `media.twonodetechnologies.com`).
   - Cloudflare automatically provisions an SSL/TLS certificate and activates global edge caching.
@@ -84,6 +86,7 @@ Safely migrate all 7,344 objects (~3.69 GB) across Surfboard, REVA, and GBC from
 
 - [ ] **2.1. Provision AWS Read-Only Migration IAM Credentials:**
   - In AWS IAM Console, create a temporary policy `TwoNodeS3MigrationRead`:
+
   ```json
   {
     "Version": "2012-10-17",
@@ -96,10 +99,7 @@ Safely migrate all 7,344 objects (~3.69 GB) across Surfboard, REVA, and GBC from
           "s3:GetObjectTagging",
           "s3:GetObjectMetadata"
         ],
-        "Resource": [
-          "arn:aws:s3:::reva-store",
-          "arn:aws:s3:::reva-store/*"
-        ]
+        "Resource": ["arn:aws:s3:::reva-store", "arn:aws:s3:::reva-store/*"]
       }
     ]
   }
@@ -115,14 +115,14 @@ Safely migrate all 7,344 objects (~3.69 GB) across Surfboard, REVA, and GBC from
   - Enter the `cloudflare-migration-slurper` AWS credentials.
   - Target R2 bucket: `twonode-store`.
   - Click **Start Migration**.
-  - *Metrics to observe:* ~7,344 objects (~3.69 GB). Direct cloud-to-cloud transfer runs at ~100–300 MB/s, finishing in approximately **10 to 15 minutes**.
+  - _Metrics to observe:_ ~7,344 objects (~3.69 GB). Direct cloud-to-cloud transfer runs at ~100–300 MB/s, finishing in approximately **10 to 15 minutes**.
 
 - [ ] **2.3. Enable Cloudflare Sippy (Lazy On-Demand Fallback):**
   - Go to `twonode-store` > **Settings** > **Incremental Migration (Sippy)**.
   - Enable Sippy:
     - Source: Amazon S3 (`reva-store`, region `eu-north-1`).
     - AWS Access Key & Secret Key.
-  - *Benefit:* If any surveyor or client uploads a new plan to S3 before final Vercel cutover, Sippy dynamically copies it to R2 upon first read.
+  - _Benefit:_ If any surveyor or client uploads a new plan to S3 before final Vercel cutover, Sippy dynamically copies it to R2 upon first read.
 
 ---
 
@@ -167,6 +167,7 @@ Safely migrate all 7,344 objects (~3.69 GB) across Surfboard, REVA, and GBC from
 
 - [ ] **4.2. Run Local & CI Test Suite:**
   - Run the full test suite with R2 provider enabled:
+
   ```bash
   STORAGE_PROVIDER=r2 npm test
   ```
@@ -225,6 +226,7 @@ Safely migrate all 7,344 objects (~3.69 GB) across Surfboard, REVA, and GBC from
 ## 4. Rollback Plan
 
 If an unexpected critical failure occurs during Phase 5 (e.g., Cloudflare API outage):
+
 1. In Vercel Project Settings > Environment Variables:
    - Change `STORAGE_PROVIDER` back to `s3`.
 2. Redeploy production.
@@ -234,12 +236,12 @@ If an unexpected critical failure occurs during Phase 5 (e.g., Cloudflare API ou
 
 ## 5. Verification Checklist
 
-| Gate | Check | Command / Action | Status |
-| :--- | :--- | :--- | :--- |
-| **G-1** | R2 Bucket & CORS | Inspect CORS JSON in Cloudflare R2 Dashboard | [ ] Pending |
-| **G-2** | Super Slurper Transfer | All 7,344 objects copied to `twonode-store` | [ ] Pending |
-| **G-3** | Sippy Active | Fallback enabled for delta synchronization | [ ] Pending |
-| **G-4** | Test Suite | `npm test` passing with `STORAGE_PROVIDER=r2` | [ ] Pending |
-| **G-5** | Staging E2E | Surfboard, REVA, and GBC file actions verified | [ ] Pending |
-| **G-6** | Production Cutover | Vercel env updated and live smoke checks passed | [ ] Pending |
-| **G-7** | S3 Read-Only Lock | AWS IAM write permissions revoked | [ ] Pending |
+| Gate    | Check                  | Command / Action                                | Status      |
+| :------ | :--------------------- | :---------------------------------------------- | :---------- |
+| **G-1** | R2 Bucket & CORS       | Inspect CORS JSON in Cloudflare R2 Dashboard    | [ ] Pending |
+| **G-2** | Super Slurper Transfer | All 7,344 objects copied to `twonode-store`     | [ ] Pending |
+| **G-3** | Sippy Active           | Fallback enabled for delta synchronization      | [ ] Pending |
+| **G-4** | Test Suite             | `npm test` passing with `STORAGE_PROVIDER=r2`   | [ ] Pending |
+| **G-5** | Staging E2E            | Surfboard, REVA, and GBC file actions verified  | [ ] Pending |
+| **G-6** | Production Cutover     | Vercel env updated and live smoke checks passed | [ ] Pending |
+| **G-7** | S3 Read-Only Lock      | AWS IAM write permissions revoked               | [ ] Pending |

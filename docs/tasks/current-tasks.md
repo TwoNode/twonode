@@ -4,7 +4,7 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 
 ---
 
-## Active Session Batch: TASK-0010 — Vercel env cleanup, staging promotion, /v4 responsive
+## Active Session Batch: TASK-0010 — Vercel env cleanup, staging promotion, /v4 responsive _(stale heading: /v4 now lives at the root under `app/(site)/`; superseded 2026-10-15)_
 
 **Batch Reference:** [TASK-0010](./0010-env-cleanup-staging-promotion-v4-responsive.md)  
 **Active Branch:** `feat/v4-responsive` (PR #360)  
@@ -25,6 +25,8 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 - [x] **Google sign-in returns to the page the user was on** (PR to `dev`: return cookie set on all login pages, lax, 15 min, cleared after use). (Done 2026-10-14: PR #438, on prod.)
 - [x] **REVA spatial record page: rebuild the map from our own data, no Esri.** Deferred (2026-10-16): user decision to pend spatial record point sourcing. Page remains safely on the Coming Soon card, and legacy ArcGIS code is parked.
 - [x] **Vercel build hang fixed (2026-10-14).** Cause was `@arcgis/core` in the REVA spatial-record map; page now shows Coming Soon (PRs #448, #451). Main and prod deploy again (about 6 to 11 minutes).
+- [x] **Dev build fixed and promoted (2026-10-18, PR #488 → #489 → #490).** Dev's deploy failed type checking on the one-off `scripts/generate-storage-summary-pdf.tsx`; excluded it in `tsconfig.json`. Main and prod deploys succeeded. Also removed 5 merged remote branches; handoff corrected (bucket `reva-store`, site at root under `app/(site)/`, #479 merged).
+- [ ] **R2 pre-work (docs first).** Move REVA `awsActions.ts` and GBC `gbc/utils/aws-s3.ts` onto `lib/storage`, and decide the URL strategy for S3 URLs stored in the DB (custom domain `storage.twonodetechnologies.com` vs DB rewrite). No provisioning. See TASK-0014. Paused 2026-10-18: research findings and corrections (one public bucket exposes everything; domain must be a Cloudflare zone) are in [0014-r2-research-findings-2026-10-18.md](./0014-r2-research-findings-2026-10-18.md). _(Waiting on: roji-tech, public GBC image strategy and go-ahead for the ADR/TASK edits)_
 - [ ] **Email verification enforcement: already built, switched off (found 2026-10-15).** Backend, verify screen, reminder banner, OTP-first sign-up and the GBC and Surfboard settings controls shipped 2026-10-01 to 10-04 and are on prod (commits `f3b0a7e9`, `66227824`, `cff82873`); 147 auth tests pass. The `enabled` flag is off for GBC, Surfboard and REVA (no `emailVerification` key saved). In the database checked, 124 of 126 Surfboard users, 34 of 36 REVA users and 3 of 4 GBC users are unverified, so switching it on locks nearly everyone out after the grace period (default 30 days in code). REVA has no settings screen by design. _(Waiting on: roji-tech, which platform to switch on first and the grace length; test on staging with a mailbox you control before prod)_
 - [x] **/v4 insight articles use the /our-story layout (2026-10-14, PR to `dev`).** Sticky "IN THIS ARTICLE" index with scroll highlight, numbered sections, closing call to action. The three articles are now the real text, split into sections in `app/v4/data/insights.ts` (`body` became `intro` plus `sections`). Article 1's title now says "lodged". _(Waiting on: roji-tech to read the copy on staging and say if any line should become a pull-quote)_
 - [x] **Surfboard: removed "Use as Record Copy" and hardened record-copy verification (2026-10-14, PR #456 to `dev`).** The survey plan PDF is never the record copy. The batch verify step now stops with a clear message when the score is not a number, and shows the route's field message instead of "Invalid request". Audit of existing plans (`redCopyFileUrl` equal to a survey-plan PDF path) found 0 of 209 in the database `.env.local` points at; not yet run against prod.
@@ -99,10 +101,10 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 
 **Batch Reference:** [TASK-0009](./0009-v4-edits.md)  
 **Active Branch:** `feat/v4-edits` (merged)  
-**Status:** `In Progress`. `/v3` is left as is. In `/v4`: real logo, 12px text, 44px tap targets, hard-coded proof numbers, contact / insights / industry pages, Active/Next chips, new footer. Waiting on roji-tech: survey plan photo, phone number, real insight copy.
+**Status:** Scrapped by decision / superseded 2026-10-15: `/v3` and `/v4` were removed; the site is at the root under `app/(site)/`. Original note: `/v3` is left as is. In `/v4`: real logo, 12px text, 44px tap targets, hard-coded proof numbers, contact / insights / industry pages, Active/Next chips, new footer. Waiting on roji-tech: survey plan photo, phone number, real insight copy.
 
 - [x] **Create `/v4` and apply defect fixes (logo, text size, tap targets).** (Done 2026-10-11)
-- [ ] **Content decisions and remaining edits.** Listed in TASK-0009. _(Waiting on: roji-tech)_
+- [x] **Content decisions and remaining edits.** Scrapped by decision 2026-10-15: `/v4` was moved to the root site under `app/(site)/`; TASK-0009 is superseded.
 
 ---
 
@@ -110,10 +112,10 @@ State as of 2026-10-13: `main` was promoted to `prod` again (PR #402): file gate
 
 **Batch Reference:** [TASK-0008](./0008-v3-prototype-port.md)  
 **Active Branch:** `feat/v3-prototype-port` (merged)  
-**Status:** `In Progress`. Port done and verified on branch `feat/v3-prototype-port`, PR open. No edits to the design yet. Waiting on roji-tech: proof numbers, survey plan photo, phone number.
+**Status:** Scrapped by decision / superseded 2026-10-15: `/v3` was removed. Original note: Port done and verified on branch `feat/v3-prototype-port`, PR open. No edits to the design yet. Waiting on roji-tech: proof numbers, survey plan photo, phone number.
 
 - [x] **Port `out/twonode-website` to `/v3` and `/v3/our-story`, as is.** Same page heights as the prototype, under 1.3% pixel difference, tsc clean, 873/873 tests. (Done 2026-10-11)
-- [ ] **Content and design decisions before it can go public.** Listed in TASK-0008. _(Waiting on: roji-tech)_
+- [x] **Content and design decisions before it can go public.** Scrapped by decision 2026-10-15: `/v3` was removed; TASK-0008 is superseded.
 
 ---
 
