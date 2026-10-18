@@ -14,6 +14,8 @@ Everything here is a **plan or a proposal, not built and not committed.** This p
 | **Cloudflare R2 storage migration**: zero-egress storage, two-bucket design             | Storage      | Proposal, paused, nothing provisioned                | [`adr/0016-storage-provider-evaluation-and-r2-migration.md`](./adr/0016-storage-provider-evaluation-and-r2-migration.md), [findings](./tasks/0014-r2-research-findings-2026-10-18.md) |
 | **Nigeria Digital Postcode API** (NIPOST): address lookup integration                   | Integrations | Research, nothing implemented                        | [`integrations/nigeria-postcode-api.md`](./integrations/nigeria-postcode-api.md)                                                                                                      |
 
+Latest research (2026-10-18): [`mobile/association-and-mobile-research-2026-10-18.md`](./mobile/association-and-mobile-research-2026-10-18.md).
+
 ## How they depend on each other
 
 - The **mobile app** needs native-client auth first (stage 0 of the [mobile roadmap](./mobile/roadmap.md)). That work also unblocks any other API client.

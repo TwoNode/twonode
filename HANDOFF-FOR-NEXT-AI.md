@@ -3,7 +3,7 @@
 > **Repository:** `/home/rojitech/Desktop/CODEC/NextJS/twonodes`  
 > **Maintainer:** `roji-tech` (they/them if unsure)  
 > **GitHub Remote:** `TwoNode/twonode`  
-> **Date:** 2026-10-15  
+> **Date:** 2026-10-18 (state as of the dev, main and prod sync after PR #493)  
 > **Target Audience:** Incoming AI assistants taking over development on the TwoNode platform.  
 > **Notice:** This repository is standalone. Do NOT confuse it with Octalve Edu or AlEemaan.
 
@@ -150,18 +150,26 @@ flowchart LR
 
 ---
 
-## 5. Recent Work Completed (October 14–15, 2026)
+### 3.5 Planned: Association subscription and the mobile app
 
-| Feature / Fix                                       | PR / Commit                        | Details                                                                                                                                                                                                                                                                               |
-| --------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Surfboard Record Copy Verification Fix**          | PR #478 (`main`), PR #479 (`prod`) | Fixed `"Verification failed ... Invalid request"` bug. Cause was raw unsigned `fetch` returning 403 on private S3 PDF. Resolved via `getPresignedDownloadUrl` in `downloadPlanPdfAsBase64`, typed 502 `UPSTREAM_FILE_ERROR`, and error extraction in `CertificateBatchSelection.tsx`. |
-| **iOS Emoji Rendering Bug Fix**                     | PR #478 (`main`), PR #479 (`prod`) | Replaced Unicode asterisk `✳` (`U+2733`) on GBC cards with inline SVG in the site home page (`app/(site)/page.tsx`) and updated `v4.css` to eliminate the green emoji box on iPhones.                                                                                                 |
-| **Route Links Cleanup (`/v4` $\rightarrow$ `/v2`)** | PR #476 (`dev`), PR #477 (`main`)  | Updated all internal links across `/v2` pages, navigation header, footer, and insight articles to point to the root site instead of `/v4`. Removed dead `/v3` and `/v4` files.                                                                                                        |
-| **GBC Public Key Layout**                           | PR #471 (`dev`), PR #472 (`main`)  | Uploads routed to `public/gbc/<edition>/…`; S3 Policy v4 applied and verified live.                                                                                                                                                                                                   |
-| **Vercel Build Hang Resolution**                    | PR #448, #451                      | Replaced heavy `@arcgis/core` import in REVA spatial-record map with a Coming Soon state. Deploys now succeed reliably in 6–11 minutes.                                                                                                                                               |
-| **Surfboard Record Copy Hardening**                 | PR #456                            | Removed misleading "Use as Record Copy" button (survey plan PDF is never the record copy); added numeric validation on verification scores.                                                                                                                                           |
-| **Google Sign-in Return URL**                       | PR #438                            | Google/Kinde auth returns users to their deep-linked destination via a 15-minute lax cookie.                                                                                                                                                                                          |
-| **REVA Admin Redesign**                             | PR #424, #433, #455                | Rebuilt request list cards, summary tabs, and detail views; removed duplicate admin report form.                                                                                                                                                                                      |
+- Research refresh: `docs/mobile/association-and-mobile-research-2026-10-18.md`. Detailed designs: `docs/surfboard/association-subscription.md` and `docs/mobile/surfboard-mobile-app-evaluation.md`. Index: `docs/future-plans.md`.
+- **Association:** Phase 0 prerequisites are merged (#261, #262, #263, #273); no association model, role or route exists yet.
+- **Mobile:** the app will be a **new sibling project `twonode-mobile`** at `/home/rojitech/Desktop/CODEC/NextJS/twonode-mobile` (not created yet). The first backend step is bearer-token auth in this repo; the app should start on Expo SDK 58.
+
+---
+
+## 5. Recent Work Completed (October 14–18, 2026)
+
+| Feature / Fix                                  | PR / Commit                        | Details                                                                                                                                                                                                                                                                               |
+| ---------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Surfboard Record Copy Verification Fix**     | PR #478 (`main`), PR #479 (`prod`) | Fixed `"Verification failed ... Invalid request"` bug. Cause was raw unsigned `fetch` returning 403 on private S3 PDF. Resolved via `getPresignedDownloadUrl` in `downloadPlanPdfAsBase64`, typed 502 `UPSTREAM_FILE_ERROR`, and error extraction in `CertificateBatchSelection.tsx`. |
+| **iOS Emoji Rendering Bug Fix**                | PR #478 (`main`), PR #479 (`prod`) | Replaced Unicode asterisk `✳` (`U+2733`) on GBC cards with inline SVG in the site home page (`app/(site)/page.tsx`) and updated `v4.css` to eliminate the green emoji box on iPhones.                                                                                                 |
+| **Route Links Cleanup (old prefixes removed)** | PR #476 (`dev`), PR #477 (`main`)  | Updated all internal links across `/v2` pages, navigation header, footer, and insight articles to point to the root site instead of `/v4`. Removed dead `/v3` and `/v4` files.                                                                                                        |
+| **GBC Public Key Layout**                      | PR #471 (`dev`), PR #472 (`main`)  | Uploads routed to `public/gbc/<edition>/…`; S3 Policy v4 applied and verified live.                                                                                                                                                                                                   |
+| **Vercel Build Hang Resolution**               | PR #448, #451                      | Replaced heavy `@arcgis/core` import in REVA spatial-record map with a Coming Soon state. Deploys now succeed reliably in 6–11 minutes.                                                                                                                                               |
+| **Surfboard Record Copy Hardening**            | PR #456                            | Removed misleading "Use as Record Copy" button (survey plan PDF is never the record copy); added numeric validation on verification scores.                                                                                                                                           |
+| **Google Sign-in Return URL**                  | PR #438                            | Google/Kinde auth returns users to their deep-linked destination via a 15-minute lax cookie.                                                                                                                                                                                          |
+| **REVA Admin Redesign**                        | PR #424, #433, #455                | Rebuilt request list cards, summary tabs, and detail views; removed duplicate admin report form.                                                                                                                                                                                      |
 
 ---
 
@@ -172,7 +180,8 @@ flowchart LR
 - **PR #479 and the 2026-10-18 promotion:** merged. Prod is at the dev build-fix promotion (#488 → #489 → #490); main and prod deploys succeeded.
 - **Dev build fix (#488):** `scripts/generate-storage-summary-pdf.tsx` (one-off ADR-0016 PDF generator) is excluded from `tsconfig.json`; it had broken Next's type check.
 - **Phone work on the site (2026-10-16 to 10-18):** hero art higher on mobile, footer back-to-top arrow, nav click-outside, article step arrows (`ArticleStepNav`), all merged and live. GBC public key layout (#471/#472) is live.
-- **R2 migration:** ADR-0016 / TASK-0014 are Proposed/Planned; nothing is provisioned. Pre-work: move REVA `awsActions.ts` and GBC `aws-s3.ts` onto `lib/storage`, decide the URL strategy for stored S3 URLs.
+- **R2 migration:** ADR-0016 / TASK-0014 are Proposed/Planned and **paused**; nothing is provisioned. Findings and corrections: `docs/tasks/0014-r2-research-findings-2026-10-18.md` (R2 public access is per bucket, so use a private bucket for all data; a custom domain needs the domain as a Cloudflare zone). Pre-work: move REVA `awsActions.ts` and GBC `aws-s3.ts` onto `lib/storage`.
+- **Association and mobile:** research refreshed 2026-10-18 (see 3.5); waiting on the decisions listed in the research doc.
 
 ### 6.2 Items Waiting on Maintainer Decisions
 
@@ -182,7 +191,9 @@ flowchart LR
 4. **REVA Spatial Map Record Source:** Decision on where individual property record coordinate points will be fetched from (boundaries are provided by `nigeria_ward_admin_boundaries`).
 5. **Email Verification Enforcement:** Feature is fully built (147 tests pass, OTP signup, banners, settings toggles) but disabled. Requires decision on initial platform rollout, grace period duration, and staging test plan.
 6. **S3 Phase 4 Archival:** Decision on standard `archive/` prefix vs. AWS S3 Glacier Deep Archive storage class for inactive survey plans and odd folders.
-7. **Paystack Renewal Webhook:** Provide real renewal webhook payloads from Paystack dashboard (`invoice.create` $\rightarrow$ `charge.success` $\rightarrow$ `invoice.update`) to verify subscription renewal pipeline.
+7. **Association and mobile decisions:** the open product questions, store accounts (organisation), map/geocoder providers, and a go for a read-only prod count of surveyors by `residenceState` (see the research doc).
+8. **R2:** how to serve public GBC images, and whether the main domain's DNS may move.
+9. **Paystack Renewal Webhook:** Provide real renewal webhook payloads from Paystack dashboard (`invoice.create` $\rightarrow$ `charge.success` $\rightarrow$ `invoice.update`) to verify subscription renewal pipeline.
 
 ---
 
