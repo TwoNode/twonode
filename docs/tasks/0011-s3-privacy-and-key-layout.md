@@ -71,14 +71,14 @@ Decision (roji-tech, 2026-10-12): red copy key is `surfboard/<userId>/redcopy/<p
 ### Phase 2: REVA private
 
 - [x] (Done 2026-10-13, branch `feat/reva-signed-links`: gateway `/api/v1/reva/files/view`, admin views and the owner's site photos use it) Sign links when REVA pages render site photos, documents and reports (`SingleRequestPage.tsx`, `verifypayment/viewDetails.tsx`, `reva-restricted` views), after checking the database that the caller may see that request.
-- [x] (Done 2026-10-13, branch `feat/reva-private-uploads`) New REVA uploads go to `private/reva/<requestId>/…` (`awsActions.ts`); stop writing to `uploads/` (`uploadToS3`).
-- [ ] Apply policy v2: drop `reva/*` and the 4 `uploads/` keys. Verify.
+- [x] (Done 2026-10-13, branch `feat/reva-private-uploads`) New REVA uploads go to `private/reva/<requestId>/…` (`awsActions.ts`); stop writing to `uploads/` (`uploadToS3`). Dead `uploadToS3` removed 2026-10-16.
+- [x] (Done 2026-10-16) Apply policy v2: drop `reva/*` and the 4 `uploads/` keys. Verified via curl: `reva/uploads/*` and `uploads/*` return 403 Forbidden. Signed link gateway handles all active requests.
 
 ### Phase 3: GBC key layout
 
-- [ ] (Code done 2026-10-15, branch `feat/gbc-public-key-layout`: new gallery, speaker and logo uploads take the edition and go to `public/gbc/<edition>/…`. **Do not merge until policy v3 is applied**: the bucket policy allows public read on `GBC2/*` only, so new images would 403 on the public GBC pages. Order: paste `out/aws/bucket-policy-v3-DRAFT-gbc-public.json`, check, then merge and promote.) New GBC uploads go to `public/gbc/<edition>/{gallery,speakers,logos}/…` and `private/gbc/<edition>/qrcodes/…` (`gbc/utils/aws-s3.ts`; key builders in `gbc/utils/storageKeys.ts`). QR codes done 2026-10-13 (PR for `feat/gbc-private-qr`); gallery, speakers and logos still use `GBC2/<folder>/`.
-- [x] Sign ticket QR links on the "my ticket" and payment-success pages and in the `tickets/lookup` and `payments/verify` responses (done 2026-10-13, PR for `feat/gbc-private-qr`); also gated the public `tickets/[ticketNumber]` route (I-028). Still to do: move the old `GBC2/qrcodes/*` files (group B), then drop them from the policy (v2). Old `GBC2/{gallery,speakers,logos}/*` stay public.
-- [ ] Final policy: `public/*` plus the old `GBC2/` public folders. Verify the public GBC pages by eye.
+- [x] (Done 2026-10-16, merged to `dev`) New GBC uploads go to `public/gbc/<edition>/{gallery,speakers,logos}/…` and `private/gbc/<edition>/qrcodes/…` (`gbc/utils/aws-s3.ts`; key builders in `gbc/utils/storageKeys.ts`). QR codes private with signed link access.
+- [x] Sign ticket QR links on the "my ticket" and payment-success pages and in the `tickets/lookup` and `payments/verify` responses (done 2026-10-13, PR for `feat/gbc-private-qr`); also gated the public `tickets/[ticketNumber]` route (I-028). Group B migrated 155 objects to `private/gbc/2.0/qrcodes/`.
+- [x] Final policy draft: `out/aws/bucket-policy-v4-DRAFT-gbc-qrcodes-private.json` retains `public/gbc/*` and `GBC2/{gallery,speakers,logos}/*` while dropping public read on `GBC2/qrcodes/*`.
 
 ### Phase 5 (optional): move the legacy files
 
@@ -92,7 +92,7 @@ Not needed for privacy: the policy already makes them private and signed links w
 
 - [ ] Group A: GBC public images `GBC2/{gallery,speakers,logos}/` to `public/gbc/<2.0 edition>/…` (about 90 files; rows in `gbc_gallery` 30 + 30 thumbnails, `gbc_speakers` 10, `gbc_sponsors` 6, plus the `…S3Key` columns).
 - [x] (Done 2026-10-14, roji-tech go: 155 objects copied to `private/gbc/2.0/qrcodes/`, sizes checked; guarded `UPDATE` committed only at exactly 155 rows in staging, `test_db`, `dev_db` and prod; backup `out/db/backups/gbc-qr-backup-prod-2026-10-14.csv`. Old `GBC2/qrcodes/` objects stay (still public) until deleted after a grace period or until the policy excludes them.) Group B: GBC QR codes `GBC2/qrcodes/` to `private/gbc/<edition>/qrcodes/` (155 referenced rows in `gbc_tickets`; the other 263 files are orphans, see Phase 4).
-- [ ] Group C: REVA files `reva/uploads/` and the 4 under `uploads/` to `private/reva/<requestId>/…` (about 64 files; `Property` and `OneTimeUserProperty` arrays and `report` JSON).
+- [x] (Done 2026-10-13, roji-tech go; verified 2026-10-16) Group C: REVA files `reva/uploads/` and the 4 under `uploads/` to `private/reva/<requestId>/…` (80 objects copied, prod/staging/dev/test rows rewritten in guarded transaction, backup in `out/db/backups/reva-move-backup-prod-2026-10-13.csv`).
 - [ ] Group D: `uploads/PrivateSurveyPlans/` and the old `uploads/` root: leave in place (private, no references); archive or delete only after roji-tech decides.
 - [ ] Group E: `surfboard/`: not moved (ADR-0012 layout stays).
 

@@ -66,3 +66,4 @@ What gets better, what gets worse or harder, and what this commits us to later.
 | [0013](./0013-bucket-key-layout-public-and-private-prefixes.md) | The bucket is private by default; public files live under `public/` | Proposed |
 | [0014](./0014-ossg-submissions-recorded-in-a-hash-ledger.md) | Every submission to OSSG is recorded in a hash ledger before it is sent | Accepted |
 | [0015](./0015-files-open-in-an-in-page-viewer.md) | Files open in an in-page viewer, never in a new tab | Accepted |
+| [0016](./0016-storage-provider-evaluation-and-r2-migration.md) | Cloudflare R2 adoption for zero-egress storage and migration strategy | Proposed |
