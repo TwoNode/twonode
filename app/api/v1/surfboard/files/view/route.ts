@@ -64,7 +64,9 @@ export const GET = withAuth<SurfboardRole>(
             AND: [
               {
                 OR: [
-                  { redCopyFileUrl: { endsWith: key } },
+                  // The record copy is the owner's alone: a plan shared with
+                  // the caller does not share it (I-037).
+                  { userId, redCopyFileUrl: { endsWith: key } },
                   { pdfFilePaths: { has: target } },
                   { cadFilePaths: { has: target } },
                   { certificateFilePaths: { has: target } },
