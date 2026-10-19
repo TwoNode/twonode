@@ -108,7 +108,7 @@ _Related:_ the NIPOST postcode API (`docs.postcode.gov.ng`) offers free postcode
 2. **Locality/LGA search** (§2).
 3. **Geocoding** and **basemap/imagery** providers (§4.4).
 4. **Viewport/"near me" plans endpoint** if map browsing is meant to go beyond "my plans" (§2: JSONB, no spatial index). For own plans, a `GET plans/map` that returns `{id, planNumber, status, simplifiedGeometry, centroid}` is enough.
-5. **A derived `displayStatus`** shared by web and mobile for batch/plan rows ("Ready for Physical Submission", "Surcon, Account Approved", …) — the brief says these "should reflect the actual workflow"; today they must be computed from `redCopyStatus`, `physicalCopySubmitted`, and the six stage statuses. Define once, test once.
+5. **A derived `displayStatus`** shared by web and mobile for batch/plan rows ("Ready for Physical Submission", "Surcon, Account Approved", …) — the brief says these "should reflect the actual workflow"; today they must be computed from `redCopyStatus`, `physicalCopySubmitted`, and the six stage statuses. Define once, test once. **Built 2026-10-19 (#500):** `surfboard/utils/planStatus.ts`.
 6. **Push**: device-token table, platform (APNs/FCM) senders, event hooks where queries/batch moves are written, notification preferences. Existing notifications are in-app/email/WhatsApp (`notificationService`, `lib/whatsapp/*`).
 7. **Rate-limit keys** for mobile (§3.3).
 
@@ -131,7 +131,7 @@ _Related:_ the NIPOST postcode API (`docs.postcode.gov.ng`) offers free postcode
 1. **Mobile auth surface** (§3) — additive; also unblocks any other native/API client.
 2. **Shared geo util** extracted from the web (`EPSG:26331/26332`), with the brief's three coordinate formats under test.
 3. **Map provider decision** and a fix for the web map's tile sources (§4.4).
-4. **Derived status helpers** (`displayStatus`) and locality/LGA search.
+4. **Derived status helpers** (`displayStatus`) and locality/LGA search. (Built 2026-10-19, #500: `plans/summary`.)
 
 ### 5.2 Phases (size, not dates)
 
