@@ -1,6 +1,8 @@
 # Surfboard Mobile App — evaluation of the brief and the engineering plan
 
-> **Status: proposal. No mobile code exists.** This evaluates the "Surfboard Mobile App — Product Brief" and Part II of the engineering write-up built from it ("Plan B": `Surfboard_Association_and_Mobile_Feasibility_Analysis.md`, kept locally in the untracked `out/` folder), against the code on `dev` (2026-10-04) and current platform/vendor policies.
+> **Update 2026-10-19:** the app is now being built. Its foundation is in the `TwoNode/twonode-mobile` repo, native auth (§3) is built and merged (PR #495, [ADR-0017](../adr/0017-the-mobile-app-signs-in-with-bearer-tokens.md)), and the live plan, decisions and task list are in [TASK-0015](../tasks/0015-mobile-app-and-api.md). Where this document names Expo SDK 56 as current, it is now SDK 58 ([research refresh](./association-and-mobile-research-2026-10-18.md)). The text below is kept as written on 2026-10-04.
+
+> **Status when written (2026-10-04): proposal, no mobile code existed.** This evaluates the "Surfboard Mobile App — Product Brief" and Part II of the engineering write-up built from it ("Plan B": `Surfboard_Association_and_Mobile_Feasibility_Analysis.md`, kept locally in the untracked `out/` folder), against the code on `dev` (2026-10-04) and current platform/vendor policies.
 >
 > It builds on, and does not repeat, [`surfboard-mobile-feasibility.md`](./surfboard-mobile-feasibility.md) (the original backend-readiness analysis — still correct that the one hard blocker is cookie-only auth). Where this document corrects or extends that one, it says so.
 

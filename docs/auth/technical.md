@@ -69,7 +69,7 @@ On the client, token refreshing is coordinated by `lib/auth/clientRefreshManager
 
 ### 1.5a Native-app (bearer) sessions — `app/api/v1/auth/mobile/*`
 
-For the Surfboard mobile app (TASK-0015). A phone has no browser cookie jar, so the same session is returned in the response body and presented as `Authorization: Bearer <access token>`. Surfboard only (`platform` must be `"surfboard"`). The browser cookie path is unchanged.
+For the Surfboard mobile app (TASK-0015). A phone has no browser cookie jar, so the same session is returned in the response body and presented as `Authorization: Bearer <access token>`. Surfboard only (`platform` must be `"surfboard"`), and only role `USER`: login refuses any other role with 403 `ACCOUNT_TYPE_NOT_SUPPORTED`, and a refresh refuses an account promoted to a staff role since it signed in (the new token is revoked). The browser cookie path is unchanged.
 
 | Route                                     | What it does                                                                                                                                                                                                                                                                                                                                         |
 | :---------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -87,6 +87,7 @@ How it fits the existing security model:
 - **Device sessions**: `RefreshToken` gained `deviceId`, `deviceLabel`, `appVersion`, `lastUsedAt` (additive migration `20261019100000_refresh_token_device_sessions`), copied to each rotated successor. A mobile session lasts 30 days from login (`MOBILE_REFRESH_LIFETIME_SECONDS`); rotation inherits that expiry.
 - **Rate limits** are keyed on email and device id, never IP alone (carrier NAT). The device id is client-chosen, so the per-email limit (20 attempts in 15 minutes) is the real brake on guessing; a side effect is that someone who knows an email can lock that account out of mobile sign-in for 15 minutes.
 - **Access tokens are stateless** (15 minutes, no database check), so signing out or revoking a device stops refreshing at once but an already-issued access token works until it expires, as on the web.
+- The app itself is in the `TwoNode/twonode-mobile` repo (foundation built 2026-10-19; its `src/lib/auth/session-manager.ts` implements the client side of these rules). Decision record: [ADR-0017](../adr/0017-the-mobile-app-signs-in-with-bearer-tokens.md).
 - Still to do for the app: the email-verification screen (the OTP routes work with bearer, but `verify-email-otp` still re-issues cookies; the app should call mobile refresh afterwards to pick up the new `emailVerified` claim), deep links in emails, and Google sign-in.
 
 ### 1.6 Registration/login schema

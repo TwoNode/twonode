@@ -1,6 +1,6 @@
 # TASK-0015: Surfboard mobile app (`twonode-mobile`) and the API work it needs
 
-- **Status:** Planned (nothing started, no code written)
+- **Status:** In progress (2026-10-19): native auth built and merged (PR #495); app foundation built in `TwoNode/twonode-mobile` (private, `main`, CI green); everything else open
 - **Priority:** High
 - **Assignee:** Maintainer / Agent
 - **Target Branch / PR:** API work: feature branches off `origin/dev` in this repo. App: new project `/home/rojitech/Desktop/CODEC/REACT-NATIVE/twonode-mobile`
@@ -55,7 +55,7 @@ Ship a native companion app for Surfboard surveyors (Android and iOS) that lets 
 - [ ] 0.4 Write the privacy policy and the data-safety answers: what is collected (account, SURCON number, plan locations, device token, crash data), why, retention, deletion. Review with counsel against the Nigeria Data Protection Act 2023 and the 2025 GAID.
 - [ ] 0.5 Decide the support contact (D7) and a public support URL; stores require one.
 - [ ] 0.6 Prepare store listing material: screenshots plan, description, keywords, category, age rating answers, demo account for reviewers (a real Surfboard test account that never expires; reviewers cannot register).
-- [ ] 0.7 Create `twonode-mobile` repository on GitHub (private) with the same branch discipline as this repo (`dev`, `main`, PRs, no direct pushes to release branches).
+- [x] 0.7 Create `twonode-mobile` repository on GitHub (private) with the same branch discipline as this repo (`dev`, `main`, PRs, no direct pushes to release branches). **Done 2026-10-19:** private repo `TwoNode/twonode-mobile` created and pushed; `main` with pull requests (no `dev` branch yet), CI on every PR (typecheck, lint, tests).
 
 ---
 
@@ -78,6 +78,7 @@ Today: access token is a 15-minute JWT in an httpOnly cookie, the refresh token 
 - [ ] 1A.9 Password reset: `request-password-reset` and `reset-password` already exist; confirm they work without cookies and that the reset email can deep link into the app (1H).
 - [ ] 1A.10 (mostly done 2026-10-19: 4 new test files, 185 auth tests, 1125 in the full suite; live HTTP and browser checks run against a throwaway database; still to add: bearer on a wider sample of `withAuth` routes) Tests: login, refresh rotation including the lost-response case, reuse detection still revoking, revoke-one-device, bearer on a sample of `withAuth` routes, CSRF matrix. Update `docs/auth/technical.md` and `docs/functions/`.
 - [ ] 1A.12 **Google (Kinde) sign-in for mobile (D4)** (research done 2026-10-19: [kinde-google-sign-in-research](../mobile/kinde-google-sign-in-research-2026-10-19.md); recommended: our own PKCE flow, the server exchanges the code with a new Kinde Front-end and mobile application; steps: spike, `POST /api/v1/auth/mobile/kinde`, account rules, pre-hijack fix on web and mobile; waiting on decisions D12 to D14 and on the Kinde application): a mobile-safe exchange that ends with the same access and refresh token pair as 1A.1, scoped to `platform: surfboard`, with account linking to the existing email account and the email-verified rule (`emailVerifiedVia: OAUTH`). Research Kinde's mobile and PKCE support first.
+- [ ] 1A.13 `GET /api/v1/auth/me` should also return `firstName` and `lastName`: after a restored session the app has only the email (the login response carries the name, `/me` does not). Found 2026-10-19 while building the app.
 - [ ] 1A.11 Security review of the new surface: token lifetime, refresh-token storage expectations, brute-force and enumeration behaviour, audit log entries for mobile logins (`writeAudit`).
 
 ### 1B. Version gate and client identification · Size S
@@ -148,16 +149,16 @@ Today: access token is a 15-minute JWT in an httpOnly cookie, the refresh token 
 
 ## 5. Phase 2: Project setup (`twonode-mobile`)
 
-- [ ] 2.1 Create the project with the **current Expo SDK (58)**, TypeScript strict, Expo Router, the New Architecture (required), and a **development build** (MapLibre cannot run in Expo Go).
-- [ ] 2.2 Environments: development, staging and production configs; API base URL configurable per build, never hard-coded; staging build points at the `main` Vercel deployment.
-- [ ] 2.3 Tooling: ESLint, Prettier, TypeScript checks, unit tests (Jest and React Native Testing Library), end-to-end tests (Maestro or Detox), pre-commit checks, CI on every PR.
+- [x] 2.1 Create the project with the **current Expo SDK (58)**, TypeScript strict, Expo Router, the New Architecture (required), and a **development build** (MapLibre cannot run in Expo Go). **Done 2026-10-19:** Expo SDK 58 (React Native 0.88, React 19.3), TypeScript strict, Expo Router with native tabs, New Architecture, phones only, web support removed. A development build is only needed once MapLibre is added (Phase 5).
+- [ ] 2.2 Environments: development, staging and production configs; API base URL configurable per build, never hard-coded; staging build points at the `main` Vercel deployment. _(2026-10-19: base URL config done: `EXPO_PUBLIC_API_BASE_URL`, https enforced outside development, local fallback on port 3211; per-environment EAS profiles wait for 2.4.)_
+- [ ] 2.3 Tooling: ESLint, Prettier, TypeScript checks, unit tests (Jest and React Native Testing Library), end-to-end tests (Maestro or Detox), pre-commit checks, CI on every PR. _(2026-10-19: done so far: ESLint and Prettier, `tsc`, Jest and React Native Testing Library (70 tests), GitHub Actions CI. Still open: end-to-end tests and pre-commit checks.)_
 - [ ] 2.4 EAS build profiles (development, preview, production), signing credentials, internal distribution (Android APK link and iOS TestFlight).
-- [ ] 2.5 Generated API client from the OpenAPI spec (1C); fall back to a thin typed wrapper for any route not yet in the spec.
-- [ ] 2.6 Data layer: TanStack Query for fetching, caching and retries; a single request wrapper that adds the bearer token, `X-App-Version` and `X-App-Platform`, and handles `401`, `EMAIL_VERIFICATION_REQUIRED`, `SUBSCRIPTION_REQUIRED` and `APP_UPDATE_REQUIRED` in one place.
-- [ ] 2.7 **Single-flight token refresh:** concurrent requests on app resume share one refresh; write the new refresh token to secure storage **before** using the new access token.
-- [ ] 2.8 Secure storage (`expo-secure-store`, Keychain and Keystore) for the refresh token; nothing sensitive in plain storage or logs.
+- [ ] 2.5 Generated API client from the OpenAPI spec (1C); fall back to a thin typed wrapper for any route not yet in the spec. _(2026-10-19: the thin typed wrapper exists: `src/lib/api/`; no OpenAPI client yet.)_
+- [ ] 2.6 Data layer: TanStack Query for fetching, caching and retries; a single request wrapper that adds the bearer token, `X-App-Version` and `X-App-Platform`, and handles `401`, `EMAIL_VERIFICATION_REQUIRED`, `SUBSCRIPTION_REQUIRED` and `APP_UPDATE_REQUIRED` in one place. _(2026-10-19: the request wrapper is done (bearer, `X-App-Version`, `X-App-Platform`, one refresh-and-retry on 401); TanStack Query is not added yet.)_
+- [x] 2.7 **Single-flight token refresh:** concurrent requests on app resume share one refresh; write the new refresh token to secure storage **before** using the new access token. **Done 2026-10-19:** `SessionManager` shares one refresh between concurrent callers and writes the new refresh token before using the new access token; tested.
+- [x] 2.8 Secure storage (`expo-secure-store`, Keychain and Keystore) for the refresh token; nothing sensitive in plain storage or logs. **Done 2026-10-19:** refresh token and device id in `expo-secure-store` (unlocked only, this device only); the access token is in memory only; tested.
 - [ ] 2.9 Design system: brand colours and type matching the web, light and dark themes, spacing scale, base components (button, input, card, list row, status chip, badge, empty state, skeleton, toast, bottom sheet).
-- [ ] 2.10 Navigation: five tabs with Records in the centre, auth stack, modal routes for details, deep link handling.
+- [ ] 2.10 Navigation: five tabs with Records in the centre, auth stack, modal routes for details, deep link handling. _(2026-10-19: five tabs with Records in the centre and the signed-in and signed-out stacks are done; modal routes and deep link handling are not.)_
 - [ ] 2.11 Crash and error reporting (for example Sentry) with user id hashed and no personal data in breadcrumbs; basic product analytics only if the privacy policy covers it.
 - [ ] 2.12 Shared geo util: port or import the coordinate parsing and conversion with the same tests as the API repo (1E.4).
 - [ ] 2.13 Accessibility baseline: dynamic type, screen reader labels, tap targets of at least 44 points, colour contrast.
@@ -167,16 +168,16 @@ Today: access token is a 15-minute JWT in an httpOnly cookie, the refresh token 
 
 ## 6. Phase 3: Auth and Profile shell · Size M
 
-- [ ] 3.1 Sign in screen (email and password), error states, rate-limit message, password reset flow.
+- [ ] 3.1 Sign in screen (email and password), error states, rate-limit message, password reset flow. _(2026-10-19: email and password sign-in screen with error and notice messages is done; the password reset flow is not.)_
 - [ ] 3.2 Email-verification screen (6-digit OTP entry, resend with cooldown) when the API returns `EMAIL_VERIFICATION_REQUIRED`.
-- [ ] 3.3 Session restore at launch, silent refresh, forced sign-out on reuse, update-required screen on `APP_UPDATE_REQUIRED`.
-- [ ] 3.4 Sign out (revokes the device on the server), and signed-in devices list with remove.
-- [ ] 3.5 Profile: account and firm details (read), subscription status card (plan, valid until, status) with **no purchase or "pay on web" call to action on iOS**, support entry, app version, legal links.
+- [ ] 3.3 Session restore at launch, silent refresh, forced sign-out on reuse, update-required screen on `APP_UPDATE_REQUIRED`. _(2026-10-19: session restore at launch, silent refresh and sign-out when the server ends the session are done; the update-required screen waits for the version gate.)_
+- [ ] 3.4 Sign out (revokes the device on the server), and signed-in devices list with remove. _(2026-10-19: sign out, which revokes the device, is done; the signed-in devices list is not.)_
+- [ ] 3.5 Profile: account and firm details (read), subscription status card (plan, valid until, status) with **no purchase or "pay on web" call to action on iOS**, support entry, app version, legal links. _(2026-10-19: a basic Profile screen (email, version, sign out, verification notice) exists; the subscription card, wallet and support are not.)_
 - [ ] 3.6 Registration stays on the web in v1; if account deletion is ever required in-app (Apple 5.1.1(v) applies once the app offers account creation), plan it then.
 - [ ] 3.7 **Google sign-in (required for v1, D4):** system browser with PKCE and a deep link back into the app; research the Kinde mobile flow first; API side needs bearer session issuance after a Kinde callback (new item 1A.12).
 - [ ] 3.8 **Sign in with Apple (iOS only, D12):** Apple connection in Kinde, the same server exchange as Google (existing accounts only), button on iOS only; Google button on Android only.
 - [ ] 3.9 **Connect a sign-in method from Profile (D12, D13):** while signed in, link Google (Android) or Apple (iOS) to the current account, so someone whose Apple "Hide My Email" address does not match their account can still use it. Server: link by the signed-in account, not by email.
-- [ ] 3.8 Biometric unlock as an opt-in screen lock (Phase 6).
+- [ ] 3.10 Biometric unlock as an opt-in screen lock (Phase 6).
 
 ---
 

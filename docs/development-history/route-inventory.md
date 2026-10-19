@@ -1,8 +1,8 @@
 # Twonodes — Full Route Inventory
 
-**Purpose:** one place that lists every route in the app — pages and API routes, across all three products plus shared/marketing and the new `/v2` site.
+**Purpose:** one place that lists every route in the app — pages and API routes, across all three products plus the shared corporate site, which is served at the root.
 
-**Last updated:** 2026-10-13.
+**Last updated:** 2026-10-19.
 
 **How this file is maintained:** the two tables below (API routes and pages) are **generated from the filesystem** by [`scripts/docs/generate-route-inventory.mjs`](../../scripts/docs/generate-route-inventory.mjs). Do not edit between the `BEGIN GENERATED` / `END GENERATED` markers by hand — run
 
@@ -31,25 +31,30 @@ The auth column is a static reading of source, not an access-control test. The a
 
 <!-- BEGIN GENERATED: api-routes -->
 
-#### Auth (shared) (15)
+#### Auth (shared) (20)
 
-| Route                                 | Method(s) | Auth                                 |
-| :------------------------------------ | :-------- | :----------------------------------- |
-| `/api/v1/auth/accept-invite`          | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/change-password`        | POST      | session (see source)                 |
-| `/api/v1/auth/invitations`            | GET       | public — single-use invitation token |
-| `/api/v1/auth/login`                  | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/logout`                 | POST      | session (see source)                 |
-| `/api/v1/auth/me`                     | GET       | session (see source)                 |
-| `/api/v1/auth/refresh`                | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/register`               | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/register/resend-otp`    | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/register/send-otp`      | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/request-password-reset` | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/resend-verification`    | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/reset-password`         | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/verify-email`           | POST      | session (see source)                 |
-| `/api/v1/auth/verify-email-otp`       | POST      | session (see source)                 |
+| Route                                    | Method(s) | Auth                                 |
+| :--------------------------------------- | :-------- | :----------------------------------- |
+| `/api/v1/auth/accept-invite`             | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/change-password`           | POST      | session (see source)                 |
+| `/api/v1/auth/invitations`               | GET       | public — single-use invitation token |
+| `/api/v1/auth/login`                     | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/logout`                    | POST      | session (see source)                 |
+| `/api/v1/auth/me`                        | GET       | session (see source)                 |
+| `/api/v1/auth/mobile/devices`            | GET       | any signed-in (unverified OK)        |
+| `/api/v1/auth/mobile/devices/[familyId]` | DELETE    | any signed-in (unverified OK)        |
+| `/api/v1/auth/mobile/login`              | POST      | public                               |
+| `/api/v1/auth/mobile/logout`             | POST      | public                               |
+| `/api/v1/auth/mobile/refresh`            | POST      | public                               |
+| `/api/v1/auth/refresh`                   | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/register`                  | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/register/resend-otp`       | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/register/send-otp`         | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/request-password-reset`    | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/resend-verification`       | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/reset-password`            | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/verify-email`              | POST      | session (see source)                 |
+| `/api/v1/auth/verify-email-otp`          | POST      | session (see source)                 |
 
 #### Surfboard (131)
 
@@ -344,6 +349,7 @@ The auth column is a static reading of source, not an access-control test. The a
 ### Notes on specific API routes
 
 - **Kinde callbacks** (`/api/auth/success/*`): still live, and each dual-writes a native session alongside the legacy Kinde cookie (see [`docs/auth/technical.md`](../auth/technical.md) §2, §9). `surf-restricted` and `surf-mda` are **deliberately unrenamed** — they are Kinde-registered redirect URIs (external dashboard config); only their internal destination paths moved to `/surfboard-restricted/*` and `/surfboard-mda/*`. Every one of these callbacks now also stamps `emailVerifiedVia = "OAUTH"` on first successful sign-in (an OAuth sign-in proves the address).
+- **`/api/v1/auth/mobile/*`** (2026-10-19) is the Surfboard mobile app's session surface: `login`, `refresh`, `logout`, `devices` and `devices/{familyId}`. The session comes back in the body, no cookies are set, and the routes are authenticated by credentials or tokens in the request, not by ambient cookies (so they are not CSRF-checked); `devices` accepts a bearer token. Only role `USER`. See [ADR-0017](../adr/0017-the-mobile-app-signs-in-with-bearer-tokens.md) and [`docs/auth/technical.md` §1.5a](../auth/technical.md).
 - **SCRAM** has no pages, only its Kinde callback (`/api/auth/success/scram`) — a platform stub.
 - **`/api/webhooks/paystack`** is the single Paystack webhook for all three products; it picks the product from `metadata.platform` (falling back to event shape) and dedupes deliveries on the unique `WebhookEvent.signature`. See [`docs/payment/`](../payment/README.md), including the "known gaps" section on that ledger.
 - **`/api/reva/webhooks/paystack`** is the older REVA-only webhook endpoint, kept for Paystack dashboards still pointed at it.
@@ -357,13 +363,9 @@ The auth column is a static reading of source, not an access-control test. The a
 
 <!-- BEGIN GENERATED: pages -->
 
-#### Marketing / shared (23)
+#### Marketing / shared (21)
 
-`/about-us` · `/contact` · `/events` · `/featurednews` · `/gallery` · `/grid/calculate` · `/grid/generate` · `/grid/route` · `/grid/search` · `/grid/verify` · `/login` · `/present` · `/redirect` · `/services` · `/signup` · `/v3` · `/v3/our-story` · `/v4` · `/v4/contact` · `/v4/industries/[slug]` · `/v4/insights` · `/v4/insights/[slug]` · `/v4/our-story`
-
-#### TwoNode /v2 site (6)
-
-`/v2` · `/v2/contact` · `/v2/industries/[slug]` · `/v2/insights` · `/v2/insights/[slug]` · `/v2/our-story`
+`/` · `/about-us` · `/contact` · `/events` · `/featurednews` · `/gallery` · `/grid/calculate` · `/grid/generate` · `/grid/route` · `/grid/search` · `/grid/verify` · `/industries/[slug]` · `/insights` · `/insights/[slug]` · `/login` · `/our-story` · `/present` · `/previous-landing-page-contact` · `/redirect` · `/services` · `/signup`
 
 #### Surfboard (56)
 
@@ -389,7 +391,7 @@ The auth column is a static reading of source, not an access-control test. The a
 - **`/gbc-frame`** and **`/gbccertificate`** are name collisions only — an unrelated ArcGIS/Survey123 tool with zero code overlap with the GBC product.
 - **`/surfboardplan/[id]`** is the public, QR-gated plan page.
 - **Email-verification pages** — `/surfboard/verify-email`, `/reva/verify-email`, `/gbc-restricted/verify-email` — serve two jobs: the blocking OTP/link gate (`VerifyEmailGate`) and, with `?pid=&token=`, the LINK-method registration landing (`RegisterVerifyLinkCard`). See [`docs/auth/technical.md` §1.7–1.8](../auth/technical.md).
-- **`/v2/*`** is the new TwoNode corporate site (scaffolded 2026-09-28). It is data-driven (`app/v2/data/industries.ts`, `insights.ts`) and mounted under its own layout; see [`docs/pages/main-site.md`](../pages/main-site.md).
+- **The corporate site** is served at the root from `app/(site)/` (it was `/v2` until 2026-10-15; the `/v2`, `/v3` and `/v4` prefixes no longer exist). It is data-driven and mounted under its own layout; see [`docs/pages/main-site.md`](../pages/main-site.md).
 
 ---
 

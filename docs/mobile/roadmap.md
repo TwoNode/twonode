@@ -1,6 +1,6 @@
 # Mobile app roadmap: what the app needs from the backend, stage by stage
 
-> **Status: future plan, not a commitment.** No mobile code exists. This is the mobile side of [`../backend/roadmap.md`](../backend/roadmap.md) (Next.js now, NestJS later, Go much later). It says what the app needs at each backend stage and how the app stays independent of which backend answers. The product scope and the backend gaps are in [`surfboard-mobile-app-evaluation.md`](./surfboard-mobile-app-evaluation.md).
+> **Status: future plan, not a commitment. Stage 0 has started (2026-10-19):** native auth is built (PR #495) and the app foundation is in the `TwoNode/twonode-mobile` repo; progress is tracked in [TASK-0015](../tasks/0015-mobile-app-and-api.md). This is the mobile side of [`../backend/roadmap.md`](../backend/roadmap.md) (Next.js now, NestJS later, Go much later). It says what the app needs at each backend stage and how the app stays independent of which backend answers. The product scope and the backend gaps are in [`surfboard-mobile-app-evaluation.md`](./surfboard-mobile-app-evaluation.md).
 
 ## 1. The one rule: the app knows a contract, not a backend
 
@@ -28,7 +28,9 @@ The mobile MVP runs on the existing API. The work is additive and does not chang
 | **Derived status**                     | One shared `displayStatus` for batch and plan rows, used by web and mobile                                                                                                                                                                                                                          |
 | **Push notifications**                 | Device-token table and APNs/FCM senders. This is also a **trigger for stage 1** (see §3)                                                                                                                                                                                                            |
 
-The app phases (0 to 4: accounts and decisions, auth and profile, records and stats, map home, push and extras) are in the [evaluation §5.2](./surfboard-mobile-app-evaluation.md).
+The app phases (0 to 4: accounts and decisions, auth and profile, records and stats, map home, push and extras) are in the [evaluation §5.2](./surfboard-mobile-app-evaluation.md); the detailed task list is [TASK-0015](../tasks/0015-mobile-app-and-api.md).
+
+**Progress on stage 0 (2026-10-19):** built: native auth (mobile login, refresh and logout, device sessions, bearer-aware CSRF, per-email and per-device rate limits, app roles limited to `USER`). Not yet built: email-verification and reset-link handling for the app, Google (Android) and Apple (iOS) sign-in, the version gate, an OpenAPI spec, locality and LGA search, the shared `displayStatus`, the own-plans map endpoint, push.
 
 ## 3. Stage 1: NestJS
 
