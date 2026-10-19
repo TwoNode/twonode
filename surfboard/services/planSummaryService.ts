@@ -82,7 +82,7 @@ export type PlanCounts = {
 /** More plans than this cannot be filtered by status in one request. A surveyor has hundreds. */
 export const STATUS_FILTER_SCAN_LIMIT = 5000;
 
-const SUMMARY_COLUMNS = {
+export const SUMMARY_COLUMNS = {
   id: true,
   planNumber: true,
   surveyTitle: true,
@@ -115,7 +115,7 @@ const SHARED_SELECT = {
   user: { select: { firstName: true, lastName: true } },
 } as const satisfies Prisma.SurfboardPlanSelect;
 
-type SummaryRow = PlanStatusRow &
+export type SummaryRow = PlanStatusRow &
   Partial<PlanQueryRow> & {
     id: string;
     planNumber: string;

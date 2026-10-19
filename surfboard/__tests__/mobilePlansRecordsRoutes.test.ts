@@ -7,12 +7,16 @@ const mocks = vi.hoisted(() => ({
   getPlanCounts: vi.fn(),
   getBatchSummaries: vi.fn(),
   getBatchDetail: vi.fn(),
+  getPlanDetail: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/session", () => ({ getServerSession: mocks.session }));
 vi.mock("@/surfboard/services/planSummaryService", () => ({
   getPlanSummaries: mocks.getPlanSummaries,
   getPlanCounts: mocks.getPlanCounts,
+}));
+vi.mock("@/surfboard/services/planDetailService", () => ({
+  getPlanDetail: mocks.getPlanDetail,
 }));
 vi.mock("@/surfboard/services/batchSummaryService", () => ({
   getBatchSummaries: mocks.getBatchSummaries,
@@ -27,6 +31,8 @@ const { GET: batchesSummary } =
   await import("@/app/api/v1/surfboard/cod/batches/summary/route");
 const { GET: batchSummary } =
   await import("@/app/api/v1/surfboard/cod/batches/[batchId]/summary/route");
+const { GET: planDetail } =
+  await import("@/app/api/v1/surfboard/plans/[planId]/summary/route");
 const { NotFoundError } = await import("@/lib/api/errors");
 
 type Handler = (req: NextRequest, routeCtx?: unknown) => Promise<Response>;
@@ -45,13 +51,20 @@ const session = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
+const PLAN_ID = "3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c";
 const routes: [string, unknown, string][] = [
   ["plans/summary", plansSummary, "plans/summary"],
   ["plans/counts", plansCounts, "plans/counts"],
+  ["plans/{id}/summary", planDetail, `plans/${PLAN_ID}/summary`],
   ["cod/batches/summary", batchesSummary, "cod/batches/summary"],
   ["cod/batches/{id}/summary", batchSummary, "cod/batches/b1/summary"],
 ];
 const batchCtx = { params: Promise.resolve({ batchId: "b1" }) };
+const planCtx = { params: Promise.resolve({ planId: PLAN_ID }) };
+// Every route in the table gets both, so the shared checks need no per-route context.
+const anyCtx = {
+  params: Promise.resolve({ batchId: "b1", planId: PLAN_ID }),
+};
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -71,12 +84,13 @@ beforeEach(() => {
     pagination: { page: 1, pageSize: 20, total: 0, totalPages: 1 },
   });
   mocks.getBatchDetail.mockResolvedValue({ id: "b1", plans: [] });
+  mocks.getPlanDetail.mockResolvedValue({ id: PLAN_ID, files: [] });
 });
 
 describe.each(routes)("GET %s", (_name, handler, path) => {
   it("needs a signed-in session", async () => {
     mocks.session.mockResolvedValue(null);
-    expect((await call(handler, path, batchCtx)).status).toBe(401);
+    expect((await call(handler, path, anyCtx)).status).toBe(401);
   });
 
   it.each([
@@ -92,14 +106,14 @@ describe.each(routes)("GET %s", (_name, handler, path) => {
     "MDA_SUPERADMIN",
   ])("is for surveyors only: %s is refused", async (role) => {
     mocks.session.mockResolvedValue(session({ role }));
-    expect((await call(handler, path, batchCtx)).status).toBe(403);
+    expect((await call(handler, path, anyCtx)).status).toBe(403);
   });
 
   it("waits for email verification when the platform enforces it", async () => {
     mocks.session.mockResolvedValue(
       session({ emailVerified: false, mustVerifyNow: true })
     );
-    const res = await call(handler, path, batchCtx);
+    const res = await call(handler, path, anyCtx);
     expect(res.status).toBe(403);
     expect((await res.json()).code).toBe("EMAIL_VERIFICATION_REQUIRED");
   });
@@ -203,5 +217,23 @@ describe("GET cod/batches/{batchId}/summary", () => {
     expect(
       (await call(batchSummary, "cod/batches/b1/summary", batchCtx)).status
     ).toBe(404);
+  });
+});
+
+describe("GET plans/{planId}/summary", () => {
+  it("reads one plan for the caller and returns it in the usual envelope", async () => {
+    const res = await call(planDetail, `plans/${PLAN_ID}/summary`, planCtx);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      success: true,
+      data: { id: PLAN_ID, files: [] },
+    });
+    expect(mocks.getPlanDetail).toHaveBeenCalledWith("user-1", PLAN_ID);
+  });
+
+  it("answers 404 for a plan that is not the caller's or not shared with them", async () => {
+    mocks.getPlanDetail.mockRejectedValue(new NotFoundError("Plan"));
+    const res = await call(planDetail, `plans/${PLAN_ID}/summary`, planCtx);
+    expect(res.status).toBe(404);
   });
 });
