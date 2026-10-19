@@ -30,7 +30,7 @@ The mobile MVP runs on the existing API. The work is additive and does not chang
 
 The app phases (0 to 4: accounts and decisions, auth and profile, records and stats, map home, push and extras) are in the [evaluation §5.2](./surfboard-mobile-app-evaluation.md); the detailed task list is [TASK-0015](../tasks/0015-mobile-app-and-api.md).
 
-**Progress on stage 0 (2026-10-19):** built: native auth (mobile login, refresh and logout, device sessions, bearer-aware CSRF, per-email and per-device rate limits, app roles limited to `USER`). Also built (#500): the lean plan list with locality, LGA, ward, LCDA and pillar search, the shared `displayStatus`, the Queried and Ready counts, and the batch summaries. Also built (PR_NUMBER): the lean plan detail (`plans/{planId}/summary`) and the shared-viewer fix (the record copy is the owner's). Not yet built: email-verification and reset-link handling for the app, Google (Android) and Apple (iOS) sign-in, the version gate, an OpenAPI spec, the own-plans map endpoint, push.
+**Progress on stage 0 (2026-10-19):** built: native auth (mobile login, refresh and logout, device sessions, bearer-aware CSRF, per-email and per-device rate limits, app roles limited to `USER`). Also built (#500): the lean plan list with locality, LGA, ward, LCDA and pillar search, the shared `displayStatus`, the Queried and Ready counts, and the batch summaries. Also built (#501): the lean plan detail (`plans/{planId}/summary`) and the shared-viewer fix (the record copy is the owner's). Not yet built: email-verification and reset-link handling for the app, Google (Android) and Apple (iOS) sign-in, the version gate, an OpenAPI spec, the own-plans map endpoint, push.
 
 ## 3. Stage 1: NestJS
 
