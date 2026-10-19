@@ -486,6 +486,62 @@ export const sendEmailVerificationOtp = async ({
 };
 
 /**
+ * Sent when signing in with Google linked to an account that was never
+ * email-verified and had a password, and that password was therefore removed
+ * (see lib/auth/oauthEmailVerification.ts). The person signing in is told what
+ * happened and how to set a password again, and anyone who set that password
+ * without owning the address learns nothing they can use.
+ */
+export const sendPasswordRemovedNotice = async ({
+  to,
+  firstName,
+  loginUrl,
+  platform,
+}: {
+  to: string;
+  firstName: string;
+  loginUrl: string;
+  platform: Platform;
+}) => {
+  const brand = PLATFORM_BRAND[platform];
+  const subject = `Your ${brand.name} password was removed`;
+  const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+  const bodyLine = `You just signed in to ${brand.name} with Google. Because your email address had never been verified, we removed the password that was saved on this account, so only Google sign-in works for now. You are signed in and nothing else changed.`;
+  const nextLine = `To use a password again, open the sign-in page and choose "Forgot password". If you did not sign in with Google, contact us right away.`;
+
+  const text = `${greeting}\n\n${bodyLine}\n\n${nextLine}\n\n${loginUrl}\n\nTwoNode Technologies — https://www.twonodetechnologies.com`;
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
+      <div style="padding: 20px 0; border-bottom: 3px solid ${brand.accent};">
+        <span style="font-size: 15px; font-weight: 700; color: ${brand.accentDark}; letter-spacing: .02em;">${brand.name}</span>
+        <span style="font-size: 12px; color: #888; margin-left: 8px;">by TwoNode Technologies</span>
+      </div>
+      <div style="padding: 28px 0;">
+        <p>${escapeHtml(greeting)}</p>
+        <p>${escapeHtml(bodyLine)}</p>
+        <p>${escapeHtml(nextLine)}</p>
+        <p style="margin: 24px 0;">
+          <a href="${loginUrl}" style="background-color:${brand.accent};background-image:linear-gradient(135deg, ${brand.accent}, ${brand.accentDark});color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Open sign-in page</a>
+        </p>
+      </div>
+      <div style="padding: 20px 0; border-top: 1px solid #e5e5e5; color: #888; font-size: 12px;">
+        <a href="https://www.twonodetechnologies.com" style="color: ${brand.accentDark}; text-decoration: none; font-weight: 600;">TwoNode Technologies</a>
+        &nbsp;&middot;&nbsp;
+        <a href="mailto:info@twonodetechnologies.com" style="color: #888; text-decoration: none;">info@twonodetechnologies.com</a>
+      </div>
+    </div>
+  `;
+
+  return sendMail({
+    to,
+    subject,
+    text,
+    html,
+    fromName: `${brand.name} · TwoNode Technologies`,
+  });
+};
+
+/**
  * A download-gate code, requested fresh every time someone tries to
  * download a report or document — not a login/verification token, so it's
  * a short human-typed code rather than a link.
