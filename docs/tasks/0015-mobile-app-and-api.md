@@ -40,6 +40,10 @@ Ship a native companion app for Surfboard surveyors (Android and iOS) that lets 
 - [x] **D9. Minimum OS versions.** Decided 2026-10-19: Expo SDK 58 defaults, phones only (tablets just scale up).
 - [x] **D10. App name and identifiers.** Decided 2026-10-19: display name **Surfboard**, iOS bundle id and Android package `com.twonode.surfboard`. Check the name is free on both stores before the first submission. _(Icon and brand assets still to be supplied.)_
 - [x] **D11. Google developer identity verification.** Decided 2026-10-19: **deferred**; handle it later. Risk: if it becomes mandatory for Nigeria before launch it could delay the first release, so re-check Google's own pages when Phase 7 starts.
+- [x] **D12. Apple guideline 4.8.** Decided 2026-10-19 (read as): **iOS offers email and password plus Sign in with Apple; Android offers email and password plus Google.** Google is not offered on iOS, so guideline 4.8 is not triggered there and Sign in with Apple is a choice, not a requirement. Costs: Apple connection in Kinde and Apple Developer configuration. Apple's "Hide My Email" gives a relay address that will not match any existing account, so Apple (like Google) only signs in to existing accounts; a new item adds "connect Apple/Google" from Profile while signed in (task 3.9).
+- [x] **D13. No account creation on mobile in v1.** Decided 2026-10-19: yes, for **both** Google and Apple. Social sign-in only signs in to existing active accounts; new accounts are created on the web (which also avoids Apple's in-app account deletion rule, 5.1.1(v), that applies once an app can create accounts).
+- [x] **D14. Mobile sessions for role `USER` only.** Decided 2026-10-19 and built in PR #495 (login and refresh refuse other roles with 403 `ACCOUNT_TYPE_NOT_SUPPORTED`).
+- [ ] **D15. Kinde dashboard work.** Create a Front-end and mobile application, callback `com.twonode.surfboard://oauth/callback`, enable Google (and Apple, for the iOS build) for it, so the spike can run. _(Waiting on: roji-tech to create it)_
 
 ---
 
@@ -73,7 +77,7 @@ Today: access token is a 15-minute JWT in an httpOnly cookie, the refresh token 
 - [ ] 1A.8 **Email verification:** when a platform enforces verification, `withAuth` throws `EMAIL_VERIFICATION_REQUIRED` (403). Mobile login must return it in a form the app can act on; add the OTP verify and resend calls (`verify-email-otp`, `resend-verification` already exist; confirm they accept bearer) so the app can show a code screen. The LINK method needs a deep link back into the app (see 1H).
 - [ ] 1A.9 Password reset: `request-password-reset` and `reset-password` already exist; confirm they work without cookies and that the reset email can deep link into the app (1H).
 - [ ] 1A.10 (mostly done 2026-10-19: 4 new test files, 185 auth tests, 1125 in the full suite; live HTTP and browser checks run against a throwaway database; still to add: bearer on a wider sample of `withAuth` routes) Tests: login, refresh rotation including the lost-response case, reuse detection still revoking, revoke-one-device, bearer on a sample of `withAuth` routes, CSRF matrix. Update `docs/auth/technical.md` and `docs/functions/`.
-- [ ] 1A.12 **Google (Kinde) sign-in for mobile (D4):** a mobile-safe exchange that ends with the same access and refresh token pair as 1A.1, scoped to `platform: surfboard`, with account linking to the existing email account and the email-verified rule (`emailVerifiedVia: OAUTH`). Research Kinde's mobile and PKCE support first.
+- [ ] 1A.12 **Google (Kinde) sign-in for mobile (D4)** (research done 2026-10-19: [kinde-google-sign-in-research](../mobile/kinde-google-sign-in-research-2026-10-19.md); recommended: our own PKCE flow, the server exchanges the code with a new Kinde Front-end and mobile application; steps: spike, `POST /api/v1/auth/mobile/kinde`, account rules, pre-hijack fix on web and mobile; waiting on decisions D12 to D14 and on the Kinde application): a mobile-safe exchange that ends with the same access and refresh token pair as 1A.1, scoped to `platform: surfboard`, with account linking to the existing email account and the email-verified rule (`emailVerifiedVia: OAUTH`). Research Kinde's mobile and PKCE support first.
 - [ ] 1A.11 Security review of the new surface: token lifetime, refresh-token storage expectations, brute-force and enumeration behaviour, audit log entries for mobile logins (`writeAudit`).
 
 ### 1B. Version gate and client identification · Size S
@@ -170,6 +174,8 @@ Today: access token is a 15-minute JWT in an httpOnly cookie, the refresh token 
 - [ ] 3.5 Profile: account and firm details (read), subscription status card (plan, valid until, status) with **no purchase or "pay on web" call to action on iOS**, support entry, app version, legal links.
 - [ ] 3.6 Registration stays on the web in v1; if account deletion is ever required in-app (Apple 5.1.1(v) applies once the app offers account creation), plan it then.
 - [ ] 3.7 **Google sign-in (required for v1, D4):** system browser with PKCE and a deep link back into the app; research the Kinde mobile flow first; API side needs bearer session issuance after a Kinde callback (new item 1A.12).
+- [ ] 3.8 **Sign in with Apple (iOS only, D12):** Apple connection in Kinde, the same server exchange as Google (existing accounts only), button on iOS only; Google button on Android only.
+- [ ] 3.9 **Connect a sign-in method from Profile (D12, D13):** while signed in, link Google (Android) or Apple (iOS) to the current account, so someone whose Apple "Hide My Email" address does not match their account can still use it. Server: link by the signed-in account, not by email.
 - [ ] 3.8 Biometric unlock as an opt-in screen lock (Phase 6).
 
 ---
