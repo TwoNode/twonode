@@ -29,17 +29,17 @@ Ship a native companion app for Surfboard surveyors (Android and iOS) that lets 
 
 ## 2. Decisions that gate the work
 
-- [ ] **D1. Order of work.** Proposed: Phase 1 (API) and Phase 0 (accounts) run in parallel; the app scaffold starts when the mobile auth routes are on `dev`. _(Waiting on: roji-tech)_
-- [ ] **D2. Store accounts.** Is TwoNode set up as an organisation for the Apple Developer Program and Google Play (D-U-N-S number, business verification)? Longest lead time in the whole plan. _(Waiting on: roji-tech)_
-- [ ] **D3. Maps.** Basemap provider and hosting, satellite imagery licence, geocoder for address search. The web map's OSM and unofficial Google tile use is a licensing risk and cannot be copied into a store app.
-- [ ] **D4. Sign-in methods in v1.** Email and password only, or also Google (Kinde)? Count how many surveyor accounts are Google-only (`authProviders`); the count query in `out/db/surveyor-state-and-surcon-count.sql` includes it.
-- [ ] **D5. "Ready for physical submission".** Server rule today: `redCopyStatus = SUBMITTED` and `physicalCopySubmitted = false` and not deleted. Does it also need specific stage approvals? One server function used by web and app.
-- [ ] **D6. Subscription gating of the physical-copy action on mobile.** Today it is `USER`-role only; confirm whether it needs an active subscription.
-- [ ] **D7. Support channel** shown in the app (WhatsApp number, email, both).
-- [ ] **D8. Languages and accessibility target** (English only at launch? minimum text size and contrast level).
-- [ ] **D9. Minimum OS versions** (Android and iOS) and whether tablets are supported.
-- [ ] **D10. App name, bundle identifiers, icon and brand assets** (one-time; the identifiers cannot change after the first store release).
-- [ ] **D11. Android sideloading and developer verification.** Google began a developer identity check on 2026-09-30 in some countries with a wider rollout through 2026 to 2027; confirm how it applies to Nigeria before launch (read Google's own pages).
+- [x] **D1. Order of work.** Decided 2026-10-19: Phase 1A (mobile auth, in this repo) and Phase 0 (accounts) run in parallel; the app scaffold starts when the mobile auth routes are on `dev`. **The association feature is paused until further notice.**
+- [x] **D2. Store accounts.** Decided 2026-10-19: yes, ready to enrol as an organisation on both stores. Longest lead time in the plan, so enrol first (task 0.1).
+- [x] **D3. Maps.** Decided 2026-10-19: **self-hosted open vector tiles, no satellite layer for now**; maybe switch to a paid hosted provider later. Consequences: the public OpenStreetMap tile servers and the unofficial Google tiles must not be used; plan a tile-hosting task (Nigeria extract as vector tiles or PMTiles on our storage or a CDN, with OpenStreetMap attribution), and a geocoder that is allowed for this use (self-hosted or a provider whose terms permit it). Address search may therefore be limited at launch.
+- [x] **D4. Sign-in methods in v1.** Decided 2026-10-19: **email and password and Google**. Adds work: Google sign-in through the system browser with PKCE and a deep link back (task 3.7 is now required for v1), a Kinde mobile flow to research, and bearer session issuance after a Kinde callback. The Google-only count in `out/db/surveyor-state-and-surcon-count.sql` still helps size it.
+- [x] **D5. "Ready for physical submission".** Decided 2026-10-19: keep today's server rule (`redCopyStatus = SUBMITTED`, `physicalCopySubmitted = false`, not deleted), in one shared server function used by web and app.
+- [x] **D6. Subscription gating of the physical-copy action on mobile.** Decided 2026-10-19: same as web today (`USER` role only, no subscription check). The app still handles `SUBSCRIPTION_REQUIRED` if the server adds a gate later.
+- [x] **D7. Support channel** shown in the app. Decided 2026-10-19: WhatsApp number, support email and a web support page, all three. _(Waiting on: roji-tech to supply the number, the address and the support page URL.)_
+- [x] **D8. Languages and accessibility target.** Decided 2026-10-19: English only, standard accessibility (dynamic text size, screen-reader labels, 44 point tap targets, readable contrast).
+- [x] **D9. Minimum OS versions.** Decided 2026-10-19: Expo SDK 58 defaults, phones only (tablets just scale up).
+- [x] **D10. App name and identifiers.** Decided 2026-10-19: display name **Surfboard**, iOS bundle id and Android package `com.twonode.surfboard`. Check the name is free on both stores before the first submission. _(Icon and brand assets still to be supplied.)_
+- [x] **D11. Google developer identity verification.** Decided 2026-10-19: **deferred**; handle it later. Risk: if it becomes mandatory for Nigeria before launch it could delay the first release, so re-check Google's own pages when Phase 7 starts.
 
 ---
 
@@ -73,6 +73,7 @@ Today: access token is a 15-minute JWT in an httpOnly cookie, the refresh token 
 - [ ] 1A.8 **Email verification:** when a platform enforces verification, `withAuth` throws `EMAIL_VERIFICATION_REQUIRED` (403). Mobile login must return it in a form the app can act on; add the OTP verify and resend calls (`verify-email-otp`, `resend-verification` already exist; confirm they accept bearer) so the app can show a code screen. The LINK method needs a deep link back into the app (see 1H).
 - [ ] 1A.9 Password reset: `request-password-reset` and `reset-password` already exist; confirm they work without cookies and that the reset email can deep link into the app (1H).
 - [ ] 1A.10 Tests: login, refresh rotation including the lost-response case, reuse detection still revoking, revoke-one-device, bearer on a sample of `withAuth` routes, CSRF matrix. Update `docs/auth/technical.md` and `docs/functions/`.
+- [ ] 1A.12 **Google (Kinde) sign-in for mobile (D4):** a mobile-safe exchange that ends with the same access and refresh token pair as 1A.1, scoped to `platform: surfboard`, with account linking to the existing email account and the email-verified rule (`emailVerifiedVia: OAUTH`). Research Kinde's mobile and PKCE support first.
 - [ ] 1A.11 Security review of the new surface: token lifetime, refresh-token storage expectations, brute-force and enumeration behaviour, audit log entries for mobile logins (`writeAudit`).
 
 ### 1B. Version gate and client identification · Size S
@@ -103,7 +104,8 @@ Today: access token is a 15-minute JWT in an httpOnly cookie, the refresh token 
 - [ ] 1E.2 Verify the stored geometry coordinate system (assumed WGS84 from the web map; spot-check before building the map). Decide UTM zone handling for plans east of 6° E (zone 32).
 - [ ] 1E.3 Only if the product later needs it: a viewport or "near me" endpoint with a spatial index. Not in v1.
 - [ ] 1E.4 Extract the shared coordinate util (`lib/geo/`, EPSG:26331 and 26332 via `proj4`, already a dependency) with tests for the brief's formats (UTM, decimal, DMS). The web has two projection paths today (proj4 and ArcGIS `projectOperator`); consolidate rather than add a third.
-- [ ] 1E.5 Geocoder integration behind a server endpoint (depends on D3); never call a paid geocoder with a key from the app.
+- [ ] 1E.5 Geocoder integration behind a server endpoint (D3: open data, no paid provider at first); pick a geocoder whose terms allow this use, and never ship a provider key in the app.
+- [ ] 1E.6 **Tile hosting (D3):** produce Nigeria vector tiles from OpenStreetMap data (for example OpenMapTiles or Protomaps PMTiles), host them on our storage or CDN, serve a style file, and show OpenStreetMap attribution. No satellite layer in v1.
 
 ### 1F. Records (batches), stats, wallet · Size S to M
 
@@ -167,7 +169,7 @@ Today: access token is a 15-minute JWT in an httpOnly cookie, the refresh token 
 - [ ] 3.4 Sign out (revokes the device on the server), and signed-in devices list with remove.
 - [ ] 3.5 Profile: account and firm details (read), subscription status card (plan, valid until, status) with **no purchase or "pay on web" call to action on iOS**, support entry, app version, legal links.
 - [ ] 3.6 Registration stays on the web in v1; if account deletion is ever required in-app (Apple 5.1.1(v) applies once the app offers account creation), plan it then.
-- [ ] 3.7 Google sign-in only if D4 says so (system browser with PKCE and a deep link back).
+- [ ] 3.7 **Google sign-in (required for v1, D4):** system browser with PKCE and a deep link back into the app; research the Kinde mobile flow first; API side needs bearer session issuance after a Kinde callback (new item 1A.12).
 - [ ] 3.8 Biometric unlock as an opt-in screen lock (Phase 6).
 
 ---
@@ -193,7 +195,7 @@ Today: access token is a 15-minute JWT in an httpOnly cookie, the refresh token 
 - [ ] 5.4 **Omnibar:** one box that classifies input (plan number, pillar number, title, facilitator, locality or LGA, coordinate, address) and **shows how it was interpreted** ("UTM zone 31N → 6.447, 3.473") before acting; includes UTM, decimal degrees and DMS with the brief's examples under test.
 - [ ] 5.5 Address search through the server geocoder endpoint (1E.5).
 - [ ] 5.6 **Navigate:** open the selected record in the user's maps app (deep link) and, if chosen, in-app routing.
-- [ ] 5.7 Basemap choice, satellite layer and attribution as required by the provider terms (D3).
+- [ ] 5.7 Self-hosted vector basemap and its style (1E.6), OpenStreetMap attribution, no satellite layer in v1 (D3).
 - [ ] 5.8 Performance: map with several hundred plans stays smooth on a mid-range Android phone.
 
 ---

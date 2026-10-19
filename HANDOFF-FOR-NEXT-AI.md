@@ -153,7 +153,8 @@ flowchart LR
 ### 3.5 Planned: Association subscription and the mobile app
 
 - Research refresh: `docs/mobile/association-and-mobile-research-2026-10-18.md`. Detailed designs: `docs/surfboard/association-subscription.md` and `docs/mobile/surfboard-mobile-app-evaluation.md`. Index: `docs/future-plans.md`.
-- **Association:** Phase 0 prerequisites are merged (#261, #262, #263, #273); no association model, role or route exists yet.
+- **Association is PAUSED until further notice (2026-10-19); the mobile app goes first** (TASK-0015, decisions D1 to D11 answered: auth and store accounts first, self-hosted open tiles, email and Google sign-in, English only, `com.twonode.surfboard`).
+- **Association (paused):** Phase 0 prerequisites are merged (#261, #262, #263, #273); no association model, role or route exists yet.
 - **Mobile:** the app will be a **new project `twonode-mobile`** at `/home/rojitech/Desktop/CODEC/REACT-NATIVE/twonode-mobile` (not created yet). The first backend step is bearer-token auth in this repo; the app should start on Expo SDK 58.
 
 ---
