@@ -56,7 +56,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/auth/verify-email`              | POST      | session (see source)                 |
 | `/api/v1/auth/verify-email-otp`          | POST      | session (see source)                 |
 
-#### Surfboard (135)
+#### Surfboard (136)
 
 | Route                                                                | Method(s)          | Auth                                                                                                        |
 | :------------------------------------------------------------------- | :----------------- | :---------------------------------------------------------------------------------------------------------- |
@@ -151,6 +151,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/plans/[planId]/share-response`                    | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/share/invite`                      | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/status`                            | PATCH              | USER, ADMIN, SUPERADMIN                                                                                     |
+| `/api/v1/surfboard/plans/[planId]/summary`                           | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/surveyor`                          | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/title`                             | PATCH              | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/plans/[planId]/viewer-attachments`                | GET, POST          | USER                                                                                                        |
