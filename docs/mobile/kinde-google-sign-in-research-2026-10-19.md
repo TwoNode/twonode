@@ -74,7 +74,15 @@ Status: **research only, nothing built.** For TASK-0015 item 1A.12 and 3.7 (deci
 4. Confirm the Google connection can be limited to this application and that other methods can be turned off for it.
 5. Record the findings here and tick 1A.12's first step.
 
-## 7. Decisions needed from you
+## 7. Decisions (answered 2026-10-19)
+
+1. **Apple 4.8:** iOS gets email and password plus **Sign in with Apple**; Android gets email and password plus **Google**. Google is not on iOS, so 4.8 is not triggered and Sign in with Apple is optional there.
+2. **No account creation on mobile:** yes, for Google **and** Apple. Apple's "Hide My Email" relay address will not match an existing account's email, so Apple sign-in also needs a way to connect to an account from inside the app while signed in (task 3.9); matching by email only works when the user shares their real address.
+3. **Mobile sessions for role `USER` only:** yes, built in PR #495.
+4. **Kinde dashboard work:** roji-tech to create the Front-end and mobile application (Google for Android, Apple for iOS); the spike follows.
+5. **Pre-hijack fix:** yes, built for web in PR #497 (the mobile Kinde route will use the same helper).
+
+_Original questions (kept for the record):_
 
 1. **Apple 4.8:** add **Sign in with Apple** (more work: Apple connection in Kinde, Apple developer configuration, a button on iOS) **or** ship Google on Android only and email and password on iOS, **or** drop Google from v1 (reverses D4).
 2. **No account creation on mobile in v1** (existing accounts only for Google)? Recommended yes.

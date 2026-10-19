@@ -40,10 +40,10 @@ Ship a native companion app for Surfboard surveyors (Android and iOS) that lets 
 - [x] **D9. Minimum OS versions.** Decided 2026-10-19: Expo SDK 58 defaults, phones only (tablets just scale up).
 - [x] **D10. App name and identifiers.** Decided 2026-10-19: display name **Surfboard**, iOS bundle id and Android package `com.twonode.surfboard`. Check the name is free on both stores before the first submission. _(Icon and brand assets still to be supplied.)_
 - [x] **D11. Google developer identity verification.** Decided 2026-10-19: **deferred**; handle it later. Risk: if it becomes mandatory for Nigeria before launch it could delay the first release, so re-check Google's own pages when Phase 7 starts.
-- [ ] **D12. Apple guideline 4.8 (new, 2026-10-19).** Offering Google on iOS requires an equivalent login such as Sign in with Apple. Options: add Sign in with Apple; Google on Android only; or drop Google from v1. _(Waiting on: roji-tech)_
-- [ ] **D13. No account creation on mobile in v1.** Google sign-in only for existing active accounts (new accounts are made on the web, which also avoids the in-app account deletion rule). Recommended yes. _(Waiting on: roji-tech)_
-- [ ] **D14. Mobile sessions for role `USER` only.** Staff roles stay on the web; PR #495's mobile login would need to enforce it. Recommended yes. _(Waiting on: roji-tech)_
-- [ ] **D15. Kinde dashboard work.** Create a Front-end and mobile application, callback `com.twonode.surfboard://oauth/callback`, enable Google for it, so the spike can run. _(Waiting on: roji-tech)_
+- [x] **D12. Apple guideline 4.8.** Decided 2026-10-19 (read as): **iOS offers email and password plus Sign in with Apple; Android offers email and password plus Google.** Google is not offered on iOS, so guideline 4.8 is not triggered there and Sign in with Apple is a choice, not a requirement. Costs: Apple connection in Kinde and Apple Developer configuration. Apple's "Hide My Email" gives a relay address that will not match any existing account, so Apple (like Google) only signs in to existing accounts; a new item adds "connect Apple/Google" from Profile while signed in (task 3.9).
+- [x] **D13. No account creation on mobile in v1.** Decided 2026-10-19: yes, for **both** Google and Apple. Social sign-in only signs in to existing active accounts; new accounts are created on the web (which also avoids Apple's in-app account deletion rule, 5.1.1(v), that applies once an app can create accounts).
+- [x] **D14. Mobile sessions for role `USER` only.** Decided 2026-10-19 and built in PR #495 (login and refresh refuse other roles with 403 `ACCOUNT_TYPE_NOT_SUPPORTED`).
+- [ ] **D15. Kinde dashboard work.** Create a Front-end and mobile application, callback `com.twonode.surfboard://oauth/callback`, enable Google (and Apple, for the iOS build) for it, so the spike can run. _(Waiting on: roji-tech to create it)_
 
 ---
 
@@ -174,6 +174,8 @@ Today: access token is a 15-minute JWT in an httpOnly cookie, the refresh token 
 - [ ] 3.5 Profile: account and firm details (read), subscription status card (plan, valid until, status) with **no purchase or "pay on web" call to action on iOS**, support entry, app version, legal links.
 - [ ] 3.6 Registration stays on the web in v1; if account deletion is ever required in-app (Apple 5.1.1(v) applies once the app offers account creation), plan it then.
 - [ ] 3.7 **Google sign-in (required for v1, D4):** system browser with PKCE and a deep link back into the app; research the Kinde mobile flow first; API side needs bearer session issuance after a Kinde callback (new item 1A.12).
+- [ ] 3.8 **Sign in with Apple (iOS only, D12):** Apple connection in Kinde, the same server exchange as Google (existing accounts only), button on iOS only; Google button on Android only.
+- [ ] 3.9 **Connect a sign-in method from Profile (D12, D13):** while signed in, link Google (Android) or Apple (iOS) to the current account, so someone whose Apple "Hide My Email" address does not match their account can still use it. Server: link by the signed-in account, not by email.
 - [ ] 3.8 Biometric unlock as an opt-in screen lock (Phase 6).
 
 ---
