@@ -57,15 +57,18 @@ export async function POST(req: NextRequest) {
     }
 
     const { session } = result;
-    return NextResponse.json({
-      success: true,
-      data: {
-        accessToken: session.accessToken,
-        refreshToken: session.refreshToken,
-        accessExpiresIn: session.accessExpiresIn,
-        refreshExpiresAt: session.refreshExpiresAt.toISOString(),
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          accessToken: session.accessToken,
+          refreshToken: session.refreshToken,
+          accessExpiresIn: session.accessExpiresIn,
+          refreshExpiresAt: session.refreshExpiresAt.toISOString(),
+        },
       },
-    });
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (err) {
     return handleApiError(err, {
       route: req.nextUrl.pathname,

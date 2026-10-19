@@ -82,24 +82,27 @@ export async function POST(req: NextRequest) {
       { emailVerified: user!.emailVerified, createdAt: user!.createdAt }
     );
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        accessToken: session.accessToken,
-        refreshToken: session.refreshToken,
-        accessExpiresIn: session.accessExpiresIn,
-        refreshExpiresAt: session.refreshExpiresAt.toISOString(),
-        user: {
-          id: user!.id,
-          email: user!.email,
-          firstName: user!.firstName,
-          lastName: user!.lastName,
-          role: user!.role.toLowerCase(),
-          emailVerified: session.emailVerified ?? user!.emailVerified,
-          mustVerifyNow: session.mustVerifyNow ?? false,
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          accessToken: session.accessToken,
+          refreshToken: session.refreshToken,
+          accessExpiresIn: session.accessExpiresIn,
+          refreshExpiresAt: session.refreshExpiresAt.toISOString(),
+          user: {
+            id: user!.id,
+            email: user!.email,
+            firstName: user!.firstName,
+            lastName: user!.lastName,
+            role: user!.role.toLowerCase(),
+            emailVerified: session.emailVerified ?? user!.emailVerified,
+            mustVerifyNow: session.mustVerifyNow ?? false,
+          },
         },
       },
-    });
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (err) {
     return handleApiError(err, {
       route: req.nextUrl.pathname,
