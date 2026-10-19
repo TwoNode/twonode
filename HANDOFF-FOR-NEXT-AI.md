@@ -3,7 +3,7 @@
 > **Repository:** `/home/rojitech/Desktop/CODEC/NextJS/twonodes`  
 > **Maintainer:** `roji-tech` (they/them if unsure)  
 > **GitHub Remote:** `TwoNode/twonode`  
-> **Date:** 2026-10-18 (state as of the dev, main and prod sync after PR #493)  
+> **Date:** 2026-10-19 (`dev` holds PRs #494 to #497 and the docs sweep; `main` and `prod` are behind `dev`, see 6.1)  
 > **Target Audience:** Incoming AI assistants taking over development on the TwoNode platform.  
 > **Notice:** This repository is standalone. Do NOT confuse it with Octalve Edu or AlEemaan.
 
@@ -19,7 +19,8 @@
    - Active work tracker is `docs/tasks/current-tasks.md` (pointer in `out/tasks.md`).
    - Check it at the start of every session and whenever asked "what's left" or "what's next".
    - Update it in the **same turn** as code changes: check off items with the date and PR, and never delete tasks.
-3. **Branching & Git Discipline:**
+3. **Keep every affected doc current, not just one:** when work lands, sweep what it touches: the task files (`docs/tasks/current-tasks.md` and the batch file), this handoff, `docs/future-plans.md`, the area README and the topic docs, `docs/functions/*.md`, the ADR index and the issues register (`docs/issues/index.md`), and run `npm run docs:routes` if a route changed (`-- --check` fails when it is stale).
+4. **Branching & Git Discipline:**
    - **Never push directly to `main` or `prod`.**
    - Commits end with the trailer:  
      `Co-Authored-By: <model> <noreply@anthropic.com>`
@@ -150,19 +151,26 @@ flowchart LR
 
 ---
 
-### 3.5 Planned: Association subscription and the mobile app
+### 3.5 The mobile app (in progress) and the paused association subscription
 
-- Research refresh: `docs/mobile/association-and-mobile-research-2026-10-18.md`. Detailed designs: `docs/surfboard/association-subscription.md` and `docs/mobile/surfboard-mobile-app-evaluation.md`. Index: `docs/future-plans.md`.
-- **Association is PAUSED until further notice (2026-10-19); the mobile app goes first** (TASK-0015, decisions D1 to D11 answered: auth and store accounts first, self-hosted open tiles, email and Google sign-in, English only, `com.twonode.surfboard`).
-- **Association (paused):** Phase 0 prerequisites are merged (#261, #262, #263, #273); no association model, role or route exists yet.
-- **Mobile:** the app will be a **new project `twonode-mobile`** at `/home/rojitech/Desktop/CODEC/REACT-NATIVE/twonode-mobile` (not created yet). The first backend step is bearer-token auth in this repo; the app should start on Expo SDK 58.
+- **Where it lives:** its own repo, **`TwoNode/twonode-mobile`** (private; local copy `/home/rojitech/Desktop/CODEC/REACT-NATIVE/twonode-mobile`; branch `main`, changes by pull request, CI on every PR). Expo SDK 58, TypeScript strict, Expo Router native tabs, phones only, English only, `com.twonode.surfboard`. Read its `docs/SCOPE.md` and `AGENTS.md` before changing it.
+- **Scope in one line:** five tabs (Home, Plans, **Records** in the centre, Stats, Profile) for surveyors; creating and processing records, uploads, admin, registration and any purchase stay on the web.
+- **Built (2026-10-19):** the app foundation (email and password sign-in, secure session storage, single-flight refresh, authenticated API client, five-tab shell where only Profile is real, 70 tests) and, in this repo, native auth: `/api/v1/auth/mobile/{login,refresh,logout,devices}`, bearer in `getServerSession`, bearer-aware CSRF, device sessions, per-email and per-device rate limits, role `USER` only ([ADR-0017](docs/adr/0017-the-mobile-app-signs-in-with-bearer-tokens.md), PR #495). Not run on a device or emulator yet.
+- **Plan and decisions:** [`docs/tasks/0015-mobile-app-and-api.md`](docs/tasks/0015-mobile-app-and-api.md) (decisions D1 to D15, phases 0 to 8, API changes with status). Research: `docs/mobile/` (evaluation, Kinde and Google sign-in, association and mobile refresh). Index: `docs/future-plans.md`.
+- **Key decisions:** self-hosted open map tiles, no satellite; email and password everywhere, Google on Android and Sign in with Apple on iOS (through Kinde, existing accounts only, not built yet); no account creation and no purchase call to action in the app; Google developer verification deferred.
+- **Association subscription is PAUSED until further notice (2026-10-19).** Phase 0 prerequisites are merged (#261, #262, #263, #273); no association model, role or route exists.
 
 ---
 
-## 5. Recent Work Completed (October 14–18, 2026)
+## 5. Recent Work Completed (October 14–19, 2026)
 
 | Feature / Fix                                  | PR / Commit                        | Details                                                                                                                                                                                                                                                                               |
 | ---------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mobile app foundation**                      | repo `TwoNode/twonode-mobile`      | Expo SDK 58 app: sign-in, secure session, API client, five-tab shell, tests, CI, scope doc. Not yet run on a device.                                                                                                                                                                  |
+| **Google sign-in no longer keeps a password**  | PR #497 (`dev`), ADR-0018          | Linking a Kinde sign-in to an unverified account with a password removes that password, revokes sessions and emails the person (`verifyEmailViaOAuth`). Changes web behaviour; not on prod yet.                                                                                       |
+| **Kinde and Google sign-in research**          | PR #496 (`dev`)                    | Recommended server-side PKCE exchange with a new Kinde mobile application; Apple guideline 4.8; decisions D12 to D15.                                                                                                                                                                 |
+| **Mobile native auth**                         | PR #495 (`dev`), ADR-0017          | Bearer sessions and `/api/v1/auth/mobile/*`, device sessions, bearer-aware CSRF, role `USER` only. Migration `20261019100000_refresh_token_device_sessions`. Not on prod yet.                                                                                                         |
+| **Dev build fix and promotion**                | PR #488, #489, #490                | Excluded the one-off storage PDF script from type checking; dev, main and prod in sync on 2026-10-18.                                                                                                                                                                                 |
 | **Surfboard Record Copy Verification Fix**     | PR #478 (`main`), PR #479 (`prod`) | Fixed `"Verification failed ... Invalid request"` bug. Cause was raw unsigned `fetch` returning 403 on private S3 PDF. Resolved via `getPresignedDownloadUrl` in `downloadPlanPdfAsBase64`, typed 502 `UPSTREAM_FILE_ERROR`, and error extraction in `CertificateBatchSelection.tsx`. |
 | **iOS Emoji Rendering Bug Fix**                | PR #478 (`main`), PR #479 (`prod`) | Replaced Unicode asterisk `✳` (`U+2733`) on GBC cards with inline SVG in the site home page (`app/(site)/page.tsx`) and updated `v4.css` to eliminate the green emoji box on iPhones.                                                                                                 |
 | **Route Links Cleanup (old prefixes removed)** | PR #476 (`dev`), PR #477 (`main`)  | Updated all internal links across `/v2` pages, navigation header, footer, and insight articles to point to the root site instead of `/v4`. Removed dead `/v3` and `/v4` files.                                                                                                        |
@@ -178,11 +186,11 @@ flowchart LR
 
 ### 6.1 In-Flight Right Now
 
-- **PR #479 and the 2026-10-18 promotion:** merged. Prod is at the dev build-fix promotion (#488 → #489 → #490); main and prod deploys succeeded.
-- **Dev build fix (#488):** `scripts/generate-storage-summary-pdf.tsx` (one-off ADR-0016 PDF generator) is excluded from `tsconfig.json`; it had broken Next's type check.
-- **Phone work on the site (2026-10-16 to 10-18):** hero art higher on mobile, footer back-to-top arrow, nav click-outside, article step arrows (`ArticleStepNav`), all merged and live. GBC public key layout (#471/#472) is live.
-- **R2 migration:** ADR-0016 / TASK-0014 are Proposed/Planned and **paused**; nothing is provisioned. Findings and corrections: `docs/tasks/0014-r2-research-findings-2026-10-18.md` (R2 public access is per bucket, so use a private bucket for all data; a custom domain needs the domain as a Cloudflare zone). Pre-work: move REVA `awsActions.ts` and GBC `aws-s3.ts` onto `lib/storage`.
-- **Association and mobile:** research refreshed 2026-10-18 (see 3.5); waiting on the decisions listed in the research doc.
+- **`dev` is ahead of `main` and `prod`** by PRs #494 to #497 plus the docs sweep. The batch includes **migration `20261019100000_refresh_token_device_sessions`** (four nullable columns on `RefreshToken`; runs before the code; undo: drop the columns and the index) and **one web behaviour change** (#497: an unverified password account loses its password on its first Google sign-in and is emailed). It waits on the maintainer's go; after staging, test #497 with a real Google sign-in. Nothing in this batch is on prod.
+- **Mobile app:** foundation built (see 3.5); open work is in TASK-0015 (Phase 1: email-verification and reset-link handling for the app 1A.8 and 1A.9, security review 1A.11, Google and Apple exchange 1A.12, `/me` names 1A.13, version gate, OpenAPI, search and map endpoints, push; then the app screens).
+- **R2 migration:** ADR-0016 / TASK-0014 are Proposed/Planned and **paused**; nothing is provisioned. Findings: `docs/tasks/0014-r2-research-findings-2026-10-18.md` (R2 public access is per bucket, so use a private bucket for all data; a custom domain needs the domain as a Cloudflare zone). Pre-work: move REVA `awsActions.ts` and GBC `aws-s3.ts` onto `lib/storage`.
+- **Association subscription:** paused (see 3.5).
+- **Known trade-offs recorded in the issues register** (`docs/issues/index.md`): I-032 (a known email can be locked out of mobile sign-in for 15 minutes), I-034 (access tokens are stateless for 15 minutes), I-035 (the app's refresh grace window re-rotates).
 
 ### 6.2 Items Waiting on Maintainer Decisions
 
@@ -192,7 +200,7 @@ flowchart LR
 4. **REVA Spatial Map Record Source:** Decision on where individual property record coordinate points will be fetched from (boundaries are provided by `nigeria_ward_admin_boundaries`).
 5. **Email Verification Enforcement:** Feature is fully built (147 tests pass, OTP signup, banners, settings toggles) but disabled. Requires decision on initial platform rollout, grace period duration, and staging test plan.
 6. **S3 Phase 4 Archival:** Decision on standard `archive/` prefix vs. AWS S3 Glacier Deep Archive storage class for inactive survey plans and odd folders.
-7. **Association and mobile decisions:** the open product questions, store accounts (organisation), map/geocoder providers, and a go for a read-only prod count of surveyors by `residenceState` (see the research doc).
+7. **Mobile app, waiting on the maintainer:** **D15** (create the Kinde "Front-end and mobile" application with callback `com.twonode.surfboard://oauth/callback` and Google and Apple enabled, so the Google sign-in spike can run); **D7** (support WhatsApp number, email and support page URL); **D10** (icon and brand assets, and check the name "Surfboard" is free on both stores); **task 0.1** (enrol the Apple Developer and Google Play organisation accounts, the longest lead time); a go for the read-only **production count** of surveyors by state, real versus placeholder SURCON numbers and Google-only accounts (`out/db/surveyor-state-and-surcon-count.sql`; the permission classifier blocked pulling the prod env, so the maintainer runs it or adds a permission rule). **The promotion go** for the batch in 6.1.
 8. **R2:** how to serve public GBC images, and whether the main domain's DNS may move.
 9. **Paystack Renewal Webhook:** Provide real renewal webhook payloads from Paystack dashboard (`invoice.create` $\rightarrow$ `charge.success` $\rightarrow$ `invoice.update`) to verify subscription renewal pipeline.
 
@@ -223,6 +231,14 @@ flowchart LR
   # or single test:
   pnpm vitest run path/to/test.test.ts
   ```
+- **Mobile app (`TwoNode/twonode-mobile`, Expo):**
+  ```bash
+  cd /home/rojitech/Desktop/CODEC/REACT-NATIVE/twonode-mobile
+  npm run check            # typecheck + lint + tests (what CI runs)
+  npx expo install <pkg>   # add packages this way, never npm install <pkg>
+  npx expo start           # API defaults to http://10.0.2.2:3211 (Android emulator) / localhost:3211
+  ```
+  Run the API with `npx next dev -p 3211` (never 3000). Release builds need `EXPO_PUBLIC_API_BASE_URL` (https). Expo's docs change every SDK: read `AGENTS.md` there and fetch the versioned docs before writing Expo code.
 - **Checking Vercel Deployment Status:**
   ```bash
   gh api repos/TwoNode/twonode/commits/<commit-sha>/statuses --jq '.[0]'

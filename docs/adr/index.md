@@ -49,21 +49,23 @@ What gets better, what gets worse or harder, and what this commits us to later.
 
 ## Index
 
-| #                                                                  | Decision                                                                             | Status   |
-| :----------------------------------------------------------------- | :----------------------------------------------------------------------------------- | :------- |
-| [0001](./0001-map-correction-is-display-only.md)                   | The map correction is applied when drawing; stored data stays raw                    | Accepted |
-| [0002](./0002-shift-pillarless-plans-on-screen-no-notification.md) | Plans with no pillars: shift their stored outline on screen, notify nobody           | Accepted |
-| [0003](./0003-plans-without-a-state-are-lagos.md)                  | Plans and CSV uploads without a state are treated as Lagos                           | Accepted |
-| [0004](./0004-other-states-stay-uncorrected.md)                    | States with no shift values stay uncorrected                                         | Accepted |
-| [0005](./0005-paystack-mode-follows-the-vercel-environment.md)     | Paystack live or test mode follows the Vercel environment                            | Accepted |
-| [0006](./0006-reva-price-is-computed-on-the-server.md)             | The REVA price is computed on the server, and the address is checked against the pin | Accepted |
-| [0007](./0007-backend-order-nextjs-nestjs-go.md)                   | Backend order: Next.js now, NestJS later, Go much later                              | Accepted |
-| [0008](./0008-gbc-certificate-access.md)                           | GBC certificate access: verify publicly, download with an emailed code               | Proposed |
-| [0009](./0009-gbc-edition-2-is-the-april-2026-event.md)            | GBC edition 2.0 is the April 30, 2026 event                                          | Accepted |
-| [0010](./0010-guarded-production-data-changes.md)                  | Production data changes are guarded, backed up and explicitly approved               | Accepted |
-| [0011](./0011-branches-and-environments.md)                        | Branches and environments: dev integrates, main is staging, prod is live             | Accepted |
-| [0012](./0012-multi-provider-storage-and-surveyor-file-privacy.md)  | Multi-provider storage architecture and surveyor file privacy                        | Accepted |
-| [0013](./0013-bucket-key-layout-public-and-private-prefixes.md) | The bucket is private by default; public files live under `public/` | Proposed |
-| [0014](./0014-ossg-submissions-recorded-in-a-hash-ledger.md) | Every submission to OSSG is recorded in a hash ledger before it is sent | Accepted |
-| [0015](./0015-files-open-in-an-in-page-viewer.md) | Files open in an in-page viewer, never in a new tab | Accepted |
-| [0016](./0016-storage-provider-evaluation-and-r2-migration.md) | Cloudflare R2 adoption for zero-egress storage and migration strategy | Proposed |
+| #                                                                                | Decision                                                                             | Status   |
+| :------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- | :------- |
+| [0001](./0001-map-correction-is-display-only.md)                                 | The map correction is applied when drawing; stored data stays raw                    | Accepted |
+| [0002](./0002-shift-pillarless-plans-on-screen-no-notification.md)               | Plans with no pillars: shift their stored outline on screen, notify nobody           | Accepted |
+| [0003](./0003-plans-without-a-state-are-lagos.md)                                | Plans and CSV uploads without a state are treated as Lagos                           | Accepted |
+| [0004](./0004-other-states-stay-uncorrected.md)                                  | States with no shift values stay uncorrected                                         | Accepted |
+| [0005](./0005-paystack-mode-follows-the-vercel-environment.md)                   | Paystack live or test mode follows the Vercel environment                            | Accepted |
+| [0006](./0006-reva-price-is-computed-on-the-server.md)                           | The REVA price is computed on the server, and the address is checked against the pin | Accepted |
+| [0007](./0007-backend-order-nextjs-nestjs-go.md)                                 | Backend order: Next.js now, NestJS later, Go much later                              | Accepted |
+| [0008](./0008-gbc-certificate-access.md)                                         | GBC certificate access: verify publicly, download with an emailed code               | Proposed |
+| [0009](./0009-gbc-edition-2-is-the-april-2026-event.md)                          | GBC edition 2.0 is the April 30, 2026 event                                          | Accepted |
+| [0010](./0010-guarded-production-data-changes.md)                                | Production data changes are guarded, backed up and explicitly approved               | Accepted |
+| [0011](./0011-branches-and-environments.md)                                      | Branches and environments: dev integrates, main is staging, prod is live             | Accepted |
+| [0012](./0012-multi-provider-storage-and-surveyor-file-privacy.md)               | Multi-provider storage architecture and surveyor file privacy                        | Accepted |
+| [0013](./0013-bucket-key-layout-public-and-private-prefixes.md)                  | The bucket is private by default; public files live under `public/`                  | Proposed |
+| [0014](./0014-ossg-submissions-recorded-in-a-hash-ledger.md)                     | Every submission to OSSG is recorded in a hash ledger before it is sent              | Accepted |
+| [0015](./0015-files-open-in-an-in-page-viewer.md)                                | Files open in an in-page viewer, never in a new tab                                  | Accepted |
+| [0016](./0016-storage-provider-evaluation-and-r2-migration.md)                   | Cloudflare R2 adoption for zero-egress storage and migration strategy                | Proposed |
+| [0017](./0017-the-mobile-app-signs-in-with-bearer-tokens.md)                     | The mobile app signs in with bearer tokens from separate mobile routes               | Accepted |
+| [0018](./0018-google-sign-in-never-keeps-a-password-on-an-unverified-account.md) | Signing in with Google never keeps a password set on an unverified account           | Accepted |
