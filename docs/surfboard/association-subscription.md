@@ -4,6 +4,8 @@
 >
 > **Superseded inputs** (kept locally in the untracked `out/` folder; their useful content is carried here): `association_subscription_plan.md` ("Plan A") and Part I of `Surfboard_Association_and_Mobile_Feasibility_Analysis.md` ("Plan B"). Part II of that file (mobile) is evaluated in [`../mobile/surfboard-mobile-app-evaluation.md`](../mobile/surfboard-mobile-app-evaluation.md).
 
+> **Field context (2026-10-19):** [`surveyor-world-research-2026-10-19.md`](./surveyor-world-research-2026-10-19.md) records what public sources say about SURCON, NIS, APPSN and the state Surveyor-General offices, and what could not be found. Key point: association membership is not the same as state residence.
+
 ## 1. What the PRB asks for
 
 A **state-level Association Admin** (for example the Ekiti chapter of the Association of Private Practicing Surveyors) pays Surfboard subscriptions **in bulk on behalf of surveyors** in its state. Individual subscriptions keep working unchanged.
