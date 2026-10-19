@@ -303,6 +303,29 @@ describe("rotateMobileRefreshToken", () => {
     });
   });
 
+  it("an account that became staff after signing in on a phone can no longer refresh there: no pair, the new token is revoked", async () => {
+    mockTx.refreshToken.updateMany.mockResolvedValue({ count: 1 });
+    mockTx.refreshToken.findUnique.mockResolvedValue({
+      userId: "u1",
+      familyId: "fam1",
+      expiresAt: future(),
+    });
+    vi.mocked(findUserById).mockResolvedValueOnce({
+      ...activeUser,
+      role: "ADMIN",
+    } as never);
+
+    expect(await rotateMobileRefreshToken(Platform.SURFBOARD, "old")).toEqual({
+      ok: false,
+      reason: "role",
+    });
+    const created = mockTx.refreshToken.create.mock.calls[0][0].data;
+    expect(mockPrisma.refreshToken.updateMany).toHaveBeenCalledWith({
+      where: { tokenHash: created.tokenHash },
+      data: { revokedAt: expect.any(Date) },
+    });
+  });
+
   it("an inactive account gets no session and the new token is revoked", async () => {
     mockTx.refreshToken.updateMany.mockResolvedValue({ count: 1 });
     mockTx.refreshToken.findUnique.mockResolvedValue({

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { Platform } from "@/utils/platform";
-import { issueMobileSession } from "@/lib/auth/session";
+import { issueMobileSession, MOBILE_ALLOWED_ROLES } from "@/lib/auth/session";
 import { consumeRateLimit } from "@/lib/auth/rateLimit";
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
@@ -70,6 +70,17 @@ export async function POST(req: NextRequest) {
     if (!user!.isActive) {
       return NextResponse.json(
         { success: false, error: "Account is inactive" },
+        { status: 403 }
+      );
+    }
+
+    if (!MOBILE_ALLOWED_ROLES.includes(user!.role)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "This account type can't sign in to the app",
+          code: "ACCOUNT_TYPE_NOT_SUPPORTED",
+        },
         { status: 403 }
       );
     }

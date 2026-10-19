@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 const mockRate = vi.hoisted(() => ({ consumeRateLimit: vi.fn() }));
 const mockLookup = vi.hoisted(() => ({ findUserByEmail: vi.fn() }));
 const mockSession = vi.hoisted(() => ({
+  MOBILE_ALLOWED_ROLES: ["USER"],
   issueMobileSession: vi.fn(),
   rotateMobileRefreshToken: vi.fn(),
 }));
@@ -136,6 +137,17 @@ describe("POST /api/v1/auth/mobile/login", () => {
     );
   });
 
+  it.each(["ADMIN", "SUPERADMIN", "ACCOUNTS", "MDA_SUPERADMIN"])(
+    "a %s account is refused on mobile with no session (staff stay on the web)",
+    async (role) => {
+      mockLookup.findUserByEmail.mockResolvedValue({ ...user, role });
+      const res = await login(post("login", loginBody()));
+      expect(res.status).toBe(403);
+      expect((await res.json()).code).toBe("ACCOUNT_TYPE_NOT_SUPPORTED");
+      expect(mockSession.issueMobileSession).not.toHaveBeenCalled();
+    }
+  );
+
   it("an inactive account is a 403 with no session", async () => {
     mockLookup.findUserByEmail.mockResolvedValue({ ...user, isActive: false });
     const res = await login(post("login", loginBody()));
@@ -206,6 +218,7 @@ describe("POST /api/v1/auth/mobile/refresh", () => {
     ["invalid", 401, "SESSION_INVALID"],
     ["inactive", 403, "ACCOUNT_INACTIVE"],
     ["conflict", 409, "REFRESH_CONFLICT"],
+    ["role", 403, "ACCOUNT_TYPE_NOT_SUPPORTED"],
   ])("%s -> %i %s", async (reason, status, code) => {
     mockSession.rotateMobileRefreshToken.mockResolvedValue({
       ok: false,

@@ -112,6 +112,13 @@ const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 /** How long a native-app session lasts without signing in again (rotation inherits it, never extends it). */
 export const MOBILE_REFRESH_LIFETIME_SECONDS = 30 * 24 * 60 * 60;
 
+/**
+ * Roles that may hold a native-app session. Staff and admin roles stay on the
+ * web: the app is a surveyor companion, and a smaller set of accounts on a
+ * phone means a smaller blast radius if one is lost.
+ */
+export const MOBILE_ALLOWED_ROLES: readonly string[] = ["USER"];
+
 function sha256(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
@@ -286,6 +293,7 @@ type RotationOutcome =
       accessToken: string;
       newRawRefreshToken: string;
       expiresAt: Date;
+      role: string;
     }
   | { kind: "grace"; accessToken: string }
   | { kind: "conflict" }
@@ -435,6 +443,7 @@ async function rotateCore(
             accessToken: newAccessToken,
             newRawRefreshToken,
             expiresAt: replacement.expiresAt,
+            role: user.role,
           };
         }
       }
@@ -471,6 +480,7 @@ async function rotateCore(
     accessToken: newAccessToken,
     newRawRefreshToken,
     expiresAt: claimed.expiresAt,
+    role: user.role,
   };
 }
 
@@ -521,7 +531,7 @@ export async function rotateRefreshToken(
 
 export type MobileRefreshResult =
   | { ok: true; session: MobileSession }
-  | { ok: false; reason: "invalid" | "inactive" | "conflict" };
+  | { ok: false; reason: "invalid" | "inactive" | "conflict" | "role" };
 
 /**
  * rotateRefreshToken for a native app: the new pair comes back to the caller
@@ -536,6 +546,19 @@ export async function rotateMobileRefreshToken(
     reRotateOnGrace: true,
   });
   if (outcome.kind === "rotated") {
+    // The role is read fresh at every rotation, so an account promoted to a
+    // staff role after signing in on a phone stops being refreshable there.
+    if (!MOBILE_ALLOWED_ROLES.includes(outcome.role)) {
+      try {
+        await prisma.refreshToken.updateMany({
+          where: { tokenHash: sha256(outcome.newRawRefreshToken) },
+          data: { revokedAt: new Date() },
+        });
+      } catch {
+        // The session is refused either way; the token just expires unused.
+      }
+      return { ok: false, reason: "role" };
+    }
     return {
       ok: true,
       session: {

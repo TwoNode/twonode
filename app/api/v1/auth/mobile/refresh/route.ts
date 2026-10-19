@@ -51,6 +51,11 @@ export async function POST(req: NextRequest) {
         invalid: [401, "SESSION_INVALID", "Invalid or revoked session"],
         inactive: [403, "ACCOUNT_INACTIVE", "Account inactive"],
         conflict: [409, "REFRESH_CONFLICT", "Try again"],
+        role: [
+          403,
+          "ACCOUNT_TYPE_NOT_SUPPORTED",
+          "This account type can't sign in to the app",
+        ],
       } as const;
       const [status, code, error] = map[result.reason];
       return NextResponse.json({ success: false, error, code }, { status });
