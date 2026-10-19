@@ -5,8 +5,11 @@ const mockLookup = vi.hoisted(() => ({
   markEmailVerified: vi.fn(),
 }));
 const mockSession = vi.hoisted(() => ({ revokeUserSession: vi.fn() }));
+const mockEmail = vi.hoisted(() => ({ sendPasswordRemovedNotice: vi.fn() }));
 vi.mock("@/lib/auth/userLookup", () => mockLookup);
 vi.mock("@/lib/auth/session", () => mockSession);
+vi.mock("@/utils/email", () => mockEmail);
+vi.mock("@/lib/siteUrl", () => ({ getSiteUrl: () => "https://site.test" }));
 
 const { verifyEmailViaOAuth } =
   await import("@/lib/auth/oauthEmailVerification");
@@ -42,6 +45,8 @@ describe("verifyEmailViaOAuth", () => {
       id: "u1",
       emailVerified: false,
       passwordHash: "hash",
+      email: "owner@example.com",
+      firstName: "Ada",
     });
 
     expect(mockLookup.clearPasswordHash).toHaveBeenCalledWith(
@@ -74,5 +79,54 @@ describe("verifyEmailViaOAuth", () => {
       "u2",
       "OAUTH"
     );
+  });
+
+  it("tells the person by email when their password was removed, linking to the platform's sign-in page", async () => {
+    await verifyEmailViaOAuth(Platform.SURFBOARD, {
+      id: "u1",
+      emailVerified: false,
+      passwordHash: "hash",
+      email: "owner@example.com",
+      firstName: "Ada",
+    });
+    expect(mockEmail.sendPasswordRemovedNotice).toHaveBeenCalledWith({
+      to: "owner@example.com",
+      firstName: "Ada",
+      loginUrl: "https://site.test/surfboard/login",
+      platform: "surfboard",
+    });
+  });
+
+  it("sends no email when no password was removed", async () => {
+    await verifyEmailViaOAuth(Platform.REVA, {
+      id: "u2",
+      emailVerified: false,
+      passwordHash: null,
+      email: "x@example.com",
+    });
+    await verifyEmailViaOAuth(Platform.REVA, {
+      id: "u3",
+      emailVerified: true,
+      passwordHash: "hash",
+      email: "y@example.com",
+    });
+    expect(mockEmail.sendPasswordRemovedNotice).not.toHaveBeenCalled();
+  });
+
+  it("a failure to send the email never blocks the sign-in", async () => {
+    mockEmail.sendPasswordRemovedNotice.mockRejectedValue(
+      new Error("smtp down")
+    );
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    await expect(
+      verifyEmailViaOAuth(Platform.SURFBOARD, {
+        id: "u1",
+        emailVerified: false,
+        passwordHash: "hash",
+        email: "owner@example.com",
+      })
+    ).resolves.toBeUndefined();
+    expect(mockLookup.markEmailVerified).toHaveBeenCalled();
+    spy.mockRestore();
   });
 });
