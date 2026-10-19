@@ -89,8 +89,17 @@ model RefreshToken {
   expiresAt  DateTime
   createdAt  DateTime  @default(now())
 
+  /// Set only for native-app sessions (POST /api/v1/auth/mobile/*); null for
+  /// browser sessions. Carried unchanged to each rotated successor so one
+  /// device's chain of tokens can be listed and revoked as a unit.
+  deviceId    String?
+  deviceLabel String?
+  appVersion  String?
+  lastUsedAt  DateTime?
+
   @@index([familyId])
   @@index([userId, platform])
+  @@index([userId, platform, deviceId])
 }
 
 /// One unified token for both a genuine forgotten-password reset and a
