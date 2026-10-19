@@ -2,6 +2,7 @@
 
 The Surfboard mobile app (Android and iOS) lives in its own repository, **`TwoNode/twonode-mobile`** (local copy: `/home/rojitech/Desktop/CODEC/REACT-NATIVE/twonode-mobile`). **Status 2026-10-19:** the app foundation is built (Expo SDK 58: email and password sign-in, session handling, a five-tab shell whose screens other than Profile are placeholders) and the backend side it needed, native bearer-token auth, is built and merged (PR #495, [ADR-0017](../adr/0017-the-mobile-app-signs-in-with-bearer-tokens.md)). Everything else follows the plan.
 
+- **In the app repo** (`TwoNode/twonode-mobile`): the same `/docs` structure; `docs/api-contract.md` (what the API really returns, examined 2026-10-19) and the phase plans `docs/tasks/0002` to `0007` (plan first, then implement).
 - [`../tasks/0015-mobile-app-and-api.md`](../tasks/0015-mobile-app-and-api.md) — **the live plan and task list:** decisions D1 to D15, phases 0 to 8, and the API changes this repo needs, with status.
 - [`kinde-google-sign-in-research-2026-10-19.md`](./kinde-google-sign-in-research-2026-10-19.md) — Google sign-in on Android and Sign in with Apple on iOS through Kinde: options, the recommended server-side exchange, Apple guideline 4.8, and the spike to run.
 - [`association-and-mobile-research-2026-10-18.md`](./association-and-mobile-research-2026-10-18.md) — research refresh (Expo SDK 58, store policy, toolchain).
