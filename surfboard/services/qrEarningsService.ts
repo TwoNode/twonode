@@ -417,6 +417,63 @@ export async function getSurveyorEarningsThisMonth(
   return result._sum.surveyorEarned ?? 0;
 }
 
+export type WalletSummary = {
+  currency: "NGN";
+  availableBalance: number;
+  pendingWithdrawal: number;
+  totalWithdrawn: number;
+  totalEarned: number;
+  earnedThisMonth: number;
+  /** The ten latest earnings, newest first: no payer, no access token. */
+  recent: {
+    planNumber: string;
+    service: "LOCATION_AUTHENTICITY" | "CERTIFICATE_OF_DEPOSIT";
+    amount: number;
+    at: string;
+  }[];
+};
+
+/**
+ * What the mobile app shows of a surveyor's wallet (TASK-0015 1F.4). Unlike
+ * `getSurveyorEarningsOverview` it never creates the wallet (a read is not a
+ * write: no wallet reads as zeros), and it carries no bank account, no payer
+ * name or email and no access token. Amounts are naira.
+ */
+export async function getWalletSummary(
+  surveyorId: string
+): Promise<WalletSummary> {
+  const [wallet, earnedThisMonth, transactions] = await Promise.all([
+    prisma.surveyorWallet.findUnique({ where: { userId: surveyorId } }),
+    getSurveyorEarningsThisMonth(surveyorId),
+    prisma.qREarningsTransaction.findMany({
+      where: { surveyorId, paymentStatus: "SUCCESS" },
+      select: {
+        serviceType: true,
+        surveyorEarned: true,
+        createdAt: true,
+        plan: { select: { planNumber: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+  ]);
+
+  return {
+    currency: "NGN",
+    availableBalance: wallet?.availableBalance ?? 0,
+    pendingWithdrawal: wallet?.pendingWithdrawal ?? 0,
+    totalWithdrawn: wallet?.totalWithdrawn ?? 0,
+    totalEarned: wallet?.totalEarned ?? 0,
+    earnedThisMonth,
+    recent: transactions.map((t) => ({
+      planNumber: t.plan.planNumber,
+      service: t.serviceType,
+      amount: t.surveyorEarned,
+      at: t.createdAt.toISOString(),
+    })),
+  };
+}
+
 export async function saveSurveyorBankDetails(
   surveyorId: string,
   input: { bankCode: string; bankName: string; accountNumber: string }
@@ -646,4 +703,3 @@ export async function getPaidCertificateKey(
   if (!key) throw new NotFoundError("Certificate");
   return key;
 }
-

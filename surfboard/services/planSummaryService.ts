@@ -7,7 +7,11 @@ import {
   type Paginated,
 } from "@/lib/api/pagination";
 import { PROVISIONAL_TYPES } from "@/surfboard/services/analyticsService";
-import { findPillarMatchIds } from "@/surfboard/services/planSearchService";
+import {
+  findColumnMatchIds,
+  findPillarMatchIds,
+  type MatchColumn,
+} from "@/surfboard/services/planSearchService";
 import { planNumberSearchClauses } from "@/surfboard/utils/planNumber";
 import {
   computeDisplayStatus,
@@ -197,10 +201,6 @@ const like = (value: string) => ({
   contains: value,
   mode: "insensitive" as const,
 });
-const exactly = (value: string) => ({
-  equals: value,
-  mode: "insensitive" as const,
-});
 
 /** The database filter for everything except the status: scope, search, and the exact filters. */
 export async function buildSummaryWhere(
@@ -241,11 +241,19 @@ export async function buildSummaryWhere(
   } else if (params.provisional === "only") {
     all.push({ planType: { in: PROVISIONAL_TYPES } });
   }
-  if (params.facilitator)
-    all.push({ facilitator: exactly(params.facilitator) });
-  if (params.lga) all.push({ lga: exactly(params.lga) });
-  if (params.ward) all.push({ ward: exactly(params.ward) });
-  if (params.lcda) all.push({ lcda: exactly(params.lcda) });
+  // Exact, ignoring capitals and surrounding spaces, the way the Stats breakdown
+  // groups them, so a row's count and the list it opens are the same plans.
+  const exact: [MatchColumn, string | undefined][] = [
+    ["facilitator", params.facilitator],
+    ["lga", params.lga],
+    ["ward", params.ward],
+    ["lcda", params.lcda],
+  ];
+  for (const [column, value] of exact) {
+    if (!value) continue;
+    const ids = await findColumnMatchIds(column, value, userId, params.scope);
+    all.push({ id: { in: ids } });
+  }
   if (params.dateFrom || params.dateTo) {
     all.push({
       dateOnSurveyPlan: {
