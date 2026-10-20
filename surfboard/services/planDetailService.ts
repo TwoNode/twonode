@@ -1,7 +1,6 @@
 import prisma from "@/lib/prisma";
 import type { Prisma } from "@/prisma/generated";
 import { NotFoundError } from "@/lib/api/errors";
-import { computeGeometryDetails } from "@/app/(projects)/(surfboard)/utils/dbUtils";
 import {
   SUMMARY_COLUMNS,
   toPlanSummary,
@@ -9,6 +8,7 @@ import {
   type SummaryRow,
 } from "@/surfboard/services/planSummaryService";
 import { planFileDisplayName } from "@/surfboard/utils/planFileName";
+import { boundaryFacts } from "@/surfboard/utils/planGeometry";
 import {
   PLAN_QUERY_SELECT,
   STAGE_ORDER,
@@ -133,30 +133,6 @@ function planFiles(
   add("DRAWING", row.cadFilePaths);
   add("CERTIFICATE", row.certificateFilePaths);
   return files;
-}
-
-function isGeometry(value: unknown): boolean {
-  if (typeof value === "string") return true;
-  if (!value || typeof value !== "object") return false;
-  const type = (value as { type?: unknown }).type;
-  return type === "Polygon" || type === "MultiPolygon";
-}
-
-function boundaryFacts(geometry: unknown): {
-  areaSqM: number | null;
-  centroid: { lat: number; lng: number } | null;
-} {
-  if (!isGeometry(geometry)) return { areaSqM: null, centroid: null };
-  try {
-    const { areaSqM, centroid } = computeGeometryDetails(geometry as never);
-    const [lng, lat] = centroid;
-    return {
-      areaSqM: Math.round(areaSqM * 100) / 100,
-      centroid: { lat, lng },
-    };
-  } catch {
-    return { areaSqM: null, centroid: null };
-  }
 }
 
 function decidedAt(
