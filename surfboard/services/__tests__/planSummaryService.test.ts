@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   findMany: vi.fn(),
   count: vi.fn(),
   pillarIds: vi.fn(),
+  columnIds: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -14,6 +15,7 @@ vi.mock("@/surfboard/services/analyticsService", () => ({
 }));
 vi.mock("@/surfboard/services/planSearchService", () => ({
   findPillarMatchIds: mocks.pillarIds,
+  findColumnMatchIds: mocks.columnIds,
 }));
 
 const {
@@ -81,6 +83,7 @@ const row = (over: Record<string, unknown> = {}) => ({
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.pillarIds.mockResolvedValue([]);
+  mocks.columnIds.mockResolvedValue([]);
 });
 
 describe("toPlanSummary", () => {
@@ -247,6 +250,10 @@ describe("buildSummaryWhere", () => {
   });
 
   it("filters by type, provisional, facilitator, place and survey date", async () => {
+    mocks.columnIds.mockImplementation(async (column: string) => [
+      `${column}-1`,
+      `${column}-2`,
+    ]);
     const where = (await buildSummaryWhere(
       "u1",
       params(
@@ -256,10 +263,10 @@ describe("buildSummaryWhere", () => {
     expect(where.AND).toEqual([
       { planType: { in: ["DEED"] } },
       { planType: { notIn: ["PROVISIONAL", "PROVISIONAL LAYOUT"] } },
-      { facilitator: { equals: "Adeyemi", mode: "insensitive" } },
-      { lga: { equals: "Eti-Osa", mode: "insensitive" } },
-      { ward: { equals: "Ajah", mode: "insensitive" } },
-      { lcda: { equals: "Ibeju", mode: "insensitive" } },
+      { id: { in: ["facilitator-1", "facilitator-2"] } },
+      { id: { in: ["lga-1", "lga-2"] } },
+      { id: { in: ["ward-1", "ward-2"] } },
+      { id: { in: ["lcda-1", "lcda-2"] } },
       {
         dateOnSurveyPlan: {
           gte: new Date("2026-01-01T00:00:00.000Z"),
@@ -267,6 +274,40 @@ describe("buildSummaryWhere", () => {
         },
       },
     ]);
+  });
+
+  it("matches a facilitator or place exactly, ignoring capitals and spaces, within the same scope", async () => {
+    await buildSummaryWhere("u1", params("facilitator=Adeyemi&ward=Ajah"));
+    expect(mocks.columnIds).toHaveBeenCalledWith(
+      "facilitator",
+      "Adeyemi",
+      "u1",
+      "mine"
+    );
+    expect(mocks.columnIds).toHaveBeenCalledWith("ward", "Ajah", "u1", "mine");
+    expect(mocks.columnIds).toHaveBeenCalledTimes(2);
+
+    mocks.columnIds.mockClear();
+    await buildSummaryWhere("u1", params("scope=shared-with-me&lga=Eti-Osa"));
+    expect(mocks.columnIds).toHaveBeenCalledWith(
+      "lga",
+      "Eti-Osa",
+      "u1",
+      "shared-with-me"
+    );
+  });
+
+  it("matches nothing, rather than everything, when no plan has that value", async () => {
+    mocks.columnIds.mockResolvedValue([]);
+    const where = (await buildSummaryWhere("u1", params("lga=Nowhere"))) as {
+      AND: unknown[];
+    };
+    expect(where.AND).toEqual([{ id: { in: [] } }]);
+  });
+
+  it("does not look anything up when no exact filter is asked for", async () => {
+    await buildSummaryWhere("u1", params("planType=DEED"));
+    expect(mocks.columnIds).not.toHaveBeenCalled();
   });
 
   it("can ask for provisional plans only", async () => {

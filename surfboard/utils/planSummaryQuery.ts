@@ -77,7 +77,8 @@ function toDate(value: string, endOfDay: boolean): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-const date = (endOfDay: boolean) =>
+/** A `YYYY-MM-DD` date or a full date and time; shared by the list and the stats query. */
+export const dateParam = (endOfDay: boolean) =>
   z
     .string()
     .trim()
@@ -109,8 +110,8 @@ const querySchema = z.object({
   ward: text(200),
   lcda: text(200),
   provisional: z.enum(["include", "exclude", "only"]).default("include"),
-  dateFrom: date(false),
-  dateTo: date(true),
+  dateFrom: dateParam(false),
+  dateTo: dateParam(true),
   sortField: z.enum(SUMMARY_SORT_FIELDS).default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });

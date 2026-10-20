@@ -77,6 +77,47 @@ export async function getProfile(userId: string) {
   return { ...rest, preferences: readPreferences(metadata) };
 }
 
+export type ProfileSummary = {
+  firstName: string | null;
+  lastName: string | null;
+  prefix: string | null;
+  suffix: string | null;
+  companyName: string | null;
+  surconRegNumber: string | null;
+  surconRegName: string | null;
+  residenceState: string | null;
+  isKycValidated: boolean;
+};
+
+const PROFILE_SUMMARY_SELECT = {
+  firstName: true,
+  lastName: true,
+  prefix: true,
+  suffix: true,
+  companyName: true,
+  surconRegNumber: true,
+  surconRegName: true,
+  residenceState: true,
+  isKycValidated: true,
+} as const;
+
+/**
+ * What the mobile app shows of a surveyor's profile (TASK-0015 1F.5): name,
+ * firm, SURCON registration and state. `getProfile` also sends the logo and
+ * signature as raw bucket links (private, not loadable), the payer id, phone
+ * and address; the app has no use for them, so they are not sent.
+ */
+export async function getProfileSummary(
+  userId: string
+): Promise<ProfileSummary> {
+  const user = await prisma.surfboardUser.findUnique({
+    where: { id: userId },
+    select: PROFILE_SUMMARY_SELECT,
+  });
+  if (!user) throw new NotFoundError("User");
+  return user;
+}
+
 export async function updateProfile(userId: string, formData: FormData) {
   const updates: Record<string, any> = {};
 

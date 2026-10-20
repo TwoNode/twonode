@@ -131,7 +131,7 @@ _Related:_ the NIPOST postcode API (`docs.postcode.gov.ng`) offers free postcode
 1. **Mobile auth surface** (§3) — additive; also unblocks any other native/API client.
 2. **Shared geo util** extracted from the web (`EPSG:26331/26332`), with the brief's three coordinate formats under test.
 3. **Map provider decision** and a fix for the web map's tile sources (§4.4).
-4. **Derived status helpers** (`displayStatus`) and locality/LGA search. (Built 2026-10-19, #500: `plans/summary`.)
+4. **Derived status helpers** (`displayStatus`) and locality/LGA search. (Built 2026-10-19, #500: `plans/summary`.) Stats, wallet, subscription and profile summaries for the Stats and Profile tabs: built 2026-10-20 (`plans/stats`, `qr/wallet-summary`, `subscription/summary`, `profile/summary`, in review).
 
 ### 5.2 Phases (size, not dates)
 

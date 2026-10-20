@@ -31,7 +31,7 @@ The auth column is a static reading of source, not an access-control test. The a
 
 <!-- BEGIN GENERATED: api-routes -->
 
-#### Auth (shared) (20)
+#### Auth (shared) (23)
 
 | Route                                        | Method(s) | Auth                                 |
 | :------------------------------------------- | :-------- | :----------------------------------- |
@@ -47,8 +47,8 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/auth/mobile/logout`                 | POST      | public                               |
 | `/api/v1/auth/mobile/refresh`                | POST      | public                               |
 | `/api/v1/auth/mobile/request-password-reset` | POST      | public                               |
-| `/api/v1/auth/mobile/resend-verification`    | POST      | any signed-in (unverified OK)        |
-| `/api/v1/auth/mobile/verify-email`           | POST      | any signed-in (unverified OK)        |
+| `/api/v1/auth/mobile/resend-verification`    | POST      | USER (unverified OK)                 |
+| `/api/v1/auth/mobile/verify-email`           | POST      | USER (unverified OK)                 |
 | `/api/v1/auth/refresh`                       | POST      | public (CSRF-checked)                |
 | `/api/v1/auth/register`                      | POST      | public (CSRF-checked)                |
 | `/api/v1/auth/register/resend-otp`           | POST      | public (CSRF-checked)                |
@@ -59,7 +59,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/auth/verify-email`                  | POST      | session (see source)                 |
 | `/api/v1/auth/verify-email-otp`              | POST      | session (see source)                 |
 
-#### Surfboard (136)
+#### Surfboard (140)
 
 | Route                                                                | Method(s)          | Auth                                                                                                        |
 | :------------------------------------------------------------------- | :----------------- | :---------------------------------------------------------------------------------------------------------- |
@@ -170,8 +170,10 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/plans/reference-numbers`                          | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/shared`                                     | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/shared-with-me`                             | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/plans/stats`                                      | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/summary`                                    | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/profile`                                          | GET, PATCH         | any signed-in                                                                                               |
+| `/api/v1/surfboard/profile/summary`                                  | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/qr/access-state`                                  | GET                | public — anonymous QR-service payer                                                                         |
 | `/api/v1/surfboard/qr/bank-details`                                  | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/qr/earnings-overview`                             | GET                | any signed-in                                                                                               |
@@ -179,6 +181,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/qr/payments`                                      | POST               | public — anonymous QR-service payer                                                                         |
 | `/api/v1/surfboard/qr/payments/verify`                               | POST               | public — anonymous QR-service payer                                                                         |
 | `/api/v1/surfboard/qr/settings`                                      | GET                | SUPERADMIN                                                                                                  |
+| `/api/v1/surfboard/qr/wallet-summary`                                | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/qr/withdrawals`                                   | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/session`                                          | GET                | own session cookie (404 if none)                                                                            |
 | `/api/v1/surfboard/settings`                                         | GET, PATCH         | GET: any signed-in; PATCH: ADMIN, SUPERADMIN                                                                |
@@ -194,6 +197,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/subscription/disable`                             | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/subscription/initiate`                            | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/subscription/initiate-onetime`                    | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/subscription/summary`                             | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/subscription/user-and-active`                     | GET                | any signed-in                                                                                               |
 | `/api/v1/surfboard/subscription/verify`                              | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/subscription/verify-onetime`                      | POST               | any signed-in                                                                                               |

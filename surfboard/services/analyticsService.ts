@@ -27,7 +27,7 @@ export const PROVISIONAL_TYPES = ["PROVISIONAL", "PROVISIONAL LAYOUT"];
 
 /** "REGULAR"/"REGULAR + ADJOINING" bucket as Regular; everything else (SPECIAL, SPECIAL + ADJOINING, RE-ESTABLISHMENT) buckets as Special. */
 const REGULAR_PILLAR_TYPES = new Set(["REGULAR", "REGULAR + ADJOINING"]);
-function pillarBucket(pillarType: string): "Regular" | "Special" {
+export function pillarBucket(pillarType: string): "Regular" | "Special" {
   return REGULAR_PILLAR_TYPES.has(pillarType) ? "Regular" : "Special";
 }
 
