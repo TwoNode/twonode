@@ -38,3 +38,7 @@ Every authenticated route reads the session from httpOnly cookies. A native app 
 - Adds one migration (`20261019100000_refresh_token_device_sessions`, four nullable columns).
 
 **Binds:** `lib/auth/session.ts`, `lib/auth/bearer.ts`, `lib/auth/csrf.ts`, `lib/auth/deviceSessions.ts`, `lib/auth/rateLimit.ts`, `app/api/v1/auth/mobile/**`, and the app's `src/lib/auth/session-manager.ts` (repo `TwoNode/twonode-mobile`).
+
+## Update 2026-10-20: verification and password reset
+
+The same rule held for the next three routes: where a website route could not serve a phone, the app gets its own twin under `/auth/mobile/` and the website's route is left alone. `mobile/verify-email` and `mobile/resend-verification` (no IP key, no cookie session, the app refreshes afterwards to learn it is verified) and `mobile/request-password-reset` (no CSRF check, keyed on email and device, one answer for every case). The reset link still opens the website's reset page; a deep link into the app is a separate decision (1H).
