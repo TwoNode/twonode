@@ -165,6 +165,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/plans/deleted`                                    | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/facilitators`                               | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/geo/boundaries`                             | POST               | USER                                                                                                        |
+| `/api/v1/surfboard/plans/map`                                        | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/physical-copy`                              | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/queried`                                    | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/reference-numbers`                          | GET                | USER                                                                                                        |

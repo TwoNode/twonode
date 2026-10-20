@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   session: vi.fn(),
   getPlanSummaries: vi.fn(),
   getPlanCounts: vi.fn(),
+  getPlanMap: vi.fn(),
   getBatchSummaries: vi.fn(),
   getBatchDetail: vi.fn(),
   getPlanDetail: vi.fn(),
@@ -14,6 +15,9 @@ vi.mock("@/lib/auth/session", () => ({ getServerSession: mocks.session }));
 vi.mock("@/surfboard/services/planSummaryService", () => ({
   getPlanSummaries: mocks.getPlanSummaries,
   getPlanCounts: mocks.getPlanCounts,
+}));
+vi.mock("@/surfboard/services/planMapService", () => ({
+  getPlanMap: mocks.getPlanMap,
 }));
 vi.mock("@/surfboard/services/planDetailService", () => ({
   getPlanDetail: mocks.getPlanDetail,
@@ -27,6 +31,8 @@ const { GET: plansSummary } =
   await import("@/app/api/v1/surfboard/plans/summary/route");
 const { GET: plansCounts } =
   await import("@/app/api/v1/surfboard/plans/counts/route");
+const { GET: plansMap } =
+  await import("@/app/api/v1/surfboard/plans/map/route");
 const { GET: batchesSummary } =
   await import("@/app/api/v1/surfboard/cod/batches/summary/route");
 const { GET: batchSummary } =
@@ -55,6 +61,7 @@ const PLAN_ID = "3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c";
 const routes: [string, unknown, string][] = [
   ["plans/summary", plansSummary, "plans/summary"],
   ["plans/counts", plansCounts, "plans/counts"],
+  ["plans/map", plansMap, "plans/map"],
   ["plans/{id}/summary", planDetail, `plans/${PLAN_ID}/summary`],
   ["cod/batches/summary", batchesSummary, "cod/batches/summary"],
   ["cod/batches/{id}/summary", batchSummary, "cod/batches/b1/summary"],
@@ -78,6 +85,12 @@ beforeEach(() => {
     sharedWithMe: 0,
     queried: 0,
     readyForPhysicalSubmission: 0,
+  });
+  mocks.getPlanMap.mockResolvedValue({
+    plans: [],
+    total: 0,
+    withoutOutline: 0,
+    truncated: false,
   });
   mocks.getBatchSummaries.mockResolvedValue({
     data: [],
@@ -177,6 +190,31 @@ describe("GET plans/counts", () => {
       },
     });
     expect(mocks.getPlanCounts).toHaveBeenCalledWith("user-1");
+  });
+});
+
+describe("GET plans/map", () => {
+  it("returns the service's answer in the usual envelope, for the caller only", async () => {
+    mocks.getPlanMap.mockResolvedValue({
+      plans: [{ id: "p1" }],
+      total: 3,
+      withoutOutline: 1,
+      truncated: false,
+    });
+    // Nothing in the query can widen what is read: whose plans is decided by the session.
+    const res = await call(plansMap, "plans/map?userId=someone-else&scope=all");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      success: true,
+      data: {
+        plans: [{ id: "p1" }],
+        total: 3,
+        withoutOutline: 1,
+        truncated: false,
+      },
+    });
+    expect(mocks.getPlanMap).toHaveBeenCalledTimes(1);
+    expect(mocks.getPlanMap).toHaveBeenCalledWith("user-1");
   });
 });
 
