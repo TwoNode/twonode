@@ -1,6 +1,6 @@
 # TASK-0015: Surfboard mobile app (`twonode-mobile`) and the API work it needs
 
-- **Status:** In progress (2026-10-20): native auth built and merged (PR #495); app foundation, design system and devices screen built in `TwoNode/twonode-mobile` (private, `main`, CI green; app PRs #1 to #5); the Plans and Records read API (#500) and plan detail (#501) built and merged to `dev`; the app's Plans and Records screens built and in review (app PR #6, not run on a device); everything else open
+- **Status:** In progress (2026-10-20): native auth built and merged (PR #495); app foundation, design system and devices screen built in `TwoNode/twonode-mobile` (private, `main`, CI green; app PRs #1 to #5); the Plans and Records read API (#500) and plan detail (#501) built and merged to `dev`; the app's Plans and Records screens built and in review (app PR #6, run on an Android emulator 2026-10-20, not yet on iOS or a physical phone); everything else open
 - **Priority:** High
 - **Assignee:** Maintainer / Agent
 - **Target Branch / PR:** API work: feature branches off `origin/dev` in this repo. App: new project `/home/rojitech/Desktop/CODEC/REACT-NATIVE/twonode-mobile`
