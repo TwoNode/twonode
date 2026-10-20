@@ -12,6 +12,24 @@ const NO_ACTIVE_CODE_MESSAGE =
 const TOO_MANY_ATTEMPTS_MESSAGE =
   "Too many attempts — please request a new code";
 
+/** Why a code was turned down, for a client that wants to word each case itself. */
+export type OtpRejection =
+  "MALFORMED" | "NO_ACTIVE_CODE" | "TOO_MANY_ATTEMPTS" | "INCORRECT";
+
+/**
+ * A ValidationError (same status, code and `details` as before, so the
+ * website's screens see no difference) that also says which way the code was
+ * turned down. The mobile route maps `reason` to a stable code; matching on
+ * the English message would break the day a message is reworded.
+ */
+export class OtpRejectedError extends ValidationError {
+  readonly reason: OtpRejection;
+  constructor(reason: OtpRejection, message: string) {
+    super({ code: message });
+    this.reason = reason;
+  }
+}
+
 function generateCode(): string {
   return crypto.randomInt(100000, 1000000).toString();
 }
@@ -87,7 +105,7 @@ export async function verifyEmailOtp(
 ): Promise<boolean> {
   const cleanCode = (code || "").trim();
   if (!cleanCode || cleanCode.length !== 6) {
-    throw new ValidationError({ code: "Code must be 6 digits" });
+    throw new OtpRejectedError("MALFORMED", "Code must be 6 digits");
   }
 
   const otp = await prisma.emailVerificationOtp.findFirst({
@@ -101,11 +119,11 @@ export async function verifyEmailOtp(
   });
 
   if (!otp) {
-    throw new ValidationError({ code: NO_ACTIVE_CODE_MESSAGE });
+    throw new OtpRejectedError("NO_ACTIVE_CODE", NO_ACTIVE_CODE_MESSAGE);
   }
 
   if (otp.attempts >= MAX_ATTEMPTS) {
-    throw new ValidationError({ code: TOO_MANY_ATTEMPTS_MESSAGE });
+    throw new OtpRejectedError("TOO_MANY_ATTEMPTS", TOO_MANY_ATTEMPTS_MESSAGE);
   }
 
   const reserved = await prisma.emailVerificationOtp.updateMany({
@@ -123,16 +141,13 @@ export async function verifyEmailOtp(
     const fresh = await prisma.emailVerificationOtp.findUnique({
       where: { id: otp.id },
     });
-    throw new ValidationError({
-      code:
-        fresh && !fresh.usedAt && fresh.attempts >= MAX_ATTEMPTS
-          ? TOO_MANY_ATTEMPTS_MESSAGE
-          : NO_ACTIVE_CODE_MESSAGE,
-    });
+    throw fresh && !fresh.usedAt && fresh.attempts >= MAX_ATTEMPTS
+      ? new OtpRejectedError("TOO_MANY_ATTEMPTS", TOO_MANY_ATTEMPTS_MESSAGE)
+      : new OtpRejectedError("NO_ACTIVE_CODE", NO_ACTIVE_CODE_MESSAGE);
   }
 
   if (!hashesMatch(otp.codeHash, cleanCode)) {
-    throw new ValidationError({ code: "Incorrect code" });
+    throw new OtpRejectedError("INCORRECT", "Incorrect code");
   }
 
   const claimed = await prisma.emailVerificationOtp.updateMany({
@@ -141,7 +156,7 @@ export async function verifyEmailOtp(
   });
   if (claimed.count === 0) {
     // A simultaneous request with the same (correct) code consumed it first.
-    throw new ValidationError({ code: NO_ACTIVE_CODE_MESSAGE });
+    throw new OtpRejectedError("NO_ACTIVE_CODE", NO_ACTIVE_CODE_MESSAGE);
   }
 
   await markEmailVerified(platform, userId, "OTP");

@@ -33,28 +33,31 @@ The auth column is a static reading of source, not an access-control test. The a
 
 #### Auth (shared) (20)
 
-| Route                                    | Method(s) | Auth                                 |
-| :--------------------------------------- | :-------- | :----------------------------------- |
-| `/api/v1/auth/accept-invite`             | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/change-password`           | POST      | session (see source)                 |
-| `/api/v1/auth/invitations`               | GET       | public — single-use invitation token |
-| `/api/v1/auth/login`                     | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/logout`                    | POST      | session (see source)                 |
-| `/api/v1/auth/me`                        | GET       | session (see source)                 |
-| `/api/v1/auth/mobile/devices`            | GET       | any signed-in (unverified OK)        |
-| `/api/v1/auth/mobile/devices/[familyId]` | DELETE    | any signed-in (unverified OK)        |
-| `/api/v1/auth/mobile/login`              | POST      | public                               |
-| `/api/v1/auth/mobile/logout`             | POST      | public                               |
-| `/api/v1/auth/mobile/refresh`            | POST      | public                               |
-| `/api/v1/auth/refresh`                   | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/register`                  | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/register/resend-otp`       | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/register/send-otp`         | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/request-password-reset`    | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/resend-verification`       | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/reset-password`            | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/verify-email`              | POST      | session (see source)                 |
-| `/api/v1/auth/verify-email-otp`          | POST      | session (see source)                 |
+| Route                                        | Method(s) | Auth                                 |
+| :------------------------------------------- | :-------- | :----------------------------------- |
+| `/api/v1/auth/accept-invite`                 | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/change-password`               | POST      | session (see source)                 |
+| `/api/v1/auth/invitations`                   | GET       | public — single-use invitation token |
+| `/api/v1/auth/login`                         | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/logout`                        | POST      | session (see source)                 |
+| `/api/v1/auth/me`                            | GET       | session (see source)                 |
+| `/api/v1/auth/mobile/devices`                | GET       | any signed-in (unverified OK)        |
+| `/api/v1/auth/mobile/devices/[familyId]`     | DELETE    | any signed-in (unverified OK)        |
+| `/api/v1/auth/mobile/login`                  | POST      | public                               |
+| `/api/v1/auth/mobile/logout`                 | POST      | public                               |
+| `/api/v1/auth/mobile/refresh`                | POST      | public                               |
+| `/api/v1/auth/mobile/request-password-reset` | POST      | public                               |
+| `/api/v1/auth/mobile/resend-verification`    | POST      | any signed-in (unverified OK)        |
+| `/api/v1/auth/mobile/verify-email`           | POST      | any signed-in (unverified OK)        |
+| `/api/v1/auth/refresh`                       | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/register`                      | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/register/resend-otp`           | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/register/send-otp`             | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/request-password-reset`        | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/resend-verification`           | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/reset-password`                | POST      | public (CSRF-checked)                |
+| `/api/v1/auth/verify-email`                  | POST      | session (see source)                 |
+| `/api/v1/auth/verify-email-otp`              | POST      | session (see source)                 |
 
 #### Surfboard (136)
 

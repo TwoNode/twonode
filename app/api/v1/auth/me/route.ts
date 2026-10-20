@@ -45,6 +45,10 @@ export async function GET(req: NextRequest) {
       data: {
         id: user.id,
         email: user.email,
+        // The app has only the email after a restored session otherwise: the
+        // login response carries the name and this did not (TASK-0015 1A.13).
+        firstName: user.firstName,
+        lastName: user.lastName,
         role: user.role.toLowerCase(),
         emailVerified: user.emailVerified,
         emailVerifiedVia: user.emailVerifiedVia,
