@@ -49,7 +49,7 @@ The app is unaffected for the same reason. The likely first Go candidates are th
 ## 5. Not decided yet
 
 - Which map and geocoding providers to use (licensing is a risk today; see the evaluation §4.4).
-- Whether the app gets any offline reads. The brief does not ask for them.
+- Whether the app gets any offline reads. The brief does not ask for them; **the app has them since 2026-10-22** (lists and the plans and batches opened, saved on the phone and removed at sign out: app ADR-0006, draft PR #13), built as proposed, awaiting the maintainer's yes.
 - Whether physical-copy submission needs an active subscription on mobile (evaluation §4.7).
 
 ## 6. Related
