@@ -50,6 +50,7 @@ The app is unaffected for the same reason. The likely first Go candidates are th
 
 - Which map and geocoding providers to use (licensing is a risk today; see the evaluation §4.4).
 - Whether the app gets any offline reads. The brief does not ask for them; **the app has them since 2026-10-22** (lists and the plans and batches opened, saved on the phone and removed at sign out: app ADR-0006, draft PR #13), built as proposed, awaiting the maintainer's yes.
+- Whether the app gets a screen lock. The brief does not ask for biometrics (the evaluation keeps them out of the MVP definition); **the app has an opt-in one since 2026-10-23**: off by default, offered once after the first sign-in and kept under Profile > Account > App lock; it asks the phone's own fingerprint, face or screen lock when the app is opened with a saved session and after 0, 1, 5 or 15 minutes away; a screen lock, not encryption; no API change (app ADR-0007, draft PR #14), built as proposed, awaiting the maintainer's yes.
 - Whether physical-copy submission needs an active subscription on mobile (evaluation §4.7).
 
 ## 6. Related
