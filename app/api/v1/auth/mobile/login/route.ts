@@ -6,6 +6,10 @@ import { issueMobileSession, MOBILE_ALLOWED_ROLES } from "@/lib/auth/session";
 import { consumeRateLimit } from "@/lib/auth/rateLimit";
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
+import {
+  assertMobileClientAllowed,
+  assertMobileSignInEnabled,
+} from "@/lib/api/mobileApp";
 import { findUserByEmail } from "@/lib/auth/userLookup";
 
 const loginSchema = z.object({
@@ -34,6 +38,12 @@ const EMAIL_LIMIT = { max: 20, windowMs: 15 * 60 * 1000 };
  */
 export async function POST(req: NextRequest) {
   try {
+    // An app that is too old is told to update (426), and while the emergency
+    // switch is off nobody signs in (503): both before the credentials are
+    // looked at, so neither can be used to probe an account.
+    await assertMobileClientAllowed(req);
+    await assertMobileSignInEnabled();
+
     const { platform, email, password, deviceId, deviceLabel, appVersion } =
       await validateBody(req, loginSchema);
     const normalizedEmail = email.trim().toLowerCase();
