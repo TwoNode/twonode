@@ -356,9 +356,16 @@ export async function revertToPreviousSettings(
   });
   if (!targetSettings) throw new NotFoundError("Settings");
 
+  // Going back to an earlier version must not bring back an earlier minimum
+  // app version or switch sign-in back on: the mobile controls stay as they are.
+  const mobileApp = await getMobileAppSettings();
+
   const revertedSettings = await prisma.surfboardSettings.create({
     data: {
-      settings: targetSettings.previousSettings ?? {},
+      settings: {
+        ...((targetSettings.previousSettings as object | null) ?? {}),
+        mobileApp,
+      } as any,
       previousSettings: targetSettings.settings ?? {},
       updatedById: userId,
     },
@@ -383,9 +390,13 @@ export async function resetToDefaultSettings(userId: string) {
     orderBy: { updatedAt: "desc" },
   });
 
+  // "Reset to default" covers the fees and texts on the settings page, not the
+  // mobile controls: a reset must not lift a forced update or re-open sign-in.
+  const mobileApp = await getMobileAppSettings();
+
   const newSettingsRecord = await prisma.surfboardSettings.create({
     data: {
-      settings: DEFAULT_SETTINGS as any,
+      settings: { ...DEFAULT_SETTINGS, mobileApp } as any,
       previousSettings: currentSettings?.settings || {},
       updatedById: userId,
     },
