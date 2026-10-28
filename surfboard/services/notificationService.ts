@@ -839,6 +839,7 @@ export async function notifyPlanApproved(params: {
         planNumber: params.planNumber,
         batchCode: params.batchCode,
       },
+      push: { kind: "PLAN_LODGED", planId: params.planId },
       sendEmail: params.sendEmail ?? true,
       sendWhatsApp: true,
     });

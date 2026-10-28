@@ -18,6 +18,7 @@ const {
   notifyConsolidatedQueries,
   notifyReadyForPhysicalSubmission,
   notifyPlanShared,
+  notifyPlanApproved,
 } = await import("@/surfboard/services/notificationService");
 
 const PLAN_ID = "3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c";
@@ -164,6 +165,25 @@ describe("which events push", () => {
       kind: "PLAN_SHARED",
       planId: PLAN_ID,
     });
+  });
+
+  it("pushes a lodged plan to its owner as PLAN_LODGED with the plan id", async () => {
+    await notifyPlanApproved({
+      userId: "u1",
+      planId: PLAN_ID,
+      planNumber: "LA/2026/0412",
+      batchCode: "B-0007",
+      sendEmail: false,
+    } as Parameters<typeof notifyPlanApproved>[0]);
+
+    expect(mockPush.sendPush).toHaveBeenCalledTimes(1);
+    expect(mockPush.sendPush).toHaveBeenCalledWith(["u1"], {
+      kind: "PLAN_LODGED",
+      planId: PLAN_ID,
+    });
+    const json = JSON.stringify(mockPush.sendPush.mock.calls[0]);
+    expect(json).not.toContain("LA/2026/0412");
+    expect(json).not.toContain("B-0007");
   });
 
   it("pushes 'ready for physical submission' with the plan id", async () => {

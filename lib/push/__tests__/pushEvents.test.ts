@@ -49,6 +49,45 @@ describe("buildPushMessage", () => {
     expect(shared.body).toBe("A plan was shared with you.");
   });
 
+  it("uses fixed, generic words for a lodged plan and an ending subscription", () => {
+    expect(buildPushMessage(T1, { kind: "PLAN_LODGED" })).toMatchObject({
+      title: "Surfboard",
+      body: "A plan was lodged. Open the app to see it.",
+      channelId: "updates",
+    });
+    expect(buildPushMessage(T1, { kind: "SUBSCRIPTION_ENDING" })).toMatchObject({
+      title: "Surfboard",
+      body: "Your subscription ends soon. Open the app for the date.",
+      channelId: "updates",
+    });
+  });
+
+  it("carries a lodged plan's id, and an ending subscription's kind alone", () => {
+    expect(
+      buildPushMessage(T1, { kind: "PLAN_LODGED", planId: PLAN_ID }).data
+    ).toEqual({ v: 1, kind: "PLAN_LODGED", planId: PLAN_ID });
+    expect(buildPushMessage(T1, { kind: "SUBSCRIPTION_ENDING" }).data).toEqual({
+      v: 1,
+      kind: "SUBSCRIPTION_ENDING",
+    });
+  });
+
+  it("never puts an amount, a date or a plan name into the subscription push", () => {
+    const event = {
+      kind: "SUBSCRIPTION_ENDING",
+      daysLeft: 3,
+      amount: 50000,
+      expiresAt: "2026-11-01",
+      planName: "SECRET-PLAN",
+    } as unknown as Parameters<typeof buildPushMessage>[1];
+
+    const json = JSON.stringify(buildPushMessage(T1, event));
+
+    for (const leak of ["50000", "2026-11-01", "SECRET-PLAN", "daysLeft"]) {
+      expect(json).not.toContain(leak);
+    }
+  });
+
   it("carries the kind, a version and a plan id, and nothing else", () => {
     expect(
       buildPushMessage(T1, { kind: "PLAN_QUERIED", planId: PLAN_ID }).data

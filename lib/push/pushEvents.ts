@@ -13,7 +13,12 @@ import {
  * a place, a name or a number. The app opens the plan from `planId` and shows
  * the detail inside the app.
  */
-export type PushKind = "PLAN_QUERIED" | "READY_FOR_PHYSICAL" | "PLAN_SHARED";
+export type PushKind =
+  | "PLAN_QUERIED"
+  | "READY_FOR_PHYSICAL"
+  | "PLAN_SHARED"
+  | "PLAN_LODGED"
+  | "SUBSCRIPTION_ENDING";
 
 export type PushEvent = {
   kind: PushKind;
@@ -33,6 +38,14 @@ const COPY: Record<PushKind, { title: string; body: string }> = {
   PLAN_SHARED: {
     title: "Surfboard",
     body: "A plan was shared with you.",
+  },
+  PLAN_LODGED: {
+    title: "Surfboard",
+    body: "A plan was lodged. Open the app to see it.",
+  },
+  SUBSCRIPTION_ENDING: {
+    title: "Surfboard",
+    body: "Your subscription ends soon. Open the app for the date.",
   },
 };
 
