@@ -8,6 +8,10 @@ const mockTokens = vi.hoisted(() => ({
 vi.mock("@/lib/push/deviceTokens", () => mockTokens);
 const mockReceipts = vi.hoisted(() => ({ recordTickets: vi.fn() }));
 vi.mock("@/lib/push/receipts", () => mockReceipts);
+const mockPrefs = vi.hoisted(() => ({ usersWhoWant: vi.fn() }));
+vi.mock("@/lib/push/preferences", () => mockPrefs);
+const mockCooldown = vi.hoisted(() => ({ claimPushWindow: vi.fn() }));
+vi.mock("@/lib/push/cooldown", () => mockCooldown);
 
 const { buildPushMessage, sendPush } = await import("@/lib/push/pushEvents");
 
@@ -33,6 +37,11 @@ beforeEach(() => {
   mockTokens.tokensForUsers.mockResolvedValue([]);
   mockTokens.removeTokens.mockResolvedValue(0);
   mockReceipts.recordTickets.mockResolvedValue(undefined);
+  // Everyone wants it and every window is free, unless a test says otherwise.
+  mockPrefs.usersWhoWant.mockImplementation(async (ids: string[]) => ids);
+  mockCooldown.claimPushWindow.mockImplementation(
+    async (ids: string[]) => new Set(ids)
+  );
   errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 afterEach(() => errorSpy.mockRestore());
@@ -254,6 +263,111 @@ describe("sendPush", () => {
     expect(await sendPush(["u1"], { kind: "PLAN_SHARED" }, sender)).toBe(0);
     expect(errorSpy).toHaveBeenCalledTimes(1);
     expect(String(errorSpy.mock.calls[0])).not.toContain(T1);
+  });
+
+  describe("preferences and the cool-down", () => {
+    it("asks who wants this kind of push, among the people named, once each", async () => {
+      const { sender } = senderOf(allOk);
+
+      await sendPush(["u1", "u2", "u1"], { kind: "PLAN_LODGED" }, sender);
+
+      expect(mockPrefs.usersWhoWant).toHaveBeenCalledWith(
+        ["u1", "u2"],
+        "PLAN_LODGED",
+        "surfboard"
+      );
+    });
+
+    it("looks up the phones only of the people who want it", async () => {
+      mockPrefs.usersWhoWant.mockResolvedValue(["u2"]);
+      const { sender } = senderOf(allOk);
+
+      await sendPush(["u1", "u2"], { kind: "PLAN_LODGED" }, sender);
+
+      expect(mockTokens.tokensForUsers).toHaveBeenCalledWith(["u2"], "surfboard");
+    });
+
+    it("looks nobody's phone up, and sends nothing, when nobody wants it", async () => {
+      mockPrefs.usersWhoWant.mockResolvedValue([]);
+      const { sender, send } = senderOf(allOk);
+
+      expect(await sendPush(["u1"], { kind: "PLAN_LODGED" }, sender)).toBe(0);
+
+      expect(mockTokens.tokensForUsers).not.toHaveBeenCalled();
+      expect(mockCooldown.claimPushWindow).not.toHaveBeenCalled();
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it("claims the window only for people who have a phone, once each", async () => {
+      mockTokens.tokensForUsers.mockResolvedValue([
+        { userId: "u1", token: T1 },
+        { userId: "u1", token: T2 },
+      ]);
+      const { sender } = senderOf(allOk);
+
+      await sendPush(["u1", "u2"], { kind: "PLAN_QUERIED" }, sender);
+
+      expect(mockCooldown.claimPushWindow).toHaveBeenCalledWith(
+        ["u1"],
+        "PLAN_QUERIED"
+      );
+    });
+
+    it("sends a person with two phones both pushes, from one claim", async () => {
+      mockTokens.tokensForUsers.mockResolvedValue([
+        { userId: "u1", token: T1 },
+        { userId: "u1", token: T2 },
+      ]);
+      const { sender, send } = senderOf(allOk);
+
+      expect(await sendPush(["u1"], { kind: "PLAN_QUERIED" }, sender)).toBe(2);
+
+      expect(send.mock.calls[0][0].map((m) => m.to)).toEqual([T1, T2]);
+    });
+
+    it("leaves out a person who was already sent this kind in the window", async () => {
+      mockTokens.tokensForUsers.mockResolvedValue([
+        { userId: "u1", token: T1 },
+        { userId: "u2", token: T2 },
+      ]);
+      mockCooldown.claimPushWindow.mockResolvedValue(new Set(["u2"]));
+      const { sender, send } = senderOf(allOk);
+
+      expect(await sendPush(["u1", "u2"], { kind: "PLAN_QUERIED" }, sender)).toBe(1);
+
+      expect(send.mock.calls[0][0].map((m) => m.to)).toEqual([T2]);
+    });
+
+    it("sends nothing when every window was taken", async () => {
+      mockTokens.tokensForUsers.mockResolvedValue([{ userId: "u1", token: T1 }]);
+      mockCooldown.claimPushWindow.mockResolvedValue(new Set());
+      const { sender, send } = senderOf(allOk);
+
+      expect(await sendPush(["u1"], { kind: "PLAN_QUERIED" }, sender)).toBe(0);
+
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it("sends nothing, and does not throw, when the preferences cannot be read", async () => {
+      mockPrefs.usersWhoWant.mockRejectedValue(new Error("db down"));
+      const { sender, send } = senderOf(allOk);
+
+      await expect(
+        sendPush(["u1"], { kind: "PLAN_LODGED" }, sender)
+      ).resolves.toBe(0);
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it("sends nothing, and does not throw, when the cool-down cannot be checked", async () => {
+      mockTokens.tokensForUsers.mockResolvedValue([{ userId: "u1", token: T1 }]);
+      mockCooldown.claimPushWindow.mockRejectedValue(new Error("db down"));
+      const { sender, send } = senderOf(allOk);
+
+      await expect(
+        sendPush(["u1"], { kind: "PLAN_LODGED" }, sender)
+      ).resolves.toBe(0);
+      expect(send).not.toHaveBeenCalled();
+    });
   });
 
   it("keeps the receipt ids of the messages the service took, with their tokens", async () => {

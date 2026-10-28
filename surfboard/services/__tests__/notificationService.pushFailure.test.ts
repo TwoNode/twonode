@@ -1,10 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Unlike notificationService.push.test.ts, nothing of the push code is replaced here but the two
-// things it reaches out to (the token table and the push service's fetch), so a failure in either
-// goes through the real sendPush and the real createNotification.
+// Unlike notificationService.push.test.ts, nothing of the push code is replaced here but the
+// things it reaches out to (the token table, the preference and cool-down tables, and the push
+// service's fetch), so a failure in any of them goes through the real sendPush and the real
+// createNotification.
 const mockPrisma = vi.hoisted(() => ({
   surfboardNotification: { create: vi.fn() },
+  pushPreference: { findMany: vi.fn() },
+  pushCooldown: { createMany: vi.fn() },
 }));
 const mockTokens = vi.hoisted(() => ({
   tokensForUsers: vi.fn(),
@@ -35,6 +38,9 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.spyOn(console, "error").mockImplementation(() => {});
   mockPrisma.surfboardNotification.create.mockResolvedValue({ id: "n1" });
+  // Nobody has chosen anything and the window is free.
+  mockPrisma.pushPreference.findMany.mockResolvedValue([]);
+  mockPrisma.pushCooldown.createMany.mockResolvedValue({ count: 1 });
   mockTokens.removeTokens.mockResolvedValue(0);
   fetchSpy = vi.fn();
   vi.stubGlobal("fetch", fetchSpy);
