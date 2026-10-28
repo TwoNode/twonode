@@ -19,6 +19,11 @@ const mockGate = vi.hoisted(() => ({
   computeMustVerifyNow: vi.fn(),
   computeVerificationGraceEndsAt: vi.fn(),
 }));
+// The version gate reads the settings from the database: these tests are about
+// the routes, so it is replaced (its own rules are in mobileApp.test.ts).
+const mockVersionGate = vi.hoisted(() => ({
+  assertMobileClientAllowed: vi.fn(),
+}));
 
 vi.mock("@/lib/auth/session", () => mockSession);
 vi.mock("@/lib/auth/rateLimit", () => mockRate);
@@ -26,6 +31,10 @@ vi.mock("@/lib/auth/userLookup", () => mockLookup);
 vi.mock("@/lib/auth/emailVerification", () => mockLink);
 vi.mock("@/lib/auth/emailVerificationSettings", () => mockSettings);
 vi.mock("@/lib/auth/emailVerificationGate", () => mockGate);
+vi.mock("@/lib/api/mobileApp", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api/mobileApp")>()),
+  ...mockVersionGate,
+}));
 // verifyEmailOtp is mocked; the real rejection class is kept so the route's
 // instanceof check sees the same one the service throws.
 vi.mock("@/lib/auth/emailVerificationOtp", async (importOriginal) => ({
@@ -39,6 +48,7 @@ const { POST: resend } =
   await import("@/app/api/v1/auth/mobile/resend-verification/route");
 const { GET: me } = await import("@/app/api/v1/auth/me/route");
 const { OtpRejectedError } = await import("@/lib/auth/emailVerificationOtp");
+const { AppUpdateRequiredError } = await import("@/lib/api/errors");
 
 const BEARER = { authorization: "Bearer access-token" };
 
@@ -86,6 +96,7 @@ const user = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockVersionGate.assertMobileClientAllowed.mockResolvedValue(undefined);
   mockSession.getServerSession.mockResolvedValue(blocked);
   mockRate.consumeRateLimit.mockResolvedValue(true);
   mockLookup.findUserById.mockResolvedValue(user);
@@ -415,6 +426,39 @@ describe("GET /api/v1/auth/me", () => {
     expect(json.data).toMatchObject({
       mustVerifyNow: false,
       verificationGraceEndsAt: "2026-11-01T00:00:00.000Z",
+    });
+  });
+
+  describe("the mobile version gate", () => {
+    const tooOld = () =>
+      new AppUpdateRequiredError({
+        platform: "android",
+        minimumVersion: "1.2.0",
+        storeUrl: "https://play.example/x",
+      });
+
+    it("answers 426 to an app that is too old, before it reads the session", async () => {
+      mockVersionGate.assertMobileClientAllowed.mockRejectedValue(tooOld());
+
+      const res = await me(get());
+
+      expect(res.status).toBe(426);
+      expect((await res.json()).code).toBe("APP_UPDATE_REQUIRED");
+      expect(mockSession.getServerSession).not.toHaveBeenCalled();
+    });
+
+    it("never asks the website (no bearer, no X-App-Platform) for a version", async () => {
+      mockVersionGate.assertMobileClientAllowed.mockRejectedValue(tooOld());
+
+      const res = await me(
+        new NextRequest(
+          "http://localhost:3000/api/v1/auth/me?platform=surfboard",
+          { headers: { cookie: "session=1" } }
+        )
+      );
+
+      expect(res.status).toBe(200);
+      expect(mockVersionGate.assertMobileClientAllowed).not.toHaveBeenCalled();
     });
   });
 });

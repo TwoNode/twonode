@@ -6,6 +6,7 @@ import { rotateMobileRefreshToken } from "@/lib/auth/session";
 import { consumeRateLimit } from "@/lib/auth/rateLimit";
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
+import { assertMobileClientAllowed } from "@/lib/api/mobileApp";
 
 const refreshSchema = z.object({
   platform: z.literal(Platform.SURFBOARD),
@@ -20,10 +21,14 @@ const refreshSchema = z.object({
  * again instead of ending the session; see rotateCore in lib/auth/session.ts.
  *
  * Responses: 200 pair | 401 SESSION_INVALID (sign in again) | 403
- * ACCOUNT_INACTIVE | 409 REFRESH_CONFLICT (try again in a moment).
+ * ACCOUNT_INACTIVE | 409 REFRESH_CONFLICT (try again in a moment) | 426
+ * APP_UPDATE_REQUIRED (the app is older than the minimum; the session stays).
  */
 export async function POST(req: NextRequest) {
   try {
+    // Too old: 426, and the app keeps its session (only 401 and 403 end one).
+    await assertMobileClientAllowed(req);
+
     const { platform, refreshToken } = await validateBody(req, refreshSchema);
 
     // Keyed on the token, not the IP: it stops a client stuck in a refresh
