@@ -14,17 +14,24 @@ const mockDevices = vi.hoisted(() => ({
   revokeDeviceSession: vi.fn(),
 }));
 const mockBcrypt = vi.hoisted(() => ({ compare: vi.fn() }));
+const mockGate = vi.hoisted(() => ({
+  assertMobileClientAllowed: vi.fn(),
+  assertMobileSignInEnabled: vi.fn(),
+}));
 
 vi.mock("@/lib/auth/rateLimit", () => mockRate);
 vi.mock("@/lib/auth/userLookup", () => mockLookup);
 vi.mock("@/lib/auth/session", () => mockSession);
 vi.mock("@/lib/auth/deviceSessions", () => mockDevices);
 vi.mock("bcryptjs", () => ({ default: mockBcrypt }));
+vi.mock("@/lib/api/mobileApp", () => mockGate);
 
 const { POST: login } = await import("@/app/api/v1/auth/mobile/login/route");
 const { POST: refresh } =
   await import("@/app/api/v1/auth/mobile/refresh/route");
 const { POST: logout } = await import("@/app/api/v1/auth/mobile/logout/route");
+const { AppUpdateRequiredError, MobileSignInDisabledError } =
+  await import("@/lib/api/errors");
 
 const post = (path: string, body: unknown) =>
   new NextRequest(`http://localhost:3000/api/v1/auth/mobile/${path}`, {
@@ -66,6 +73,8 @@ const pair = {
 describe("POST /api/v1/auth/mobile/login", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGate.assertMobileClientAllowed.mockResolvedValue(undefined);
+    mockGate.assertMobileSignInEnabled.mockResolvedValue(undefined);
     mockRate.consumeRateLimit.mockResolvedValue(true);
     mockLookup.findUserByEmail.mockResolvedValue(user);
     mockBcrypt.compare.mockResolvedValue(true);
@@ -180,6 +189,40 @@ describe("POST /api/v1/auth/mobile/login", () => {
     expect(res.status).toBe(429);
   });
 
+  it("answers 426 to an app that is too old before anything else is looked at", async () => {
+    mockGate.assertMobileClientAllowed.mockRejectedValue(
+      new AppUpdateRequiredError({
+        platform: "android",
+        minimumVersion: "1.2.0",
+        storeUrl: "https://play.example/x",
+      })
+    );
+    const res = await login(post("login", loginBody()));
+
+    expect(res.status).toBe(426);
+    expect(await res.json()).toMatchObject({
+      code: "APP_UPDATE_REQUIRED",
+      details: { minimumVersion: "1.2.0" },
+    });
+    expect(mockRate.consumeRateLimit).not.toHaveBeenCalled();
+    expect(mockLookup.findUserByEmail).not.toHaveBeenCalled();
+    expect(mockBcrypt.compare).not.toHaveBeenCalled();
+    expect(mockSession.issueMobileSession).not.toHaveBeenCalled();
+  });
+
+  it("answers 503 while the emergency switch is off, with no password check and no session", async () => {
+    mockGate.assertMobileSignInEnabled.mockRejectedValue(
+      new MobileSignInDisabledError()
+    );
+    const res = await login(post("login", loginBody()));
+
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe("MOBILE_SIGN_IN_DISABLED");
+    expect(mockRate.consumeRateLimit).not.toHaveBeenCalled();
+    expect(mockLookup.findUserByEmail).not.toHaveBeenCalled();
+    expect(mockSession.issueMobileSession).not.toHaveBeenCalled();
+  });
+
   it("rejects other platforms and malformed bodies", async () => {
     expect(
       (await login(post("login", loginBody({ platform: "reva" })))).status
@@ -196,6 +239,7 @@ describe("POST /api/v1/auth/mobile/login", () => {
 describe("POST /api/v1/auth/mobile/refresh", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGate.assertMobileClientAllowed.mockResolvedValue(undefined);
     mockRate.consumeRateLimit.mockResolvedValue(true);
   });
   const body = { platform: "surfboard", refreshToken: "a".repeat(64) };
@@ -229,6 +273,36 @@ describe("POST /api/v1/auth/mobile/refresh", () => {
     expect((await res.json()).code).toBe(code);
   });
 
+  it("answers 426 to an app that is too old and does not touch the token", async () => {
+    mockGate.assertMobileClientAllowed.mockRejectedValue(
+      new AppUpdateRequiredError({
+        platform: "android",
+        minimumVersion: "1.2.0",
+        storeUrl: "",
+      })
+    );
+    const res = await refresh(post("refresh", body));
+
+    expect(res.status).toBe(426);
+    expect((await res.json()).code).toBe("APP_UPDATE_REQUIRED");
+    expect(mockRate.consumeRateLimit).not.toHaveBeenCalled();
+    expect(mockSession.rotateMobileRefreshToken).not.toHaveBeenCalled();
+  });
+
+  it("is not stopped by the emergency switch: an open session carries on", async () => {
+    mockGate.assertMobileSignInEnabled.mockRejectedValue(
+      new MobileSignInDisabledError()
+    );
+    mockSession.rotateMobileRefreshToken.mockResolvedValue({
+      ok: true,
+      session: pair,
+    });
+    const res = await refresh(post("refresh", body));
+
+    expect(res.status).toBe(200);
+    expect(mockGate.assertMobileSignInEnabled).not.toHaveBeenCalled();
+  });
+
   it("is rate limited by the token, not the IP address", async () => {
     mockSession.rotateMobileRefreshToken.mockResolvedValue({
       ok: true,
@@ -246,7 +320,11 @@ describe("POST /api/v1/auth/mobile/refresh", () => {
 });
 
 describe("POST /api/v1/auth/mobile/logout", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGate.assertMobileClientAllowed.mockResolvedValue(undefined);
+    mockGate.assertMobileSignInEnabled.mockResolvedValue(undefined);
+  });
   const body = { platform: "surfboard", refreshToken: "a".repeat(64) };
 
   it("revokes the device's family and always answers success (reveals nothing about the token)", async () => {
@@ -259,5 +337,26 @@ describe("POST /api/v1/auth/mobile/logout", () => {
       "surfboard",
       body.refreshToken
     );
+  });
+
+  it("works for an app that is too old, or while sign-in is paused: signing out is always allowed", async () => {
+    mockGate.assertMobileClientAllowed.mockRejectedValue(
+      new AppUpdateRequiredError({
+        platform: "android",
+        minimumVersion: "9.0.0",
+        storeUrl: "",
+      })
+    );
+    mockGate.assertMobileSignInEnabled.mockRejectedValue(
+      new MobileSignInDisabledError()
+    );
+    mockDevices.revokeFamilyByRefreshToken.mockResolvedValue(true);
+
+    const res = await logout(post("logout", body));
+
+    expect(res.status).toBe(200);
+    expect(mockGate.assertMobileClientAllowed).not.toHaveBeenCalled();
+    expect(mockGate.assertMobileSignInEnabled).not.toHaveBeenCalled();
+    expect(mockDevices.revokeFamilyByRefreshToken).toHaveBeenCalled();
   });
 });

@@ -60,7 +60,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/auth/verify-email`                  | POST         | session (see source)                     |
 | `/api/v1/auth/verify-email-otp`              | POST         | session (see source)                     |
 
-#### Surfboard (141)
+#### Surfboard (143)
 
 | Route                                                                | Method(s)          | Auth                                                                                                        |
 | :------------------------------------------------------------------- | :----------------- | :---------------------------------------------------------------------------------------------------------- |
@@ -138,6 +138,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/plans/[planId]/attachments`                       | DELETE             | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/comments`                          | GET, POST          | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/comments/[commentId]`              | DELETE             | USER                                                                                                        |
+| `/api/v1/surfboard/plans/[planId]/files/[n]`                         | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/permanent`                         | DELETE             | USER, ADMIN, SUPERADMIN                                                                                     |
 | `/api/v1/surfboard/plans/[planId]/person-count`                      | PATCH              | any signed-in                                                                                               |
 | `/api/v1/surfboard/plans/[planId]/public`                            | GET                | public — QR-gated (`?token=`)                                                                               |
@@ -191,6 +192,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/settings/cod-submission`                          | GET                | public (read-only config)                                                                                   |
 | `/api/v1/surfboard/settings/coordinate-shifts`                       | GET                | public (read-only config)                                                                                   |
 | `/api/v1/surfboard/settings/history`                                 | GET                | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/settings/mobile-app`                              | GET, PATCH         | any signed-in                                                                                               |
 | `/api/v1/surfboard/settings/reset`                                   | POST               | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/settings/revert/[id]`                             | POST               | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/subscription`                                     | GET                | any signed-in                                                                                               |
