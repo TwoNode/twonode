@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   getBatchSummaries: vi.fn(),
   getBatchDetail: vi.fn(),
   getPlanDetail: vi.fn(),
+  getPlanFileLink: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/session", () => ({ getServerSession: mocks.session }));
@@ -21,6 +22,9 @@ vi.mock("@/surfboard/services/planMapService", () => ({
 }));
 vi.mock("@/surfboard/services/planDetailService", () => ({
   getPlanDetail: mocks.getPlanDetail,
+}));
+vi.mock("@/surfboard/services/planFileLinkService", () => ({
+  getPlanFileLink: mocks.getPlanFileLink,
 }));
 vi.mock("@/surfboard/services/batchSummaryService", () => ({
   getBatchSummaries: mocks.getBatchSummaries,
@@ -39,7 +43,9 @@ const { GET: batchSummary } =
   await import("@/app/api/v1/surfboard/cod/batches/[batchId]/summary/route");
 const { GET: planDetail } =
   await import("@/app/api/v1/surfboard/plans/[planId]/summary/route");
-const { NotFoundError } = await import("@/lib/api/errors");
+const { GET: planFile } =
+  await import("@/app/api/v1/surfboard/plans/[planId]/files/[n]/route");
+const { ApiError, NotFoundError } = await import("@/lib/api/errors");
 
 type Handler = (req: NextRequest, routeCtx?: unknown) => Promise<Response>;
 const call = (handler: unknown, path: string, routeCtx?: unknown) =>
@@ -63,6 +69,7 @@ const routes: [string, unknown, string][] = [
   ["plans/counts", plansCounts, "plans/counts"],
   ["plans/map", plansMap, "plans/map"],
   ["plans/{id}/summary", planDetail, `plans/${PLAN_ID}/summary`],
+  ["plans/{id}/files/{n}", planFile, `plans/${PLAN_ID}/files/1`],
   ["cod/batches/summary", batchesSummary, "cod/batches/summary"],
   ["cod/batches/{id}/summary", batchSummary, "cod/batches/b1/summary"],
 ];
@@ -70,7 +77,7 @@ const batchCtx = { params: Promise.resolve({ batchId: "b1" }) };
 const planCtx = { params: Promise.resolve({ planId: PLAN_ID }) };
 // Every route in the table gets both, so the shared checks need no per-route context.
 const anyCtx = {
-  params: Promise.resolve({ batchId: "b1", planId: PLAN_ID }),
+  params: Promise.resolve({ batchId: "b1", planId: PLAN_ID, n: "1" }),
 };
 
 beforeEach(() => {
@@ -98,6 +105,12 @@ beforeEach(() => {
   });
   mocks.getBatchDetail.mockResolvedValue({ id: "b1", plans: [] });
   mocks.getPlanDetail.mockResolvedValue({ id: PLAN_ID, files: [] });
+  mocks.getPlanFileLink.mockResolvedValue({
+    url: "https://bucket.s3.amazonaws.com/signed",
+    expiresAt: "2026-10-28T10:05:00.000Z",
+    name: "LA_2026_0412.pdf",
+    format: "pdf",
+  });
 });
 
 describe.each(routes)("GET %s", (_name, handler, path) => {
@@ -273,5 +286,49 @@ describe("GET plans/{planId}/summary", () => {
     mocks.getPlanDetail.mockRejectedValue(new NotFoundError("Plan"));
     const res = await call(planDetail, `plans/${PLAN_ID}/summary`, planCtx);
     expect(res.status).toBe(404);
+  });
+});
+
+describe("GET plans/{planId}/files/{n}", () => {
+  const ctx = (n: string) => ({ params: Promise.resolve({ planId: PLAN_ID, n }) });
+  const path = (n: string) => `plans/${PLAN_ID}/files/${n}`;
+
+  it("returns the address in the usual envelope, for the caller and the file asked for only", async () => {
+    const res = await call(planFile, path("2"), ctx("2"));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      success: true,
+      data: {
+        url: "https://bucket.s3.amazonaws.com/signed",
+        expiresAt: "2026-10-28T10:05:00.000Z",
+        name: "LA_2026_0412.pdf",
+        format: "pdf",
+      },
+    });
+    expect(mocks.getPlanFileLink).toHaveBeenCalledWith("user-1", PLAN_ID, "2");
+  });
+
+  it("takes nobody's word for whose plan it is: a user id in the query changes nothing", async () => {
+    await call(planFile, `${path("0")}?userId=someone-else`, ctx("0"));
+    expect(mocks.getPlanFileLink.mock.calls[0][0]).toBe("user-1");
+  });
+
+  it("is never kept by the phone, a proxy or the browser: the address is a secret for its few minutes", async () => {
+    const res = await call(planFile, path("0"), ctx("0"));
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+  });
+
+  it("answers 404 for a plan or file that is not there or not the caller's", async () => {
+    mocks.getPlanFileLink.mockRejectedValue(new NotFoundError("File"));
+    expect((await call(planFile, path("9"), ctx("9"))).status).toBe(404);
+  });
+
+  it("answers 422 FILE_NOT_VIEWABLE for a drawing, so the app can say so instead of failing", async () => {
+    mocks.getPlanFileLink.mockRejectedValue(
+      new ApiError(422, "FILE_NOT_VIEWABLE", "This kind of file can't be opened on a phone")
+    );
+    const res = await call(planFile, path("2"), ctx("2"));
+    expect(res.status).toBe(422);
+    expect((await res.json()).code).toBe("FILE_NOT_VIEWABLE");
   });
 });
