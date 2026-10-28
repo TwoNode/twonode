@@ -40,7 +40,12 @@ const DEFAULT_QUIET_END = 7 * 60;
 /** What the API sends and takes. Times are "HH:MM" on a 24 hour clock. */
 export type PushPreferences = {
   categories: Record<PushCategory, boolean>;
-  quietHours: { enabled: boolean; start: string; end: string; timeZone: string };
+  quietHours: {
+    enabled: boolean;
+    start: string;
+    end: string;
+    timeZone: string;
+  };
 };
 
 /** The columns of a `PushPreference` row that mean something. */
@@ -190,7 +195,9 @@ export async function updatePushPreferences(
   });
   const next = applyPatch(current, patch);
   if (next.quietStart === next.quietEnd) {
-    throw new ValidationError("Quiet hours must start and end at different times");
+    throw new ValidationError(
+      "Quiet hours must start and end at different times"
+    );
   }
   await prisma.pushPreference.upsert({
     where: { userId_platform: { userId, platform } },

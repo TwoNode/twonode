@@ -113,9 +113,9 @@ describe("toPreferences", () => {
   });
 
   it("ignores an off category it does not know (one a later version removed)", () => {
-    expect(
-      toPreferences(row({ categoriesOff: ["GONE"] })).categories
-    ).toEqual(toPreferences(null).categories);
+    expect(toPreferences(row({ categoriesOff: ["GONE"] })).categories).toEqual(
+      toPreferences(null).categories
+    );
   });
 
   it("formats minutes after midnight with two digits each", () => {
@@ -130,11 +130,27 @@ describe("pushPreferencesPatch", () => {
 
   it.each([
     ["one switch", { categories: { PLAN_SHARED: false } }],
-    ["every switch", { categories: Object.fromEntries(PUSH_CATEGORIES.map((c) => [c, true])) }],
+    [
+      "every switch",
+      { categories: Object.fromEntries(PUSH_CATEGORIES.map((c) => [c, true])) },
+    ],
     ["quiet hours on", { quietHours: { enabled: true } }],
     ["a start only", { quietHours: { start: "21:30" } }],
-    ["all of quiet hours", { quietHours: { enabled: true, start: "22:00", end: "07:00", timeZone: "Africa/Lagos" } }],
-    ["both parts", { categories: { SUBSCRIPTION: false }, quietHours: { enabled: false } }],
+    [
+      "all of quiet hours",
+      {
+        quietHours: {
+          enabled: true,
+          start: "22:00",
+          end: "07:00",
+          timeZone: "Africa/Lagos",
+        },
+      },
+    ],
+    [
+      "both parts",
+      { categories: { SUBSCRIPTION: false }, quietHours: { enabled: false } },
+    ],
     ["a zone that is an offset or UTC", { quietHours: { timeZone: "UTC" } }],
   ])("takes %s", (_name, body) => {
     expect(ok(body)).toBe(true);
@@ -145,7 +161,10 @@ describe("pushPreferencesPatch", () => {
     ["empty parts", { categories: {}, quietHours: {} }],
     ["a switch the app has not got", { categories: { SOMETHING_ELSE: true } }],
     ["a key of its own", { other: 1 }],
-    ["a quiet-hours key of its own", { quietHours: { enabled: true, loud: true } }],
+    [
+      "a quiet-hours key of its own",
+      { quietHours: { enabled: true, loud: true } },
+    ],
     ["a switch that is not a boolean", { categories: { PLAN_SHARED: "no" } }],
     ["an enabled that is not a boolean", { quietHours: { enabled: "yes" } }],
     ["a time without its leading zero", { quietHours: { start: "7:00" } }],
@@ -153,9 +172,15 @@ describe("pushPreferencesPatch", () => {
     ["a minute of 60", { quietHours: { end: "07:60" } }],
     ["a time with seconds", { quietHours: { end: "07:00:00" } }],
     ["a time as a number", { quietHours: { start: 2200 } }],
-    ["a time zone that does not exist", { quietHours: { timeZone: "Mars/Olympus" } }],
+    [
+      "a time zone that does not exist",
+      { quietHours: { timeZone: "Mars/Olympus" } },
+    ],
     ["an empty time zone", { quietHours: { timeZone: "" } }],
-    ["a time zone that is too long", { quietHours: { timeZone: "A".repeat(65) } }],
+    [
+      "a time zone that is too long",
+      { quietHours: { timeZone: "A".repeat(65) } },
+    ],
     ["a body that is not an object", "categories"],
     ["null", null],
   ])("refuses %s", (_name, body) => {
@@ -171,16 +196,22 @@ describe("applyPatch", () => {
   });
 
   it("switches a kind back on", () => {
-    const next = applyPatch(row({ categoriesOff: ["PLAN_SHARED", "WITHDRAWALS"] }), {
-      categories: { PLAN_SHARED: true },
-    });
+    const next = applyPatch(
+      row({ categoriesOff: ["PLAN_SHARED", "WITHDRAWALS"] }),
+      {
+        categories: { PLAN_SHARED: true },
+      }
+    );
     expect(next.categoriesOff).toEqual(["WITHDRAWALS"]);
   });
 
   it("keeps the off list in the order the app shows the switches, whatever order they were changed in", () => {
-    const a = applyPatch(applyPatch(null, { categories: { WITHDRAWALS: false } }), {
-      categories: { PLANS_NEED_YOU: false },
-    });
+    const a = applyPatch(
+      applyPatch(null, { categories: { WITHDRAWALS: false } }),
+      {
+        categories: { PLANS_NEED_YOU: false },
+      }
+    );
     expect(a.categoriesOff).toEqual(["PLANS_NEED_YOU", "WITHDRAWALS"]);
   });
 
@@ -313,9 +344,13 @@ describe("inQuietHours", () => {
 
   it("reads the hours in the person's own time zone", () => {
     const instant = at("2026-10-29T21:30:00Z");
-    expect(inQuietHours(instant, quiet({ timeZone: "Africa/Lagos" }))).toBe(true); // 22:30
+    expect(inQuietHours(instant, quiet({ timeZone: "Africa/Lagos" }))).toBe(
+      true
+    ); // 22:30
     expect(inQuietHours(instant, quiet({ timeZone: "Asia/Tokyo" }))).toBe(true); // 06:30 next day
-    expect(inQuietHours(instant, quiet({ timeZone: "America/New_York" }))).toBe(false); // 17:30
+    expect(inQuietHours(instant, quiet({ timeZone: "America/New_York" }))).toBe(
+      false
+    ); // 17:30
   });
 
   it("counts midnight as 00:00, not 24:00", () => {
@@ -332,13 +367,19 @@ describe("inQuietHours", () => {
 
   it("is never quiet when the start and the end are the same minute", () => {
     expect(
-      inQuietHours(at("2026-10-29T21:30:00Z"), quiet({ quietStart: 600, quietEnd: 600 }))
+      inQuietHours(
+        at("2026-10-29T21:30:00Z"),
+        quiet({ quietStart: 600, quietEnd: 600 })
+      )
     ).toBe(false);
   });
 
   it("is not quiet for a time zone this server cannot read", () => {
     expect(
-      inQuietHours(at("2026-10-29T21:30:00Z"), quiet({ timeZone: "Mars/Olympus" }))
+      inQuietHours(
+        at("2026-10-29T21:30:00Z"),
+        quiet({ timeZone: "Mars/Olympus" })
+      )
     ).toBe(false);
   });
 });
@@ -348,13 +389,20 @@ describe("usersWhoWant", () => {
   const DAY = new Date("2026-10-29T12:00:00Z");
 
   it("asks nothing for nobody", async () => {
-    expect(await usersWhoWant([], "PLAN_SHARED", "surfboard" as never, DAY)).toEqual([]);
+    expect(
+      await usersWhoWant([], "PLAN_SHARED", "surfboard" as never, DAY)
+    ).toEqual([]);
     expect(mockPrisma.pushPreference.findMany).not.toHaveBeenCalled();
   });
 
   it("wants everything from a person who never chose (no row)", async () => {
     expect(
-      await usersWhoWant(["u1", "u2"], "PLAN_LODGED", "surfboard" as never, NIGHT)
+      await usersWhoWant(
+        ["u1", "u2"],
+        "PLAN_LODGED",
+        "surfboard" as never,
+        NIGHT
+      )
     ).toEqual(["u1", "u2"]);
   });
 
@@ -386,7 +434,9 @@ describe("usersWhoWant", () => {
     ]);
 
     for (const kind of ["PLAN_QUERIED", "READY_FOR_PHYSICAL"] as const) {
-      expect(await usersWhoWant(["u1"], kind, "surfboard" as never, DAY)).toEqual([]);
+      expect(
+        await usersWhoWant(["u1"], kind, "surfboard" as never, DAY)
+      ).toEqual([]);
     }
   });
 
@@ -396,10 +446,20 @@ describe("usersWhoWant", () => {
     ]);
 
     expect(
-      await usersWhoWant(["u1", "u2"], "WITHDRAWAL_UPDATED", "surfboard" as never, NIGHT)
+      await usersWhoWant(
+        ["u1", "u2"],
+        "WITHDRAWAL_UPDATED",
+        "surfboard" as never,
+        NIGHT
+      )
     ).toEqual(["u2"]);
     expect(
-      await usersWhoWant(["u1", "u2"], "WITHDRAWAL_UPDATED", "surfboard" as never, DAY)
+      await usersWhoWant(
+        ["u1", "u2"],
+        "WITHDRAWAL_UPDATED",
+        "surfboard" as never,
+        DAY
+      )
     ).toEqual(["u1", "u2"]);
   });
 

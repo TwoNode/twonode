@@ -13,9 +13,8 @@ vi.mock("@/lib/push/preferences", async (importOriginal) => ({
   ...mockPrefs,
 }));
 
-const { GET, PATCH } = await import(
-  "@/app/api/v1/surfboard/push/preferences/route"
-);
+const { GET, PATCH } =
+  await import("@/app/api/v1/surfboard/push/preferences/route");
 
 const URL = "http://localhost:3000/api/v1/surfboard/push/preferences";
 const BEARER = { authorization: "Bearer access-token" };
@@ -77,7 +76,10 @@ describe("GET /api/v1/surfboard/push/preferences", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ success: true, data: PREFS });
-    expect(mockPrefs.getPushPreferences).toHaveBeenCalledWith("u1", "surfboard");
+    expect(mockPrefs.getPushPreferences).toHaveBeenCalledWith(
+      "u1",
+      "surfboard"
+    );
   });
 
   it("answers 401 with no session", async () => {
@@ -107,7 +109,10 @@ describe("PATCH /api/v1/surfboard/push/preferences", () => {
   });
 
   it("takes the person from the session, never from the body", async () => {
-    const res = await patch({ userId: "someone-else", categories: { PLAN_SHARED: false } });
+    const res = await patch({
+      userId: "someone-else",
+      categories: { PLAN_SHARED: false },
+    });
 
     expect(res.status).toBe(400);
     expect(mockPrefs.updatePushPreferences).not.toHaveBeenCalled();
@@ -118,7 +123,10 @@ describe("PATCH /api/v1/surfboard/push/preferences", () => {
     ["an empty change", {}],
     ["a switch that does not exist", { categories: { NOPE: true } }],
     ["a time that is not HH:MM", { quietHours: { start: "7pm" } }],
-    ["a time zone that does not exist", { quietHours: { timeZone: "Mars/Olympus" } }],
+    [
+      "a time zone that does not exist",
+      { quietHours: { timeZone: "Mars/Olympus" } },
+    ],
     ["a switch that is not a boolean", { categories: { PLAN_SHARED: "off" } }],
   ])("answers 400 and changes nothing for %s", async (_name, body) => {
     const res = await patch(body);
@@ -140,13 +148,17 @@ describe("PATCH /api/v1/surfboard/push/preferences", () => {
 
   it("answers 401 with no session", async () => {
     mockSession.getServerSession.mockResolvedValue(null);
-    expect((await patch({ categories: { PLAN_SHARED: false } })).status).toBe(401);
+    expect((await patch({ categories: { PLAN_SHARED: false } })).status).toBe(
+      401
+    );
     expect(mockPrefs.updatePushPreferences).not.toHaveBeenCalled();
   });
 
   it("answers 403 to a role that is not a surveyor's", async () => {
     mockSession.getServerSession.mockResolvedValue(session({ role: "ADMIN" }));
-    expect((await patch({ categories: { PLAN_SHARED: false } })).status).toBe(403);
+    expect((await patch({ categories: { PLAN_SHARED: false } })).status).toBe(
+      403
+    );
     expect(mockPrefs.updatePushPreferences).not.toHaveBeenCalled();
   });
 

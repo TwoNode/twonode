@@ -75,9 +75,9 @@ describe("claimPushWindow", () => {
   it("lets the error through, so a send that cannot check does not guess", async () => {
     mockPrisma.pushCooldown.createMany.mockRejectedValue(new Error("db down"));
 
-    await expect(
-      claimPushWindow(["u1"], "PLAN_QUERIED", T0)
-    ).rejects.toThrow("db down");
+    await expect(claimPushWindow(["u1"], "PLAN_QUERIED", T0)).rejects.toThrow(
+      "db down"
+    );
   });
 });
 
