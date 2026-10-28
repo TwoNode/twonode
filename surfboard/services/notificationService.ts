@@ -9,6 +9,7 @@ import {
 } from "@/prisma/generated";
 import { NotFoundError } from "@/lib/api/errors";
 import { paginatedResult } from "@/lib/api/pagination";
+import { sendPush, type PushEvent } from "@/lib/push/pushEvents";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/notificationActions.ts —
@@ -44,6 +45,13 @@ export type CreateNotificationInput = {
   showAsModal?: boolean;
   startsAt?: Date;
   endsAt?: Date;
+  /**
+   * Also push this to the app (TASK-0015 1I.3), to `userIds`. Opt-in per
+   * caller, so no existing notification starts pushing by itself. Only the
+   * kind and a plan id travel: the push text is fixed and never carries this
+   * notification's title, message or metadata (P6-D3).
+   */
+  push?: PushEvent;
 };
 
 export type NotificationWithUser = {
@@ -96,6 +104,11 @@ export async function createNotification(input: CreateNotificationInput) {
     sendNotificationWhatsApp(notification.id).catch((error) =>
       console.error("Error sending notification WhatsApp messages:", error)
     );
+  }
+  // Best effort and never awaited past a failure: sendPush does not throw, and a push that
+  // cannot be sent must not fail the action that caused the notification.
+  if (input.push && input.audience === "SPECIFIC_USERS" && input.userIds?.length) {
+    await sendPush(input.userIds, input.push);
   }
 
   return { id: notification.id };
@@ -647,6 +660,7 @@ export async function notifyPlanShared(params: {
         planNumber: params.planNumber,
         sharedBy: params.sharedByUser,
       },
+      push: { kind: "PLAN_SHARED", planId: params.planId },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -765,6 +779,7 @@ export async function notifyPlanQueried(params: {
         queriedBy: params.queriedBy,
         comment: params.comment,
       },
+      push: { kind: "PLAN_QUERIED", planId: params.planId },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -796,6 +811,7 @@ export async function notifyConsolidatedQueries(params: {
         planNumber: params.planNumber,
         queries: params.queries,
       },
+      push: { kind: "PLAN_QUERIED", planId: params.planId },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {
@@ -925,6 +941,7 @@ export async function notifyReadyForPhysicalSubmission(params: {
       userIds: [params.userId],
       link: `/surfboard/dashboard/plan?planId=${params.planId}`,
       metadata: { planId: params.planId, planNumber: params.planNumber },
+      push: { kind: "READY_FOR_PHYSICAL", planId: params.planId },
       sendEmail: params.sendEmail ?? true,
     });
   } catch (error) {

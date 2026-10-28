@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { Platform } from "@/utils/platform";
+import { removeDeviceToken } from "@/lib/push/deviceTokens";
 
 export type DeviceSession = {
   id: string; // the refresh-token family, the unit that is revoked
@@ -49,10 +50,18 @@ export async function revokeDeviceSession(
   platform: Platform,
   familyId: string
 ): Promise<number> {
+  // The device the family belongs to, read first: its push token goes with it.
+  const family = await prisma.refreshToken.findFirst({
+    where: { userId, platform, familyId, deviceId: { not: null } },
+    select: { deviceId: true },
+  });
   const result = await prisma.refreshToken.updateMany({
     where: { userId, platform, familyId, revokedAt: null },
     data: { revokedAt: new Date() },
   });
+  if (family?.deviceId) {
+    await removeDeviceToken(userId, platform, family.deviceId);
+  }
   return result.count;
 }
 
@@ -75,5 +84,10 @@ export async function revokeFamilyByRefreshToken(
     where: { familyId: row.familyId, platform, revokedAt: null },
     data: { revokedAt: new Date() },
   });
+  // Signing out stops the pushes to this phone for this person, even when the session had
+  // already ended some other way (an expired family does not revoke itself).
+  if (row.deviceId) {
+    await removeDeviceToken(row.userId, platform, row.deviceId);
+  }
   return result.count > 0;
 }

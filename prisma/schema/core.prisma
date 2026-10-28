@@ -102,6 +102,32 @@ model RefreshToken {
   @@index([userId, platform, deviceId])
 }
 
+/// A phone that can be sent a push notification (TASK-0015 1I.1). One row per
+/// app install: the token belongs to the install, so signing in as someone else
+/// on the same phone moves it to them (the upsert is by token). `deviceId` ties
+/// it to the device session (RefreshToken.deviceId): revoking or signing out
+/// that device deletes its token, and a token the push service reports as no
+/// longer registered is deleted too. The token is a delivery address, not a
+/// credential for the account, but it is still never logged or returned.
+model DeviceToken {
+  id         String   @id @default(uuid())
+  userId     String
+  platform   String
+  /// The app's own id for this install (the same one sent at mobile login).
+  deviceId   String
+  /// Expo push token, `ExponentPushToken[...]`.
+  token      String   @unique
+  /// "android" or "ios".
+  os         String
+  appVersion String?
+  createdAt  DateTime @default(now())
+  /// Last time the app registered this token (it re-registers on each launch).
+  lastSeenAt DateTime @default(now())
+
+  @@unique([userId, platform, deviceId])
+  @@index([userId, platform])
+}
+
 /// One unified token for both a genuine forgotten-password reset and a
 /// first-time password setup for a Kinde-only account — same mechanism,
 /// only the emailed copy differs (utils/email.ts's sendPasswordResetEmail),
