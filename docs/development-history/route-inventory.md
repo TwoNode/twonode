@@ -2,7 +2,7 @@
 
 **Purpose:** one place that lists every route in the app — pages and API routes, across all three products plus the shared corporate site, which is served at the root.
 
-**Last updated:** 2026-10-19.
+**Last updated:** 2026-10-25 (added `/api/v1/surfboard/settings/mobile-app`).
 
 **How this file is maintained:** the two tables below (API routes and pages) are **generated from the filesystem** by [`scripts/docs/generate-route-inventory.mjs`](../../scripts/docs/generate-route-inventory.mjs). Do not edit between the `BEGIN GENERATED` / `END GENERATED` markers by hand — run
 
@@ -190,6 +190,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/settings/cod-submission`                          | GET                | public (read-only config)                                                                                   |
 | `/api/v1/surfboard/settings/coordinate-shifts`                       | GET                | public (read-only config)                                                                                   |
 | `/api/v1/surfboard/settings/history`                                 | GET                | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/settings/mobile-app`                              | GET, PATCH         | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/settings/reset`                                   | POST               | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/settings/revert/[id]`                             | POST               | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/subscription`                                     | GET                | any signed-in                                                                                               |

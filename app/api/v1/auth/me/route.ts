@@ -5,6 +5,10 @@ import { getServerSession } from "@/lib/auth/session";
 import { findUserById } from "@/lib/auth/userLookup";
 import { handleApiError } from "@/lib/api/errors";
 import { UnauthenticatedError } from "@/lib/api/errors";
+import {
+  assertMobileClientAllowed,
+  isMobileRequest,
+} from "@/lib/api/mobileApp";
 
 import {
   computeMustVerifyNow,
@@ -16,6 +20,11 @@ const platformParam = z.nativeEnum(Platform);
 
 export async function GET(req: NextRequest) {
   try {
+    // The app reads this after signing in. It is not behind withAuth, so it
+    // meets the mobile version gate here; the website (cookies, no bearer and
+    // no X-App-Platform) does not.
+    if (isMobileRequest(req)) await assertMobileClientAllowed(req);
+
     const parsedPlatform = platformParam.safeParse(
       req.nextUrl.searchParams.get("platform")
     );
