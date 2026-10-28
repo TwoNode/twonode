@@ -15,6 +15,7 @@ import {
   computeVerificationGraceEndsAt,
 } from "@/lib/auth/emailVerificationGate";
 import { getEmailVerificationSettings } from "@/lib/auth/emailVerificationSettings";
+import { mobileRequestContext } from "@/lib/observability/mobileTags";
 
 const platformParam = z.nativeEnum(Platform);
 
@@ -67,9 +68,6 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    return handleApiError(err, {
-      route: req.nextUrl.pathname,
-      method: req.method,
-    });
+    return handleApiError(err, mobileRequestContext(req));
   }
 }

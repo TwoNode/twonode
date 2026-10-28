@@ -66,6 +66,24 @@ export async function revokeDeviceSession(
 }
 
 /**
+ * Revokes every signed-in device of one user (and each device's push token).
+ * For an admin ending all of a person's app sign-ins at once, for example a
+ * lost phone. Returns how many device sessions were ended.
+ */
+export async function revokeAllDeviceSessions(
+  userId: string,
+  platform: Platform
+): Promise<number> {
+  const live = await listDeviceSessions(userId, platform);
+  let ended = 0;
+  for (const device of live) {
+    const count = await revokeDeviceSession(userId, platform, device.id);
+    if (count > 0) ended += 1;
+  }
+  return ended;
+}
+
+/**
  * Sign-out for a native app: revokes the family the presented refresh token
  * belongs to. Holding the refresh token is the credential, so this works even
  * when the access token has expired. Returns whether a live session was ended.

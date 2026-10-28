@@ -7,6 +7,7 @@ import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
 import { findUserByEmail } from "@/lib/auth/userLookup";
 import { issuePasswordReset } from "@/lib/auth/passwordReset";
+import { mobileRequestContext } from "@/lib/observability/mobileTags";
 
 const requestSchema = z.object({
   platform: z.literal(Platform.SURFBOARD),
@@ -74,9 +75,6 @@ export async function POST(req: NextRequest) {
 
     return genericResponse();
   } catch (err) {
-    return handleApiError(err, {
-      route: req.nextUrl.pathname,
-      method: req.method,
-    });
+    return handleApiError(err, mobileRequestContext(req));
   }
 }

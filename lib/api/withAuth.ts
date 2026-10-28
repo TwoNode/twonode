@@ -11,6 +11,7 @@ import {
   assertMobileClientAllowed,
   isMobileRequest,
 } from "@/lib/api/mobileApp";
+import { mobileTags } from "@/lib/observability/mobileTags";
 
 export type Session<TRole extends string> = {
   sub: string;
@@ -42,6 +43,8 @@ export function withAuth<TRole extends string>(
     const context: Record<string, unknown> = {
       route: req.nextUrl.pathname,
       method: req.method,
+      // Which app build asked, for a mobile request (nothing for the website).
+      ...mobileTags(req),
     };
     try {
       // The version gate comes first, so an app that is too old is told to
