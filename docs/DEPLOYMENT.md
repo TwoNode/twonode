@@ -84,3 +84,5 @@ _(The maintainer verified this against the databases; it is recorded here becaus
 ## Promoting `dev` → `main` → `prod`
 
 Promotion is by PR (`dev` → `main`, then `main` → `prod`), merged by the maintainer. A local helper, `out/promote.sh`, opens those PRs; it is **untracked** (the `out/` folder is git-ignored), so it isn't available on a fresh clone. When a promotion includes a migration, follow the order above: staging deploys on merge to `main`; production is a separate manual run after the `prod` merge.
+
+**After a promotion that touches the mobile routes**, run `npm run contract:live` against that environment (`API_BASE`, `CHECK_EMAIL`, `CHECK_PASSWORD` of a test surveyor; it only reads, plus one sign-in that it signs out again). It checks every route the app calls against `docs/mobile/openapi.json`'s schemas. See [`docs/mobile/api-contract.md`](./mobile/api-contract.md).
