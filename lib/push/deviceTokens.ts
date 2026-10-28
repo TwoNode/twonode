@@ -83,16 +83,55 @@ export async function removeDeviceToken(
   return result.count;
 }
 
-/** The tokens to send a push to for these people, on this platform. */
+/**
+ * The tokens to send a push to for these people, on this platform: only those
+ * whose device still has a live session (not revoked, not expired). A phone
+ * that signed out with no connection never told the server, so its token would
+ * otherwise outlive the sign-in (A-053); such a token is not returned, and is
+ * deleted here, best effort, so the table does not keep dead addresses.
+ */
 export async function tokensForUsers(
   userIds: string[],
   platform: Platform
 ): Promise<{ userId: string; token: string }[]> {
   if (userIds.length === 0) return [];
-  return prisma.deviceToken.findMany({
+  const candidates = await prisma.deviceToken.findMany({
     where: { userId: { in: userIds }, platform },
-    select: { userId: true, token: true },
+    select: { id: true, userId: true, deviceId: true, token: true },
   });
+  if (candidates.length === 0) return [];
+
+  const sessions = await prisma.refreshToken.findMany({
+    where: {
+      userId: { in: userIds },
+      platform,
+      deviceId: { in: candidates.map((c) => c.deviceId) },
+      revokedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    select: { userId: true, deviceId: true },
+  });
+  // A session of another person on the same phone does not keep this person's
+  // token alive, so the pair is the key.
+  const live = new Set(sessions.map((s) => `${s.userId}/${s.deviceId}`));
+  const isLive = (c: { userId: string; deviceId: string }) =>
+    live.has(`${c.userId}/${c.deviceId}`);
+
+  const ended = candidates.filter((c) => !isLive(c));
+  if (ended.length > 0) {
+    try {
+      await prisma.deviceToken.deleteMany({
+        where: { id: { in: ended.map((c) => c.id) } },
+      });
+    } catch (err) {
+      // Not sending to them is what matters; the next send tries again.
+      console.error("Push: could not drop tokens of ended sessions", err);
+    }
+  }
+
+  return candidates
+    .filter(isLive)
+    .map(({ userId, token }) => ({ userId, token }));
 }
 
 /** Drops tokens the push service said are not registered any more. */

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockPrisma = vi.hoisted(() => ({
-  refreshToken: { findFirst: vi.fn() },
+  refreshToken: { findFirst: vi.fn(), findMany: vi.fn() },
   deviceToken: {
     deleteMany: vi.fn(),
     create: vi.fn(),
@@ -150,14 +150,40 @@ describe("removeDeviceToken", () => {
 });
 
 describe("tokensForUsers", () => {
+  const row = (over: Record<string, unknown> = {}) => ({
+    id: "t1",
+    userId: "u1",
+    deviceId: "device-abcdef01",
+    token: "ExponentPushToken[abcdefgh12345678]",
+    ...over,
+  });
+
+  beforeEach(() => {
+    mockPrisma.deviceToken.deleteMany.mockResolvedValue({ count: 0 });
+  });
+
   it("looks up nothing for nobody", async () => {
     expect(await tokensForUsers([], Platform.SURFBOARD)).toEqual([]);
     expect(mockPrisma.deviceToken.findMany).not.toHaveBeenCalled();
+    expect(mockPrisma.refreshToken.findMany).not.toHaveBeenCalled();
   });
 
-  it("returns only the user and the token, for the platform asked", async () => {
-    mockPrisma.deviceToken.findMany.mockResolvedValue([
-      { userId: "u1", token: "ExponentPushToken[abcdefgh12345678]" },
+  it("asks for the platform's tokens of these people, and checks no session when there are none", async () => {
+    mockPrisma.deviceToken.findMany.mockResolvedValue([]);
+
+    expect(await tokensForUsers(["u1", "u2"], Platform.SURFBOARD)).toEqual([]);
+
+    expect(mockPrisma.deviceToken.findMany).toHaveBeenCalledWith({
+      where: { userId: { in: ["u1", "u2"] }, platform: "surfboard" },
+      select: { id: true, userId: true, deviceId: true, token: true },
+    });
+    expect(mockPrisma.refreshToken.findMany).not.toHaveBeenCalled();
+  });
+
+  it("returns only the user and the token, never the device or the row id", async () => {
+    mockPrisma.deviceToken.findMany.mockResolvedValue([row()]);
+    mockPrisma.refreshToken.findMany.mockResolvedValue([
+      { userId: "u1", deviceId: "device-abcdef01" },
     ]);
 
     const rows = await tokensForUsers(["u1", "u2"], Platform.SURFBOARD);
@@ -165,10 +191,118 @@ describe("tokensForUsers", () => {
     expect(rows).toEqual([
       { userId: "u1", token: "ExponentPushToken[abcdefgh12345678]" },
     ]);
-    expect(mockPrisma.deviceToken.findMany).toHaveBeenCalledWith({
-      where: { userId: { in: ["u1", "u2"] }, platform: "surfboard" },
-      select: { userId: true, token: true },
+    expect(mockPrisma.deviceToken.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("counts only a session that is not revoked and not expired, of these people, on this platform, for these devices", async () => {
+    mockPrisma.deviceToken.findMany.mockResolvedValue([
+      row(),
+      row({ id: "t2", userId: "u2", deviceId: "device-zzzzzz02", token: "ExponentPushToken[zzzzzzzz22222222]" }),
+    ]);
+    mockPrisma.refreshToken.findMany.mockResolvedValue([]);
+
+    await tokensForUsers(["u1", "u2"], Platform.SURFBOARD);
+
+    const args = mockPrisma.refreshToken.findMany.mock.calls[0][0];
+    expect(args.where).toMatchObject({
+      userId: { in: ["u1", "u2"] },
+      platform: "surfboard",
+      deviceId: { in: ["device-abcdef01", "device-zzzzzz02"] },
+      revokedAt: null,
     });
+    expect(args.where.expiresAt.gt).toBeInstanceOf(Date);
+    expect(args.select).toEqual({ userId: true, deviceId: true });
+  });
+
+  it("does not return a token whose session ended, and deletes it by its row id", async () => {
+    mockPrisma.deviceToken.findMany.mockResolvedValue([
+      row(),
+      row({ id: "t2", userId: "u2", deviceId: "device-zzzzzz02", token: "ExponentPushToken[zzzzzzzz22222222]" }),
+    ]);
+    // Only u2's device still has a session.
+    mockPrisma.refreshToken.findMany.mockResolvedValue([
+      { userId: "u2", deviceId: "device-zzzzzz02" },
+    ]);
+
+    const rows = await tokensForUsers(["u1", "u2"], Platform.SURFBOARD);
+
+    expect(rows).toEqual([
+      { userId: "u2", token: "ExponentPushToken[zzzzzzzz22222222]" },
+    ]);
+    expect(mockPrisma.deviceToken.deleteMany).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.deviceToken.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: ["t1"] } },
+    });
+  });
+
+  it("does not let another person's session on the same phone keep this person's token alive", async () => {
+    mockPrisma.deviceToken.findMany.mockResolvedValue([row({ userId: "u1" })]);
+    // u2 is signed in on the same device id; u1 is not.
+    mockPrisma.refreshToken.findMany.mockResolvedValue([
+      { userId: "u2", deviceId: "device-abcdef01" },
+    ]);
+
+    expect(await tokensForUsers(["u1", "u2"], Platform.SURFBOARD)).toEqual([]);
+    expect(mockPrisma.deviceToken.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: ["t1"] } },
+    });
+  });
+
+  it("does not let the same person's session on another device keep a token alive", async () => {
+    mockPrisma.deviceToken.findMany.mockResolvedValue([row()]);
+    mockPrisma.refreshToken.findMany.mockResolvedValue([
+      { userId: "u1", deviceId: "device-other001" },
+    ]);
+
+    expect(await tokensForUsers(["u1"], Platform.SURFBOARD)).toEqual([]);
+  });
+
+  it("returns every live token of a person with two phones", async () => {
+    mockPrisma.deviceToken.findMany.mockResolvedValue([
+      row(),
+      row({ id: "t2", deviceId: "device-zzzzzz02", token: "ExponentPushToken[zzzzzzzz22222222]" }),
+    ]);
+    mockPrisma.refreshToken.findMany.mockResolvedValue([
+      { userId: "u1", deviceId: "device-abcdef01" },
+      { userId: "u1", deviceId: "device-zzzzzz02" },
+    ]);
+
+    const rows = await tokensForUsers(["u1"], Platform.SURFBOARD);
+
+    expect(rows.map((r) => r.token)).toEqual([
+      "ExponentPushToken[abcdefgh12345678]",
+      "ExponentPushToken[zzzzzzzz22222222]",
+    ]);
+  });
+
+  it("still returns the live tokens when dropping the ended ones fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mockPrisma.deviceToken.findMany.mockResolvedValue([
+      row(),
+      row({ id: "t2", userId: "u2", deviceId: "device-zzzzzz02", token: "ExponentPushToken[zzzzzzzz22222222]" }),
+    ]);
+    mockPrisma.refreshToken.findMany.mockResolvedValue([
+      { userId: "u2", deviceId: "device-zzzzzz02" },
+    ]);
+    mockPrisma.deviceToken.deleteMany.mockRejectedValue(new Error("db down"));
+
+    const rows = await tokensForUsers(["u1", "u2"], Platform.SURFBOARD);
+
+    expect(rows).toEqual([
+      { userId: "u2", token: "ExponentPushToken[zzzzzzzz22222222]" },
+    ]);
+  });
+
+  it("does not log the token when dropping fails", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockPrisma.deviceToken.findMany.mockResolvedValue([row()]);
+    mockPrisma.refreshToken.findMany.mockResolvedValue([]);
+    mockPrisma.deviceToken.deleteMany.mockRejectedValue(new Error("db down"));
+
+    await tokensForUsers(["u1"], Platform.SURFBOARD);
+
+    expect(spy).toHaveBeenCalled();
+    expect(JSON.stringify(spy.mock.calls)).not.toContain("ExponentPushToken");
   });
 });
 
