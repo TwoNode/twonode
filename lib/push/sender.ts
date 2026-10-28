@@ -34,6 +34,8 @@ export interface PushSender {
 export const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 /** Expo accepts up to 100 messages in one request. */
 export const EXPO_BATCH_SIZE = 100;
+/** A slow push service must not hold up the action that caused the push. */
+export const EXPO_TIMEOUT_MS = 5_000;
 
 export class NullPushSender implements PushSender {
   readonly enabled = false;
@@ -78,6 +80,7 @@ export class ExpoPushSender implements PushSender {
             : {}),
         },
         body: JSON.stringify(batch),
+        signal: AbortSignal.timeout(EXPO_TIMEOUT_MS),
       });
       if (!res.ok) return failed(`Push service answered ${res.status}`);
       const body = (await res.json()) as { data?: ExpoTicket[] };

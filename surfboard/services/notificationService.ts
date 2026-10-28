@@ -105,8 +105,8 @@ export async function createNotification(input: CreateNotificationInput) {
       console.error("Error sending notification WhatsApp messages:", error)
     );
   }
-  // Best effort and never awaited past a failure: sendPush does not throw, and a push that
-  // cannot be sent must not fail the action that caused the notification.
+  // Best effort: sendPush never throws, so a push that cannot be sent does not fail the
+  // action that caused the notification.
   if (input.push && input.audience === "SPECIFIC_USERS" && input.userIds?.length) {
     await sendPush(input.userIds, input.push);
   }
