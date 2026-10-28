@@ -2,7 +2,7 @@
 
 **Purpose:** one place that lists every route in the app — pages and API routes, across all three products plus the shared corporate site, which is served at the root.
 
-**Last updated:** 2026-10-28 (plans/[planId]/files/[n] added).
+**Last updated:** 2026-10-19.
 
 **How this file is maintained:** the two tables below (API routes and pages) are **generated from the filesystem** by [`scripts/docs/generate-route-inventory.mjs`](../../scripts/docs/generate-route-inventory.mjs). Do not edit between the `BEGIN GENERATED` / `END GENERATED` markers by hand — run
 
@@ -31,33 +31,34 @@ The auth column is a static reading of source, not an access-control test. The a
 
 <!-- BEGIN GENERATED: api-routes -->
 
-#### Auth (shared) (23)
+#### Auth (shared) (24)
 
-| Route                                        | Method(s) | Auth                                 |
-| :------------------------------------------- | :-------- | :----------------------------------- |
-| `/api/v1/auth/accept-invite`                 | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/change-password`               | POST      | session (see source)                 |
-| `/api/v1/auth/invitations`                   | GET       | public — single-use invitation token |
-| `/api/v1/auth/login`                         | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/logout`                        | POST      | session (see source)                 |
-| `/api/v1/auth/me`                            | GET       | session (see source)                 |
-| `/api/v1/auth/mobile/devices`                | GET       | any signed-in (unverified OK)        |
-| `/api/v1/auth/mobile/devices/[familyId]`     | DELETE    | any signed-in (unverified OK)        |
-| `/api/v1/auth/mobile/login`                  | POST      | public                               |
-| `/api/v1/auth/mobile/logout`                 | POST      | public                               |
-| `/api/v1/auth/mobile/refresh`                | POST      | public                               |
-| `/api/v1/auth/mobile/request-password-reset` | POST      | public                               |
-| `/api/v1/auth/mobile/resend-verification`    | POST      | USER (unverified OK)                 |
-| `/api/v1/auth/mobile/verify-email`           | POST      | USER (unverified OK)                 |
-| `/api/v1/auth/refresh`                       | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/register`                      | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/register/resend-otp`           | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/register/send-otp`             | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/request-password-reset`        | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/resend-verification`           | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/reset-password`                | POST      | public (CSRF-checked)                |
-| `/api/v1/auth/verify-email`                  | POST      | session (see source)                 |
-| `/api/v1/auth/verify-email-otp`              | POST      | session (see source)                 |
+| Route                                        | Method(s)    | Auth                                     |
+| :------------------------------------------- | :----------- | :--------------------------------------- |
+| `/api/v1/auth/accept-invite`                 | POST         | public (CSRF-checked)                    |
+| `/api/v1/auth/change-password`               | POST         | session (see source)                     |
+| `/api/v1/auth/invitations`                   | GET          | public — single-use invitation token     |
+| `/api/v1/auth/login`                         | POST         | public (CSRF-checked)                    |
+| `/api/v1/auth/logout`                        | POST         | session (see source)                     |
+| `/api/v1/auth/me`                            | GET          | session (see source)                     |
+| `/api/v1/auth/mobile/devices`                | GET          | any signed-in (unverified OK)            |
+| `/api/v1/auth/mobile/devices/[familyId]`     | DELETE       | any signed-in (unverified OK)            |
+| `/api/v1/auth/mobile/login`                  | POST         | public                                   |
+| `/api/v1/auth/mobile/logout`                 | POST         | public                                   |
+| `/api/v1/auth/mobile/push-token`             | POST, DELETE | POST: USER; DELETE: USER (unverified OK) |
+| `/api/v1/auth/mobile/refresh`                | POST         | public                                   |
+| `/api/v1/auth/mobile/request-password-reset` | POST         | public                                   |
+| `/api/v1/auth/mobile/resend-verification`    | POST         | USER (unverified OK)                     |
+| `/api/v1/auth/mobile/verify-email`           | POST         | USER (unverified OK)                     |
+| `/api/v1/auth/refresh`                       | POST         | public (CSRF-checked)                    |
+| `/api/v1/auth/register`                      | POST         | public (CSRF-checked)                    |
+| `/api/v1/auth/register/resend-otp`           | POST         | public (CSRF-checked)                    |
+| `/api/v1/auth/register/send-otp`             | POST         | public (CSRF-checked)                    |
+| `/api/v1/auth/request-password-reset`        | POST         | public (CSRF-checked)                    |
+| `/api/v1/auth/resend-verification`           | POST         | public (CSRF-checked)                    |
+| `/api/v1/auth/reset-password`                | POST         | public (CSRF-checked)                    |
+| `/api/v1/auth/verify-email`                  | POST         | session (see source)                     |
+| `/api/v1/auth/verify-email-otp`              | POST         | session (see source)                     |
 
 #### Surfboard (143)
 
@@ -364,7 +365,7 @@ The auth column is a static reading of source, not an access-control test. The a
 ### Notes on specific API routes
 
 - **Kinde callbacks** (`/api/auth/success/*`): still live, and each dual-writes a native session alongside the legacy Kinde cookie (see [`docs/auth/technical.md`](../auth/technical.md) §2, §9). `surf-restricted` and `surf-mda` are **deliberately unrenamed** — they are Kinde-registered redirect URIs (external dashboard config); only their internal destination paths moved to `/surfboard-restricted/*` and `/surfboard-mda/*`. Every one of these callbacks now also stamps `emailVerifiedVia = "OAUTH"` on first successful sign-in (an OAuth sign-in proves the address).
-- **`/api/v1/auth/mobile/*`** (2026-10-19) is the Surfboard mobile app's session surface: `login`, `refresh`, `logout`, `devices` and `devices/{familyId}`. The session comes back in the body, no cookies are set, and the routes are authenticated by credentials or tokens in the request, not by ambient cookies (so they are not CSRF-checked); `devices` accepts a bearer token. Only role `USER`. See [ADR-0017](../adr/0017-the-mobile-app-signs-in-with-bearer-tokens.md) and [`docs/auth/technical.md` §1.5a](../auth/technical.md).
+- **`/api/v1/auth/mobile/*`** (2026-10-19) is the Surfboard mobile app's session surface: `login`, `refresh`, `logout`, `devices`, `devices/{familyId}` and `push-token` (2026-10-28: POST registers and DELETE forgets this install's push address; TASK-0015 1I.1). The session comes back in the body, no cookies are set, and the routes are authenticated by credentials or tokens in the request, not by ambient cookies (so they are not CSRF-checked; `push-token` is the exception and runs the usual check, which a bearer request passes); `devices` accepts a bearer token. Only role `USER`. See [ADR-0017](../adr/0017-the-mobile-app-signs-in-with-bearer-tokens.md) and [`docs/auth/technical.md` §1.5a](../auth/technical.md).
 - **SCRAM** has no pages, only its Kinde callback (`/api/auth/success/scram`) — a platform stub.
 - **`/api/webhooks/paystack`** is the single Paystack webhook for all three products; it picks the product from `metadata.platform` (falling back to event shape) and dedupes deliveries on the unique `WebhookEvent.signature`. See [`docs/payment/`](../payment/README.md), including the "known gaps" section on that ledger.
 - **`/api/reva/webhooks/paystack`** is the older REVA-only webhook endpoint, kept for Paystack dashboards still pointed at it.
