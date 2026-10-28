@@ -152,7 +152,9 @@ describe("checkPushReceipts", () => {
 
   it("forgets a delivered ticket and keeps its token", async () => {
     mockPrisma.pushReceiptTicket.findMany.mockResolvedValue([ticket(1)]);
-    const { sender } = senderOf(() => new Map<string, PushReceipt>([["receipt-1", ok]]));
+    const { sender } = senderOf(
+      () => new Map<string, PushReceipt>([["receipt-1", ok]])
+    );
 
     const result = await checkPushReceipts(sender, NOW);
 
@@ -245,7 +247,9 @@ describe("checkPushReceipts", () => {
 
   it("does not log a gone phone as a problem: it is in the summary's removedTokens", async () => {
     mockPrisma.pushReceiptTicket.findMany.mockResolvedValue([ticket(1)]);
-    const { sender } = senderOf(() => new Map<string, PushReceipt>([["receipt-1", dead]]));
+    const { sender } = senderOf(
+      () => new Map<string, PushReceipt>([["receipt-1", dead]])
+    );
 
     await checkPushReceipts(sender, NOW);
 
@@ -285,7 +289,9 @@ describe("checkPushReceipts", () => {
     mockPrisma.pushReceiptTicket.findMany.mockResolvedValue([
       ticket(1, T1, ago(30 * HOUR)),
     ]);
-    const { sender } = senderOf(() => new Map<string, PushReceipt>([["receipt-1", dead]]));
+    const { sender } = senderOf(
+      () => new Map<string, PushReceipt>([["receipt-1", dead]])
+    );
 
     const result = await checkPushReceipts(sender, NOW);
 
@@ -302,7 +308,11 @@ describe("checkPushReceipts", () => {
     const result = await checkPushReceipts(sender, NOW);
 
     expect(receipts).toHaveBeenCalledTimes(1);
-    expect(result).toMatchObject({ checked: 2500, deferred: 2500, delivered: 0 });
+    expect(result).toMatchObject({
+      checked: 2500,
+      deferred: 2500,
+      delivered: 0,
+    });
     expect(mockPrisma.pushReceiptTicket.deleteMany).not.toHaveBeenCalled();
     expect(mockTokens.removeTokensDeadSince).not.toHaveBeenCalled();
   });
@@ -343,7 +353,9 @@ describe("checkPushReceipts", () => {
   it("does not forget tickets whose tokens could not be removed: the next run repeats the work", async () => {
     mockPrisma.pushReceiptTicket.findMany.mockResolvedValue([ticket(1)]);
     mockTokens.removeTokensDeadSince.mockRejectedValue(new Error("db down"));
-    const { sender } = senderOf(() => new Map<string, PushReceipt>([["receipt-1", dead]]));
+    const { sender } = senderOf(
+      () => new Map<string, PushReceipt>([["receipt-1", dead]])
+    );
 
     await expect(checkPushReceipts(sender, NOW)).rejects.toThrow("db down");
 

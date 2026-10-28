@@ -338,10 +338,11 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/webhooks/paystack`      | POST      | Paystack signature                      |
 | `/api/webhooks/redcopy`       | POST      | external Red Copy callback (see source) |
 
-#### Cron (1)
+#### Cron (2)
 
 | Route                                     | Method(s) | Auth        |
 | :---------------------------------------- | :-------- | :---------- |
+| `/api/cron/push-receipts`                 | GET       | cron secret |
 | `/api/cron/subscription-expiry-reminders` | GET       | cron secret |
 
 #### Kinde callbacks (legacy) (11)

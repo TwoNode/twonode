@@ -160,7 +160,8 @@ export class ExpoPushSender implements PushSender {
             : {
                 status: "error",
                 unregistered: receipt.details?.error === "DeviceNotRegistered",
-                message: receipt.details?.error ?? receipt.message ?? "No detail",
+                message:
+                  receipt.details?.error ?? receipt.message ?? "No detail",
               }
         );
       }

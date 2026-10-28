@@ -17,9 +17,8 @@ vi.mock("@/utils/paystackConfig", () => ({
   getPaystackSecretForWebhook: () => "sk_test_unused",
 }));
 
-const { processAdminWithdrawalRequest } = await import(
-  "@/surfboard/services/qrAdminService"
-);
+const { processAdminWithdrawalRequest } =
+  await import("@/surfboard/services/qrAdminService");
 
 const PENDING = {
   id: "w1",
