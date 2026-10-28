@@ -1,0 +1,13 @@
+{
+  "status": 400,
+  "body": {
+    "success": false,
+    "error": "Invalid request",
+    "code": "VALIDATION_ERROR",
+    "details": {
+      "dateFrom": {
+        "_errors": ["dateFrom is after dateTo"]
+      }
+    }
+  }
+}

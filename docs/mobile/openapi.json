@@ -1,0 +1,4862 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Surfboard mobile API",
+    "version": "1.0.0",
+    "description": "The calls the Surfboard mobile app makes. Generated from `lib/mobile/contract` in the API repository: do not edit by hand. Every success is `{ success: true, data }`; every failure is `{ success: false, error, code?, details? }`. Dates are ISO 8601 in UTC. Objects are open: a newer server may add a field, and an app must ignore what it does not know."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "The API host the app is built for."
+    }
+  ],
+  "tags": [
+    {
+      "name": "Session"
+    },
+    {
+      "name": "Account"
+    },
+    {
+      "name": "Push"
+    },
+    {
+      "name": "Plans"
+    },
+    {
+      "name": "Files"
+    },
+    {
+      "name": "Map"
+    },
+    {
+      "name": "Records"
+    },
+    {
+      "name": "Stats"
+    },
+    {
+      "name": "Money"
+    }
+  ],
+  "paths": {
+    "/api/v1/auth/mobile/login": {
+      "post": {
+        "operationId": "login",
+        "tags": [
+          "Session"
+        ],
+        "summary": "Sign in",
+        "description": "Starts a device session. Rate limited per email and device. The answer does not say how to verify an address: that comes from `GET /auth/me`.\n\nNo session needed.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "platform": {
+                    "type": "string",
+                    "const": "surfboard"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "deviceId": {
+                    "description": "The id the app sends at sign-in.",
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  },
+                  "deviceLabel": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "appVersion": {
+                    "type": "string",
+                    "maxLength": 32
+                  }
+                },
+                "required": [
+                  "platform",
+                  "email",
+                  "password",
+                  "deviceId"
+                ]
+              },
+              "example": {
+                "platform": "surfboard",
+                "email": "ada@example.com",
+                "password": "pw",
+                "deviceId": "device-12345678"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/LoginResult"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "403": {
+            "description": "`ACCOUNT_TYPE_NOT_SUPPORTED`: The account is not a surveyor, so it cannot use the app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "ACCOUNT_TYPE_NOT_SUPPORTED"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "503": {
+            "description": "`MOBILE_SIGN_IN_DISABLED`: New sign-ins are paused (an emergency switch). Open sessions carry on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "MOBILE_SIGN_IN_DISABLED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mobile/refresh": {
+      "post": {
+        "operationId": "refresh",
+        "tags": [
+          "Session"
+        ],
+        "summary": "Replace the access token",
+        "description": "Single use: the refresh token in the request is spent and a new pair is returned. The access token's claims (`emailVerified`, `mustVerifyNow`) change here.\n\nNo session needed.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "platform": {
+                    "type": "string",
+                    "const": "surfboard"
+                  },
+                  "refreshToken": {
+                    "type": "string",
+                    "minLength": 16,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "platform",
+                  "refreshToken"
+                ]
+              },
+              "example": {
+                "platform": "surfboard",
+                "refreshToken": "0123456789abcdef0123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RefreshResult"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`SESSION_INVALID`: The refresh token is not valid, was already used, or its sign-in was revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "SESSION_INVALID"
+            ]
+          },
+          "403": {
+            "description": "`ACCOUNT_INACTIVE`: The account has been switched off. `ACCOUNT_TYPE_NOT_SUPPORTED`: The account is not a surveyor, so it cannot use the app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "ACCOUNT_INACTIVE",
+              "ACCOUNT_TYPE_NOT_SUPPORTED"
+            ]
+          },
+          "409": {
+            "description": "`REFRESH_CONFLICT`: Two refreshes of the same token raced.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "REFRESH_CONFLICT"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mobile/logout": {
+      "post": {
+        "operationId": "logout",
+        "tags": [
+          "Session"
+        ],
+        "summary": "Sign out this device",
+        "description": "Revokes the device session the refresh token belongs to. Succeeds whether or not it was still live, and is exempt from the version gate so an old app can always sign out.\n\nNo session needed.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "platform": {
+                    "type": "string",
+                    "const": "surfboard"
+                  },
+                  "refreshToken": {
+                    "type": "string",
+                    "minLength": 16,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "platform",
+                  "refreshToken"
+                ]
+              },
+              "example": {
+                "platform": "surfboard",
+                "refreshToken": "0123456789abcdef0123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Empty"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mobile/request-password-reset": {
+      "post": {
+        "operationId": "requestPasswordReset",
+        "tags": [
+          "Session"
+        ],
+        "summary": "Email a password reset link",
+        "description": "Always answers 200 with the same words, whether or not the email has an account, the account is a surveyor, or the caller was rate limited. The emailed link opens the website's reset page. Exempt from the version gate.\n\nNo session needed.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "platform": {
+                    "type": "string",
+                    "const": "surfboard"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "deviceId": {
+                    "description": "The id the app sends at sign-in.",
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "platform",
+                  "email",
+                  "deviceId"
+                ]
+              },
+              "example": {
+                "platform": "surfboard",
+                "email": "ada@example.com",
+                "deviceId": "device-12345678"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "me",
+        "tags": [
+          "Account"
+        ],
+        "summary": "The signed-in person and how to verify",
+        "description": "Read from the access token plus the account row. Version-gated for mobile requests only.\n\nAny signed-in role. Allowed while the email is unverified.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "platform",
+            "in": "query",
+            "required": true,
+            "description": "Always `surfboard` for the app.",
+            "schema": {
+              "type": "string",
+              "const": "surfboard"
+            },
+            "example": "surfboard"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Me"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mobile/devices": {
+      "get": {
+        "operationId": "listDevices",
+        "tags": [
+          "Account"
+        ],
+        "summary": "Devices signed in to the account",
+        "description": "One entry per live sign-in, most recently used first.\n\nAny signed-in role. Allowed while the email is unverified.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DeviceSession"
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mobile/devices/{familyId}": {
+      "delete": {
+        "operationId": "revokeDevice",
+        "tags": [
+          "Account"
+        ],
+        "summary": "Sign a device out",
+        "description": "Ends that device's session. Its push address is removed with it.\n\nAny signed-in role. Allowed while the email is unverified.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "familyId",
+            "in": "path",
+            "required": true,
+            "description": "A device's `id` from the list.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "fam-1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Empty"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "404": {
+            "description": "`NOT_FOUND`: Unknown, deleted or someone else's record (these look the same on purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mobile/verify-email": {
+      "post": {
+        "operationId": "verifyEmail",
+        "tags": [
+          "Account"
+        ],
+        "summary": "Enter the emailed code",
+        "description": "Only records the verification: call `refresh` afterwards, because the token's claims change when a new one is issued. Also answers `{ verified: true }` for an account already verified, so a lost answer can be retried. Five tries per five minutes per account.\n\nA signed-in surveyor (role USER). Allowed while the email is unverified.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "platform": {
+                    "type": "string",
+                    "const": "surfboard"
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 6
+                  }
+                },
+                "required": [
+                  "platform",
+                  "code"
+                ]
+              },
+              "example": {
+                "platform": "surfboard",
+                "code": "123456"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "verified": {
+                          "type": "boolean",
+                          "const": true
+                        }
+                      },
+                      "required": [
+                        "verified"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields. `VERIFICATION_CODE_INVALID`: The code is not six digits. `VERIFICATION_CODE_INCORRECT`: The code is wrong. `VERIFICATION_CODE_EXPIRED`: No live code: it lapsed after 10 minutes, was used, or was replaced. `VERIFICATION_CODE_LOCKED`: Five wrong tries on that code.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR",
+              "VERIFICATION_CODE_INVALID",
+              "VERIFICATION_CODE_INCORRECT",
+              "VERIFICATION_CODE_EXPIRED",
+              "VERIFICATION_CODE_LOCKED"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mobile/resend-verification": {
+      "post": {
+        "operationId": "resendVerification",
+        "tags": [
+          "Account"
+        ],
+        "summary": "Send a new code or link",
+        "description": "Goes to the address on the account; a new code replaces the old. Five per 15 minutes per account. No body.\n\nA signed-in surveyor (role USER). Allowed while the email is unverified.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ResendVerificationResult"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mobile/push-token": {
+      "post": {
+        "operationId": "registerPushToken",
+        "tags": [
+          "Push"
+        ],
+        "summary": "Keep this phone's push address",
+        "description": "Kept only for a `deviceId` that is a live device session of the caller; a token another person had is moved to the caller. The address is never read back. Off unless the server has push switched on.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deviceId": {
+                    "description": "The id the app sends at sign-in.",
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  },
+                  "token": {
+                    "type": "string",
+                    "pattern": "^Expo(?:nent)?PushToken\\[[A-Za-z0-9_-]{8,200}\\]$"
+                  },
+                  "os": {
+                    "type": "string",
+                    "enum": [
+                      "android",
+                      "ios"
+                    ]
+                  },
+                  "appVersion": {
+                    "type": "string",
+                    "maxLength": 32
+                  }
+                },
+                "required": [
+                  "deviceId",
+                  "token",
+                  "os"
+                ]
+              },
+              "example": {
+                "deviceId": "device-12345678",
+                "token": "ExponentPushToken[abc123def456]",
+                "os": "android"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Empty"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "description": "`NOT_FOUND`: Unknown, deleted or someone else's record (these look the same on purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removePushToken",
+        "tags": [
+          "Push"
+        ],
+        "summary": "Forget this phone's push address",
+        "description": "Succeeds whether or not there was one. Also works while email verification is outstanding.\n\nA signed-in surveyor (role USER). Allowed while the email is unverified.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deviceId": {
+                    "description": "The id the app sends at sign-in.",
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "deviceId"
+                ]
+              },
+              "example": {
+                "deviceId": "device-12345678"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Empty"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/plans/summary": {
+      "get": {
+        "operationId": "listPlanSummaries",
+        "tags": [
+          "Plans"
+        ],
+        "summary": "The Plans list",
+        "description": "A lean row per plan: one `displayStatus`, no geometry, pillars or file links. Order is the chosen column, then the plan id, so a page never repeats or skips a plan. A `displayStatus` filter is worked out on the server, so a request over 5,000 plans is a 400 (narrow the search). Reads are not subscription-gated.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "description": "Whose plans: the caller's own (default) or those shared with the caller.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mine",
+                "shared-with-me"
+              ]
+            },
+            "example": "shared-with-me"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "1-based page number.",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "example": "2"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "Rows a page; capped at 100.",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 100
+            },
+            "example": "7"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Plan number, title, facilitator, LGA, ward, LCDA, locality or pillar number; at most 100 characters. `%` and `_` act as wildcards.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "example": "ajah"
+          },
+          {
+            "name": "displayStatus",
+            "in": "query",
+            "required": false,
+            "description": "Comma list of status codes.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "QUERIED,LODGED"
+          },
+          {
+            "name": "planType",
+            "in": "query",
+            "required": false,
+            "description": "Comma list of plan types.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "APPROVED LAYOUT"
+          },
+          {
+            "name": "facilitator",
+            "in": "query",
+            "required": false,
+            "description": "The whole value, ignoring capitals and surrounding spaces.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "example": "Adeyemi & Partners"
+          },
+          {
+            "name": "lga",
+            "in": "query",
+            "required": false,
+            "description": "As `facilitator`.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "example": "Eti-Osa"
+          },
+          {
+            "name": "ward",
+            "in": "query",
+            "required": false,
+            "description": "As `facilitator`.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "example": "Ajah"
+          },
+          {
+            "name": "lcda",
+            "in": "query",
+            "required": false,
+            "description": "As `facilitator`.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "example": "Ibeju"
+          },
+          {
+            "name": "provisional",
+            "in": "query",
+            "required": false,
+            "description": "Whether provisional plan types are in the list; `exclude` matches the Stats Total plans figure.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "include",
+                "exclude",
+                "only"
+              ]
+            },
+            "example": "exclude"
+          },
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "required": false,
+            "description": "On the date printed on the survey plan, inclusive. `YYYY-MM-DD` is that whole day (UTC); a full date and time is used as given.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "2026-01-02"
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "required": false,
+            "description": "As `dateFrom`; a plain date is the end of that day.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "2026-09-30"
+          },
+          {
+            "name": "sortField",
+            "in": "query",
+            "required": false,
+            "description": "The column to order by; plans with no survey date come last.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "createdAt",
+                "updatedAt",
+                "dateOnSurveyPlan",
+                "planNumber",
+                "surveyTitle"
+              ]
+            },
+            "example": "planNumber"
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "required": false,
+            "description": "Default `desc`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            },
+            "example": "asc"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlanList"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/plans/counts": {
+      "get": {
+        "operationId": "planCounts",
+        "tags": [
+          "Plans"
+        ],
+        "summary": "The numbers on the Plans segments and badges",
+        "description": "Counted by the same rules as the lists, so the Queried badge equals the Queried list's total.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlanCounts"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/plans/{planId}/summary": {
+      "get": {
+        "operationId": "planDetail",
+        "tags": [
+          "Plans"
+        ],
+        "summary": "One plan",
+        "description": "The owner gets everything; someone a plan is shared with gets no reviewer comments, no batch, no record copy and nobody else's details. An unknown, deleted, malformed or someone else's plan is a 404.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "description": "A plan's id (a uuid).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlanDetail"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "description": "`NOT_FOUND`: Unknown, deleted or someone else's record (these look the same on purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/plans/{planId}/files/{n}": {
+      "get": {
+        "operationId": "planFileLink",
+        "tags": [
+          "Files"
+        ],
+        "summary": "A short-lived address for one file of a plan",
+        "description": "`n` is the file's place (from 0) in the plan's `files` list. The address works for five minutes; fetch it on each tap and never store it.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "description": "A plan's id (a uuid).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c"
+          },
+          {
+            "name": "n",
+            "in": "path",
+            "required": true,
+            "description": "Place in the plan's `files` list, from 0.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "example": "0"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlanFileLink"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "description": "`NOT_FOUND`: Unknown, deleted or someone else's record (these look the same on purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "description": "`FILE_NOT_VIEWABLE`: The file is a drawing or another format a phone cannot open.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "FILE_NOT_VIEWABLE"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/plans/map": {
+      "get": {
+        "operationId": "planMap",
+        "tags": [
+          "Map"
+        ],
+        "summary": "The caller's own plans for the Home map",
+        "description": "At most 2,000 plans, most recently changed first. The outline is for drawing and nothing else: never measure from it.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlanMap"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/settings/coordinate-shifts": {
+      "get": {
+        "operationId": "coordinateShifts",
+        "tags": [
+          "Map"
+        ],
+        "summary": "The per-state map display correction",
+        "description": "Public. The map applies it when it draws (ADR-0004).\n\nNo session needed.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CoordinateShifts"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/cod/batches/summary": {
+      "get": {
+        "operationId": "listBatchSummaries",
+        "tags": [
+          "Records"
+        ],
+        "summary": "The Records list",
+        "description": "A signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "description": "`active` (default): a plan still to be lodged. `history`: every plan lodged.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "history"
+              ]
+            },
+            "example": "history"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Batch code, plan number, title or facilitator; at most 100 characters.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "example": "SurfCoD"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "1-based page number.",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "example": "2"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "Rows a page; capped at 100.",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 100
+            },
+            "example": "7"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/BatchList"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/cod/batches/{batchId}/summary": {
+      "get": {
+        "operationId": "batchDetail",
+        "tags": [
+          "Records"
+        ],
+        "summary": "One batch and its plans",
+        "description": "Someone else's batch, or an unknown id, is a 404.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "batchId",
+            "in": "path",
+            "required": true,
+            "description": "A batch's id.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "b1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/BatchDetail"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "description": "`NOT_FOUND`: Unknown, deleted or someone else's record (these look the same on purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/plans/stats": {
+      "get": {
+        "operationId": "planStats",
+        "tags": [
+          "Stats"
+        ],
+        "summary": "The Stats tab",
+        "description": "Every figure is counted by the rules of the list it opens, so the number and the list agree. A surveyor with more than 5,000 plans in scope gets a 400.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "required": false,
+            "description": "On the date printed on the survey plan, inclusive. `YYYY-MM-DD` is that whole day (UTC); a full date and time is used as given.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "2026-01-02"
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "required": false,
+            "description": "As `dateFrom`; a plain date is the end of that day.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "2026-09-30"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlanStats"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/profile/summary": {
+      "get": {
+        "operationId": "profileSummary",
+        "tags": [
+          "Account"
+        ],
+        "summary": "The firm on the Profile tab",
+        "description": "Never sends the logo or signature links, payer id, phone, address or preferences.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ProfileSummary"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/subscription/summary": {
+      "get": {
+        "operationId": "subscriptionSummary",
+        "tags": [
+          "Account"
+        ],
+        "summary": "The subscription, as status only",
+        "description": "Unlike the website's call it also reports a subscription that has ended. A state the app does not know is shown neutrally.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SubscriptionSummary"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/qr/wallet-summary": {
+      "get": {
+        "operationId": "walletSummary",
+        "tags": [
+          "Money"
+        ],
+        "summary": "The wallet, read only",
+        "description": "A read never creates the wallet (none reads as zeros). Never sends the bank account, the payer's name or email, or an access token.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WalletSummary"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "The 15-minute access token from `login` or `refresh`."
+      }
+    },
+    "parameters": {
+      "AppVersion": {
+        "name": "X-App-Version",
+        "in": "header",
+        "required": true,
+        "description": "The app's version, for example `1.4.2`. With a minimum set on the server, a call without it is refused with 426.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "AppPlatform": {
+        "name": "X-App-Platform",
+        "in": "header",
+        "required": true,
+        "description": "Which store the build is from.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "android",
+            "ios"
+          ]
+        }
+      }
+    },
+    "schemas": {
+      "ApprovalState": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "APPROVED",
+          "QUERIED"
+        ]
+      },
+      "BatchDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "batchCode": {
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "ISO 8601 date and time, UTC",
+            "type": "string",
+            "format": "date-time"
+          },
+          "paymentStatus": {
+            "$ref": "#/components/schemas/BatchPaymentStatus"
+          },
+          "paymentLabel": {
+            "type": "string"
+          },
+          "planCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "readyCount": {
+            "description": "Plans that can be marked physical copy submitted now.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "statusCounts": {
+            "description": "One entry per distinct status, queried and ready first. Show as given.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "$ref": "#/components/schemas/DisplayStatusCode"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "code",
+                "label",
+                "count"
+              ]
+            }
+          },
+          "plans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "planNumber": {
+                  "type": "string"
+                },
+                "surveyTitle": {
+                  "type": "string"
+                },
+                "facilitator": {
+                  "type": "string"
+                },
+                "displayStatus": {
+                  "$ref": "#/components/schemas/DisplayStatus"
+                },
+                "ready": {
+                  "description": "True exactly when the status code is READY_FOR_PHYSICAL.",
+                  "type": "boolean"
+                },
+                "queries": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlanQuery"
+                  }
+                },
+                "physicalCopySubmittedAt": {
+                  "anyOf": [
+                    {
+                      "description": "ISO 8601 date and time, UTC",
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "planNumber",
+                "surveyTitle",
+                "facilitator",
+                "displayStatus",
+                "ready",
+                "queries",
+                "physicalCopySubmittedAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "batchCode",
+          "createdAt",
+          "paymentStatus",
+          "paymentLabel",
+          "planCount",
+          "readyCount",
+          "statusCounts",
+          "plans"
+        ]
+      },
+      "BatchList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BatchSummary"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ]
+      },
+      "BatchPaymentStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING_USER_PAYMENT",
+          "LASG_PAID",
+          "ACCOUNTS_APPROVED",
+          "ACCOUNTS_DISAPPROVED",
+          "COMPLETED"
+        ]
+      },
+      "BatchSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "batchCode": {
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "ISO 8601 date and time, UTC",
+            "type": "string",
+            "format": "date-time"
+          },
+          "paymentStatus": {
+            "$ref": "#/components/schemas/BatchPaymentStatus"
+          },
+          "paymentLabel": {
+            "type": "string"
+          },
+          "planCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "readyCount": {
+            "description": "Plans that can be marked physical copy submitted now.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "statusCounts": {
+            "description": "One entry per distinct status, queried and ready first. Show as given.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "$ref": "#/components/schemas/DisplayStatusCode"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "code",
+                "label",
+                "count"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "batchCode",
+          "createdAt",
+          "paymentStatus",
+          "paymentLabel",
+          "planCount",
+          "readyCount",
+          "statusCounts"
+        ]
+      },
+      "Breakdown": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "description": "Biggest first; at most 100. `key` is the text to hand back as the list's filter.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "key",
+                "count"
+              ]
+            }
+          },
+          "distinct": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "missing": {
+            "description": "Plans with no value; they have no row.",
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "rows",
+          "distinct",
+          "missing"
+        ]
+      },
+      "CoordinateShifts": {
+        "description": "Metres, keyed by the state's lower-case name. Empty when no state has a correction.",
+        "type": "object",
+        "propertyNames": {
+          "type": "string"
+        },
+        "additionalProperties": {
+          "type": "object",
+          "properties": {
+            "eastingShift": {
+              "type": "number"
+            },
+            "northingShift": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "eastingShift",
+            "northingShift"
+          ]
+        }
+      },
+      "DeviceSession": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "The sign-in's family id: the unit that is revoked.",
+            "type": "string"
+          },
+          "deviceId": {
+            "type": "string"
+          },
+          "deviceLabel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "appVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastUsedAt": {
+            "anyOf": [
+              {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "signedInAt": {
+            "description": "ISO 8601 date and time, UTC",
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "deviceId",
+          "deviceLabel",
+          "appVersion",
+          "lastUsedAt",
+          "signedInAt"
+        ]
+      },
+      "DisplayStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/DisplayStatusCode"
+          },
+          "label": {
+            "description": "The words to show; a code the app does not know is shown with this label.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "label"
+        ]
+      },
+      "DisplayStatusCode": {
+        "type": "string",
+        "enum": [
+          "QUERIED",
+          "LODGED",
+          "PHYSICAL_SUBMITTED",
+          "READY_FOR_PHYSICAL",
+          "PARTLY_APPROVED",
+          "IN_REVIEW",
+          "PAYMENT_PENDING",
+          "NOT_SUBMITTED",
+          "SUBMISSION_FAILED"
+        ]
+      },
+      "Empty": {
+        "description": "Nothing to report; the call worked.",
+        "type": "object",
+        "properties": {}
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": false
+          },
+          "error": {
+            "description": "A sentence for a developer. The app words its own messages and does not show this.",
+            "type": "string"
+          },
+          "code": {
+            "description": "A stable code (see the list of codes). Some older failures have none: use the status.",
+            "type": "string"
+          },
+          "details": {
+            "description": "Extra facts for some codes (VALIDATION_ERROR, APP_UPDATE_REQUIRED)."
+          }
+        },
+        "required": [
+          "success",
+          "error"
+        ]
+      },
+      "LoginResult": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "description": "Single use: each refresh returns a new one.",
+            "type": "string"
+          },
+          "accessExpiresIn": {
+            "description": "Seconds.",
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "refreshExpiresAt": {
+            "description": "ISO 8601 date and time, UTC",
+            "type": "string",
+            "format": "date-time"
+          },
+          "user": {
+            "$ref": "#/components/schemas/SessionUser"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "accessExpiresIn",
+          "refreshExpiresAt",
+          "user"
+        ]
+      },
+      "MapPlan": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "planNumber": {
+            "type": "string"
+          },
+          "surveyTitle": {
+            "type": "string"
+          },
+          "displayStatus": {
+            "$ref": "#/components/schemas/DisplayStatus"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lga": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "locality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "areaSqM": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "centroid": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lng": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "lat",
+              "lng"
+            ]
+          },
+          "simplifiedGeometry": {
+            "$ref": "#/components/schemas/Outline"
+          }
+        },
+        "required": [
+          "id",
+          "planNumber",
+          "surveyTitle",
+          "displayStatus",
+          "state",
+          "lga",
+          "locality",
+          "areaSqM",
+          "centroid",
+          "simplifiedGeometry"
+        ]
+      },
+      "Me": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "firstName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "role": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "emailVerifiedVia": {
+            "description": "How the address was verified; null while it is not.",
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "OTP",
+                  "LINK",
+                  "OAUTH"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mustVerifyNow": {
+            "description": "Read from the access token: current only after a refresh.",
+            "type": "boolean"
+          },
+          "verificationMethod": {
+            "description": "How this platform verifies an address.",
+            "type": "string",
+            "enum": [
+              "OTP",
+              "LINK"
+            ]
+          },
+          "verificationGraceEndsAt": {
+            "description": "When an account that predates enforcement is held at the gate; null otherwise.",
+            "anyOf": [
+              {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "verificationCodeSentAt": {
+            "description": "When a code the person can still enter was sent; null when none is live (never sent, used, expired or out of attempts) and for verified accounts and link platforms.",
+            "anyOf": [
+              {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "firstName",
+          "lastName",
+          "role",
+          "emailVerified",
+          "emailVerifiedVia",
+          "mustVerifyNow",
+          "verificationMethod",
+          "verificationGraceEndsAt",
+          "verificationCodeSentAt"
+        ]
+      },
+      "Outline": {
+        "description": "Longitude and latitude as stored, not corrected for display. For drawing only.",
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "Polygon"
+              },
+              "coordinates": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "required": [
+              "type",
+              "coordinates"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "MultiPolygon"
+              },
+              "coordinates": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "required": [
+              "type",
+              "coordinates"
+            ]
+          }
+        ]
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "pageSize": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalPages": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "page",
+          "pageSize",
+          "total",
+          "totalPages"
+        ]
+      },
+      "PlanCounts": {
+        "type": "object",
+        "properties": {
+          "mine": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sharedWithMe": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "queried": {
+            "description": "Equals the total of the Queried list.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "readyForPhysicalSubmission": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "mine",
+          "sharedWithMe",
+          "queried",
+          "readyForPhysicalSubmission"
+        ]
+      },
+      "PlanDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "planNumber": {
+            "type": "string"
+          },
+          "surveyTitle": {
+            "type": "string"
+          },
+          "planType": {
+            "type": "string"
+          },
+          "facilitator": {
+            "type": "string"
+          },
+          "displayStatus": {
+            "$ref": "#/components/schemas/DisplayStatus"
+          },
+          "stages": {
+            "$ref": "#/components/schemas/Stages"
+          },
+          "queries": {
+            "description": "Empty when nothing is queried, and always empty for a plan seen through a share.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanQuery"
+            }
+          },
+          "physicalCopySubmitted": {
+            "type": "boolean"
+          },
+          "hasRecordCopy": {
+            "description": "Whether a record copy exists. The link is never sent.",
+            "type": "boolean"
+          },
+          "lga": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ward": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lcda": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "locality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dateOnSurveyPlan": {
+            "anyOf": [
+              {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dateLodged": {
+            "anyOf": [
+              {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "description": "ISO 8601 date and time, UTC",
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "description": "ISO 8601 date and time, UTC",
+            "type": "string",
+            "format": "date-time"
+          },
+          "isOwner": {
+            "type": "boolean"
+          },
+          "sharedCount": {
+            "description": "People the owner shared it with; 0 when seen through a share.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "ownerName": {
+            "description": "Who shared it, for a plan seen through a share.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deededArea": {
+            "type": "string"
+          },
+          "pillarType": {
+            "type": "string"
+          },
+          "pillarCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "referencePlanNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "areaSqM": {
+            "description": "Square metres, worked out from the boundary; null if the boundary is unusable.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "centroid": {
+            "description": "Stored, not corrected for display.",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lng": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "lat",
+                  "lng"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "submittedAt": {
+            "anyOf": [
+              {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "physicalCopySubmittedAt": {
+            "anyOf": [
+              {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "archiveReceivedAt": {
+            "anyOf": [
+              {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stageDecidedAt": {
+            "description": "When each review last acted (a query counts); null while pending.",
+            "type": "object",
+            "properties": {
+              "accounts": {
+                "anyOf": [
+                  {
+                    "description": "ISO 8601 date and time, UTC",
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "charting": {
+                "anyOf": [
+                  {
+                    "description": "ISO 8601 date and time, UTC",
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "surcon": {
+                "anyOf": [
+                  {
+                    "description": "ISO 8601 date and time, UTC",
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "recordsI": {
+                "anyOf": [
+                  {
+                    "description": "ISO 8601 date and time, UTC",
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "intake": {
+                "anyOf": [
+                  {
+                    "description": "ISO 8601 date and time, UTC",
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "recordsII": {
+                "anyOf": [
+                  {
+                    "description": "ISO 8601 date and time, UTC",
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "accounts",
+              "charting",
+              "surcon",
+              "recordsI",
+              "intake",
+              "recordsII"
+            ]
+          },
+          "files": {
+            "description": "The entry's place in this list is the `n` of the file route.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanFile"
+            }
+          },
+          "batch": {
+            "description": "Owner only.",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "batchCode": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "batchCode"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "planNumber",
+          "surveyTitle",
+          "planType",
+          "facilitator",
+          "displayStatus",
+          "stages",
+          "queries",
+          "physicalCopySubmitted",
+          "hasRecordCopy",
+          "lga",
+          "ward",
+          "lcda",
+          "locality",
+          "state",
+          "dateOnSurveyPlan",
+          "dateLodged",
+          "createdAt",
+          "updatedAt",
+          "isOwner",
+          "sharedCount",
+          "ownerName",
+          "deededArea",
+          "pillarType",
+          "pillarCount",
+          "referencePlanNumber",
+          "areaSqM",
+          "centroid",
+          "submittedAt",
+          "physicalCopySubmittedAt",
+          "archiveReceivedAt",
+          "stageDecidedAt",
+          "files",
+          "batch"
+        ]
+      },
+      "PlanFile": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "RECORD_COPY",
+              "SURVEY_PLAN",
+              "DRAWING",
+              "CERTIFICATE"
+            ]
+          },
+          "name": {
+            "description": "The website's name: the plan number with `/` as `_`, then the extension.",
+            "type": "string"
+          },
+          "format": {
+            "description": "Lower-case extension; empty when the stored name has none.",
+            "type": "string"
+          },
+          "viewable": {
+            "description": "PDF and common images. Drawings are not.",
+            "type": "boolean"
+          },
+          "ref": {
+            "description": "The stored reference. The app never shows or logs it.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "name",
+          "format",
+          "viewable",
+          "ref"
+        ]
+      },
+      "PlanFileLink": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "description": "A signed address that works until `expiresAt`. Never store or show it.",
+            "type": "string"
+          },
+          "expiresAt": {
+            "description": "ISO 8601 date and time, UTC",
+            "type": "string",
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "expiresAt",
+          "name",
+          "format"
+        ]
+      },
+      "PlanList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanSummary"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ]
+      },
+      "PlanMap": {
+        "type": "object",
+        "properties": {
+          "plans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MapPlan"
+            }
+          },
+          "total": {
+            "description": "Every live plan the caller has, drawn or not.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "withoutOutline": {
+            "description": "Plans left out because their boundary cannot be drawn.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "truncated": {
+            "description": "There are more plans than were read.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "plans",
+          "total",
+          "withoutOutline",
+          "truncated"
+        ]
+      },
+      "PlanQuery": {
+        "description": "Who queried the plan, why and when. Owner only.",
+        "type": "object",
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "accounts",
+              "charting",
+              "surcon",
+              "recordsI",
+              "intake",
+              "recordsII"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "at": {
+            "anyOf": [
+              {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "stage",
+          "label",
+          "comment",
+          "at"
+        ]
+      },
+      "PlanStats": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "description": "Plans in scope that are not provisional.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "provisional": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "undated": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "byStatus": {
+            "description": "One count for every status code, 0 included.",
+            "type": "object",
+            "properties": {
+              "QUERIED": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "LODGED": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "PHYSICAL_SUBMITTED": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "READY_FOR_PHYSICAL": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "PARTLY_APPROVED": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "IN_REVIEW": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "PAYMENT_PENDING": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "NOT_SUBMITTED": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "SUBMISSION_FAILED": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "QUERIED",
+              "LODGED",
+              "PHYSICAL_SUBMITTED",
+              "READY_FOR_PHYSICAL",
+              "PARTLY_APPROVED",
+              "IN_REVIEW",
+              "PAYMENT_PENDING",
+              "NOT_SUBMITTED",
+              "SUBMISSION_FAILED"
+            ]
+          },
+          "pillars": {
+            "type": "object",
+            "properties": {
+              "regular": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "special": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "regular",
+              "special"
+            ]
+          },
+          "byMonth": {
+            "description": "Oldest first; months with no plan are left out.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "period": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}$"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "period",
+                "count"
+              ]
+            }
+          },
+          "facilitators": {
+            "$ref": "#/components/schemas/Breakdown"
+          },
+          "lgas": {
+            "$ref": "#/components/schemas/Breakdown"
+          },
+          "wards": {
+            "$ref": "#/components/schemas/Breakdown"
+          },
+          "lcdas": {
+            "$ref": "#/components/schemas/Breakdown"
+          },
+          "activeBatches": {
+            "description": "Not affected by the date range.",
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "total",
+          "provisional",
+          "undated",
+          "byStatus",
+          "pillars",
+          "byMonth",
+          "facilitators",
+          "lgas",
+          "wards",
+          "lcdas",
+          "activeBatches"
+        ]
+      },
+      "PlanSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "planNumber": {
+            "type": "string"
+          },
+          "surveyTitle": {
+            "type": "string"
+          },
+          "planType": {
+            "type": "string"
+          },
+          "facilitator": {
+            "type": "string"
+          },
+          "displayStatus": {
+            "$ref": "#/components/schemas/DisplayStatus"
+          },
+          "stages": {
+            "$ref": "#/components/schemas/Stages"
+          },
+          "queries": {
+            "description": "Empty when nothing is queried, and always empty for a plan seen through a share.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanQuery"
+            }
+          },
+          "physicalCopySubmitted": {
+            "type": "boolean"
+          },
+          "hasRecordCopy": {
+            "description": "Whether a record copy exists. The link is never sent.",
+            "type": "boolean"
+          },
+          "lga": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ward": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lcda": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "locality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dateOnSurveyPlan": {
+            "anyOf": [
+              {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dateLodged": {
+            "anyOf": [
+              {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "description": "ISO 8601 date and time, UTC",
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "description": "ISO 8601 date and time, UTC",
+            "type": "string",
+            "format": "date-time"
+          },
+          "isOwner": {
+            "type": "boolean"
+          },
+          "sharedCount": {
+            "description": "People the owner shared it with; 0 when seen through a share.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "ownerName": {
+            "description": "Who shared it, for a plan seen through a share.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "planNumber",
+          "surveyTitle",
+          "planType",
+          "facilitator",
+          "displayStatus",
+          "stages",
+          "queries",
+          "physicalCopySubmitted",
+          "hasRecordCopy",
+          "lga",
+          "ward",
+          "lcda",
+          "locality",
+          "state",
+          "dateOnSurveyPlan",
+          "dateLodged",
+          "createdAt",
+          "updatedAt",
+          "isOwner",
+          "sharedCount",
+          "ownerName"
+        ]
+      },
+      "ProfileSummary": {
+        "description": "A field left blank on the website may arrive as an empty string.",
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "prefix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "suffix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "companyName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "surconRegNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "surconRegName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "residenceState": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "isKycValidated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName",
+          "prefix",
+          "suffix",
+          "companyName",
+          "surconRegNumber",
+          "surconRegName",
+          "residenceState",
+          "isKycValidated"
+        ]
+      },
+      "RefreshResult": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "description": "Single use: each refresh returns a new one.",
+            "type": "string"
+          },
+          "accessExpiresIn": {
+            "description": "Seconds.",
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "refreshExpiresAt": {
+            "description": "ISO 8601 date and time, UTC",
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "accessExpiresIn",
+          "refreshExpiresAt"
+        ]
+      },
+      "ResendVerificationResult": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "sent": {
+                "type": "boolean",
+                "const": true
+              },
+              "method": {
+                "type": "string",
+                "enum": [
+                  "OTP",
+                  "LINK"
+                ]
+              }
+            },
+            "required": [
+              "sent",
+              "method"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "sent": {
+                "type": "boolean",
+                "const": false
+              },
+              "alreadyVerified": {
+                "type": "boolean",
+                "const": true
+              }
+            },
+            "required": [
+              "sent",
+              "alreadyVerified"
+            ]
+          }
+        ]
+      },
+      "SessionUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "firstName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "role": {
+            "description": "Lower case, for example `user`.",
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "mustVerifyNow": {
+            "description": "True when the person is held at the verification screen.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "firstName",
+          "lastName",
+          "role",
+          "emailVerified",
+          "mustVerifyNow"
+        ]
+      },
+      "Stages": {
+        "description": "Each review's state. A review that has not acted is PENDING.",
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "$ref": "#/components/schemas/ApprovalState"
+          },
+          "charting": {
+            "$ref": "#/components/schemas/ApprovalState"
+          },
+          "surcon": {
+            "$ref": "#/components/schemas/ApprovalState"
+          },
+          "recordsI": {
+            "$ref": "#/components/schemas/ApprovalState"
+          },
+          "intake": {
+            "$ref": "#/components/schemas/ApprovalState"
+          },
+          "recordsII": {
+            "$ref": "#/components/schemas/ApprovalState"
+          }
+        },
+        "required": [
+          "accounts",
+          "charting",
+          "surcon",
+          "recordsI",
+          "intake",
+          "recordsII"
+        ]
+      },
+      "SubscriptionSummary": {
+        "description": "Status only: no price, card or payment.",
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "ACTIVE",
+              "ENDING",
+              "GRACE",
+              "ENDED"
+            ]
+          },
+          "planName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "interval": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "validUntil": {
+            "anyOf": [
+              {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "state",
+          "planName",
+          "interval",
+          "validUntil"
+        ]
+      },
+      "WalletSummary": {
+        "description": "Amounts are naira.",
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "const": "NGN"
+          },
+          "availableBalance": {
+            "type": "number"
+          },
+          "pendingWithdrawal": {
+            "type": "number"
+          },
+          "totalWithdrawn": {
+            "type": "number"
+          },
+          "totalEarned": {
+            "type": "number"
+          },
+          "earnedThisMonth": {
+            "type": "number"
+          },
+          "recent": {
+            "description": "The ten latest earnings, newest first.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "planNumber": {
+                  "type": "string"
+                },
+                "service": {
+                  "type": "string",
+                  "enum": [
+                    "LOCATION_AUTHENTICITY",
+                    "CERTIFICATE_OF_DEPOSIT"
+                  ]
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "at": {
+                  "description": "ISO 8601 date and time, UTC",
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "planNumber",
+                "service",
+                "amount",
+                "at"
+              ]
+            }
+          }
+        },
+        "required": [
+          "currency",
+          "availableBalance",
+          "pendingWithdrawal",
+          "totalWithdrawn",
+          "totalEarned",
+          "earnedThisMonth",
+          "recent"
+        ]
+      }
+    }
+  },
+  "x-error-codes": {
+    "VALIDATION_ERROR": {
+      "status": 400,
+      "meaning": "A parameter or body field is missing or not valid. `details` names the fields.",
+      "appDoes": "Shows its own message; for a list it asks the person to narrow the search."
+    },
+    "UNAUTHENTICATED": {
+      "status": 401,
+      "meaning": "No valid access token (missing, expired or for another platform).",
+      "appDoes": "Refreshes once and repeats the call; a second 401 ends the session."
+    },
+    "SESSION_INVALID": {
+      "status": 401,
+      "meaning": "The refresh token is not valid, was already used, or its sign-in was revoked.",
+      "appDoes": "Ends the session and returns to the sign-in screen."
+    },
+    "FORBIDDEN": {
+      "status": 403,
+      "meaning": "The signed-in role may not use this route.",
+      "appDoes": "Treats it as the end of the session (ADR-0002)."
+    },
+    "EMAIL_VERIFICATION_REQUIRED": {
+      "status": 403,
+      "meaning": "Enforcement is on and this account must verify its email first.",
+      "appDoes": "Reloads the profile once, which opens the verification screen."
+    },
+    "SUBSCRIPTION_REQUIRED": {
+      "status": 403,
+      "meaning": "An action that needs an active subscription. Reads never return this.",
+      "appDoes": "Explains that managing a subscription is on the website."
+    },
+    "ACCOUNT_TYPE_NOT_SUPPORTED": {
+      "status": 403,
+      "meaning": "The account is not a surveyor, so it cannot use the app.",
+      "appDoes": "Says the account type cannot sign in to the app."
+    },
+    "ACCOUNT_INACTIVE": {
+      "status": 403,
+      "meaning": "The account has been switched off.",
+      "appDoes": "Ends the session."
+    },
+    "NOT_FOUND": {
+      "status": 404,
+      "meaning": "Unknown, deleted or someone else's record (these look the same on purpose).",
+      "appDoes": "Shows \"This isn't available\"."
+    },
+    "REFRESH_CONFLICT": {
+      "status": 409,
+      "meaning": "Two refreshes of the same token raced.",
+      "appDoes": "Tries once more."
+    },
+    "FILE_NOT_VIEWABLE": {
+      "status": 422,
+      "meaning": "The file is a drawing or another format a phone cannot open.",
+      "appDoes": "Says the file cannot be opened on a phone."
+    },
+    "RATE_LIMITED": {
+      "status": 429,
+      "meaning": "Too many tries.",
+      "appDoes": "Asks the person to wait, without a countdown the server did not promise."
+    },
+    "APP_UPDATE_REQUIRED": {
+      "status": 426,
+      "meaning": "This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+      "appDoes": "Covers the app with the update screen. Never ends the session."
+    },
+    "MOBILE_SIGN_IN_DISABLED": {
+      "status": 503,
+      "meaning": "New sign-ins are paused (an emergency switch). Open sessions carry on.",
+      "appDoes": "Says signing in is paused for a short while."
+    },
+    "VERIFICATION_CODE_INVALID": {
+      "status": 400,
+      "meaning": "The code is not six digits.",
+      "appDoes": "Asks for six digits."
+    },
+    "VERIFICATION_CODE_INCORRECT": {
+      "status": 400,
+      "meaning": "The code is wrong.",
+      "appDoes": "Says it did not match and lets the person try again."
+    },
+    "VERIFICATION_CODE_EXPIRED": {
+      "status": 400,
+      "meaning": "No live code: it lapsed after 10 minutes, was used, or was replaced.",
+      "appDoes": "Offers to send a new one."
+    },
+    "VERIFICATION_CODE_LOCKED": {
+      "status": 400,
+      "meaning": "Five wrong tries on that code.",
+      "appDoes": "Offers to send a new one."
+    }
+  },
+  "x-uncoded-failures": [
+    {
+      "status": 401,
+      "route": "POST /auth/mobile/login",
+      "meaning": "Wrong email or password."
+    },
+    {
+      "status": 403,
+      "route": "POST /auth/mobile/login",
+      "meaning": "The account is inactive."
+    },
+    {
+      "status": 429,
+      "route": "POST /auth/mobile/login, POST /auth/mobile/refresh",
+      "meaning": "Too many attempts."
+    },
+    {
+      "status": 403,
+      "route": "routes that check the request's origin",
+      "meaning": "A cross-origin call was blocked."
+    },
+    {
+      "status": 400,
+      "route": "GET /auth/me",
+      "meaning": "The `platform` parameter is missing or not valid."
+    }
+  ]
+}

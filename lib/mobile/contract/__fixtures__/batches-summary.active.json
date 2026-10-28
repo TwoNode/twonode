@@ -1,0 +1,120 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "data": [
+        {
+          "id": "be50ce6b-18e1-487f-8cac-f7b5b6d81836",
+          "batchCode": "SurfCoD_4c52b6af",
+          "createdAt": "2026-10-18T08:00:00.000Z",
+          "paymentStatus": "PENDING_USER_PAYMENT",
+          "paymentLabel": "Payment pending",
+          "planCount": 2,
+          "readyCount": 0,
+          "statusCounts": [
+            {
+              "code": "PAYMENT_PENDING",
+              "label": "Payment pending",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "id": "8437f09e-7a11-492b-919f-e4e645b74def",
+          "batchCode": "SurfCoD_aff0f9b9",
+          "createdAt": "2026-10-16T08:00:00.000Z",
+          "paymentStatus": "ACCOUNTS_APPROVED",
+          "paymentLabel": "Approved",
+          "planCount": 10,
+          "readyCount": 3,
+          "statusCounts": [
+            {
+              "code": "QUERIED",
+              "label": "Queried by Accounts, Records II",
+              "count": 1
+            },
+            {
+              "code": "QUERIED",
+              "label": "Queried by Charting",
+              "count": 1
+            },
+            {
+              "code": "QUERIED",
+              "label": "Queried by Intake",
+              "count": 1
+            },
+            {
+              "code": "READY_FOR_PHYSICAL",
+              "label": "Ready for physical submission",
+              "count": 3
+            },
+            {
+              "code": "PARTLY_APPROVED",
+              "label": "Approved by Accounts, SURCON",
+              "count": 1
+            },
+            {
+              "code": "PHYSICAL_SUBMITTED",
+              "label": "Physical copy submitted",
+              "count": 1
+            },
+            {
+              "code": "LODGED",
+              "label": "Lodged",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "id": "dc49bfe7-ce18-4e80-bb41-67375aa407f5",
+          "batchCode": "SurfCoD_c54947ef",
+          "createdAt": "2026-10-14T08:00:00.000Z",
+          "paymentStatus": "LASG_PAID",
+          "paymentLabel": "Processing",
+          "planCount": 5,
+          "readyCount": 1,
+          "statusCounts": [
+            {
+              "code": "QUERIED",
+              "label": "Queried by SURCON",
+              "count": 1
+            },
+            {
+              "code": "READY_FOR_PHYSICAL",
+              "label": "Ready for physical submission",
+              "count": 1
+            },
+            {
+              "code": "IN_REVIEW",
+              "label": "In review",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "347d61ed-e8fe-4778-bde4-5fe237872b95",
+          "batchCode": "SurfCoD_99b558a1",
+          "createdAt": "2026-09-29T08:00:00.000Z",
+          "paymentStatus": "COMPLETED",
+          "paymentLabel": "Completed",
+          "planCount": 1,
+          "readyCount": 1,
+          "statusCounts": [
+            {
+              "code": "READY_FOR_PHYSICAL",
+              "label": "Ready for physical submission",
+              "count": 1
+            }
+          ]
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "pageSize": 20,
+        "total": 4,
+        "totalPages": 1
+      }
+    }
+  }
+}
