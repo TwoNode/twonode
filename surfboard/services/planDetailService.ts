@@ -84,7 +84,7 @@ const DETAIL_SELECT = {
 } as const satisfies Prisma.SurfboardPlanSelect;
 
 /** `id` is a database uuid column: any other text would be a 500 instead of "not found". */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const iso = (date: Date | null | undefined) =>
   date ? date.toISOString() : null;
@@ -98,7 +98,7 @@ function formatOf(storedPath: string): string {
   return dot > 0 ? stored.slice(dot + 1).toLowerCase() : "";
 }
 
-function planFiles(
+export function planFiles(
   row: {
     planNumber: string;
     redCopyFileUrl: string | null;
