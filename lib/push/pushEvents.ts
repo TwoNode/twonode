@@ -1,5 +1,6 @@
 import { Platform } from "@/utils/platform";
 import { removeTokens, tokensForUsers } from "@/lib/push/deviceTokens";
+import { recordTickets } from "@/lib/push/receipts";
 import {
   getPushSender,
   type PushMessage,
@@ -18,7 +19,8 @@ export type PushKind =
   | "READY_FOR_PHYSICAL"
   | "PLAN_SHARED"
   | "PLAN_LODGED"
-  | "SUBSCRIPTION_ENDING";
+  | "SUBSCRIPTION_ENDING"
+  | "WITHDRAWAL_UPDATED";
 
 export type PushEvent = {
   kind: PushKind;
@@ -46,6 +48,11 @@ const COPY: Record<PushKind, { title: string; body: string }> = {
   SUBSCRIPTION_ENDING: {
     title: "Surfboard",
     body: "Your subscription ends soon. Open the app for the date.",
+  },
+  // One kind for a paid and a refused withdrawal: which one, and the amount, are shown in the app.
+  WITHDRAWAL_UPDATED: {
+    title: "Surfboard",
+    body: "Your withdrawal request was updated. Open the app for the details.",
   },
 };
 
@@ -86,6 +93,14 @@ export async function sendPush(
       ticket.status === "error" && ticket.unregistered ? [targets[index].token] : []
     );
     await removeTokens(dead);
+    // So the receipts can be read later (1I.6). Never throws.
+    await recordTickets(
+      tickets.flatMap((ticket, index) =>
+        ticket.status === "ok" && ticket.id
+          ? [{ ticketId: ticket.id, token: targets[index].token }]
+          : []
+      )
+    );
     const failed = tickets.filter(
       (t) => t.status === "error" && !t.unregistered
     ).length;

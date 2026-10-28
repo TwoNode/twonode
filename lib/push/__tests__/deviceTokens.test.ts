@@ -17,6 +17,7 @@ const {
   removeDeviceToken,
   tokensForUsers,
   removeTokens,
+  removeTokensDeadSince,
 } = await import("@/lib/push/deviceTokens");
 const { Platform } = await import("@/utils/platform");
 
@@ -319,5 +320,50 @@ describe("removeTokens", () => {
     expect(mockPrisma.deviceToken.deleteMany).toHaveBeenCalledWith({
       where: { token: { in: ["a", "b"] } },
     });
+  });
+});
+
+describe("removeTokensDeadSince", () => {
+  const SENT = new Date("2026-10-29T09:00:00.000Z");
+
+  it("does nothing for no tokens", async () => {
+    expect(await removeTokensDeadSince([])).toBe(0);
+    expect(mockPrisma.deviceToken.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("deletes a token only if it was last seen no later than the send it was reported for", async () => {
+    mockPrisma.deviceToken.deleteMany.mockResolvedValue({ count: 1 });
+    const later = new Date("2026-10-29T09:30:00.000Z");
+
+    expect(
+      await removeTokensDeadSince([
+        { token: "a", sentAt: SENT },
+        { token: "b", sentAt: later },
+      ])
+    ).toBe(1);
+
+    expect(mockPrisma.deviceToken.deleteMany).toHaveBeenCalledWith({
+      where: {
+        OR: [
+          { token: "a", lastSeenAt: { lte: SENT } },
+          { token: "b", lastSeenAt: { lte: later } },
+        ],
+      },
+    });
+  });
+
+  it("works through a long list in chunks and adds up what was deleted", async () => {
+    mockPrisma.deviceToken.deleteMany.mockResolvedValue({ count: 3 });
+    const dead = Array.from({ length: 1100 }, (_, i) => ({
+      token: `token-${i}`,
+      sentAt: SENT,
+    }));
+
+    expect(await removeTokensDeadSince(dead)).toBe(9);
+
+    const sizes = mockPrisma.deviceToken.deleteMany.mock.calls.map(
+      ([arg]) => arg.where.OR.length
+    );
+    expect(sizes).toEqual([500, 500, 100]);
   });
 });

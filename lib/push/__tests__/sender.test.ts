@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   EXPO_BATCH_SIZE,
   EXPO_PUSH_URL,
+  EXPO_RECEIPTS_URL,
+  EXPO_RECEIPT_BATCH_SIZE,
   EXPO_TIMEOUT_MS,
   ExpoPushSender,
   NullPushSender,
@@ -56,6 +58,10 @@ describe("NullPushSender", () => {
       { status: "ok" },
       { status: "ok" },
     ]);
+  });
+
+  it("has no receipts to give", async () => {
+    expect(await new NullPushSender().receipts()).toEqual(new Map());
   });
 });
 
@@ -230,5 +236,148 @@ describe("ExpoPushSender", () => {
 
     expect(tickets).toHaveLength(1);
     expect(tickets[0].status).toBe("error");
+  });
+});
+
+describe("ExpoPushSender tickets", () => {
+  it("hands back the receipt id of each message the service took", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(
+        reply([
+          { status: "ok", id: "receipt-a" },
+          { status: "error", details: { error: "DeviceNotRegistered" } },
+          { status: "ok" },
+        ])
+      );
+
+    const tickets = await new ExpoPushSender(undefined, fetchImpl).send(
+      messages(3)
+    );
+
+    expect(tickets[0]).toEqual({ status: "ok", id: "receipt-a" });
+    expect(tickets[1]).toMatchObject({ status: "error", unregistered: true });
+    expect(tickets[2]).toEqual({ status: "ok" });
+  });
+
+  it("ignores a receipt id that is not text", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(reply([{ status: "ok", id: { not: "text" } }]));
+
+    const [ticket] = await new ExpoPushSender(undefined, fetchImpl).send(
+      messages(1)
+    );
+
+    expect(ticket).toEqual({ status: "ok" });
+  });
+});
+
+describe("ExpoPushSender receipts", () => {
+  const sender = (fetchImpl: typeof fetch, token?: string) =>
+    new ExpoPushSender(token, fetchImpl);
+
+  it("posts the ids to Expo's receipts endpoint as JSON, with the access token when there is one", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(reply({}));
+
+    await sender(fetchImpl as unknown as typeof fetch, "secret").receipts([
+      "a",
+      "b",
+    ]);
+
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe(EXPO_RECEIPTS_URL);
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body)).toEqual({ ids: ["a", "b"] });
+    expect(init.headers.Authorization).toBe("Bearer secret");
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("does not call Expo for no ids", async () => {
+    const fetchImpl = vi.fn();
+
+    expect(
+      await sender(fetchImpl as unknown as typeof fetch).receipts([])
+    ).toEqual(new Map());
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("reads delivered, dead and failed receipts, and leaves out an id with none", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      reply({
+        a: { status: "ok" },
+        b: { status: "error", details: { error: "DeviceNotRegistered" } },
+        c: {
+          status: "error",
+          message: "too big",
+          details: { error: "MessageTooBig" },
+        },
+        d: { status: "error", message: "Something else" },
+        e: { status: "error" },
+      })
+    );
+
+    const got = await sender(fetchImpl as unknown as typeof fetch).receipts([
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "missing",
+    ]);
+
+    expect(got).toEqual(
+      new Map([
+        ["a", { status: "ok" }],
+        ["b", { status: "error", unregistered: true, message: "DeviceNotRegistered" }],
+        ["c", { status: "error", unregistered: false, message: "MessageTooBig" }],
+        ["d", { status: "error", unregistered: false, message: "Something else" }],
+        ["e", { status: "error", unregistered: false, message: "No detail" }],
+      ])
+    );
+  });
+
+  it("answers only for the ids it was asked about", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(reply({ a: { status: "ok" }, other: { status: "ok" } }));
+
+    const got = await sender(fetchImpl as unknown as typeof fetch).receipts(["a"]);
+
+    expect([...got!.keys()]).toEqual(["a"]);
+  });
+
+  it("is not fooled by an id that is a property name of every object", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(reply({}));
+
+    const got = await sender(fetchImpl as unknown as typeof fetch).receipts([
+      "constructor",
+      "__proto__",
+      "toString",
+    ]);
+
+    expect(got).toEqual(new Map());
+  });
+
+  it("says it could not ask (null) for a refusal, a throw, a bad answer or an answer without data", async () => {
+    const refused = vi.fn().mockResolvedValue(new Response("no", { status: 503 }));
+    const threw = vi.fn().mockRejectedValue(new Error("socket hang up"));
+    const notJson = vi.fn().mockResolvedValue(new Response("<html>", { status: 200 }));
+    const onlyErrors = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ errors: [{ code: "TOO_MANY_REQUESTS" }] }), {
+        status: 200,
+      })
+    );
+    const aList = vi.fn().mockResolvedValue(reply([{ status: "ok" }]));
+
+    for (const fetchImpl of [refused, threw, notJson, onlyErrors, aList]) {
+      expect(
+        await sender(fetchImpl as unknown as typeof fetch).receipts(["a"])
+      ).toBeNull();
+    }
+  });
+
+  it("asks for no more ids at a time than the service answers for", () => {
+    expect(EXPO_RECEIPT_BATCH_SIZE).toBe(1000);
   });
 });
