@@ -202,7 +202,7 @@
           "Session"
         ],
         "summary": "Replace the access token",
-        "description": "Single use: the refresh token in the request is spent and a new pair is returned. The access token's claims (`emailVerified`, `mustVerifyNow`) change here.\n\nNo session needed.",
+        "description": "Single use: the refresh token in the request is spent and a new pair is returned. A token presented again within 30 seconds is re-issued, so a lost answer does not end the sign-in; presented later, a spent token ends the whole sign-in. The access token's claims (`emailVerified`, `mustVerifyNow`) change here.\n\nNo session needed.",
         "security": [],
         "parameters": [
           {
@@ -885,7 +885,7 @@
             }
           },
           "400": {
-            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields. `VERIFICATION_CODE_INVALID`: The code is not six digits. `VERIFICATION_CODE_INCORRECT`: The code is wrong. `VERIFICATION_CODE_EXPIRED`: No live code: it lapsed after 10 minutes, was used, or was replaced. `VERIFICATION_CODE_LOCKED`: Five wrong tries on that code.",
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields. `VERIFICATION_CODE_INVALID`: The code is not six characters long once the spaces around it are trimmed. Six wrong characters, digits or not, are INCORRECT. `VERIFICATION_CODE_INCORRECT`: The code is wrong. `VERIFICATION_CODE_EXPIRED`: No live code: it lapsed after 10 minutes, was used, or was replaced. `VERIFICATION_CODE_LOCKED`: Five wrong tries on that code.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4813,8 +4813,8 @@
     },
     "VERIFICATION_CODE_INVALID": {
       "status": 400,
-      "meaning": "The code is not six digits.",
-      "appDoes": "Asks for six digits."
+      "meaning": "The code is not six characters long once the spaces around it are trimmed. Six wrong characters, digits or not, are INCORRECT.",
+      "appDoes": "Asks for the six digits."
     },
     "VERIFICATION_CODE_INCORRECT": {
       "status": 400,

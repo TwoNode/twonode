@@ -26,7 +26,8 @@
     "prisma:create-only": "npx prisma migrate dev --create-only",
     "prisma:check": "npx prisma migrate diff --from-schema-datasource prisma/schema --to-schema-datamodel prisma/schema --script",
     "docs:routes": "node scripts/docs/generate-route-inventory.mjs",
-    "docs:openapi": "vitest run lib/mobile/contract/__tests__/openapi.test.ts -u"
+    "docs:openapi": "vitest run lib/mobile/contract/__tests__/openapi.test.ts -u",
+    "contract:live": "tsx --tsconfig tsconfig.json scripts/mobile/contract-live-check.ts"
   },
   "dependencies": {
     "@arcgis/core": "^4.33.9",

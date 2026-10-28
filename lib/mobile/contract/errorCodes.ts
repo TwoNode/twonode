@@ -101,8 +101,9 @@ export const ERROR_CODES = {
   },
   VERIFICATION_CODE_INVALID: {
     status: 400,
-    meaning: "The code is not six digits.",
-    appDoes: "Asks for six digits.",
+    meaning:
+      "The code is not six characters long once the spaces around it are trimmed. Six wrong characters, digits or not, are INCORRECT.",
+    appDoes: "Asks for the six digits.",
   },
   VERIFICATION_CODE_INCORRECT: {
     status: 400,

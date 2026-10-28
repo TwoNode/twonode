@@ -193,7 +193,7 @@ export const ENDPOINTS: Endpoint[] = [
     tag: "Session",
     summary: "Replace the access token",
     description:
-      "Single use: the refresh token in the request is spent and a new pair is returned. The access token's claims (`emailVerified`, `mustVerifyNow`) change here.",
+      "Single use: the refresh token in the request is spent and a new pair is returned. A token presented again within 30 seconds is re-issued, so a lost answer does not end the sign-in; presented later, a spent token ends the whole sign-in. The access token's claims (`emailVerified`, `mustVerifyNow`) change here.",
     access: "public",
     versionGate: true,
     body: {
