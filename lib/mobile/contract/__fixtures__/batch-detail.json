@@ -1,0 +1,211 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "id": "8437f09e-7a11-492b-919f-e4e645b74def",
+      "batchCode": "SurfCoD_aff0f9b9",
+      "createdAt": "2026-10-16T08:00:00.000Z",
+      "paymentStatus": "ACCOUNTS_APPROVED",
+      "paymentLabel": "Approved",
+      "planCount": 10,
+      "readyCount": 3,
+      "statusCounts": [
+        {
+          "code": "QUERIED",
+          "label": "Queried by Accounts, Records II",
+          "count": 1
+        },
+        {
+          "code": "QUERIED",
+          "label": "Queried by Charting",
+          "count": 1
+        },
+        {
+          "code": "QUERIED",
+          "label": "Queried by Intake",
+          "count": 1
+        },
+        {
+          "code": "READY_FOR_PHYSICAL",
+          "label": "Ready for physical submission",
+          "count": 3
+        },
+        {
+          "code": "PARTLY_APPROVED",
+          "label": "Approved by Accounts, SURCON",
+          "count": 1
+        },
+        {
+          "code": "PHYSICAL_SUBMITTED",
+          "label": "Physical copy submitted",
+          "count": 1
+        },
+        {
+          "code": "LODGED",
+          "label": "Lodged",
+          "count": 2
+        }
+      ],
+      "plans": [
+        {
+          "id": "2b1416a2-b0d7-4238-8be9-307a56ec40f3",
+          "planNumber": "LA/2026/PARTLY",
+          "surveyTitle": "Survey LA/2026/PARTLY",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "PARTLY_APPROVED",
+            "label": "Approved by Accounts, SURCON"
+          },
+          "ready": false,
+          "queries": [],
+          "physicalCopySubmittedAt": null
+        },
+        {
+          "id": "194c76b5-eb77-4285-8105-6cc0bad8335c",
+          "planNumber": "LA/2026/0409",
+          "surveyTitle": "Survey LA/2026/0409",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "READY_FOR_PHYSICAL",
+            "label": "Ready for physical submission"
+          },
+          "ready": true,
+          "queries": [],
+          "physicalCopySubmittedAt": null
+        },
+        {
+          "id": "a8af28ec-0444-4f67-9854-6363783d88f7",
+          "planNumber": "LA/2026/0412",
+          "surveyTitle": "Survey of land at Ajah",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "READY_FOR_PHYSICAL",
+            "label": "Ready for physical submission"
+          },
+          "ready": true,
+          "queries": [],
+          "physicalCopySubmittedAt": null
+        },
+        {
+          "id": "d9685305-101e-4322-a03b-2cd7b266f0ab",
+          "planNumber": "LA/2026/PHYSICAL",
+          "surveyTitle": "Survey LA/2026/PHYSICAL",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "PHYSICAL_SUBMITTED",
+            "label": "Physical copy submitted"
+          },
+          "ready": false,
+          "queries": [],
+          "physicalCopySubmittedAt": "2026-10-18T08:00:00.000Z"
+        },
+        {
+          "id": "d1068b67-a614-4d4f-a5ce-08279eef13e7",
+          "planNumber": "LA/2026/Q-TWO",
+          "surveyTitle": "Survey LA/2026/Q-TWO",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "QUERIED",
+            "label": "Queried by Accounts, Records II"
+          },
+          "ready": false,
+          "queries": [
+            {
+              "stage": "accounts",
+              "label": "Accounts",
+              "comment": "Receipt mismatch.",
+              "at": null
+            },
+            {
+              "stage": "recordsII",
+              "label": "Records II",
+              "comment": "Number differs.",
+              "at": null
+            }
+          ],
+          "physicalCopySubmittedAt": null
+        },
+        {
+          "id": "19f115e4-dd9b-40d5-a2e5-1fc5ef2a95a8",
+          "planNumber": "LA/2026/Q-INTAKE",
+          "surveyTitle": "Survey LA/2026/Q-INTAKE",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "QUERIED",
+            "label": "Queried by Intake"
+          },
+          "ready": false,
+          "queries": [
+            {
+              "stage": "intake",
+              "label": "Intake",
+              "comment": "Physical copy does not match.",
+              "at": "2026-10-17T08:00:00.000Z"
+            }
+          ],
+          "physicalCopySubmittedAt": null
+        },
+        {
+          "id": "799f8654-60eb-4059-a717-349419779c99",
+          "planNumber": "LA/2026/Q-CHARTING",
+          "surveyTitle": "Survey LA/2026/Q-CHARTING",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "QUERIED",
+            "label": "Queried by Charting"
+          },
+          "ready": false,
+          "queries": [
+            {
+              "stage": "charting",
+              "label": "Charting",
+              "comment": "Closure outside tolerance.",
+              "at": "2026-10-15T08:00:00.000Z"
+            }
+          ],
+          "physicalCopySubmittedAt": null
+        },
+        {
+          "id": "44e46e6b-a5a1-4424-b4d7-a4ce326c6fa5",
+          "planNumber": "LA/2026/LODGED-STALE-QUERY",
+          "surveyTitle": "Survey LA/2026/LODGED-STALE-QUERY",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "ready": false,
+          "queries": [],
+          "physicalCopySubmittedAt": null
+        },
+        {
+          "id": "bc136eed-009e-4399-a989-d7b1b82d637f",
+          "planNumber": "LA/2026/LODGED-A",
+          "surveyTitle": "Survey LA/2026/LODGED-A",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "ready": false,
+          "queries": [],
+          "physicalCopySubmittedAt": null
+        },
+        {
+          "id": "fa2904fb-2423-4359-90d5-b42910c4d779",
+          "planNumber": "LA/2026/FILES-A",
+          "surveyTitle": "Survey with every kind of file",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "READY_FOR_PHYSICAL",
+            "label": "Ready for physical submission"
+          },
+          "ready": true,
+          "queries": [],
+          "physicalCopySubmittedAt": null
+        }
+      ]
+    }
+  }
+}

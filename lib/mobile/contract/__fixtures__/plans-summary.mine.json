@@ -1,0 +1,900 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "data": [
+        {
+          "id": "fa2904fb-2423-4359-90d5-b42910c4d779",
+          "planNumber": "LA/2026/FILES-A",
+          "surveyTitle": "Survey with every kind of file",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "READY_FOR_PHYSICAL",
+            "label": "Ready for physical submission"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Eti-Osa",
+          "ward": "Ajah",
+          "lcda": null,
+          "locality": "Ajah Junction",
+          "state": "Lagos",
+          "dateOnSurveyPlan": "2026-09-12T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-19T22:37:01.267Z",
+          "updatedAt": "2026-10-19T22:37:01.267Z",
+          "isOwner": true,
+          "sharedCount": 2,
+          "ownerName": null
+        },
+        {
+          "id": "bc136eed-009e-4399-a989-d7b1b82d637f",
+          "planNumber": "LA/2026/LODGED-A",
+          "surveyTitle": "Survey LA/2026/LODGED-A",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "APPROVED",
+            "recordsII": "APPROVED"
+          },
+          "queries": [],
+          "physicalCopySubmitted": true,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-08T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-18T08:00:00.000Z",
+          "updatedAt": "2026-10-18T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "0e3bbe89-e178-4168-aace-cef0de482931",
+          "planNumber": "LA/2026/LODGED-H1",
+          "surveyTitle": "Survey LA/2026/LODGED-H1",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "APPROVED",
+            "recordsII": "APPROVED"
+          },
+          "queries": [],
+          "physicalCopySubmitted": true,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-07T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-17T08:00:00.000Z",
+          "updatedAt": "2026-10-17T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "23505745-d9c4-4894-bfd9-6916b252de5a",
+          "planNumber": "LA/2026/LODGED-H2",
+          "surveyTitle": "Survey LA/2026/LODGED-H2",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "APPROVED",
+            "recordsII": "APPROVED"
+          },
+          "queries": [],
+          "physicalCopySubmitted": true,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-06T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-16T08:00:00.000Z",
+          "updatedAt": "2026-10-16T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "293af547-8da0-4c86-b02b-34858c43e174",
+          "planNumber": "LA/2026/LODGED-IMPORTED",
+          "surveyTitle": "Survey LA/2026/LODGED-IMPORTED",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": null,
+          "dateLodged": null,
+          "createdAt": "2026-10-15T08:00:00.000Z",
+          "updatedAt": "2026-10-15T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "44e46e6b-a5a1-4424-b4d7-a4ce326c6fa5",
+          "planNumber": "LA/2026/LODGED-STALE-QUERY",
+          "surveyTitle": "Survey LA/2026/LODGED-STALE-QUERY",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "QUERIED",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-04T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-14T08:00:00.000Z",
+          "updatedAt": "2026-10-14T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "799f8654-60eb-4059-a717-349419779c99",
+          "planNumber": "LA/2026/Q-CHARTING",
+          "surveyTitle": "Survey LA/2026/Q-CHARTING",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "QUERIED",
+            "label": "Queried by Charting"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "QUERIED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [
+            {
+              "stage": "charting",
+              "label": "Charting",
+              "comment": "Closure outside tolerance.",
+              "at": "2026-10-15T08:00:00.000Z"
+            }
+          ],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-03T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-13T08:00:00.000Z",
+          "updatedAt": "2026-10-13T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "19f115e4-dd9b-40d5-a2e5-1fc5ef2a95a8",
+          "planNumber": "LA/2026/Q-INTAKE",
+          "surveyTitle": "Survey LA/2026/Q-INTAKE",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "QUERIED",
+            "label": "Queried by Intake"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "QUERIED",
+            "recordsII": "PENDING"
+          },
+          "queries": [
+            {
+              "stage": "intake",
+              "label": "Intake",
+              "comment": "Physical copy does not match.",
+              "at": "2026-10-17T08:00:00.000Z"
+            }
+          ],
+          "physicalCopySubmitted": true,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-02T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-12T08:00:00.000Z",
+          "updatedAt": "2026-10-12T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "81804b8e-bed7-4137-8351-a584882eaee9",
+          "planNumber": "LA/2026/Q-ADMIN-FLAG",
+          "surveyTitle": "Survey LA/2026/Q-ADMIN-FLAG",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "QUERIED",
+            "label": "Queried"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-01T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-11T08:00:00.000Z",
+          "updatedAt": "2026-10-11T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "34320057-9980-4e8d-abb8-f90fe9556697",
+          "planNumber": "LA/2026/Q-NULLS",
+          "surveyTitle": "Survey LA/2026/Q-NULLS",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "QUERIED",
+            "label": "Queried by SURCON"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "QUERIED",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [
+            {
+              "stage": "surcon",
+              "label": "SURCON",
+              "comment": "Plan number differs.",
+              "at": null
+            }
+          ],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-31T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-10T08:00:00.000Z",
+          "updatedAt": "2026-10-10T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "d1068b67-a614-4d4f-a5ce-08279eef13e7",
+          "planNumber": "LA/2026/Q-TWO",
+          "surveyTitle": "Survey LA/2026/Q-TWO",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "QUERIED",
+            "label": "Queried by Accounts, Records II"
+          },
+          "stages": {
+            "accounts": "QUERIED",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "QUERIED"
+          },
+          "queries": [
+            {
+              "stage": "accounts",
+              "label": "Accounts",
+              "comment": "Receipt mismatch.",
+              "at": null
+            },
+            {
+              "stage": "recordsII",
+              "label": "Records II",
+              "comment": "Number differs.",
+              "at": null
+            }
+          ],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-30T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-09T08:00:00.000Z",
+          "updatedAt": "2026-10-09T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "d9685305-101e-4322-a03b-2cd7b266f0ab",
+          "planNumber": "LA/2026/PHYSICAL",
+          "surveyTitle": "Survey LA/2026/PHYSICAL",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "PHYSICAL_SUBMITTED",
+            "label": "Physical copy submitted"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": true,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-29T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-08T08:00:00.000Z",
+          "updatedAt": "2026-10-08T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "2c65d1dc-5a63-469a-807e-50184b904de6",
+          "planNumber": "LA/2026/NOT-SUBMITTED",
+          "surveyTitle": "Survey LA/2026/NOT-SUBMITTED",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-28T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-07T08:00:00.000Z",
+          "updatedAt": "2026-10-07T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "7140ae47-9806-4cc4-883c-a3cc35095f88",
+          "planNumber": "LA/2026/FAILED",
+          "surveyTitle": "Survey LA/2026/FAILED",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "SUBMISSION_FAILED",
+            "label": "Submission failed"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-27T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-06T08:00:00.000Z",
+          "updatedAt": "2026-10-06T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "a8af28ec-0444-4f67-9854-6363783d88f7",
+          "planNumber": "LA/2026/0412",
+          "surveyTitle": "Survey of land at Ajah",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "READY_FOR_PHYSICAL",
+            "label": "Ready for physical submission"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Eti-Osa",
+          "ward": "Ajah",
+          "lcda": "Eti-Osa West",
+          "locality": "Ajah Junction",
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-12T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-05T08:00:00.000Z",
+          "updatedAt": "2026-10-05T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "194c76b5-eb77-4285-8105-6cc0bad8335c",
+          "planNumber": "LA/2026/0409",
+          "surveyTitle": "Survey LA/2026/0409",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "READY_FOR_PHYSICAL",
+            "label": "Ready for physical submission"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-25T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-04T08:00:00.000Z",
+          "updatedAt": "2026-10-04T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "8564dafd-c433-4114-9014-b3e782268cd6",
+          "planNumber": "LA/2026/READY-LASG",
+          "surveyTitle": "Survey LA/2026/READY-LASG",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "READY_FOR_PHYSICAL",
+            "label": "Ready for physical submission"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-24T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-03T08:00:00.000Z",
+          "updatedAt": "2026-10-03T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "9dc642ea-a278-4597-9e83-85d5358ab2f3",
+          "planNumber": "LA/2026/READY-COMPLETED",
+          "surveyTitle": "Survey LA/2026/READY-COMPLETED",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "READY_FOR_PHYSICAL",
+            "label": "Ready for physical submission"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-23T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-02T08:00:00.000Z",
+          "updatedAt": "2026-10-02T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "24fc5f8d-10cf-40bc-af45-53b9367ec13e",
+          "planNumber": "LA/2026/APPROVED-NO-BATCH",
+          "surveyTitle": "Survey LA/2026/APPROVED-NO-BATCH",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "IN_REVIEW",
+            "label": "In review"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-22T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-01T08:00:00.000Z",
+          "updatedAt": "2026-10-01T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "3ade3b6a-b13b-4a5e-b24e-a83b4783b7be",
+          "planNumber": "LA/2026/APPROVED-UNPAID",
+          "surveyTitle": "Survey LA/2026/APPROVED-UNPAID",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "PAYMENT_PENDING",
+            "label": "Payment pending"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-21T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-30T08:00:00.000Z",
+          "updatedAt": "2026-09-30T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "9e9112fd-1fd4-41de-ad9f-7c97ceea1dd4",
+          "planNumber": "LA/2026/UNPAID-1",
+          "surveyTitle": "Survey LA/2026/UNPAID-1",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "PAYMENT_PENDING",
+            "label": "Payment pending"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-20T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-29T08:00:00.000Z",
+          "updatedAt": "2026-09-29T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "2b1416a2-b0d7-4238-8be9-307a56ec40f3",
+          "planNumber": "LA/2026/PARTLY",
+          "surveyTitle": "Survey LA/2026/PARTLY",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "PARTLY_APPROVED",
+            "label": "Approved by Accounts, SURCON"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "PENDING",
+            "surcon": "APPROVED",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-19T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-28T08:00:00.000Z",
+          "updatedAt": "2026-09-28T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "eab14a50-ab5d-4e30-8ca3-a12e1fd47926",
+          "planNumber": "LA/2026/IN-REVIEW",
+          "surveyTitle": "Survey LA/2026/IN-REVIEW",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "IN_REVIEW",
+            "label": "In review"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-18T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-27T08:00:00.000Z",
+          "updatedAt": "2026-10-19T22:37:00.515Z",
+          "isOwner": true,
+          "sharedCount": 1,
+          "ownerName": null
+        },
+        {
+          "id": "2d9fd756-3dce-49d8-b9cf-da48a18ca59f",
+          "planNumber": "LA/2026/IN-REVIEW-NULLS",
+          "surveyTitle": "Survey LA/2026/IN-REVIEW-NULLS",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "IN_REVIEW",
+            "label": "In review"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-17T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-26T08:00:00.000Z",
+          "updatedAt": "2026-09-26T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "4f3b68fa-4016-4632-b0e8-30b1114dfd61",
+          "planNumber": "LA/2026/PROVISIONAL-1",
+          "surveyTitle": "Survey LA/2026/PROVISIONAL-1",
+          "planType": "PROVISIONAL",
+          "facilitator": "Lekki Survey Hub",
+          "displayStatus": {
+            "code": "IN_REVIEW",
+            "label": "In review"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ibeju-Lekki",
+          "ward": "Akodo",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-16T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-25T08:00:00.000Z",
+          "updatedAt": "2026-09-25T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "pageSize": 100,
+        "total": 25,
+        "totalPages": 1
+      }
+    }
+  }
+}

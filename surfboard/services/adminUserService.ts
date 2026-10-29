@@ -9,6 +9,12 @@ import {
 import { paginatedResult } from "@/lib/api/pagination";
 import { activeSubscriptionWhereClause } from "@/surfboard/services/subscriptionService";
 import { EXPIRING_SOON_WINDOW_DAYS } from "@/surfboard/utils/subscriptionExpiry";
+import {
+  listDeviceSessions,
+  revokeAllDeviceSessions,
+  revokeDeviceSession,
+} from "@/lib/auth/deviceSessions";
+import { Platform } from "@/utils/platform";
 
 /**
  * Who is performing an admin action. The audit log's `userId` is defined as
@@ -249,6 +255,74 @@ export async function updateUserStatus(
   });
 
   return updatedUser;
+}
+
+/**
+ * The app sign-ins of one person (TASK-0015 1J.3): what an admin needs to end
+ * one, never the device id (it is the key to the push token). Same rule as
+ * `updateUserStatus`: an `ADMIN` cannot act on another `ADMIN` or a
+ * `SUPERADMIN`.
+ */
+async function deviceTarget(actor: AdminActor, userId: string) {
+  const target = await prisma.surfboardUser.findUnique({
+    where: { id: userId },
+    select: { role: true, email: true },
+  });
+  if (!target) throw new NotFoundError("User");
+  if (
+    actor.role === "ADMIN" &&
+    (target.role === "ADMIN" || target.role === "SUPERADMIN")
+  ) {
+    throw new ForbiddenError();
+  }
+  return target;
+}
+
+export async function listUserDevices(actor: AdminActor, userId: string) {
+  await deviceTarget(actor, userId);
+  const devices = await listDeviceSessions(userId, Platform.SURFBOARD);
+  return devices.map(
+    ({ id, deviceLabel, appVersion, lastUsedAt, signedInAt }) => ({
+      id,
+      deviceLabel,
+      appVersion,
+      lastUsedAt,
+      signedInAt,
+    })
+  );
+}
+
+export async function revokeUserDevice(
+  actor: AdminActor,
+  userId: string,
+  familyId: string
+) {
+  const target = await deviceTarget(actor, userId);
+  const ended = await revokeDeviceSession(userId, Platform.SURFBOARD, familyId);
+  if (ended === 0) throw new NotFoundError("Device session");
+
+  await logAuditAction({
+    userId: actor.id,
+    action: "REVOKE_DEVICE_SESSION",
+    entity: "SurfboardUser",
+    entityId: userId,
+    changes: createChangeLog({ familyId, userEmail: target.email }),
+  });
+  return { ended: 1 };
+}
+
+export async function revokeAllUserDevices(actor: AdminActor, userId: string) {
+  const target = await deviceTarget(actor, userId);
+  const ended = await revokeAllDeviceSessions(userId, Platform.SURFBOARD);
+
+  await logAuditAction({
+    userId: actor.id,
+    action: "REVOKE_ALL_DEVICE_SESSIONS",
+    entity: "SurfboardUser",
+    entityId: userId,
+    changes: createChangeLog({ ended, userEmail: target.email }),
+  });
+  return { ended };
 }
 
 export async function updateUserSubscription(

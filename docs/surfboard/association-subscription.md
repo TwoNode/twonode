@@ -1,8 +1,12 @@
 # Surfboard Association Subscription — evaluation and recommended design
 
+> **Paused (2026-10-19):** by decision, the association feature waits until further notice while the mobile app is built first ([TASK-0015](../tasks/0015-mobile-app-and-api.md)). Nothing association-specific is built; the Phase 0 prerequisites are merged (#261, #262, #263, #273). The research is kept: [surveyor-world-research-2026-10-19.md](./surveyor-world-research-2026-10-19.md) and [association-and-mobile-research-2026-10-18.md](../mobile/association-and-mobile-research-2026-10-18.md).
+
 > **Status: proposal. The association feature itself is not implemented.** The Phase 0 prerequisites in §6 — defects this evaluation found in today's subscription flow — are fixed in pull requests #262 (one-time payment binding), #261 (webhook retries) and #263 (additive periods, month arithmetic), open when this was updated on 2026-10-05; each section below says which. The rest of the document describes the code as it was on `dev` on 2026-10-04. It evaluates the product requirements ("Surfboard Association Subscription PRB") and the two engineering write-ups that were produced from them, checks every factual claim against the code on `dev` (2026-10-04), and replaces them with one reconciled design.
 >
 > **Superseded inputs** (kept locally in the untracked `out/` folder; their useful content is carried here): `association_subscription_plan.md` ("Plan A") and Part I of `Surfboard_Association_and_Mobile_Feasibility_Analysis.md` ("Plan B"). Part II of that file (mobile) is evaluated in [`../mobile/surfboard-mobile-app-evaluation.md`](../mobile/surfboard-mobile-app-evaluation.md).
+
+> **Field context (2026-10-19):** [`surveyor-world-research-2026-10-19.md`](./surveyor-world-research-2026-10-19.md) records what public sources say about SURCON, NIS, APPSN and the state Surveyor-General offices, and what could not be found. Key point: association membership is not the same as state residence.
 
 ## 1. What the PRB asks for
 
@@ -54,7 +58,7 @@ Two PRB statements drive most of the findings below: **#10/#13.9 "every purchase
 | `residenceState`                  | Free-text `String?` column, but the UI is a `<select>` over `nigerianStates` (names such as `"Federal Capital Territory"`). **Editable until KYC validation** (`isLocked = isKycValidated`).                                                  | `prisma/schema/surfboard.prisma:55`, `surfboard/services/profileService.ts:88`, `lib/constants.ts`              |
 | Manual override                   | A `SUPERADMIN` can set any user's subscription directly (`PATCH admin/users/[id]/subscription`) — a precedent for non-Paystack grants.                                                                                                        | `app/api/v1/surfboard/admin/users/[id]/subscription/route.ts`                                                   |
 | Receipts                          | `@react-pdf/renderer` run in a child-process worker; eligibility/ownership logic in `receiptPdfService.ts`.                                                                                                                                   | `surfboard/services/receiptPdfService.ts`                                                                       |
-| Reminders                         | Daily cron (`vercel.json`, 08:00 UTC) scans `status = active` rows by `currentEnd`; sets `expiryReminderSentAt` once per expiry date, so a bumped `currentEnd` re-arms it.                                                                    | `surfboard/services/subscriptionReminderService.ts`                                                             |
+| Reminders                         | Daily cron (`vercel.json`, 08:00 UTC) scans `status = active` rows by `currentEnd`; sets `expiryReminderSentAt` once per expiry date, so a bumped `currentEnd` re-arms it. (Known gap, 2026-10-28: as written the check does not stop the email and WhatsApp reminder repeating inside the 3-day window; see `docs/tasks/current-tasks.md`. The push goes once per cycle.)                                                                    | `surfboard/services/subscriptionReminderService.ts`                                                             |
 
 ## 4. Findings
 

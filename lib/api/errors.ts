@@ -82,6 +82,43 @@ export class EmailVerificationRequiredError extends ApiError {
 }
 
 /**
+ * The mobile app is older than the lowest version the server still serves
+ * (settings.mobileApp, see lib/api/mobileApp.ts). 426 ("Upgrade Required") is
+ * the status written for exactly this; the app shows an update screen and does
+ * not sign the person out. `details` carries what the screen needs:
+ * { platform, minimumVersion, storeUrl } (storeUrl is "" when none is set).
+ */
+export class AppUpdateRequiredError extends ApiError {
+  constructor(details: {
+    platform: string | null;
+    minimumVersion: string;
+    storeUrl: string;
+  }) {
+    super(
+      426,
+      "APP_UPDATE_REQUIRED",
+      "This version of the app is no longer supported. Please update it.",
+      details
+    );
+  }
+}
+
+/**
+ * The emergency switch (settings.mobileApp.signInEnabled) is off: new sign-ins
+ * from the app are paused. 503 so a client treats it as "try again later", not
+ * as a wrong password. Sessions that are already open are not touched.
+ */
+export class MobileSignInDisabledError extends ApiError {
+  constructor() {
+    super(
+      503,
+      "MOBILE_SIGN_IN_DISABLED",
+      "Signing in from the app is paused. Please try again later."
+    );
+  }
+}
+
+/**
  * Prisma error-code -> friendly message table. Ported from the existing
  * app/(projects)/(surfboard)/utils/prismaErrorHandler.ts (the one place this
  * codebase already had thorough coverage, but Surfboard-only and shaped to

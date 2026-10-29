@@ -130,3 +130,42 @@ describe("record copies stored under the plan number (I-023)", () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe("a plan shared with the surveyor (I-037)", () => {
+  const redCopy = "surfboard/SAS/LA/1886/2023/A001/redcopy/1700000000000__ab12__x.pdf";
+  const pdf = "https://bucket.s3.amazonaws.com/surfboard/owner-1/pdf/a.pdf";
+
+  /** The conditions the plan lookup is asked to match, whichever plan comes back. */
+  const fileMatches = async (target: string) => {
+    await get(target);
+    return mocks.plan.mock.calls[0][0].where.AND[0].OR as Record<string, unknown>[];
+  };
+
+  it("matches the record copy only on a plan the caller owns", async () => {
+    const matches = await fileMatches(redCopy);
+    expect(matches).toContainEqual({
+      userId: "user-1",
+      redCopyFileUrl: { endsWith: redCopy },
+    });
+    // No bare record-copy condition that a shared plan could satisfy.
+    expect(matches).not.toContainEqual({ redCopyFileUrl: { endsWith: redCopy } });
+  });
+
+  it("still matches the plan's other files on a shared plan", async () => {
+    const matches = await fileMatches(pdf);
+    expect(matches).toContainEqual({ pdfFilePaths: { has: pdf } });
+    expect(matches).toContainEqual({ cadFilePaths: { has: pdf } });
+    expect(matches).toContainEqual({ certificateFilePaths: { has: pdf } });
+    expect(mocks.plan.mock.calls[0][0].where.OR).toEqual([
+      { userId: "user-1" },
+      { sharedTo: { has: "user-1" } },
+    ]);
+  });
+
+  it("refuses a shared viewer the record copy when no plan of theirs matches it", async () => {
+    mocks.plan.mockResolvedValue(null);
+    const res = await get(redCopy);
+    expect(res.status).toBe(403);
+    expect(mocks.sign).not.toHaveBeenCalled();
+  });
+});

@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "data": [
+        {
+          "id": "704f3fba-f40c-4a4e-8fbe-080c408652cc",
+          "batchCode": "SurfCoD_8afb0e8a",
+          "createdAt": "2026-09-19T08:00:00.000Z",
+          "paymentStatus": "COMPLETED",
+          "paymentLabel": "Completed",
+          "planCount": 2,
+          "readyCount": 0,
+          "statusCounts": [
+            {
+              "code": "LODGED",
+              "label": "Lodged",
+              "count": 2
+            }
+          ]
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "pageSize": 20,
+        "total": 1,
+        "totalPages": 1
+      }
+    }
+  }
+}

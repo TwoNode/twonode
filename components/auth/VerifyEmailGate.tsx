@@ -64,6 +64,11 @@ export function VerifyEmailGate({
   const [resendStatus, setResendStatus] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState<number>(0);
   const [checkingLinkStatus, setCheckingLinkStatus] = useState(false);
+  // Whether a code the person can still enter was sent. Null until /me has said (a person who has
+  // just registered was sent one, so it is treated as sent until told otherwise); false shows
+  // "Send a code" instead of claiming one was emailed (I-048).
+  const [codeSent, setCodeSent] = useState<boolean | null>(null);
+  const [sendingCode, setSendingCode] = useState(false);
 
   const dark = accentDark ?? accent;
   const headingColor = theme === "dark" ? "#fff" : dark;
@@ -88,6 +93,9 @@ export function VerifyEmailGate({
           const user = result.data;
           setEmail(user.email);
           setMethod(user.verificationMethod);
+          if (user.verificationMethod === "OTP" && !user.emailVerified) {
+            setCodeSent(Boolean(user.verificationCodeSentAt));
+          }
           if (user.emailVerified) {
             setIsAlreadyVerified(true);
           }
@@ -111,17 +119,18 @@ export function VerifyEmailGate({
     };
   }, [platform]);
 
-  // Focus first OTP input on mount when method is OTP
+  // Focus first OTP input on mount when method is OTP (not while the "Send a code" panel is up)
   useEffect(() => {
     if (
       !loadingMe &&
       method === "OTP" &&
+      codeSent !== false &&
       !isAlreadyVerified &&
       !isUnauthenticated
     ) {
       inputRefs.current[0]?.focus();
     }
-  }, [loadingMe, method, isAlreadyVerified, isUnauthenticated]);
+  }, [loadingMe, method, codeSent, isAlreadyVerified, isUnauthenticated]);
 
   // Handle OTP digit change
   const handleDigitChange = (index: number, value: string) => {
@@ -232,14 +241,16 @@ export function VerifyEmailGate({
 
   // Resend code or link
   const handleResend = async () => {
-    if (cooldown > 0 || !email) return;
+    if (cooldown > 0 || sendingCode || !email) return;
     setResendStatus(null);
     setErrorMessage(null);
+    setSendingCode(true);
 
     try {
       const res = await resendVerification({ platform, email });
       if (res.success) {
         setCooldown(60);
+        if (method === "OTP") setCodeSent(true);
         setResendStatus(
           method === "OTP"
             ? "A fresh 6-digit verification code has been sent to your email."
@@ -254,6 +265,8 @@ export function VerifyEmailGate({
       setErrorMessage(
         "Unable to connect to the server. Please try again later."
       );
+    } finally {
+      setSendingCode(false);
     }
   };
 
@@ -382,6 +395,63 @@ export function VerifyEmailGate({
                   className="h-5 w-5 animate-spin"
                   style={{ color: accent }}
                 />
+              </div>
+            ) : codeSent === false ? (
+              <div className="w-full flex flex-col items-center gap-4 text-center">
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center mb-1"
+                  style={{ background: `${accent}15`, color: accent }}
+                >
+                  <Mail className="h-7 w-7" />
+                </div>
+                <div className="space-y-1">
+                  <h1
+                    className="text-2xl font-extrabold"
+                    style={{ color: headingColor }}
+                  >
+                    Verify Your Email
+                  </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    No code has been sent yet. We'll email a 6-digit code to{" "}
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {email || "your email"}
+                    </span>
+                  </p>
+                </div>
+
+                {errorMessage && (
+                  <div className="w-full p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg flex items-start gap-2.5 text-red-700 dark:text-red-300 text-xs text-left">
+                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleResend}
+                  disabled={sendingCode || cooldown > 0 || !email}
+                  className="w-full py-3 h-auto text-white dark:text-white rounded-lg font-semibold shadow hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                  style={{
+                    background: `linear-gradient(90deg, ${dark}, ${accent})`,
+                  }}
+                >
+                  {sendingCode ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <span>Send a code</span>
+                  )}
+                </Button>
+
+                <div className="pt-2">
+                  <Link
+                    href={loginHref}
+                    className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline"
+                  >
+                    Back to Sign In
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="w-full flex flex-col items-center gap-4">

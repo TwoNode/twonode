@@ -7,6 +7,11 @@ import {
   EmailVerificationRequiredError,
   handleApiError,
 } from "@/lib/api/errors";
+import {
+  assertMobileClientAllowed,
+  isMobileRequest,
+} from "@/lib/api/mobileApp";
+import { mobileTags } from "@/lib/observability/mobileTags";
 
 export type Session<TRole extends string> = {
   sub: string;
@@ -23,7 +28,8 @@ type Handler<TRole extends string> = (
 ) => Promise<NextResponse>;
 
 /**
- * Wraps a route handler with session + role checks, and funnels any thrown
+ * Wraps a route handler with the mobile version gate (lib/api/mobileApp.ts,
+ * mobile requests only), session + role checks, and funnels any thrown
  * ApiError (or Prisma error) through the shared error handler — individual
  * routes never write their own try/catch for that. Generic over each
  * product's own role type (RevaRole | SurfboardRole | GBCRole, from
@@ -37,8 +43,16 @@ export function withAuth<TRole extends string>(
     const context: Record<string, unknown> = {
       route: req.nextUrl.pathname,
       method: req.method,
+      // Which app build asked, for a mobile request (nothing for the website).
+      ...mobileTags(req),
     };
     try {
+      // The version gate comes first, so an app that is too old is told to
+      // update (426) whatever state its session is in, instead of being sent
+      // round a refresh that would be refused the same way. Website requests
+      // carry neither a bearer token nor X-App-Platform and skip it.
+      if (isMobileRequest(req)) await assertMobileClientAllowed(req);
+
       const jwtSession = await getServerSession(opts.platform);
       if (!jwtSession) throw new UnauthenticatedError();
 

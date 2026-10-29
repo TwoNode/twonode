@@ -5,7 +5,7 @@ import { setEncryptedUserCookie } from "@/utils/encryptedCookies";
 import { issueSession } from "@/lib/auth/session";
 import { Platform, SurfboardRole } from "@/utils/platform";
 import { acceptPendingPlanShareInvites } from "@/surfboard/services/planService";
-import { markEmailVerified } from "@/lib/auth/userLookup";
+import { verifyEmailViaOAuth } from "@/lib/auth/oauthEmailVerification";
 
 export async function GET(request: NextRequest) {
   try {
@@ -63,7 +63,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (!dbUser.emailVerified) {
-      await markEmailVerified(Platform.SURFBOARD, dbUser.id, "OAUTH");
+      // Also drops the password of an account that was never verified, so a
+      // person who set it can't keep access to the real owner's account.
+      await verifyEmailViaOAuth(Platform.SURFBOARD, dbUser);
       dbUser.emailVerified = true;
     }
 
