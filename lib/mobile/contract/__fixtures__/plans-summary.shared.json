@@ -1,0 +1,50 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "data": [
+        {
+          "id": "17e9e3fc-f462-45cd-b0fe-2868329ebd92",
+          "planNumber": "LA/2026/SHARED-1",
+          "surveyTitle": "Shared Ajah survey",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Eze Geomatics",
+          "displayStatus": {
+            "code": "QUERIED",
+            "label": "Queried by Charting"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "QUERIED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-13T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-22T08:00:00.000Z",
+          "updatedAt": "2026-09-22T08:00:00.000Z",
+          "isOwner": false,
+          "sharedCount": 0,
+          "ownerName": "Ngozi Eze"
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "pageSize": 20,
+        "total": 1,
+        "totalPages": 1
+      }
+    }
+  }
+}

@@ -14,3 +14,7 @@ build
 coverage
 *.min.js
 *.min.css
+
+# Generated, or recorded from the real server: byte-for-byte copies that tests compare.
+docs/mobile/openapi.json
+lib/mobile/contract/__fixtures__
