@@ -128,6 +128,24 @@ model DeviceToken {
   @@index([userId, platform])
 }
 
+/// A push the push service accepted (TASK-0015 1I.6), kept until its receipt
+/// is looked up. Accepting a message only means the push service has it; a
+/// minute or more later its receipt says whether Google or Apple took it, and
+/// that is where a phone that was uninstalled shows up. Expo has the receipt
+/// about 15 minutes after the send and clears it after 24 hours, so a row is
+/// deleted once the receipt is read, or when it is too old to have one.
+model PushReceiptTicket {
+  id       String   @id @default(uuid())
+  /// The push service's receipt id for the message (not the push token).
+  ticketId String   @unique
+  /// The address the message went to: deleted from DeviceToken if the receipt
+  /// says the phone is gone. Never logged or returned, like DeviceToken.token.
+  token    String
+  sentAt   DateTime @default(now())
+
+  @@index([sentAt])
+}
+
 /// One unified token for both a genuine forgotten-password reset and a
 /// first-time password setup for a Kinde-only account — same mechanism,
 /// only the emailed copy differs (utils/email.ts's sendPasswordResetEmail),

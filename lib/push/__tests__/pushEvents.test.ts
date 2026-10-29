@@ -6,6 +6,8 @@ const mockTokens = vi.hoisted(() => ({
   removeTokens: vi.fn(),
 }));
 vi.mock("@/lib/push/deviceTokens", () => mockTokens);
+const mockReceipts = vi.hoisted(() => ({ recordTickets: vi.fn() }));
+vi.mock("@/lib/push/receipts", () => mockReceipts);
 
 const { buildPushMessage, sendPush } = await import("@/lib/push/pushEvents");
 
@@ -19,7 +21,8 @@ const senderOf = (
   enabled = true
 ) => {
   const send = vi.fn(async (messages: PushMessage[]) => tickets(messages));
-  return { sender: { enabled, send } satisfies PushSender, send };
+  const receipts = vi.fn(async () => new Map());
+  return { sender: { enabled, send, receipts } satisfies PushSender, send };
 };
 const allOk = (messages: PushMessage[]): PushTicket[] =>
   messages.map(() => ({ status: "ok" }));
@@ -29,6 +32,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   mockTokens.tokensForUsers.mockResolvedValue([]);
   mockTokens.removeTokens.mockResolvedValue(0);
+  mockReceipts.recordTickets.mockResolvedValue(undefined);
   errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 afterEach(() => errorSpy.mockRestore());
@@ -70,6 +74,36 @@ describe("buildPushMessage", () => {
       v: 1,
       kind: "SUBSCRIPTION_ENDING",
     });
+  });
+
+  it("uses one fixed, generic push for a payout, paid or refused", () => {
+    const message = buildPushMessage(T1, { kind: "WITHDRAWAL_UPDATED" });
+
+    expect(message).toMatchObject({
+      to: T1,
+      title: "Surfboard",
+      body: "Your withdrawal request was updated. Open the app for the details.",
+      channelId: "updates",
+    });
+    expect(message.data).toEqual({ v: 1, kind: "WITHDRAWAL_UPDATED" });
+  });
+
+  it("never puts an amount, a bank or a reason into the payout push", () => {
+    const event = {
+      kind: "WITHDRAWAL_UPDATED",
+      amount: 50000,
+      bankName: "Example Bank",
+      accountNumber: "0123456789",
+      adminComment: "Rejected: name mismatch",
+    } as unknown as Parameters<typeof buildPushMessage>[1];
+
+    const message = buildPushMessage(T1, event);
+
+    const text = JSON.stringify(message);
+    for (const secret of ["50000", "Example Bank", "0123456789", "mismatch"]) {
+      expect(text).not.toContain(secret);
+    }
+    expect(message.data).toEqual({ v: 1, kind: "WITHDRAWAL_UPDATED" });
   });
 
   it("never puts an amount, a date or a plan name into the subscription push", () => {
@@ -222,12 +256,49 @@ describe("sendPush", () => {
     expect(String(errorSpy.mock.calls[0])).not.toContain(T1);
   });
 
+  it("keeps the receipt ids of the messages the service took, with their tokens", async () => {
+    mockTokens.tokensForUsers.mockResolvedValue([
+      { userId: "u1", token: T1 },
+      { userId: "u1", token: T2 },
+      { userId: "u2", token: T3 },
+    ]);
+    const { sender } = senderOf(() => [
+      { status: "ok", id: "receipt-1" },
+      { status: "error", unregistered: false, message: "boom" },
+      { status: "ok", id: "receipt-3" },
+    ]);
+
+    await sendPush(["u1", "u2"], { kind: "PLAN_SHARED" }, sender);
+
+    expect(mockReceipts.recordTickets).toHaveBeenCalledWith([
+      { ticketId: "receipt-1", token: T1 },
+      { ticketId: "receipt-3", token: T3 },
+    ]);
+  });
+
+  it("keeps nothing for an accepted message the service gave no receipt id for", async () => {
+    mockTokens.tokensForUsers.mockResolvedValue([{ userId: "u1", token: T1 }]);
+    const { sender } = senderOf(allOk);
+
+    expect(await sendPush(["u1"], { kind: "PLAN_SHARED" }, sender)).toBe(1);
+
+    expect(mockReceipts.recordTickets).toHaveBeenCalledWith([]);
+  });
+
+  it("keeps nothing when push is off or nobody has registered", async () => {
+    await sendPush(["u1"], { kind: "PLAN_SHARED" }, senderOf(allOk, false).sender);
+    await sendPush(["u1"], { kind: "PLAN_SHARED" }, senderOf(allOk).sender);
+
+    expect(mockReceipts.recordTickets).not.toHaveBeenCalled();
+  });
+
   describe("never throws", () => {
     it("when the push service throws", async () => {
       mockTokens.tokensForUsers.mockResolvedValue([{ userId: "u1", token: T1 }]);
       const sender: PushSender = {
         enabled: true,
         send: vi.fn().mockRejectedValue(new Error("down")),
+        receipts: vi.fn(),
       };
       await expect(
         sendPush(["u1"], { kind: "PLAN_SHARED" }, sender)

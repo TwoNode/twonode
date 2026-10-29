@@ -142,3 +142,30 @@ export async function removeTokens(tokens: string[]): Promise<number> {
   });
   return result.count;
 }
+
+/** Each pair is two bind values, and the database takes at most 32,767 of them in one query. */
+const DEAD_TOKEN_CHUNK = 500;
+
+/**
+ * Drops tokens a delivery receipt (1I.6) said belong to a phone that is gone,
+ * except one that registered again after the message was sent: the receipt is
+ * about that earlier message, and an install that has been seen since is back.
+ * The app registers on each launch, which moves `lastSeenAt`.
+ */
+export async function removeTokensDeadSince(
+  dead: { token: string; sentAt: Date }[]
+): Promise<number> {
+  let removed = 0;
+  for (let i = 0; i < dead.length; i += DEAD_TOKEN_CHUNK) {
+    const result = await prisma.deviceToken.deleteMany({
+      where: {
+        OR: dead.slice(i, i + DEAD_TOKEN_CHUNK).map(({ token, sentAt }) => ({
+          token,
+          lastSeenAt: { lte: sentAt },
+        })),
+      },
+    });
+    removed += result.count;
+  }
+  return removed;
+}
