@@ -1,0 +1,254 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "data": [
+        {
+          "id": "0d41e384-499a-437a-a873-39cd99cd4902",
+          "planNumber": "LA/2026/LODGED-A",
+          "surveyTitle": "Survey LA/2026/LODGED-A",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "APPROVED",
+            "recordsII": "APPROVED"
+          },
+          "queries": [],
+          "physicalCopySubmitted": true,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-08T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-18T08:00:00.000Z",
+          "updatedAt": "2026-10-18T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "c15a0f89-26b7-4047-b36a-c988e10a4519",
+          "planNumber": "LA/2026/LODGED-H1",
+          "surveyTitle": "Survey LA/2026/LODGED-H1",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "APPROVED",
+            "recordsII": "APPROVED"
+          },
+          "queries": [],
+          "physicalCopySubmitted": true,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-07T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-17T08:00:00.000Z",
+          "updatedAt": "2026-10-17T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "f52ef906-e70f-4e29-9757-31223ab5f213",
+          "planNumber": "LA/2026/LODGED-H2",
+          "surveyTitle": "Survey LA/2026/LODGED-H2",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "APPROVED",
+            "charting": "APPROVED",
+            "surcon": "APPROVED",
+            "recordsI": "APPROVED",
+            "intake": "APPROVED",
+            "recordsII": "APPROVED"
+          },
+          "queries": [],
+          "physicalCopySubmitted": true,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-06T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-16T08:00:00.000Z",
+          "updatedAt": "2026-10-16T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "8e7076ec-bb7d-4ba3-8554-ab51d3f6f560",
+          "planNumber": "LA/2026/LODGED-IMPORTED",
+          "surveyTitle": "Survey LA/2026/LODGED-IMPORTED",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": null,
+          "dateLodged": null,
+          "createdAt": "2026-10-15T08:00:00.000Z",
+          "updatedAt": "2026-10-15T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "0d386b91-58fe-4a06-a41d-26be4654c039",
+          "planNumber": "LA/2026/LODGED-STALE-QUERY",
+          "surveyTitle": "Survey LA/2026/LODGED-STALE-QUERY",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Adeyemi & Partners",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "QUERIED",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": true,
+          "lga": "Ikorodu",
+          "ward": "Ikorodu West",
+          "lcda": null,
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-04T08:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-10-14T08:00:00.000Z",
+          "updatedAt": "2026-10-14T08:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "1eb000e0-4c72-4e4c-bb48-ca4a20af01a2",
+          "planNumber": "LA/2026/ST-011",
+          "surveyTitle": "Stats 11",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Alausa",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-04-02T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "30bde5b8-b1b9-498b-8fab-0701009647f0",
+          "planNumber": "LA/2026/ST-012",
+          "surveyTitle": "Stats 12",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Alausa",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-03-03T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "pageSize": 20,
+        "total": 7,
+        "totalPages": 1
+      }
+    }
+  }
+}

@@ -29,6 +29,7 @@ vi.mock("@/lib/observability/logger", () => ({
 const { withAuth } = await import("@/lib/api/withAuth");
 const { resetMobileControlsCache } = await import("@/lib/api/mobileApp");
 const { Platform } = await import("@/utils/platform");
+const { logger } = await import("@/lib/observability/logger");
 
 const handler = vi.fn(async () => NextResponse.json({ success: true }));
 const route = withAuth(handler, { platform: Platform.SURFBOARD });
@@ -135,5 +136,40 @@ describe("withAuth and the mobile version gate", () => {
     );
 
     expect(res.status).toBe(200);
+  });
+});
+
+describe("withAuth log tags (TASK-0015 1J.1)", () => {
+  it("tags a refused mobile request with the app's store and version", async () => {
+    mockSession.getServerSession.mockResolvedValue(null);
+    await route(
+      request({
+        authorization: "Bearer token",
+        "x-app-platform": "android",
+        "x-app-version": "1.2.3",
+      })
+    );
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      "Not signed in",
+      expect.objectContaining({
+        code: "UNAUTHENTICATED",
+        status: 401,
+        appPlatform: "android",
+        appVersion: "1.2.3",
+      })
+    );
+  });
+
+  it("adds nothing for a website request", async () => {
+    mockSession.getServerSession.mockResolvedValue(null);
+    await route(request());
+
+    const context = vi.mocked(logger.warn).mock.calls[0][1] as Record<
+      string,
+      unknown
+    >;
+    expect(context).not.toHaveProperty("appVersion");
+    expect(context).not.toHaveProperty("appPlatform");
   });
 });

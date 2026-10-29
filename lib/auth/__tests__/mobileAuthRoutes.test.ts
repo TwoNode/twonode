@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const mockRate = vi.hoisted(() => ({ consumeRateLimit: vi.fn() }));
@@ -358,5 +358,170 @@ describe("POST /api/v1/auth/mobile/logout", () => {
     expect(mockGate.assertMobileClientAllowed).not.toHaveBeenCalled();
     expect(mockGate.assertMobileSignInEnabled).not.toHaveBeenCalled();
     expect(mockDevices.revokeFamilyByRefreshToken).toHaveBeenCalled();
+  });
+});
+
+describe("what the sign-in and refresh routes write to the log (TASK-0015 1J.1)", () => {
+  const withApp = (path: string, body: unknown) =>
+    new NextRequest(`http://localhost:3000/api/v1/auth/mobile/${path}`, {
+      method: "POST",
+      headers: {
+        host: "localhost:3000",
+        "content-type": "application/json",
+        "x-app-platform": "android",
+        "x-app-version": "1.4.2",
+      },
+      body: JSON.stringify(body),
+    });
+
+  let lines: Record<string, unknown>[];
+  let raw: string;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGate.assertMobileClientAllowed.mockResolvedValue(undefined);
+    mockGate.assertMobileSignInEnabled.mockResolvedValue(undefined);
+    mockRate.consumeRateLimit.mockResolvedValue(true);
+    mockLookup.findUserByEmail.mockResolvedValue(user);
+    mockBcrypt.compare.mockResolvedValue(true);
+    mockSession.issueMobileSession.mockResolvedValue(pair);
+    lines = [];
+    raw = "";
+    const keep = (value: unknown) => {
+      raw += `${String(value)}\n`;
+      lines.push(JSON.parse(String(value)));
+    };
+    vi.spyOn(console, "log").mockImplementation(keep);
+    vi.spyOn(console, "warn").mockImplementation(keep);
+    vi.spyOn(console, "error").mockImplementation(keep);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  const event = (name: string) => lines.filter((l) => l.event === name);
+
+  it("a sign-in is one info line with the build, a short device hash and the person's id", async () => {
+    await login(withApp("login", loginBody()));
+
+    expect(event("mobile.login")).toEqual([
+      expect.objectContaining({
+        level: "info",
+        outcome: "ok",
+        appPlatform: "android",
+        appVersion: "1.4.2",
+        userId: "u1",
+        deviceHash: expect.stringMatching(/^[0-9a-f]{12}$/),
+      }),
+    ]);
+  });
+
+  it("never writes the email, the password, a token or the device id", async () => {
+    await login(withApp("login", loginBody()));
+    mockBcrypt.compare.mockResolvedValue(false);
+    await login(withApp("login", loginBody()));
+
+    for (const secret of [
+      "surveyor@example.com",
+      "Surveyor@Example.com",
+      "secret",
+      "refresh-raw",
+      "access",
+      "device-123456",
+    ]) {
+      expect(raw, secret).not.toContain(secret);
+    }
+  });
+
+  it.each([
+    ["a wrong password", "invalid_credentials", false],
+    ["an inactive account", "inactive", true],
+    [
+      "an account type the app does not serve",
+      "account_type_not_supported",
+      true,
+    ],
+    ["too many tries", "rate_limited", false],
+  ])("%s is a warn line (%s)", async (name, outcome, hasUser) => {
+    if (outcome === "invalid_credentials")
+      mockBcrypt.compare.mockResolvedValue(false);
+    if (outcome === "inactive")
+      mockLookup.findUserByEmail.mockResolvedValue({
+        ...user,
+        isActive: false,
+      });
+    if (outcome === "account_type_not_supported")
+      mockLookup.findUserByEmail.mockResolvedValue({ ...user, role: "ADMIN" });
+    if (outcome === "rate_limited")
+      mockRate.consumeRateLimit.mockResolvedValue(false);
+
+    await login(withApp("login", loginBody()));
+
+    const [line] = event("mobile.login");
+    expect(line, name).toMatchObject({
+      level: "warn",
+      outcome,
+      appVersion: "1.4.2",
+    });
+    // A wrong password does not say whether the address has an account.
+    expect("userId" in line).toBe(hasUser);
+  });
+
+  it("a refused refresh is a warn line with the reason and the code, and no token", async () => {
+    mockSession.rotateMobileRefreshToken.mockResolvedValue({
+      ok: false,
+      reason: "invalid",
+    });
+    const body = { platform: "surfboard", refreshToken: "a".repeat(64) };
+
+    await refresh(withApp("refresh", body));
+
+    expect(event("mobile.refresh")).toEqual([
+      expect.objectContaining({
+        level: "warn",
+        outcome: "invalid",
+        code: "SESSION_INVALID",
+        appPlatform: "android",
+        appVersion: "1.4.2",
+      }),
+    ]);
+    expect(raw).not.toContain("a".repeat(64));
+  });
+
+  it("a refresh that works writes no event line (it happens every few minutes per phone)", async () => {
+    mockSession.rotateMobileRefreshToken.mockResolvedValue({
+      ok: true,
+      session: pair,
+    });
+
+    await refresh(
+      withApp("refresh", {
+        platform: "surfboard",
+        refreshToken: "a".repeat(64),
+      })
+    );
+
+    expect(event("mobile.refresh")).toEqual([]);
+  });
+
+  it("an app that is told to update is logged by the shared handler with its build", async () => {
+    mockGate.assertMobileClientAllowed.mockRejectedValue(
+      new AppUpdateRequiredError({
+        platform: "android",
+        minimumVersion: "2.0.0",
+        storeUrl: "",
+      })
+    );
+
+    await login(withApp("login", loginBody()));
+
+    expect(lines).toContainEqual(
+      expect.objectContaining({
+        level: "warn",
+        code: "APP_UPDATE_REQUIRED",
+        status: 426,
+        route: "/api/v1/auth/mobile/login",
+        appPlatform: "android",
+        appVersion: "1.4.2",
+      })
+    );
   });
 });
