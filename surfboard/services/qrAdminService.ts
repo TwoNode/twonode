@@ -185,6 +185,7 @@ export async function processAdminWithdrawalRequest(
       userIds: [request.userId],
       link: "/surfboard/dashboard/qr-earnings",
       sendEmail: true,
+      push: { kind: "WITHDRAWAL_UPDATED" },
     });
 
     return { message: "Withdrawal request rejected" };
@@ -257,6 +258,7 @@ export async function processAdminWithdrawalRequest(
     userIds: [request.userId],
     link: "/surfboard/dashboard/qr-earnings",
     sendEmail: true,
+    push: { kind: "WITHDRAWAL_UPDATED" },
   });
 
   return { message: "Withdrawal approved and paid successfully" };

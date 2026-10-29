@@ -1,0 +1,105 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "total": 8,
+      "provisional": 0,
+      "undated": 0,
+      "byStatus": {
+        "QUERIED": 0,
+        "LODGED": 2,
+        "PHYSICAL_SUBMITTED": 0,
+        "READY_FOR_PHYSICAL": 0,
+        "PARTLY_APPROVED": 0,
+        "IN_REVIEW": 0,
+        "PAYMENT_PENDING": 0,
+        "NOT_SUBMITTED": 6,
+        "SUBMISSION_FAILED": 0
+      },
+      "pillars": {
+        "regular": 13,
+        "special": 8
+      },
+      "byMonth": [
+        {
+          "period": "2026-01",
+          "count": 1
+        },
+        {
+          "period": "2026-02",
+          "count": 1
+        },
+        {
+          "period": "2026-03",
+          "count": 1
+        },
+        {
+          "period": "2026-04",
+          "count": 1
+        },
+        {
+          "period": "2026-05",
+          "count": 2
+        },
+        {
+          "period": "2026-06",
+          "count": 2
+        }
+      ],
+      "facilitators": {
+        "rows": [
+          {
+            "key": "Bello Surveys",
+            "count": 8
+          }
+        ],
+        "distinct": 1,
+        "missing": 0
+      },
+      "lgas": {
+        "rows": [
+          {
+            "key": "Ikeja",
+            "count": 8
+          }
+        ],
+        "distinct": 1,
+        "missing": 0
+      },
+      "wards": {
+        "rows": [
+          {
+            "key": "Alausa",
+            "count": 4
+          },
+          {
+            "key": "Zone_1",
+            "count": 2
+          },
+          {
+            "key": "Zone%2",
+            "count": 1
+          },
+          {
+            "key": "ZoneA1",
+            "count": 1
+          }
+        ],
+        "distinct": 4,
+        "missing": 0
+      },
+      "lcdas": {
+        "rows": [
+          {
+            "key": "Ikeja Central",
+            "count": 8
+          }
+        ],
+        "distinct": 1,
+        "missing": 0
+      },
+      "activeBatches": 4
+    }
+  }
+}

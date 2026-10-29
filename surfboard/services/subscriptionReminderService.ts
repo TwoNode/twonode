@@ -3,6 +3,7 @@ import { sendMail } from "@/utils/email";
 import { sendWhatsAppSubscriptionExpiryReminder } from "@/lib/whatsapp";
 import { getSiteUrl } from "@/lib/siteUrl";
 import { expiryReminderEmail } from "@/surfboard/utils/subscriptionEmails";
+import { sendPush } from "@/lib/push/pushEvents";
 
 const REMINDER_WINDOW_DAYS = 3;
 
@@ -47,6 +48,15 @@ export async function sendExpiringSubscriptionReminders(): Promise<{
     if (sub.expiryReminderSentAt && sub.expiryReminderSentAt >= sub.currentEnd)
       continue;
 
+    // The push goes out only with the first reminder of this expiry cycle (the cycle's window opens
+    // REMINDER_WINDOW_DAYS before currentEnd), however many more days the email and WhatsApp
+    // reminders repeat. A renewal moves currentEnd forward, so the next cycle pushes again.
+    const windowStart = new Date(
+      sub.currentEnd.getTime() - REMINDER_WINDOW_DAYS * 24 * 60 * 60 * 1000
+    );
+    const firstOfCycle =
+      !sub.expiryReminderSentAt || sub.expiryReminderSentAt < windowStart;
+
     const daysLeft = Math.ceil(
       (sub.currentEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
     );
@@ -80,6 +90,12 @@ export async function sendExpiringSubscriptionReminders(): Promise<{
         data: { expiryReminderSentAt: now },
       });
       reminded++;
+
+      // After the stamp, so a failure to stamp cannot push twice. Best effort: sendPush never
+      // throws, and does nothing when push is off or no phone is registered.
+      if (firstOfCycle) {
+        await sendPush([sub.userId], { kind: "SUBSCRIPTION_ENDING" });
+      }
     } catch (error) {
       console.error(
         `Failed to send expiry reminder for subscription ${sub.id}:`,

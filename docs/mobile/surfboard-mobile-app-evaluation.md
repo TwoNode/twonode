@@ -1,6 +1,10 @@
 # Surfboard Mobile App — evaluation of the brief and the engineering plan
 
-> **Status: proposal. No mobile code exists.** This evaluates the "Surfboard Mobile App — Product Brief" and Part II of the engineering write-up built from it ("Plan B": `Surfboard_Association_and_Mobile_Feasibility_Analysis.md`, kept locally in the untracked `out/` folder), against the code on `dev` (2026-10-04) and current platform/vendor policies.
+> **Update 2026-10-19:** the app is now being built. Its foundation is in the `TwoNode/twonode-mobile` repo, native auth (§3) is built and merged (PR #495, [ADR-0017](../adr/0017-the-mobile-app-signs-in-with-bearer-tokens.md)), and the live plan, decisions and task list are in [TASK-0015](../tasks/0015-mobile-app-and-api.md). Where this document names Expo SDK 56 as current, it is now SDK 58 ([research refresh](./association-and-mobile-research-2026-10-18.md)). The text below is kept as written on 2026-10-04.
+
+> **Corrections from the API examination (2026-10-19):** `cod/batches/stats` is admin only (surveyors get active batch counts from `analytics?section=stats`); `GET plans/queried` has no pagination and no history (resubmission clears the comments); `GET cod/batches/{id}` is PDF data, not a detail view; "ready for physical submission" on the web needs four stage approvals and a paid batch while the server only checks the red copy status; the plans list is a heavy payload; the dashboard analytics count soft-deleted plans. Details and sources: the app repo's `docs/api-contract.md` (`TwoNode/twonode-mobile`) and TASK-0015.
+
+> **Status when written (2026-10-04): proposal, no mobile code existed.** This evaluates the "Surfboard Mobile App — Product Brief" and Part II of the engineering write-up built from it ("Plan B": `Surfboard_Association_and_Mobile_Feasibility_Analysis.md`, kept locally in the untracked `out/` folder), against the code on `dev` (2026-10-04) and current platform/vendor policies.
 >
 > It builds on, and does not repeat, [`surfboard-mobile-feasibility.md`](./surfboard-mobile-feasibility.md) (the original backend-readiness analysis — still correct that the one hard blocker is cookie-only auth). Where this document corrects or extends that one, it says so.
 
@@ -103,8 +107,8 @@ _Related:_ the NIPOST postcode API (`docs.postcode.gov.ng`) offers free postcode
 1. **Mobile auth surface** (§3) with re-rotation, device sessions, version gate.
 2. **Locality/LGA search** (§2).
 3. **Geocoding** and **basemap/imagery** providers (§4.4).
-4. **Viewport/"near me" plans endpoint** if map browsing is meant to go beyond "my plans" (§2: JSONB, no spatial index). For own plans, a `GET plans/map` that returns `{id, planNumber, status, simplifiedGeometry, centroid}` is enough.
-5. **A derived `displayStatus`** shared by web and mobile for batch/plan rows ("Ready for Physical Submission", "Surcon, Account Approved", …) — the brief says these "should reflect the actual workflow"; today they must be computed from `redCopyStatus`, `physicalCopySubmitted`, and the six stage statuses. Define once, test once.
+4. **Viewport/"near me" plans endpoint** if map browsing is meant to go beyond "my plans" (§2: JSONB, no spatial index). For own plans, a `GET plans/map` that returns `{id, planNumber, status, simplifiedGeometry, centroid}` is enough. (Built 2026-10-20, #508: `plans/map` returns each plan's `displayStatus`, place, area, centre and a simplified outline, own plans only, at most 2000.)
+5. **A derived `displayStatus`** shared by web and mobile for batch/plan rows ("Ready for Physical Submission", "Surcon, Account Approved", …) — the brief says these "should reflect the actual workflow"; today they must be computed from `redCopyStatus`, `physicalCopySubmitted`, and the six stage statuses. Define once, test once. **Built 2026-10-19 (#500):** `surfboard/utils/planStatus.ts`.
 6. **Push**: device-token table, platform (APNs/FCM) senders, event hooks where queries/batch moves are written, notification preferences. Existing notifications are in-app/email/WhatsApp (`notificationService`, `lib/whatsapp/*`).
 7. **Rate-limit keys** for mobile (§3.3).
 
@@ -127,7 +131,7 @@ _Related:_ the NIPOST postcode API (`docs.postcode.gov.ng`) offers free postcode
 1. **Mobile auth surface** (§3) — additive; also unblocks any other native/API client.
 2. **Shared geo util** extracted from the web (`EPSG:26331/26332`), with the brief's three coordinate formats under test.
 3. **Map provider decision** and a fix for the web map's tile sources (§4.4).
-4. **Derived status helpers** (`displayStatus`) and locality/LGA search.
+4. **Derived status helpers** (`displayStatus`) and locality/LGA search. (Built 2026-10-19, #500: `plans/summary`.) Stats, wallet, subscription and profile summaries for the Stats and Profile tabs: built 2026-10-20 (`plans/stats`, `qr/wallet-summary`, `subscription/summary`, `profile/summary`; #505, merged to `dev`). The own-plans map route for Home: built 2026-10-20 (`plans/map`; #508).
 
 ### 5.2 Phases (size, not dates)
 

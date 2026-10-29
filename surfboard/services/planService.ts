@@ -909,6 +909,24 @@ export async function getSurfPlanById(
   });
   if (!plan) throw new NotFoundError("Plan (or access denied)");
 
+  // Seen through a share (I-037): the record copy is the owner's and the other
+  // people it is shared with are not for this viewer. The Shared tab already
+  // says "the file is not shared with you"; this makes the plan page agree.
+  if (plan.userId !== userId) {
+    const { redCopyFileUrl, user, ...rest } = plan;
+    return {
+      ...withGeometry({ ...rest, sharedTo: [userId] }),
+      user: user && {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+      hasRecordCopy: !!redCopyFileUrl,
+      isOwner: false,
+      sharedToUsers: [],
+    };
+  }
+
   // Resolved for the owner's Share modal / "who has access" display — the
   // plan itself only stores sharedTo as a plain id array (SharedPlanModal
   // needs full user objects, same shape searchUsers returns).
@@ -927,7 +945,7 @@ export async function getSurfPlanById(
 
   return {
     ...withGeometry(plan),
-    isOwner: plan.userId === userId,
+    isOwner: true,
     sharedToUsers,
   };
 }

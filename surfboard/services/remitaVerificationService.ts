@@ -33,7 +33,7 @@ import {
 } from "@/lib/api/errors";
 import { SurfboardRole } from "@/utils/platform";
 import { paginatedResult } from "@/lib/api/pagination";
-import { planNumberSearchClauses } from "@/surfboard/utils/planNumber";
+import { userBatchWhere } from "@/surfboard/utils/batchScope";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/codActions.ts — batch
@@ -1162,41 +1162,7 @@ export async function getUserBatchesPaginated(
     search?: string;
   }
 ) {
-  const historyFilter = {
-    plans: { some: {}, every: { status: "LODGED" as const } },
-  };
-  const activeFilter = {
-    plans: { some: { status: { not: "LODGED" as const } } },
-  };
-
-  const where: any = {
-    submittedBy: userId,
-    ...(options.scope === "history" ? historyFilter : activeFilter),
-  };
-  if (options.search) {
-    where.OR = [
-      { batchCode: { contains: options.search, mode: "insensitive" } },
-      {
-        plans: {
-          some: { OR: planNumberSearchClauses(options.search) },
-        },
-      },
-      {
-        plans: {
-          some: {
-            surveyTitle: { contains: options.search, mode: "insensitive" },
-          },
-        },
-      },
-      {
-        plans: {
-          some: {
-            facilitator: { contains: options.search, mode: "insensitive" },
-          },
-        },
-      },
-    ];
-  }
+  const where = userBatchWhere(userId, options.scope, options.search);
 
   const [total, batches] = await Promise.all([
     prisma.certificateOfDepositBatch.count({ where }),
