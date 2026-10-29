@@ -175,7 +175,10 @@ describe("the documented routes are real", () => {
     "%s: its route file answers that method",
     async (_id, endpoint) => {
       await handlerFor(endpoint);
-    }
+    },
+    // Each route file is imported cold (some pull in S3 and PDF code), which can pass 5 s when the
+    // whole suite runs on a busy machine; alone the file takes under 7 s for all of them.
+    30_000
   );
 
   it("documents every method of every route under auth/mobile (nothing undocumented can be added)", () => {
