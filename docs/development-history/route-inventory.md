@@ -60,7 +60,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/auth/verify-email`                  | POST         | session (see source)                     |
 | `/api/v1/auth/verify-email-otp`              | POST         | session (see source)                     |
 
-#### Surfboard (143)
+#### Surfboard (145)
 
 | Route                                                                | Method(s)          | Auth                                                                                                        |
 | :------------------------------------------------------------------- | :----------------- | :---------------------------------------------------------------------------------------------------------- |
@@ -78,6 +78,8 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/admin/qr/withdrawals`                             | GET                | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/admin/qr/withdrawals/[id]`                        | PATCH              | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/admin/users`                                      | GET                | ADMIN, SUPERADMIN                                                                                           |
+| `/api/v1/surfboard/admin/users/[id]/devices`                         | GET, DELETE        | any signed-in                                                                                               |
+| `/api/v1/surfboard/admin/users/[id]/devices/[familyId]`              | DELETE             | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/admin/users/[id]/kyc`                             | PATCH              | SUPERADMIN                                                                                                  |
 | `/api/v1/surfboard/admin/users/[id]/promote`                         | POST               | SUPERADMIN                                                                                                  |
 | `/api/v1/surfboard/admin/users/[id]/role`                            | PATCH              | ADMIN, SUPERADMIN                                                                                           |

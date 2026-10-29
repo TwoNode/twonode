@@ -13,8 +13,12 @@ const mockPush = vi.hoisted(() => ({ removeDeviceToken: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 vi.mock("@/lib/push/deviceTokens", () => mockPush);
 
-const { listDeviceSessions, revokeDeviceSession, revokeFamilyByRefreshToken } =
-  await import("@/lib/auth/deviceSessions");
+const {
+  listDeviceSessions,
+  revokeAllDeviceSessions,
+  revokeDeviceSession,
+  revokeFamilyByRefreshToken,
+} = await import("@/lib/auth/deviceSessions");
 const { Platform } = await import("@/utils/platform");
 
 describe("listDeviceSessions", () => {
@@ -185,5 +189,73 @@ describe("revokeFamilyByRefreshToken", () => {
     await revokeFamilyByRefreshToken(Platform.SURFBOARD, "raw");
 
     expect(mockPush.removeDeviceToken).not.toHaveBeenCalled();
+  });
+});
+
+describe("revokeAllDeviceSessions", () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  const live = (familyId: string, deviceId: string) => ({
+    familyId,
+    deviceId,
+    deviceLabel: null,
+    appVersion: null,
+    lastUsedAt: null,
+    createdAt: new Date("2026-10-01"),
+  });
+
+  it("ends every live device sign-in of the user and forgets each phone's push token", async () => {
+    mockPrisma.refreshToken.findMany.mockResolvedValue([
+      live("fam1", "dev-1"),
+      live("fam2", "dev-2"),
+    ]);
+    mockPrisma.refreshToken.findFirst.mockImplementation(
+      async ({ where }: { where: { familyId: string } }) => ({
+        deviceId: where.familyId === "fam1" ? "dev-1" : "dev-2",
+      })
+    );
+    mockPrisma.refreshToken.updateMany.mockResolvedValue({ count: 1 });
+
+    const ended = await revokeAllDeviceSessions("u1", Platform.SURFBOARD);
+
+    expect(ended).toBe(2);
+    expect(
+      mockPrisma.refreshToken.findMany.mock.calls[0][0].where
+    ).toMatchObject({
+      userId: "u1",
+      platform: "surfboard",
+      deviceId: { not: null },
+    });
+    expect(mockPush.removeDeviceToken).toHaveBeenCalledWith(
+      "u1",
+      "surfboard",
+      "dev-1"
+    );
+    expect(mockPush.removeDeviceToken).toHaveBeenCalledWith(
+      "u1",
+      "surfboard",
+      "dev-2"
+    );
+  });
+
+  it("is 0 for a person with no app sign-ins, and touches nothing", async () => {
+    mockPrisma.refreshToken.findMany.mockResolvedValue([]);
+
+    expect(await revokeAllDeviceSessions("u1", Platform.SURFBOARD)).toBe(0);
+    expect(mockPrisma.refreshToken.updateMany).not.toHaveBeenCalled();
+    expect(mockPush.removeDeviceToken).not.toHaveBeenCalled();
+  });
+
+  it("counts only the sign-ins that were still live when it got to them", async () => {
+    mockPrisma.refreshToken.findMany.mockResolvedValue([
+      live("fam1", "dev-1"),
+      live("fam2", "dev-2"),
+    ]);
+    mockPrisma.refreshToken.findFirst.mockResolvedValue({ deviceId: "dev-1" });
+    mockPrisma.refreshToken.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+
+    expect(await revokeAllDeviceSessions("u1", Platform.SURFBOARD)).toBe(1);
   });
 });

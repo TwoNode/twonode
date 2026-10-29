@@ -4,6 +4,7 @@ import { Platform } from "@/utils/platform";
 import { revokeFamilyByRefreshToken } from "@/lib/auth/deviceSessions";
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
+import { mobileRequestContext } from "@/lib/observability/mobileTags";
 
 const logoutSchema = z.object({
   platform: z.literal(Platform.SURFBOARD),
@@ -21,9 +22,6 @@ export async function POST(req: NextRequest) {
     await revokeFamilyByRefreshToken(platform, refreshToken);
     return NextResponse.json({ success: true, data: {} });
   } catch (err) {
-    return handleApiError(err, {
-      route: req.nextUrl.pathname,
-      method: req.method,
-    });
+    return handleApiError(err, mobileRequestContext(req));
   }
 }
