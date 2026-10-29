@@ -4,7 +4,9 @@ import { NextRequest } from "next/server";
 /** The receipts cron fails closed when CRON_SECRET is not configured (like I-017's reminder cron). */
 
 const check = vi.hoisted(() => vi.fn());
+const prune = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/push/receipts", () => ({ checkPushReceipts: check }));
+vi.mock("@/lib/push/cooldown", () => ({ prunePushCooldowns: prune }));
 
 const { GET } = await import("../route");
 
@@ -28,6 +30,7 @@ describe("push-receipts cron", () => {
   const original = process.env.CRON_SECRET;
   beforeEach(() => {
     check.mockReset().mockResolvedValue(RESULT);
+    prune.mockReset().mockResolvedValue(3);
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
   afterEach(() => {
@@ -41,6 +44,7 @@ describe("push-receipts cron", () => {
     expect((await call()).status).toBe(401);
     expect((await call("Bearer undefined")).status).toBe(401);
     expect(check).not.toHaveBeenCalled();
+    expect(prune).not.toHaveBeenCalled();
   });
 
   it("refuses a wrong or missing token", async () => {
@@ -55,8 +59,19 @@ describe("push-receipts cron", () => {
     const res = await call("Bearer s3cret");
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ success: true, data: RESULT });
+    expect(await res.json()).toEqual({
+      success: true,
+      data: { ...RESULT, prunedCooldowns: 3 },
+    });
     expect(check).toHaveBeenCalledOnce();
+  });
+
+  it("deletes the day-old cool-down rows in the same run", async () => {
+    process.env.CRON_SECRET = "s3cret";
+
+    await call("Bearer s3cret");
+
+    expect(prune).toHaveBeenCalledOnce();
   });
 
   it("answers 500, not a crash, when the check fails", async () => {
@@ -67,5 +82,15 @@ describe("push-receipts cron", () => {
 
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ success: false, error: "db down" });
+  });
+
+  it("answers 500 too when the clean-up fails, after the receipts were read", async () => {
+    process.env.CRON_SECRET = "s3cret";
+    prune.mockRejectedValue(new Error("db down"));
+
+    const res = await call("Bearer s3cret");
+
+    expect(check).toHaveBeenCalledOnce();
+    expect(res.status).toBe(500);
   });
 });

@@ -1,5 +1,7 @@
 import { Platform } from "@/utils/platform";
+import { claimPushWindow } from "@/lib/push/cooldown";
 import { removeTokens, tokensForUsers } from "@/lib/push/deviceTokens";
+import { usersWhoWant } from "@/lib/push/preferences";
 import { recordTickets } from "@/lib/push/receipts";
 import {
   getPushSender,
@@ -73,7 +75,10 @@ export function buildPushMessage(
  * Sends a push to these people's installs. Best effort in every way: it never
  * throws (a notification must not break the action that caused it), does
  * nothing when push is off or nobody has registered, and deletes tokens the
- * push service says are dead. Returns how many pushes it handed over.
+ * push service says are dead. Leaves out a person who switched this kind off or
+ * is in their quiet hours (TASK-0015 1I.5), and sends a person at most one push
+ * of a kind in 5 minutes (1I.4: a batch of plans is one notification, not
+ * twenty). Returns how many pushes it handed over.
  */
 export async function sendPush(
   userIds: string[],
@@ -82,10 +87,20 @@ export async function sendPush(
 ): Promise<number> {
   if (!sender.enabled) return 0;
   try {
-    const targets = await tokensForUsers(
+    const wanting = await usersWhoWant(
       Array.from(new Set(userIds)),
+      event.kind,
       Platform.SURFBOARD
     );
+    if (wanting.length === 0) return 0;
+    const withPhones = await tokensForUsers(wanting, Platform.SURFBOARD);
+    if (withPhones.length === 0) return 0;
+    // Claimed only for people who have a phone to send to, so a window is not spent on nobody.
+    const free = await claimPushWindow(
+      Array.from(new Set(withPhones.map((t) => t.userId))),
+      event.kind
+    );
+    const targets = withPhones.filter((t) => free.has(t.userId));
     if (targets.length === 0) return 0;
     const messages = targets.map(({ token }) => buildPushMessage(token, event));
     const tickets = await sender.send(messages);

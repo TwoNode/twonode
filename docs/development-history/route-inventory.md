@@ -60,7 +60,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/auth/verify-email`                  | POST         | session (see source)                     |
 | `/api/v1/auth/verify-email-otp`              | POST         | session (see source)                     |
 
-#### Surfboard (145)
+#### Surfboard (146)
 
 | Route                                                                | Method(s)          | Auth                                                                                                        |
 | :------------------------------------------------------------------- | :----------------- | :---------------------------------------------------------------------------------------------------------- |
@@ -179,6 +179,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/plans/summary`                                    | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/profile`                                          | GET, PATCH         | any signed-in                                                                                               |
 | `/api/v1/surfboard/profile/summary`                                  | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/push/preferences`                                 | GET, PATCH         | USER                                                                                                        |
 | `/api/v1/surfboard/qr/access-state`                                  | GET                | public — anonymous QR-service payer                                                                         |
 | `/api/v1/surfboard/qr/bank-details`                                  | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/qr/earnings-overview`                             | GET                | any signed-in                                                                                               |
