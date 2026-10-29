@@ -10,6 +10,7 @@ const mockLookup = vi.hoisted(() => ({ findUserById: vi.fn() }));
 const mockOtp = vi.hoisted(() => ({
   verifyEmailOtp: vi.fn(),
   issueAndSendVerificationOtp: vi.fn(),
+  getLiveVerificationCodeSentAt: vi.fn(),
 }));
 const mockLink = vi.hoisted(() => ({ issueAndSendVerificationEmail: vi.fn() }));
 const mockSettings = vi.hoisted(() => ({
@@ -396,6 +397,69 @@ describe("GET /api/v1/auth/me", () => {
     });
     mockGate.computeMustVerifyNow.mockResolvedValue(true);
     mockGate.computeVerificationGraceEndsAt.mockResolvedValue(null);
+    mockOtp.getLiveVerificationCodeSentAt.mockResolvedValue(null);
+  });
+
+  describe("verificationCodeSentAt (I-048: say whether a code was sent)", () => {
+    it("says when the code the person can still enter was sent", async () => {
+      mockOtp.getLiveVerificationCodeSentAt.mockResolvedValue(
+        new Date("2026-10-28T09:00:00.000Z")
+      );
+
+      const json = await (await me(get())).json();
+
+      expect(json.data.verificationCodeSentAt).toBe("2026-10-28T09:00:00.000Z");
+      expect(mockOtp.getLiveVerificationCodeSentAt).toHaveBeenCalledWith(
+        "surfboard",
+        "u1"
+      );
+    });
+
+    it("says null when no code is live, so the screens offer to send one", async () => {
+      mockOtp.getLiveVerificationCodeSentAt.mockResolvedValue(null);
+
+      const json = await (await me(get())).json();
+
+      expect(json.data.verificationCodeSentAt).toBeNull();
+      expect(json.data.verificationMethod).toBe("OTP");
+      expect(json.data.emailVerified).toBe(false);
+    });
+
+    it("is null, and looks nothing up, for an account that is already verified", async () => {
+      mockLookup.findUserById.mockResolvedValue({ ...user, emailVerified: true });
+      mockOtp.getLiveVerificationCodeSentAt.mockResolvedValue(new Date());
+
+      const json = await (await me(get())).json();
+
+      expect(json.data.verificationCodeSentAt).toBeNull();
+      expect(mockOtp.getLiveVerificationCodeSentAt).not.toHaveBeenCalled();
+    });
+
+    it("is null, and looks nothing up, when the platform verifies by link", async () => {
+      mockSettings.getEmailVerificationSettings.mockResolvedValue({
+        enabled: true,
+        method: "LINK",
+        gracePeriodDays: 30,
+        enforcedSince: "2026-10-01T00:00:00.000Z",
+      });
+      mockOtp.getLiveVerificationCodeSentAt.mockResolvedValue(new Date());
+
+      const json = await (await me(get())).json();
+
+      expect(json.data.verificationCodeSentAt).toBeNull();
+      expect(mockOtp.getLiveVerificationCodeSentAt).not.toHaveBeenCalled();
+    });
+
+    it("is still answered while the grace period lets the person in", async () => {
+      mockGate.computeMustVerifyNow.mockResolvedValue(false);
+      mockOtp.getLiveVerificationCodeSentAt.mockResolvedValue(null);
+
+      const json = await (await me(get())).json();
+
+      expect(json.data.mustVerifyNow).toBe(false);
+      expect(json.data.verificationCodeSentAt).toBeNull();
+      expect(mockOtp.getLiveVerificationCodeSentAt).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("gives the app the surveyor's name, so a restored session has more than the email", async () => {

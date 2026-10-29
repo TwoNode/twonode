@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "lagos": {
+        "eastingShift": 3.051,
+        "northingShift": -6.999
+      }
+    }
+  }
+}
