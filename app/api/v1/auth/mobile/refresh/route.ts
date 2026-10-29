@@ -7,6 +7,11 @@ import { consumeRateLimit } from "@/lib/auth/rateLimit";
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
 import { assertMobileClientAllowed } from "@/lib/api/mobileApp";
+import {
+  logMobileAuthEvent,
+  mobileRequestContext,
+  mobileTags,
+} from "@/lib/observability/mobileTags";
 
 const refreshSchema = z.object({
   platform: z.literal(Platform.SURFBOARD),
@@ -44,6 +49,7 @@ export async function POST(req: NextRequest) {
         windowMs: 5 * 60 * 1000,
       }))
     ) {
+      logMobileAuthEvent("mobile.refresh", "rate_limited", mobileTags(req));
       return NextResponse.json(
         { success: false, error: "Too many requests" },
         { status: 429 }
@@ -63,6 +69,10 @@ export async function POST(req: NextRequest) {
         ],
       } as const;
       const [status, code, error] = map[result.reason];
+      logMobileAuthEvent("mobile.refresh", result.reason, {
+        ...mobileTags(req),
+        code,
+      });
       return NextResponse.json({ success: false, error, code }, { status });
     }
 
@@ -80,9 +90,6 @@ export async function POST(req: NextRequest) {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (err) {
-    return handleApiError(err, {
-      route: req.nextUrl.pathname,
-      method: req.method,
-    });
+    return handleApiError(err, mobileRequestContext(req));
   }
 }

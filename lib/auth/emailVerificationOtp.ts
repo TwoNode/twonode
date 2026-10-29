@@ -78,6 +78,26 @@ export async function issueAndSendVerificationOtp(
   }
 }
 
+/**
+ * When the code this person can still enter was sent, or null when there is none: it was never
+ * sent (an account that predates the rule, or one that has not asked), or it was used, expired or
+ * out of attempts. It applies the rules `verifyEmailOtp` applies, so "a code was sent" and "a code
+ * will be accepted" cannot disagree; the gates use it to say "Send a code" instead of claiming one
+ * was emailed (I-048, TASK-0015 1A.14).
+ */
+export async function getLiveVerificationCodeSentAt(
+  platform: Platform,
+  userId: string
+): Promise<Date | null> {
+  const otp = await prisma.emailVerificationOtp.findFirst({
+    where: { userId, platform, usedAt: null, expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true, attempts: true },
+  });
+  if (!otp || otp.attempts >= MAX_ATTEMPTS) return null;
+  return otp.createdAt;
+}
+
 /** Constant-time comparison of two sha256 hex digests. */
 function hashesMatch(storedHash: string, code: string): boolean {
   const a = Buffer.from(storedHash, "hex");

@@ -15,6 +15,8 @@ import {
   computeVerificationGraceEndsAt,
 } from "@/lib/auth/emailVerificationGate";
 import { getEmailVerificationSettings } from "@/lib/auth/emailVerificationSettings";
+import { getLiveVerificationCodeSentAt } from "@/lib/auth/emailVerificationOtp";
+import { mobileRequestContext } from "@/lib/observability/mobileTags";
 
 const platformParam = z.nativeEnum(Platform);
 
@@ -49,6 +51,13 @@ export async function GET(req: NextRequest) {
       user
     );
 
+    // Only for an account that is waiting for a code: whether one was sent, so the screens say
+    // "Send a code" instead of claiming one was emailed (I-048). Null for everyone else.
+    const codeSentAt =
+      !user.emailVerified && config.method === "OTP"
+        ? await getLiveVerificationCodeSentAt(platform, user.id)
+        : null;
+
     return NextResponse.json({
       success: true,
       data: {
@@ -64,12 +73,10 @@ export async function GET(req: NextRequest) {
         mustVerifyNow,
         verificationMethod: config.method,
         verificationGraceEndsAt,
+        verificationCodeSentAt: codeSentAt ? codeSentAt.toISOString() : null,
       },
     });
   } catch (err) {
-    return handleApiError(err, {
-      route: req.nextUrl.pathname,
-      method: req.method,
-    });
+    return handleApiError(err, mobileRequestContext(req));
   }
 }

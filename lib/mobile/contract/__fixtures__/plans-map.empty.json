@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "plans": [],
+      "total": 0,
+      "withoutOutline": 0,
+      "truncated": false
+    }
+  }
+}

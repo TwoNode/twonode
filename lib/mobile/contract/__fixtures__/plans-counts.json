@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "mine": 25,
+      "sharedWithMe": 1,
+      "queried": 5,
+      "readyForPhysicalSubmission": 5
+    }
+  }
+}

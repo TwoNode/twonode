@@ -24,8 +24,11 @@ vi.mock("@/utils/email", () => mockEmail);
 vi.mock("@/lib/auth/userLookup", () => mockUserLookup);
 
 const { Platform } = await import("@/utils/platform");
-const { issueAndSendVerificationOtp, verifyEmailOtp } =
-  await import("@/lib/auth/emailVerificationOtp");
+const {
+  issueAndSendVerificationOtp,
+  verifyEmailOtp,
+  getLiveVerificationCodeSentAt,
+} = await import("@/lib/auth/emailVerificationOtp");
 
 const sha256 = (v: string) =>
   crypto.createHash("sha256").update(v).digest("hex");
@@ -362,6 +365,66 @@ describe("emailVerificationOtp", () => {
         expect(results.filter((r) => r === "ok")).toHaveLength(1);
         expect(mockUserLookup.markEmailVerified).toHaveBeenCalledTimes(1);
       });
+    });
+  });
+
+  describe("getLiveVerificationCodeSentAt", () => {
+    const SENT = new Date("2026-10-28T09:00:00.000Z");
+
+    it("answers when the code the person can still enter was sent", async () => {
+      mockPrisma.emailVerificationOtp.findFirst.mockResolvedValue({
+        createdAt: SENT,
+        attempts: 0,
+      });
+
+      expect(
+        await getLiveVerificationCodeSentAt(Platform.SURFBOARD, "user-123")
+      ).toEqual(SENT);
+    });
+
+    it("looks only at this person's unused, unexpired, newest code on this platform", async () => {
+      mockPrisma.emailVerificationOtp.findFirst.mockResolvedValue(null);
+
+      await getLiveVerificationCodeSentAt(Platform.SURFBOARD, "user-123");
+
+      const args = mockPrisma.emailVerificationOtp.findFirst.mock.calls[0][0];
+      expect(args.where).toMatchObject({
+        userId: "user-123",
+        platform: Platform.SURFBOARD,
+        usedAt: null,
+      });
+      expect(args.where.expiresAt.gt).toBeInstanceOf(Date);
+      expect(args.orderBy).toEqual({ createdAt: "desc" });
+    });
+
+    it("answers null for an account that was never sent a code", async () => {
+      mockPrisma.emailVerificationOtp.findFirst.mockResolvedValue(null);
+
+      expect(
+        await getLiveVerificationCodeSentAt(Platform.SURFBOARD, "user-123")
+      ).toBeNull();
+    });
+
+    it("answers null for a code that is out of attempts, as verifyEmailOtp refuses it too", async () => {
+      mockPrisma.emailVerificationOtp.findFirst.mockResolvedValue({
+        createdAt: SENT,
+        attempts: 5,
+      });
+
+      expect(
+        await getLiveVerificationCodeSentAt(Platform.SURFBOARD, "user-123")
+      ).toBeNull();
+    });
+
+    it("still answers for a code with attempts left", async () => {
+      mockPrisma.emailVerificationOtp.findFirst.mockResolvedValue({
+        createdAt: SENT,
+        attempts: 4,
+      });
+
+      expect(
+        await getLiveVerificationCodeSentAt(Platform.SURFBOARD, "user-123")
+      ).toEqual(SENT);
     });
   });
 });

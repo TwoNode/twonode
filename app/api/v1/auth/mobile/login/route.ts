@@ -11,6 +11,12 @@ import {
   assertMobileSignInEnabled,
 } from "@/lib/api/mobileApp";
 import { findUserByEmail } from "@/lib/auth/userLookup";
+import {
+  deviceHash,
+  logMobileAuthEvent,
+  mobileRequestContext,
+  mobileTags,
+} from "@/lib/observability/mobileTags";
 
 const loginSchema = z.object({
   platform: z.literal(Platform.SURFBOARD),
@@ -47,6 +53,8 @@ export async function POST(req: NextRequest) {
     const { platform, email, password, deviceId, deviceLabel, appVersion } =
       await validateBody(req, loginSchema);
     const normalizedEmail = email.trim().toLowerCase();
+    // Never the email, password or device id themselves: see lib/observability/mobileTags.ts.
+    const tags = { ...mobileTags(req), deviceHash: deviceHash(deviceId) };
 
     const allowed =
       (await consumeRateLimit(
@@ -60,6 +68,7 @@ export async function POST(req: NextRequest) {
         EMAIL_LIMIT
       ));
     if (!allowed) {
+      logMobileAuthEvent("mobile.login", "rate_limited", tags);
       return NextResponse.json(
         { success: false, error: "Too many attempts. Try again later." },
         { status: 429 }
@@ -72,12 +81,17 @@ export async function POST(req: NextRequest) {
     const valid =
       user?.passwordHash && (await bcrypt.compare(password, user.passwordHash));
     if (!valid) {
+      logMobileAuthEvent("mobile.login", "invalid_credentials", tags);
       return NextResponse.json(
         { success: false, error: "Invalid email or password" },
         { status: 401 }
       );
     }
     if (!user!.isActive) {
+      logMobileAuthEvent("mobile.login", "inactive", {
+        ...tags,
+        userId: user!.id,
+      });
       return NextResponse.json(
         { success: false, error: "Account is inactive" },
         { status: 403 }
@@ -85,6 +99,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (!MOBILE_ALLOWED_ROLES.includes(user!.role)) {
+      logMobileAuthEvent("mobile.login", "account_type_not_supported", {
+        ...tags,
+        userId: user!.id,
+      });
       return NextResponse.json(
         {
           success: false,
@@ -102,6 +120,8 @@ export async function POST(req: NextRequest) {
       { deviceId, deviceLabel, appVersion },
       { emailVerified: user!.emailVerified, createdAt: user!.createdAt }
     );
+
+    logMobileAuthEvent("mobile.login", "ok", { ...tags, userId: user!.id });
 
     return NextResponse.json(
       {
@@ -125,9 +145,6 @@ export async function POST(req: NextRequest) {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (err) {
-    return handleApiError(err, {
-      route: req.nextUrl.pathname,
-      method: req.method,
-    });
+    return handleApiError(err, mobileRequestContext(req));
   }
 }

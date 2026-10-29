@@ -1,0 +1,84 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "id": "fa2904fb-2423-4359-90d5-b42910c4d779",
+      "planNumber": "LA/2026/FILES-A",
+      "surveyTitle": "Survey with every kind of file",
+      "planType": "APPROVED LAYOUT",
+      "facilitator": "Adeyemi & Partners",
+      "displayStatus": {
+        "code": "IN_REVIEW",
+        "label": "In review"
+      },
+      "stages": {
+        "accounts": "APPROVED",
+        "charting": "APPROVED",
+        "surcon": "APPROVED",
+        "recordsI": "APPROVED",
+        "intake": "PENDING",
+        "recordsII": "PENDING"
+      },
+      "queries": [],
+      "physicalCopySubmitted": false,
+      "hasRecordCopy": true,
+      "lga": "Eti-Osa",
+      "ward": "Ajah",
+      "lcda": null,
+      "locality": "Ajah Junction",
+      "state": "Lagos",
+      "dateOnSurveyPlan": "2026-09-12T00:00:00.000Z",
+      "dateLodged": null,
+      "createdAt": "2026-10-19T22:37:01.267Z",
+      "updatedAt": "2026-10-19T22:37:01.267Z",
+      "isOwner": false,
+      "sharedCount": 0,
+      "ownerName": "Tunde Okafor",
+      "deededArea": "1,250 m²",
+      "pillarType": "REGULAR",
+      "pillarCount": 4,
+      "referencePlanNumber": "LA/2025/0001",
+      "areaSqM": 1105.64,
+      "centroid": {
+        "lat": 6.50015,
+        "lng": 3.40015
+      },
+      "submittedAt": "2026-10-10T08:00:00.000Z",
+      "physicalCopySubmittedAt": null,
+      "archiveReceivedAt": null,
+      "stageDecidedAt": {
+        "accounts": "2026-10-11T09:00:00.000Z",
+        "charting": "2026-10-12T09:00:00.000Z",
+        "surcon": "2026-10-12T10:00:00.000Z",
+        "recordsI": "2026-10-13T09:00:00.000Z",
+        "intake": null,
+        "recordsII": null
+      },
+      "files": [
+        {
+          "kind": "SURVEY_PLAN",
+          "name": "LA_2026_FILES-A.pdf",
+          "format": "pdf",
+          "viewable": true,
+          "ref": "https://throwaway-bucket.s3.us-east-1.amazonaws.com/surfboard/88444b9d-9072-4ad3-9912-84846d8069cc/pdf/1700000000001-survey.pdf"
+        },
+        {
+          "kind": "DRAWING",
+          "name": "LA_2026_FILES-A.dwg",
+          "format": "dwg",
+          "viewable": false,
+          "ref": "https://throwaway-bucket.s3.us-east-1.amazonaws.com/surfboard/88444b9d-9072-4ad3-9912-84846d8069cc/cad/1700000000002-drawing.DWG"
+        },
+        {
+          "kind": "CERTIFICATE",
+          "name": "LA_2026_FILES-A.png",
+          "format": "png",
+          "viewable": true,
+          "ref": "https://throwaway-bucket.s3.us-east-1.amazonaws.com/surfboard/88444b9d-9072-4ad3-9912-84846d8069cc/certificate/1700000000003-cert.png"
+        }
+      ],
+      "batch": null
+    }
+  }
+}
