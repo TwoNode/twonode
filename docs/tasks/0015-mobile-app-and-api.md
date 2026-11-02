@@ -50,8 +50,8 @@ Ship a native companion app for Surfboard surveyors (Android and iOS) that lets 
 
 ## 3. Phase 0: Accounts and foundations (no code, can start now)
 
-- [ ] 0.1 Create the Apple Developer Program enrolment (organisation) and the Google Play Console organisation account (D2). Size S, calendar time is the cost.
-- [ ] 0.2 Create an Expo account and an EAS project; connect it to GitHub for builds.
+- [ ] 0.1 Create the Apple Developer Program enrolment (organisation) and the Google Play Console organisation account (D2). Size S, calendar time is the cost. _(2026-10-30: the maintainer says the Apple Developer Program is paid for; whether it is an organisation account was not said, and the Google Play account is not recorded. Connecting Apple to Expo is the maintainer's interactive step: `eas credentials -p ios` or the first iOS build.)_
+- [ ] 0.2 Create an Expo account and an EAS project; connect it to GitHub for builds. _(Done in part: the EAS project exists (created 2026-10-26 as `@rojitech/surfboard`) and since 2026-10-30 belongs to the Expo account `twonode-technologies`, where the maintainer is an Owner (app PR #27); not connected to GitHub: builds are started by hand.)_
 - [ ] 0.3 Install the toolchain on the dev machine: `eas-cli`, Android Studio and an emulator, a physical Android device with USB debugging (`adb` is already present). iOS builds run in EAS cloud (this machine is Linux); a physical iPhone is needed for testing.
 - [ ] 0.4 Write the privacy policy and the data-safety answers: what is collected (account, SURCON number, plan locations, device token, crash data), why, retention, deletion. Review with counsel against the Nigeria Data Protection Act 2023 and the 2025 GAID.
 - [ ] 0.5 Decide the support contact (D7) and a public support URL; stores require one.
