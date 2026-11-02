@@ -40,7 +40,7 @@ ORDER BY "createdAt" DESC;
 
 ## Recommended fixes (in order)
 
-Item 1 is merged to `dev` (PR #536). Item 2 is built for the contact form only (a second PR, see the task list); the sign-in half is not started. Items 3 to 5 are not started.
+Item 1 is merged to `dev` (PR #536). Item 2 is built for the contact form only (PR #537, open); the sign-in half is not started. Items 3 to 5 are not started.
 
 1. Contact form: a per-IP and per-email limit with `consumeRateLimit`; escape `name`, `subject`, `message` and `type` in both mails (`escapeHtml` already exists in `gbc/utils/certificateEmailTemplate.ts`); a hidden honeypot field and a minimum time between page load and submit; make the confirmation mail a fixed text that does not repeat what the sender typed.
 2. A challenge (Cloudflare Turnstile) on the contact form and on sign-in. **Contact form: built** (`lib/security/turnstile.ts`, `components/security/TurnstileWidget.tsx`; off until `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET` are set; the widget must list every hostname). **Sign-in: not started**; it touches every web login page and the scripted client tried three wrong passwords per round from rotating exits, so it needs a decision (always show it on the web sign-in, or only after failures counted per account across all IPs).
