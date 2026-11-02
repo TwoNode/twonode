@@ -6,11 +6,12 @@ import { Prisma } from "@/prisma/generated";
  * whose number contains `term`. Prisma's `Json` filters cannot say "any element's
  * field contains X", so this is raw SQL.
  *
- * It is limited to the caller's plans *inside* the query. planService's
- * `findPlanIdsByPillarNumber` searches every surveyor's plans and keeps the
- * first 500, so for a common term the caller's own match can be cut off before
- * the owner filter is applied. Like Prisma's `contains` (used for the other search
- * clauses), `%` and `_` in the term act as wildcards.
+ * It is limited to the caller's plans *inside* the query, so a common term
+ * cannot fill the limit with other surveyors' plans and cut off the caller's own
+ * match. The website's lists use it too (I-045); they used to search every
+ * surveyor's plans and keep the first 500 before the owner filter was applied.
+ * Like Prisma's `contains` (used for the other search clauses), `%` and `_` in
+ * the term act as wildcards.
  */
 export async function findPillarMatchIds(
   term: string,
