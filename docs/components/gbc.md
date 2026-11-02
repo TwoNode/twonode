@@ -74,7 +74,7 @@ plus files colocated directly with GBC pages under `app/(projects)/(GBC)/`.
 
 | File                     | Description                       |
 | ------------------------ | --------------------------------- |
-| `ContactForm.tsx`        | Public contact form; also posts a hidden honeypot field (`fax`) and the time the form was open (`fillTimeMs`) for the server's abuse checks (I-057) |
+| `ContactForm.tsx`        | Public contact form; also posts a hidden honeypot field (`fax`), the time the form was open (`fillTimeMs`) and, when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set, a Cloudflare Turnstile token (widget action `contact`, reset after every send) for the server's abuse checks (I-057) |
 | `HomeGallery.tsx`        | Homepage gallery preview section  |
 | `HomeSpeakers.tsx`       | Homepage speakers preview section |
 | `HomeSponsors.tsx`       | Homepage sponsors preview section |

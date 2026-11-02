@@ -145,6 +145,8 @@ export type ContactSubmitInput = ContactFormInput & {
   fax?: string;
   /** Milliseconds the page was open before submit. */
   fillTimeMs: number;
+  /** Cloudflare Turnstile token; absent when Turnstile is not switched on. */
+  turnstileToken?: string;
 };
 
 export type QRTicketData = {

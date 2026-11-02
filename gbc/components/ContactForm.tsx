@@ -16,6 +16,14 @@ import {
 import { toast } from "sonner";
 import { Send } from "lucide-react";
 import { gbcApi } from "@/gbc/apiClient";
+import {
+  TurnstileWidget,
+  type TurnstileHandle,
+} from "@/components/security/TurnstileWidget";
+import { CONTACT_TURNSTILE_ACTION } from "@/gbc/utils/contactGuard";
+
+// The widget's public site key; unset = no widget and the server asks for no token.
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,6 +33,9 @@ export function ContactForm() {
   useEffect(() => {
     openedAt.current = Date.now();
   }, []);
+  // Cloudflare Turnstile: a token is single-use, so it is renewed after every send.
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstile = useRef<TurnstileHandle>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,6 +55,7 @@ export function ContactForm() {
         type: formData.get("type") as any,
         fax: (formData.get("fax") as string) || "",
         fillTimeMs: Date.now() - openedAt.current,
+        ...(TURNSTILE_SITE_KEY && { turnstileToken }),
       });
 
       if (result.success) {
@@ -58,6 +70,8 @@ export function ContactForm() {
       toast.error("An error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
+      // Whatever happened, the token has been spent: get a fresh one.
+      turnstile.current?.reset();
     }
   }
 
@@ -155,10 +169,21 @@ export function ContactForm() {
         />
       </div>
 
+      {TURNSTILE_SITE_KEY && (
+        <TurnstileWidget
+          ref={turnstile}
+          siteKey={TURNSTILE_SITE_KEY}
+          action={CONTACT_TURNSTILE_ACTION}
+          onToken={setTurnstileToken}
+        />
+      )}
+
       {/* Submit Button */}
       <Button
         type="submit"
-        disabled={isSubmitting}
+        disabled={
+          isSubmitting || (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken)
+        }
         className="w-full"
         size="lg"
       >
