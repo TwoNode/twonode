@@ -1,6 +1,6 @@
 # Review of the mobile sign-in and API surface, 2026-11-02
 
-TASK-0015 **1A.11**: a read of the code behind the Surfboard app's sign-in and of what a signed-in account can reach. Done on `dev` at `9968e28e`, by reading the code and running the tests added for 1A.10 (PR #530). Nothing was run against production and no real account was used. Findings are in the [issues register](../issues/index.md) as I-051 to I-056; none is fixed by this document.
+TASK-0015 **1A.11** (PR #531): a read of the code behind the Surfboard app's sign-in and of what a signed-in account can reach. Done on `dev` at `9968e28e`, by reading the code and running the tests added for 1A.10 (PR #530). Nothing was run against production and no real account was used. Findings are in the [issues register](../issues/index.md) as I-051 to I-056; none is fixed by this document.
 
 ## What was read
 
