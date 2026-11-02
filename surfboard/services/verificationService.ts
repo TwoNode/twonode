@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NotFoundError, ApiError } from "@/lib/api/errors";
 import { getPresignedDownloadUrl } from "@/surfboard/services/awsService";
+import { SurfboardRole } from "@/utils/platform";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/verificationActions.ts.
@@ -11,12 +12,34 @@ import { getPresignedDownloadUrl } from "@/surfboard/services/awsService";
  * downloadPlanPdfAsBase64/savePlanVerificationResult).
  */
 
-export async function downloadPlanPdfAsBase64(planId: string): Promise<string> {
-  const plan = await prisma.surfboardPlan.findUnique({
-    where: { id: planId },
+/**
+ * Who may read or change a plan's record copy (I-046, I-047): the plan's owner,
+ * or an admin or superadmin (the staff the plan routes already let see any
+ * plan). A plan id is not secret, because it is in the plan's public page
+ * address, which its QR code carries, so holding one proves nothing. Anyone
+ * else gets the same 404 as for a plan that does not exist, which also stops
+ * ids being probed.
+ */
+const canSeeAnyPlan = (role: SurfboardRole) =>
+  role === SurfboardRole.ADMIN || role === SurfboardRole.SUPERADMIN;
+
+const recordCopyScope = (
+  userId: string,
+  role: SurfboardRole,
+  planId: string
+) => (canSeeAnyPlan(role) ? { id: planId } : { id: planId, userId });
+
+export async function downloadPlanPdfAsBase64(
+  userId: string,
+  role: SurfboardRole,
+  planId: string
+): Promise<string> {
+  const plan = await prisma.surfboardPlan.findFirst({
+    where: recordCopyScope(userId, role, planId),
     select: { id: true, redCopyFileUrl: true },
   });
-  if (!plan || !plan.redCopyFileUrl) throw new NotFoundError("PDF URL");
+  if (!plan) throw new NotFoundError("Plan (or access denied)");
+  if (!plan.redCopyFileUrl) throw new NotFoundError("PDF URL");
 
   let lastError = "Failed to download PDF";
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -49,19 +72,23 @@ export async function downloadPlanPdfAsBase64(planId: string): Promise<string> {
 }
 
 export async function savePlanVerificationResult(
+  userId: string,
+  role: SurfboardRole,
   planId: string,
   verdict: string,
   score: number,
   verificationData: any
 ) {
-  await prisma.surfboardPlan.update({
-    where: { id: planId },
+  // One statement that both checks who is asking and writes, so nothing can change between the two.
+  const { count } = await prisma.surfboardPlan.updateMany({
+    where: recordCopyScope(userId, role, planId),
     data: {
       recordCopyVerifiedAt: new Date(),
       recordCopyVerdict: verdict,
       recordCopyVerificationData: verificationData as any,
     },
   });
+  if (count === 0) throw new NotFoundError("Plan (or access denied)");
 
   return { success: true };
 }

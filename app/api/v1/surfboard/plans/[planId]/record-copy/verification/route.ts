@@ -15,7 +15,7 @@ const schema = z.object({
 });
 
 export const POST = withAuth<SurfboardRole>(
-  async (req, _ctx, routeCtx: RouteCtx) => {
+  async (req, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
       return NextResponse.json(
         { success: false, error: "Cross-origin request blocked" },
@@ -27,7 +27,10 @@ export const POST = withAuth<SurfboardRole>(
       req,
       schema
     );
+    // The plan's owner or an admin only (I-047): a plan id is in its public QR address.
     const data = await savePlanVerificationResult(
+      ctx.session.sub,
+      ctx.session.role,
       planId,
       verdict,
       score,
@@ -35,5 +38,8 @@ export const POST = withAuth<SurfboardRole>(
     );
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD }
+  {
+    platform: Platform.SURFBOARD,
+    roles: [SurfboardRole.USER, SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN],
+  }
 );
