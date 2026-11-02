@@ -308,7 +308,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/gbc/certificates/download`                  | POST          | public — ticket buyer / site visitor |
 | `/api/v1/gbc/certificates/request-code`              | POST          | public — ticket buyer / site visitor |
 | `/api/v1/gbc/certificates/verify-code`               | POST          | public — ticket buyer / site visitor |
-| `/api/v1/gbc/contact`                                | POST          | public — ticket buyer / site visitor |
+| `/api/v1/gbc/contact`                                | POST          | public — ticket buyer / site visitor; honeypot, minimum fill time, limits per IP, per sender and overall, Cloudflare Turnstile when its keys are set (I-057) |
 | `/api/v1/gbc/editions`                               | GET           | public — ticket buyer / site visitor |
 | `/api/v1/gbc/editions/[key]/recap`                   | GET           | public — ticket buyer / site visitor |
 | `/api/v1/gbc/editions/current`                       | GET           | public — ticket buyer / site visitor |

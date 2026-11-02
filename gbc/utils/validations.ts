@@ -66,6 +66,21 @@ export const contactFormSchema = z.object({
 
 export type ContactFormInput = z.infer<typeof contactFormSchema>;
 
+/**
+ * What the public form actually posts: the inquiry plus two anti-abuse fields
+ * that are checked and then dropped, never stored (see contactGuard.ts).
+ * `fax` is a hidden honeypot that must stay empty; `fillTimeMs` is how long
+ * the page was open before submit; `turnstileToken` is the Cloudflare
+ * Turnstile token (see lib/security/turnstile.ts).
+ */
+export const contactSubmissionSchema = contactFormSchema.extend({
+  fax: z.string().max(200).optional(),
+  fillTimeMs: z.number().optional(),
+  // The Cloudflare Turnstile token from the widget, checked (and dropped) by
+  // the route when Turnstile is switched on; single-use, never stored.
+  turnstileToken: z.string().max(2048).optional(),
+});
+
 // Admin Login Schema
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
