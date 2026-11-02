@@ -18,7 +18,8 @@ vi.mock("@/gbc/services/certificatePdfService", () => ({
   getCertificateVerificationUrl: mockGetCertificateVerificationUrl,
 }));
 
-const { sendGBCCertificateEmail } = await import("@/gbc/utils/email");
+const emailModule = await import("@/gbc/utils/email");
+const { sendGBCCertificateEmail } = emailModule;
 
 const ticket = {
   ticketNumber: "GBC2_ABC123",
@@ -83,5 +84,39 @@ describe("sendGBCCertificateEmail", () => {
     const result = await sendGBCCertificateEmail(ticket, "body");
     expect(result).toEqual({ success: false, error: "font not found" });
     expect(mockSendMail).not.toHaveBeenCalled();
+  });
+});
+
+describe("contact form emails (I-057)", () => {
+  const { sendGBCContactConfirmation, sendGBCAdminNotification } = emailModule;
+
+  it("sends a confirmation that repeats nothing the sender wrote", async () => {
+    await sendGBCContactConfirmation("victim@example.com");
+
+    const mail = mockSendMail.mock.calls[0][0];
+    expect(mail.to).toBe("victim@example.com");
+    expect(mail.subject).toBe("GBC 2.0 - Inquiry Received");
+    expect(mail.html).not.toMatch(/<a\b|<img\b|href=|src=/i);
+    expect(mail.html).toContain("We have received your inquiry");
+  });
+
+  it("escapes every sender-supplied field in the admin notice", async () => {
+    await sendGBCAdminNotification(
+      "GENERAL",
+      `<img src=x onerror=alert(1)>`,
+      `a"b@example.com`,
+      `<b>1</b>`,
+      `<a href="https://evil.example">win</a>`,
+      `line one\n<script>alert(1)</script>`
+    );
+
+    const html: string = mockSendMail.mock.calls[0][0].html;
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain("<script");
+    expect(html).not.toContain("<a href");
+    expect(html).not.toContain("<b>1</b>");
+    expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
+    // Line breaks in the message still show as line breaks.
+    expect(html).toContain("line one<br>&lt;script&gt;");
   });
 });
