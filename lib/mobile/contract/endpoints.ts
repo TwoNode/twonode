@@ -45,7 +45,7 @@ export type Body = {
 
 export type Endpoint = {
   operationId: string;
-  method: "get" | "post" | "delete";
+  method: "get" | "post" | "patch" | "delete";
   /** Starts with `/api/v1`; `{name}` marks a path parameter. */
   path: string;
   tag:
@@ -430,6 +430,48 @@ export const ENDPOINTS: Endpoint[] = [
     data: S.Empty,
     errors: ["VALIDATION_ERROR"],
     routeFile: "app/api/v1/auth/mobile/push-token/route.ts",
+  },
+  {
+    operationId: "getPushPreferences",
+    method: "get",
+    path: "/api/v1/surfboard/push/preferences",
+    tag: "Push",
+    summary: "What this account wants pushed",
+    description:
+      "The account's choice, the same on every phone. A person who never changed anything gets the defaults: everything on, quiet hours off, 22:00 to 07:00 in Africa/Lagos.",
+    access: "surveyor",
+    versionGate: true,
+    data: S.PushPreferencesData,
+    routeFile: "app/api/v1/surfboard/push/preferences/route.ts",
+  },
+  {
+    operationId: "changePushPreferences",
+    method: "patch",
+    path: "/api/v1/surfboard/push/preferences",
+    tag: "Push",
+    summary: "Change what this account wants pushed",
+    description:
+      "Only what is sent changes, so two phones changing two switches do not undo each other, and the answer is everything as it now stands. At least one field must be sent; an unknown key is refused. Quiet hours that start and end at the same time are refused (400), and the time zone must be an IANA name. A push inside quiet hours is dropped, not delayed.",
+    access: "surveyor",
+    versionGate: true,
+    body: {
+      schema: S.PushPreferencesPatch,
+      example: {
+        categories: { PLAN_LODGED: false },
+        quietHours: { enabled: true, start: "22:30", end: "07:00" },
+      },
+      invalid: [
+        {},
+        { categories: {} },
+        { categories: { PLAN_QUERIED: true } },
+        { quietHours: { start: "25:00" } },
+        { quietHours: { end: "7:00" } },
+        { enabled: true },
+      ],
+    },
+    data: S.PushPreferencesData,
+    errors: ["VALIDATION_ERROR"],
+    routeFile: "app/api/v1/surfboard/push/preferences/route.ts",
   },
 
   // ----------------------------------------------------------- plans

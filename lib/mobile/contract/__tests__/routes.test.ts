@@ -74,6 +74,8 @@ const ROUTES: Record<string, () => Promise<Record<string, unknown>>> = {
     import("@/app/api/v1/auth/mobile/resend-verification/route"),
   "app/api/v1/auth/mobile/push-token/route.ts": () =>
     import("@/app/api/v1/auth/mobile/push-token/route"),
+  "app/api/v1/surfboard/push/preferences/route.ts": () =>
+    import("@/app/api/v1/surfboard/push/preferences/route"),
   "app/api/v1/surfboard/plans/summary/route.ts": () =>
     import("@/app/api/v1/surfboard/plans/summary/route"),
   "app/api/v1/surfboard/plans/counts/route.ts": () =>

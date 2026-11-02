@@ -23,7 +23,7 @@ import * as S from "@/lib/mobile/contract/schemas";
  * changed): the major number. Anything an old app can ignore (a new field, a
  * new route) is the minor number. Record it in `docs/mobile/CHANGELOG-openapi.md`.
  */
-export const OPENAPI_VERSION = "1.0.0";
+export const OPENAPI_VERSION = "1.1.0";
 
 const SCHEMA_URI = (id: string) => `#/components/schemas/${id}`;
 

@@ -42,6 +42,8 @@ const SUCCESSES: [string, z.ZodType][] = [
   ["plans-summary.queried.json", S.PlanListData],
   ["plans-summary.shared.json", S.PlanListData],
   ["profile-summary.json", S.ProfileSummaryData],
+  ["push-preferences.json", S.PushPreferencesData],
+  ["push-preferences.changed.json", S.PushPreferencesData],
   ["subscription-summary.active.json", S.SubscriptionSummaryData],
   ["subscription-summary.ended.json", S.SubscriptionSummaryData],
   ["subscription-summary.ending.json", S.SubscriptionSummaryData],
@@ -56,6 +58,7 @@ const FAILURES: [string, number][] = [
   ["plan-detail.not-found.json", 404],
   ["plans-stats.bad-range.json", 400],
   ["plans-summary.invalid.json", 400],
+  ["push-preferences.invalid.json", 400],
   ["unauthenticated.json", 401],
 ];
 
