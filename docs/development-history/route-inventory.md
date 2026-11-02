@@ -149,8 +149,8 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/plans/[planId]/qr`                                | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/query`                             | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/plans/[planId]/record-copy`                       | PATCH              | USER                                                                                                        |
-| `/api/v1/surfboard/plans/[planId]/record-copy/download`              | GET                | any signed-in                                                                                               |
-| `/api/v1/surfboard/plans/[planId]/record-copy/verification`          | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/plans/[planId]/record-copy/download`              | GET                | USER (own plans), ADMIN, SUPERADMIN                                                                         |
+| `/api/v1/surfboard/plans/[planId]/record-copy/verification`          | POST               | USER (own plans), ADMIN, SUPERADMIN                                                                         |
 | `/api/v1/surfboard/plans/[planId]/red-copy`                          | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/restore`                           | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/resubmit`                          | POST               | USER                                                                                                        |
