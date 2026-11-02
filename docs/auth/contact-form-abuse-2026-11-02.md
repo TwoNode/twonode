@@ -26,7 +26,7 @@ Costs: our sender reputation (and a possible Zoho suspension, which would also s
 
 ## Unknown
 
-The submitted `message` text (the payload), which is the best clue to the goal. It is in the `gbc_contact_inquiries` table and in the admin mail's body in the Sent folder. Reading it from the production database needs the maintainer's go.
+The submitted `message` text (the payload), which is the best clue to the goal. It is in the `gbc_contact_inquiries` table and in the admin mail's body in the Sent folder. The maintainer said yes to a read-only query of the last 24 hours on 2026-11-02, but the session's permission classifier refused the way it tried to reach prod (pulling the production environment variables to get the database URL), so it was **not read**. The maintainer can run the query below, or add a permission rule that allows it, or open the 17:24 admin mail in the Sent folder.
 
 Read-only query for the maintainer (or for a Claude session with a go):
 
@@ -38,7 +38,9 @@ WHERE "createdAt" > now() - interval '24 hours'
 ORDER BY "createdAt" DESC;
 ```
 
-## Recommended fixes (in order; none done yet)
+## Recommended fixes (in order)
+
+Item 1 is built as PR #536 (open against `dev`, not merged); the rest are not started.
 
 1. Contact form: a per-IP and per-email limit with `consumeRateLimit`; escape `name`, `subject`, `message` and `type` in both mails (`escapeHtml` already exists in `gbc/utils/certificateEmailTemplate.ts`); a hidden honeypot field and a minimum time between page load and submit; make the confirmation mail a fixed text that does not repeat what the sender typed.
 2. A challenge (Cloudflare Turnstile) on the contact form and on sign-in after repeated failures. Needs site and secret keys from the maintainer.
