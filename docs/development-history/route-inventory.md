@@ -157,7 +157,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/plans/[planId]/share`                             | POST, DELETE       | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/share-response`                    | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/share/invite`                      | POST               | USER                                                                                                        |
-| `/api/v1/surfboard/plans/[planId]/status`                            | PATCH              | USER, ADMIN, SUPERADMIN                                                                                     |
+| `/api/v1/surfboard/plans/[planId]/status`                            | PATCH              | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/plans/[planId]/summary`                           | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/surveyor`                          | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/title`                             | PATCH              | ADMIN, SUPERADMIN                                                                                           |

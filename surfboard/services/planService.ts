@@ -1276,23 +1276,26 @@ export async function searchReferencePlanNumbers(
 // Status / lifecycle
 // ---------------------------------------------------------------------------
 
+/**
+ * Sets a plan's status by hand. Staff only (ADMIN and SUPERADMIN): a surveyor
+ * could otherwise put their own plan into any status, which skews the counts and
+ * chips (I-043). A surveyor's plan moves through lodging, the review stages and
+ * `resubmitQueriedPlan`, not through this.
+ */
 export async function updateSurfPlanStatus(
-  userId: string,
   userRole: SurfboardRole,
-  userFirstLastName: { firstName: string; lastName: string },
   id: string,
   status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW"
 ) {
-  const plan = await prisma.surfboardPlan.findUnique({
-    where: { id },
-    select: { userId: true, planNumber: true, surveyTitle: true, status: true },
-  });
-  if (!plan) throw new NotFoundError("Plan");
-
-  const isOwner = plan.userId === userId;
   const isAdmin =
     userRole === SurfboardRole.ADMIN || userRole === SurfboardRole.SUPERADMIN;
-  if (!isOwner && !isAdmin) throw new ForbiddenError();
+  if (!isAdmin) throw new ForbiddenError();
+
+  const plan = await prisma.surfboardPlan.findUnique({
+    where: { id },
+    select: { userId: true, planNumber: true, status: true },
+  });
+  if (!plan) throw new NotFoundError("Plan");
 
   const updatedPlan = await prisma.surfboardPlan.update({
     where: { id },
@@ -1316,7 +1319,7 @@ export async function updateSurfPlanStatus(
       UNDER_REVIEW: "INFO",
     };
 
-    if (isAdmin && plan.userId) {
+    if (plan.userId) {
       await notifyPlanUpdate({
         planId: id,
         planNumber: plan.planNumber,
@@ -1325,16 +1328,6 @@ export async function updateSurfPlanStatus(
         type: notificationTypes[status],
         userIds: [plan.userId],
         sendEmail: true,
-      });
-    }
-    if (isOwner && !isAdmin) {
-      await notifyPlanUpdate({
-        planId: id,
-        planNumber: plan.planNumber,
-        title: `Plan Status Changed: ${plan.planNumber}`,
-        message: `Plan ${plan.planNumber} (${plan.surveyTitle}) status changed to ${status} by ${userFirstLastName.firstName} ${userFirstLastName.lastName}.`,
-        type: "INFO",
-        sendEmail: false,
       });
     }
   }
