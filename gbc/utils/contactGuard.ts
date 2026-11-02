@@ -11,6 +11,9 @@ export const MIN_FILL_TIME_MS = 3000;
 /** A page left open for a day is not a fill time worth trusting, and a huge number is a forged one. */
 export const MAX_FILL_TIME_MS = 24 * 60 * 60 * 1000;
 
+/** The `action` set on the contact form's Turnstile widget; a token is accepted only if it was minted for it. */
+export const CONTACT_TURNSTILE_ACTION = "contact";
+
 export type ContactGuardResult = "ok" | "honeypot" | "too-fast";
 
 /**

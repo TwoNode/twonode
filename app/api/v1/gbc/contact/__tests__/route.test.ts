@@ -6,8 +6,13 @@ const mockRate = vi.hoisted(() => ({
   consumeRateLimit: vi.fn(),
   getClientIp: vi.fn(() => "203.0.113.7"),
 }));
+const mockTurnstile = vi.hoisted(() => ({
+  isTurnstileEnabled: vi.fn(() => false),
+  verifyTurnstile: vi.fn(),
+}));
 vi.mock("@/gbc/services/contactService", () => mockService);
 vi.mock("@/lib/auth/rateLimit", () => mockRate);
+vi.mock("@/lib/security/turnstile", () => mockTurnstile);
 
 const { POST } = await import("@/app/api/v1/gbc/contact/route");
 
@@ -33,6 +38,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockRate.consumeRateLimit.mockResolvedValue(true);
   mockService.submitContactForm.mockResolvedValue({ id: "i1" });
+  // Off unless a test turns it on, like an environment without the keys.
+  mockTurnstile.isTurnstileEnabled.mockReturnValue(false);
+  mockTurnstile.verifyTurnstile.mockResolvedValue({ ok: true });
 });
 
 describe("POST /api/v1/gbc/contact", () => {
@@ -122,5 +130,120 @@ describe("POST /api/v1/gbc/contact", () => {
       expect.objectContaining({ email: "Jane@Example.com" }),
       { sendConfirmation: false }
     );
+  });
+});
+
+describe("POST /api/v1/gbc/contact with Cloudflare Turnstile switched on (I-057)", () => {
+  const WITH_TOKEN = { ...GOOD, turnstileToken: "XXXX.token.XXXX" };
+
+  beforeEach(() => {
+    mockTurnstile.isTurnstileEnabled.mockReturnValue(true);
+  });
+
+  it("checks the token for this form, the visitor's address and host, then saves the inquiry without the token", async () => {
+    const res = await POST(post(WITH_TOKEN));
+
+    expect(res.status).toBe(200);
+    expect(mockTurnstile.verifyTurnstile).toHaveBeenCalledWith({
+      token: "XXXX.token.XXXX",
+      action: "contact",
+      remoteIp: "203.0.113.7",
+      requestHost: "localhost:3000",
+    });
+    const [data] = mockService.submitContactForm.mock.calls[0];
+    expect(data).not.toHaveProperty("turnstileToken");
+  });
+
+  it("refuses a missing token with 403 and saves nothing", async () => {
+    mockTurnstile.verifyTurnstile.mockResolvedValue({
+      ok: false,
+      reason: "missing-token",
+    });
+    const res = await POST(post(GOOD));
+
+    expect(res.status).toBe(403);
+    expect((await res.json()).success).toBe(false);
+    expect(mockTurnstile.verifyTurnstile).toHaveBeenCalledWith(
+      expect.objectContaining({ token: undefined })
+    );
+    expect(mockService.submitContactForm).not.toHaveBeenCalled();
+  });
+
+  it.each(["rejected", "wrong-action", "wrong-hostname"])(
+    "refuses a token that fails as '%s' with 403 and saves nothing",
+    async (reason) => {
+      mockTurnstile.verifyTurnstile.mockResolvedValue({ ok: false, reason });
+      const res = await POST(post(WITH_TOKEN));
+
+      expect(res.status).toBe(403);
+      expect(mockService.submitContactForm).not.toHaveBeenCalled();
+    }
+  );
+
+  it("logs why a token was refused, and never the token itself", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockTurnstile.verifyTurnstile.mockResolvedValue({
+      ok: false,
+      reason: "rejected",
+      codes: ["timeout-or-duplicate"],
+    });
+    await POST(post(WITH_TOKEN));
+
+    expect(warn).toHaveBeenCalledWith(
+      "[contact] Turnstile refused:",
+      "rejected",
+      ["timeout-or-duplicate"]
+    );
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("XXXX.token.XXXX");
+    warn.mockRestore();
+  });
+
+  it("answers 503, not 403, when Cloudflare cannot be reached, and saves nothing", async () => {
+    mockTurnstile.verifyTurnstile.mockResolvedValue({
+      ok: false,
+      reason: "unavailable",
+    });
+    const res = await POST(post(WITH_TOKEN));
+
+    expect(res.status).toBe(503);
+    expect((await res.json()).error).toMatch(/temporarily unavailable/i);
+    expect(mockService.submitContactForm).not.toHaveBeenCalled();
+  });
+
+  it("does not use up the sender's daily allowance when the token fails", async () => {
+    mockTurnstile.verifyTurnstile.mockResolvedValue({
+      ok: false,
+      reason: "rejected",
+    });
+    await POST(post(WITH_TOKEN));
+
+    const ids = mockRate.consumeRateLimit.mock.calls.map((c) => c[0]);
+    expect(ids).toEqual(["contact-ip:203.0.113.7"]);
+  });
+
+  it("is not asked at all while the cheap checks fail first: honeypot, fill time, per-address limit", async () => {
+    await POST(post({ ...WITH_TOKEN, fax: "555" }));
+    await POST(post({ ...WITH_TOKEN, fillTimeMs: 1800 }));
+    mockRate.consumeRateLimit.mockResolvedValue(false);
+    await POST(post(WITH_TOKEN));
+
+    expect(mockTurnstile.verifyTurnstile).not.toHaveBeenCalled();
+  });
+
+  it("is not asked, and no token is needed, while it is switched off", async () => {
+    mockTurnstile.isTurnstileEnabled.mockReturnValue(false);
+    const res = await POST(post(GOOD));
+
+    expect(res.status).toBe(200);
+    expect(mockTurnstile.verifyTurnstile).not.toHaveBeenCalled();
+    expect(mockService.submitContactForm).toHaveBeenCalled();
+  });
+
+  it("never lets an over-long token through the schema", async () => {
+    const res = await POST(post({ ...GOOD, turnstileToken: "x".repeat(2049) }));
+
+    expect(res.status).toBe(400);
+    expect(mockTurnstile.verifyTurnstile).not.toHaveBeenCalled();
+    expect(mockService.submitContactForm).not.toHaveBeenCalled();
   });
 });
