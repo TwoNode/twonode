@@ -32,6 +32,7 @@ import {
 import { Platform, SurfboardRole } from "@/utils/platform";
 import { paginatedResult } from "@/lib/api/pagination";
 import { PROVISIONAL_TYPES } from "@/surfboard/services/analyticsService";
+import { findPillarMatchIds } from "@/surfboard/services/planSearchService";
 import { emailInUse } from "@/lib/auth/userLookup";
 import { sendPlanShareInviteEmail } from "@/utils/email";
 import { getSiteUrl } from "@/lib/siteUrl";
@@ -180,28 +181,14 @@ const PLAN_LIST_SELECT = {
 } as const;
 
 /**
- * Prisma's native `Json` filters can only express exact array-element
- * containment, not "any element's field partial-matches X" — needs raw SQL.
- * Unindexed for now (confirmed with user): table is ~2,173 rows, small
- * enough that a full scan isn't a near-term concern; revisit with a
- * pg_trgm index if it grows large enough to matter.
+ * `owner` says whose plans the pillar-number search looks in. The raw search
+ * runs inside that scope (`findPillarMatchIds`), so a common term cannot fill
+ * its limit with other surveyors' plans and cut off the caller's own match (I-045).
  */
-async function findPlanIdsByPillarNumber(search: string): Promise<string[]> {
-  const rows = await prisma.$queryRaw<{ id: string }[]>`
-    SELECT id FROM "SurfboardPlan"
-    WHERE jsonb_typeof(pillars) = 'array'
-      AND EXISTS (
-        SELECT 1 FROM jsonb_array_elements(pillars) AS pillar
-        WHERE pillar->>'pillarNumber' ILIKE ${"%" + search + "%"}
-      )
-    LIMIT 500
-  `;
-  return rows.map((r) => r.id);
-}
-
 async function buildPlanFilterWhere(
   filters: PlanFilters | undefined,
-  base: any
+  base: any,
+  owner: { userId: string; scope: "mine" | "shared-with-me" }
 ) {
   const where: any = { ...base };
   if (!filters) return where;
@@ -212,7 +199,11 @@ async function buildPlanFilterWhere(
       { surveyTitle: { contains: filters.search, mode: "insensitive" } },
       { facilitator: { contains: filters.search, mode: "insensitive" } },
     ];
-    const pillarMatchIds = await findPlanIdsByPillarNumber(filters.search);
+    const pillarMatchIds = await findPillarMatchIds(
+      filters.search,
+      owner.userId,
+      owner.scope
+    );
     if (pillarMatchIds.length > 0) {
       where.OR.push({ id: { in: pillarMatchIds } });
     }
@@ -756,7 +747,11 @@ export async function getPaginatedSurfPlans(
   } = {}
 ) {
   const skip = noPagination ? undefined : (page - 1) * pageSize;
-  const where = await buildPlanFilterWhere(filters, { userId, deleted: false });
+  const where = await buildPlanFilterWhere(
+    filters,
+    { userId, deleted: false },
+    { userId, scope: "mine" }
+  );
   const orderBy = sort
     ? ({
         [sort.field]: sort.order,
@@ -800,11 +795,11 @@ export async function getAllSharedSurfPlans(
   sort?: PlanSort
 ) {
   const skip = (page - 1) * pageSize;
-  const where = await buildPlanFilterWhere(filters, {
-    userId,
-    sharedTo: { isEmpty: false },
-    deleted: false,
-  });
+  const where = await buildPlanFilterWhere(
+    filters,
+    { userId, sharedTo: { isEmpty: false }, deleted: false },
+    { userId, scope: "mine" }
+  );
   const orderBy = sort
     ? ({
         [sort.field]: sort.order,
@@ -843,10 +838,11 @@ export async function getSharedWithMeSurfPlans(
   sort?: PlanSort
 ) {
   const skip = (page - 1) * pageSize;
-  const where = await buildPlanFilterWhere(filters, {
-    sharedTo: { has: userId },
-    deleted: false,
-  });
+  const where = await buildPlanFilterWhere(
+    filters,
+    { sharedTo: { has: userId }, deleted: false },
+    { userId, scope: "shared-with-me" }
+  );
   const orderBy = sort
     ? ({
         [sort.field]: sort.order,
