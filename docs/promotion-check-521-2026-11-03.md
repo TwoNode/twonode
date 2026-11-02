@@ -8,17 +8,17 @@ Read-only: nothing was run against production, no migration was applied, and #52
 
 The code is in good shape. The only thing that can go wrong on the day is the order of the database change and the code (below). Two things were not checked and need a person.
 
-| Check | Result |
-| --- | --- |
-| `tsc --noEmit` | Clean |
-| Full test suite on `44ea0f66` | 164 files, 2,231 tests pass |
-| `next build` (production) on `44ea0f66`, local | Succeeds (316 s). The staging build of the same commit is Ready on Vercel (compiled in 98 s) |
-| Build warnings | The "unexpected file in NFT list" warning and the "Dynamic server usage" messages are identical in the live production build of 2026-10-18 and in staging's build: existing noise, not new |
-| What merging does to prod | Merging `main` into `prod` gives a tree identical to `main`. Nothing exists only on `prod` (its 14 prod-only commits are already in `main`'s content), so nothing is lost and there are no conflicts |
-| Config changes, `prod` to `main` | `package.json` (two npm scripts), `vercel.json` (one daily cron, `/api/cron/push-receipts` at 10:00 UTC, allowed on Hobby), `.env.example`. **Unchanged:** `next.config.mjs`, `proxy.ts`, `pnpm-lock.yaml`, `.github/` |
-| Environment variables the new code reads | Only `CRON_SECRET` (present on prod), `PUSH_ENABLED` and `EXPO_ACCESS_TOKEN` (both absent on prod, so push stays off) and `NODE_ENV`. Names only were compared; no values were read |
-| Staging, website sign-in (cookies) | 11 of 11 pass: wrong password 401, sign-in 200, `/auth/me` 200 with the new `verificationCodeSentAt`, refresh rotates the cookie, `/surfboard/dashboard` 200, cross-origin refresh 403, sign-out then 401 |
-| Staging, mobile (bearer), `npm run contract:live` | 31 of 31 pass (sign-in, device list, push preferences, plans, records, stats, files, refresh, refresh with a token never issued, sign-out) |
+| Check                                             | Result                                                                                                                                                                                                                 |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tsc --noEmit`                                    | Clean                                                                                                                                                                                                                  |
+| Full test suite on `44ea0f66`                     | 164 files, 2,231 tests pass                                                                                                                                                                                            |
+| `next build` (production) on `44ea0f66`, local    | Succeeds (316 s). The staging build of the same commit is Ready on Vercel (compiled in 98 s)                                                                                                                           |
+| Build warnings                                    | The "unexpected file in NFT list" warning and the "Dynamic server usage" messages are identical in the live production build of 2026-10-18 and in staging's build: existing noise, not new                             |
+| What merging does to prod                         | Merging `main` into `prod` gives a tree identical to `main`. Nothing exists only on `prod` (its 14 prod-only commits are already in `main`'s content), so nothing is lost and there are no conflicts                   |
+| Config changes, `prod` to `main`                  | `package.json` (two npm scripts), `vercel.json` (one daily cron, `/api/cron/push-receipts` at 10:00 UTC, allowed on Hobby), `.env.example`. **Unchanged:** `next.config.mjs`, `proxy.ts`, `pnpm-lock.yaml`, `.github/` |
+| Environment variables the new code reads          | Only `CRON_SECRET` (present on prod), `PUSH_ENABLED` and `EXPO_ACCESS_TOKEN` (both absent on prod, so push stays off) and `NODE_ENV`. Names only were compared; no values were read                                    |
+| Staging, website sign-in (cookies)                | 11 of 11 pass: wrong password 401, sign-in 200, `/auth/me` 200 with the new `verificationCodeSentAt`, refresh rotates the cookie, `/surfboard/dashboard` 200, cross-origin refresh 403, sign-out then 401              |
+| Staging, mobile (bearer), `npm run contract:live` | 31 of 31 pass (sign-in, device list, push preferences, plans, records, stats, files, refresh, refresh with a token never issued, sign-out)                                                                             |
 
 ## The migrations (four files, all additive and idempotent)
 
