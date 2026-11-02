@@ -162,7 +162,7 @@ Public reads: `getGalleryItems(year?)`, `getSponsors()`, `getPartners()`, `getSp
 | `/admin/uploads/:kind`          | POST          | `upload*`                      | ADMIN, SUPERADMIN                          | `:kind` ∈ sponsor-logo\|partner-logo\|speaker-photo\|gallery-media, multipart |
 | `/admin/uploads`                | DELETE        | `deleteFile`/`deleteFiles`     | ADMIN, SUPERADMIN                          | body: `{key}` or `{keys[]}`                                                   |
 | `/admin/uploads/limits`         | GET           | `getUploadLimits`              | ADMIN, SUPERADMIN                          |                                                                               |
-| `/contact`                      | POST          | `submitContactForm`            | _public_                                   |                                                                               |
+| `/contact`                      | POST          | `submitContactForm`            | _public_ (limited, see I-057)              |                                                                               |
 | `/admin/inquiries`              | GET           | `getInquiries`                 | ADMIN, SUPERADMIN                          | `?status=&type=`                                                              |
 | `/admin/inquiries/:id/status`   | PATCH         | `updateInquiryStatus`          | ADMIN, SUPERADMIN                          |                                                                               |
 | `/admin/inquiries/:id/reply`    | POST          | `replyToInquiry`               | ADMIN, SUPERADMIN                          |                                                                               |

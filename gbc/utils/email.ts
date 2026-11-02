@@ -2,7 +2,10 @@
 import nodemailer from "nodemailer";
 import type { GBCCertificateTicket } from "@/gbc/components/certificates/types";
 import { getSiteUrl } from "@/lib/siteUrl";
-import { buildCertificateEmailHtml } from "@/gbc/utils/certificateEmailTemplate";
+import {
+  buildCertificateEmailHtml,
+  escapeHtml,
+} from "@/gbc/utils/certificateEmailTemplate";
 
 // Create Zoho SMTP transporter - using same config as working email utility
 const transporter = nodemailer.createTransport({
@@ -318,19 +321,22 @@ export async function sendGBCTicketConfirmation(
 }
 
 /**
- * Send contact inquiry confirmation
+ * Send contact inquiry confirmation.
+ *
+ * Fixed text on purpose: this mail goes to whatever address the sender typed
+ * into a public form, so it must not repeat anything they wrote (a name or a
+ * subject would let a stranger deliver their own words, and links, from our
+ * sender — I-057).
  */
 export async function sendGBCContactConfirmation(
-  name: string,
-  email: string,
-  subject: string
+  email: string
 ): Promise<{ success: boolean }> {
   try {
     const html = `
       <h2>Thank you for contacting GBC 2.0</h2>
-      <p>Dear ${name},</p>
-      <p>We have received your inquiry regarding: <strong>${subject}</strong></p>
+      <p>We have received your inquiry.</p>
       <p>Our team will review your message and respond within 24-48 hours.</p>
+      <p>If you did not send an inquiry to GBC 2.0, you can ignore this email.</p>
       <p>Best regards,<br>The GBC Team</p>
     `;
 
@@ -361,12 +367,12 @@ export async function sendGBCAdminNotification(
 ): Promise<void> {
   try {
     const html = `
-      <h2>New ${type} Inquiry - GBC 2.0</h2>
-      <p><strong>From:</strong> ${name} (${email})</p>
-      ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ""}
-      <p><strong>Subject:</strong> ${subject}</p>
+      <h2>New ${escapeHtml(type)} Inquiry - GBC 2.0</h2>
+      <p><strong>From:</strong> ${escapeHtml(name)} (${escapeHtml(email)})</p>
+      ${phone ? `<p><strong>Phone:</strong> ${escapeHtml(phone)}</p>` : ""}
+      <p><strong>Subject:</strong> ${escapeHtml(subject)}</p>
       <p><strong>Message:</strong></p>
-      <p>${message}</p>
+      <p>${escapeHtml(message).replace(/\n/g, "<br>")}</p>
       <hr>
       <p><small>Received at: ${new Date().toLocaleString()}</small></p>
     `;
@@ -374,7 +380,7 @@ export async function sendGBCAdminNotification(
     await transporter.sendMail({
       from: `"GBC System" <${FROM_EMAIL}>`,
       to: FROM_EMAIL,
-      subject: `[GBC Admin] New ${type} Inquiry`,
+      subject: `[GBC Admin] New ${type.replace(/[\r\n]/g, " ")} Inquiry`,
       html,
     });
   } catch (error) {
@@ -488,7 +494,7 @@ export async function sendGBCInquiryReply(
           </div>
           
           <div class="content">
-            <p>Dear <strong>${recipientName}</strong>,</p>
+            <p>Dear <strong>${escapeHtml(recipientName)}</strong>,</p>
             
             <p>Thank you for reaching out to us. We're pleased to respond to your inquiry.</p>
             

@@ -1,7 +1,7 @@
 // src/components/public/ContactForm.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,12 @@ import { gbcApi } from "@/gbc/apiClient";
 
 export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // When the form appeared, so the server can tell a person from a script that
+  // submits within a second or two of loading the page (I-057).
+  const openedAt = useRef(0);
+  useEffect(() => {
+    openedAt.current = Date.now();
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,12 +42,15 @@ export function ContactForm() {
         subject: formData.get("subject") as string,
         message: formData.get("message") as string,
         type: formData.get("type") as any,
+        fax: (formData.get("fax") as string) || "",
+        fillTimeMs: Date.now() - openedAt.current,
       });
 
       if (result.success) {
         toast.success(result.data.message || "Message sent successfully!");
         // Reset form
         form.reset();
+        openedAt.current = Date.now();
       } else {
         toast.error(result.error || "Failed to send message");
       }
@@ -166,6 +175,22 @@ export function ContactForm() {
       <p className="text-sm text-gray-500 text-center">
         We'll get back to you within 24-48 hours
       </p>
+      {/* Honeypot: off screen rather than display:none (some scripts skip
+          hidden fields), out of the tab order, and not autofilled. A person
+          never sees it; a script that fills every field gives itself away. */}
+      <div
+        aria-hidden="true"
+        className="absolute -left-[9999px] h-0 w-0 overflow-hidden"
+      >
+        <label htmlFor="fax">Fax (leave this empty)</label>
+        <input
+          id="fax"
+          name="fax"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+        />
+      </div>
     </form>
   );
 }
