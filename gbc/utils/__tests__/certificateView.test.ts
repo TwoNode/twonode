@@ -16,29 +16,12 @@ describe("toCertificateView", () => {
       qrCodeUrl: "https://s3/x",
       amount: 5000,
       editionRef: {
-        name: "E",
-        theme: "T",
-        subTheme: "S",
-        venue: "V",
-        startDate: new Date(),
-        endDate: new Date(),
-        price: 100,
-        capacity: 9,
+        name: "E", theme: "T", subTheme: "S", venue: "V",
+        startDate: new Date(), endDate: new Date(), price: 100, capacity: 9,
       },
     };
     const json = JSON.stringify(toCertificateView(row));
-    for (const k of [
-      "email",
-      "phone",
-      "paymentRef",
-      "paymentDetails",
-      "certificatePublicId",
-      "checkedInBy",
-      "qrCodeUrl",
-      "amount",
-      "price",
-      "capacity",
-    ]) {
+    for (const k of ["email", "phone", "paymentRef", "paymentDetails", "certificatePublicId", "checkedInBy", "qrCodeUrl", "amount", "price", "capacity"]) {
       expect(json).not.toContain(`"${k}"`);
     }
     expect(json).toContain("Ada Lovelace");
