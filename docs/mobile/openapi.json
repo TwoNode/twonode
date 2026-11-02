@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Surfboard mobile API",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "The calls the Surfboard mobile app makes. Generated from `lib/mobile/contract` in the API repository: do not edit by hand. Every success is `{ success: true, data }`; every failure is `{ success: false, error, code?, details? }`. Dates are ISO 8601 in UTC. Objects are open: a newer server may add a field, and an app must ignore what it does not know."
   },
   "servers": [
@@ -1324,6 +1324,259 @@
               }
             },
             "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/push/preferences": {
+      "get": {
+        "operationId": "getPushPreferences",
+        "tags": [
+          "Push"
+        ],
+        "summary": "What this account wants pushed",
+        "description": "The account's choice, the same on every phone. A person who never changed anything gets the defaults: everything on, quiet hours off, 22:00 to 07:00 in Africa/Lagos.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PushPreferences"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      },
+      "patch": {
+        "operationId": "changePushPreferences",
+        "tags": [
+          "Push"
+        ],
+        "summary": "Change what this account wants pushed",
+        "description": "Only what is sent changes, so two phones changing two switches do not undo each other, and the answer is everything as it now stands. At least one field must be sent; an unknown key is refused. Quiet hours that start and end at the same time are refused (400), and the time zone must be an IANA name. A push inside quiet hours is dropped, not delayed.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "categories": {
+                    "type": "object",
+                    "properties": {
+                      "PLANS_NEED_YOU": {
+                        "type": "boolean"
+                      },
+                      "PLAN_LODGED": {
+                        "type": "boolean"
+                      },
+                      "PLAN_SHARED": {
+                        "type": "boolean"
+                      },
+                      "SUBSCRIPTION": {
+                        "type": "boolean"
+                      },
+                      "WITHDRAWALS": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "quietHours": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "start": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "end": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "timeZone": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              },
+              "example": {
+                "categories": {
+                  "PLAN_LODGED": false
+                },
+                "quietHours": {
+                  "enabled": true,
+                  "start": "22:30",
+                  "end": "07:00"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PushPreferences"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
               "FORBIDDEN"
             ]
           },
@@ -4463,6 +4716,72 @@
           "surconRegName",
           "residenceState",
           "isKycValidated"
+        ]
+      },
+      "PushPreferences": {
+        "description": "What the account wants pushed, the same on every phone it is signed in on. A push inside quiet hours is dropped, not delayed.",
+        "type": "object",
+        "properties": {
+          "categories": {
+            "description": "Which kinds of push the account wants. Everything is on until changed.",
+            "type": "object",
+            "properties": {
+              "PLANS_NEED_YOU": {
+                "type": "boolean"
+              },
+              "PLAN_LODGED": {
+                "type": "boolean"
+              },
+              "PLAN_SHARED": {
+                "type": "boolean"
+              },
+              "SUBSCRIPTION": {
+                "type": "boolean"
+              },
+              "WITHDRAWALS": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "PLANS_NEED_YOU",
+              "PLAN_LODGED",
+              "PLAN_SHARED",
+              "SUBSCRIPTION",
+              "WITHDRAWALS"
+            ]
+          },
+          "quietHours": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "start": {
+                "description": "\"HH:MM\", 24 hour clock, in `timeZone`.",
+                "type": "string",
+                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "end": {
+                "description": "\"HH:MM\", 24 hour clock, in `timeZone`.",
+                "type": "string",
+                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "timeZone": {
+                "description": "An IANA time zone name, the phone's.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "enabled",
+              "start",
+              "end",
+              "timeZone"
+            ]
+          }
+        },
+        "required": [
+          "categories",
+          "quietHours"
         ]
       },
       "RefreshResult": {

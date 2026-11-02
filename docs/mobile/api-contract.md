@@ -2,7 +2,7 @@
 
 What the Surfboard mobile app is promised, written down once and checked from both sides. It exists so that a change to the website's API cannot break an installed app without a test failing first (TASK-0015 1C).
 
-**The document:** [`openapi.json`](./openapi.json), OpenAPI 3.1, 23 operations, 33 named schemas. **Do not edit it by hand:** it is generated from the code in `lib/mobile/contract/` and a test fails if the file and the code disagree. The app keeps a copy (`src/lib/api/contract/openapi.json` in `TwoNode/twonode-mobile`) and tests itself against it.
+**The document:** [`openapi.json`](./openapi.json), OpenAPI 3.1, 25 operations, 34 named schemas. **Do not edit it by hand:** it is generated from the code in `lib/mobile/contract/` and a test fails if the file and the code disagree. The app keeps a copy (`src/lib/api/contract/openapi.json` in `TwoNode/twonode-mobile`) and tests itself against it.
 
 ## What is in it
 
@@ -49,9 +49,10 @@ The list is in `errorCodes.ts` and, with each operation's own failures, in the d
 
 ## History
 
-| Version | Date       | Change                                                                                                                                                   |
-| :------ | :--------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1.0.0   | 2026-10-28 | First publication: the 23 operations the app calls on the day the contract was written down, including `/auth/me` with `verificationCodeSentAt` (1A.14). |
+| Version | Date       | Change                                                                                                                                                                                                                                 |
+| :------ | :--------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1.0.0   | 2026-10-28 | First publication: the 23 operations the app calls on the day the contract was written down, including `/auth/me` with `verificationCodeSentAt` (1A.14).                                                                               |
+| 1.1.0   | 2026-11-02 | Two new operations, no change to an existing one: `getPushPreferences` and `changePushPreferences` (`/api/v1/surfboard/push/preferences`, 1I.8), with the `PushPreferences` answer and the `PATCH` method (the first in the document). |
 
 ## Not done
 

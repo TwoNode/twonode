@@ -197,6 +197,11 @@ async function main() {
     await call("GET", "/api/v1/surfboard/qr/wallet-summary", { token }),
     S.WalletSummaryData
   );
+  expectData(
+    "GET surfboard/push/preferences",
+    await call("GET", "/api/v1/surfboard/push/preferences", { token }),
+    S.PushPreferencesData
+  );
 
   // -- plans
   const mine = expectData(
