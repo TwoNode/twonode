@@ -125,8 +125,8 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/mda/pending-counts`                               | GET                | ADMIN, SUPERADMIN, ACCOUNTS, CHARTING, SURCON, RECORDS_I, INTAKE, RECORDS_II, ARCHIVE, MDA_SUPERADMIN       |
 | `/api/v1/surfboard/mda/records-ii/batches`                           | GET                | RECORDS_II, SUPERADMIN, MDA_SUPERADMIN                                                                      |
 | `/api/v1/surfboard/mda/records-ii/plans/[planId]/decision`           | POST               | RECORDS_II, SUPERADMIN                                                                                      |
-| `/api/v1/surfboard/mda/remarks/charting`                             | GET                | any signed-in                                                                                               |
-| `/api/v1/surfboard/mda/remarks/query-reasons`                        | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/mda/remarks/charting`                             | GET                | CHARTING, MDA_SUPERADMIN, ADMIN, SUPERADMIN                                                                 |
+| `/api/v1/surfboard/mda/remarks/query-reasons`                        | GET                | the stage's own reviewer role for `?role=` (ACCOUNTS, CHARTING, SURCON, RECORDS_I, RECORDS_II, INTAKE); MDA_SUPERADMIN, ADMIN, SUPERADMIN for any|
 | `/api/v1/surfboard/mda/stage-stats`                                  | GET                | STAGE_ROLES, MDA_SUPERADMIN, SUPERADMIN                                                                     |
 | `/api/v1/surfboard/notifications`                                    | GET, POST          | GET: any signed-in; POST: ADMIN, SUPERADMIN                                                                 |
 | `/api/v1/surfboard/notifications/[id]`                               | PATCH, DELETE      | ADMIN, SUPERADMIN                                                                                           |
