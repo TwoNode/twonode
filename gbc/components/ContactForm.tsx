@@ -20,7 +20,10 @@ import {
   TurnstileWidget,
   type TurnstileHandle,
 } from "@/components/security/TurnstileWidget";
-import { CONTACT_TURNSTILE_ACTION } from "@/gbc/utils/contactGuard";
+import {
+  CONTACT_TURNSTILE_ACTION,
+  fillTimeSince,
+} from "@/gbc/utils/contactGuard";
 
 // The widget's public site key; unset = no widget and the server asks for no token.
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -54,7 +57,7 @@ export function ContactForm() {
         message: formData.get("message") as string,
         type: formData.get("type") as any,
         fax: (formData.get("fax") as string) || "",
-        fillTimeMs: Date.now() - openedAt.current,
+        fillTimeMs: fillTimeSince(openedAt.current),
         ...(TURNSTILE_SITE_KEY && { turnstileToken }),
       });
 
@@ -205,7 +208,7 @@ export function ContactForm() {
           never sees it; a script that fills every field gives itself away. */}
       <div
         aria-hidden="true"
-        className="absolute -left-[9999px] h-0 w-0 overflow-hidden"
+        className="absolute -left-2499.75 h-0 w-0 overflow-hidden"
       >
         <label htmlFor="fax">Fax (leave this empty)</label>
         <input
