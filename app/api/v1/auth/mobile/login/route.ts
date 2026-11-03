@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { Platform } from "@/utils/platform";
 import { issueMobileSession, MOBILE_ALLOWED_ROLES } from "@/lib/auth/session";
@@ -11,6 +10,7 @@ import {
   assertMobileSignInEnabled,
 } from "@/lib/api/mobileApp";
 import { findUserByEmail } from "@/lib/auth/userLookup";
+import { verifyPassword } from "@/lib/auth/passwordCheck";
 import {
   deviceHash,
   logMobileAuthEvent,
@@ -77,9 +77,9 @@ export async function POST(req: NextRequest) {
 
     const user = await findUserByEmail(platform, email);
     // Same rule as the web login: no passwordHash means a Kinde-only account,
-    // and it must fail exactly like a wrong password (no account enumeration).
-    const valid =
-      user?.passwordHash && (await bcrypt.compare(password, user.passwordHash));
+    // and it must fail exactly like a wrong password, in the same time (no
+    // account enumeration, I-054).
+    const valid = await verifyPassword(password, user?.passwordHash);
     if (!valid) {
       logMobileAuthEvent("mobile.login", "invalid_credentials", tags);
       return NextResponse.json(

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { Platform } from "@/utils/platform";
 import { issueSession } from "@/lib/auth/session";
@@ -12,6 +11,7 @@ import {
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
 import { findUserByEmail } from "@/lib/auth/userLookup";
+import { verifyPassword } from "@/lib/auth/passwordCheck";
 
 const loginSchema = z.object({
   platform: z.nativeEnum(Platform),
@@ -46,9 +46,10 @@ export async function POST(req: NextRequest) {
     const user = await findUserByEmail(platform, email);
     // No passwordHash means this account only ever signed in via Kinde — a
     // native-login attempt against it should fail exactly like a wrong
-    // password would, not with a different (account-enumerating) message.
-    const valid =
-      user?.passwordHash && (await bcrypt.compare(password, user.passwordHash));
+    // password would, not with a different (account-enumerating) message, and
+    // not faster: verifyPassword hashes once whether or not there is an account
+    // (I-054).
+    const valid = await verifyPassword(password, user?.passwordHash);
 
     if (!valid) {
       await recordAttempt(identifier, user?.id);
