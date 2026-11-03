@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import maplibregl, { Map, LngLatLike, GeoJSONSource } from "maplibre-gl";
 import * as turf from "@turf/turf";
 import { Feature, GeoJsonProperties, Point } from "geojson";
-import proj4 from "proj4";
+import { utmToLonLat } from "@/lib/geo/crs";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { applyVisualizationShift } from "@/app/(projects)/(surfboard)/utils/surfboardUtils";
@@ -22,12 +22,6 @@ interface MaplibreMapProps {
   processedPillars: PillarData[];
   state?: string | null;
 }
-
-// Define the coordinate reference system
-proj4.defs(
-  "EPSG:26331",
-  "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-92,-93,122,0,0,0,0 +units=m +no_defs"
-);
 
 const MaplibreMap: React.FC<MaplibreMapProps> = ({
   processedPillars,
@@ -216,10 +210,7 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({
 
       const groups: Record<number, any[]> = {};
       visualPillars.forEach((p) => {
-        const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
-          p.easting,
-          p.northing,
-        ]);
+        const [lon, lat] = utmToLonLat(p.easting, p.northing);
         const idx = p.polygonIndex ?? 0;
         if (!groups[idx]) groups[idx] = [];
         groups[idx].push([lon, lat]);
@@ -239,10 +230,7 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({
       });
 
       const pointFeatures = visualPillars.map((p) => {
-        const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
-          p.easting,
-          p.northing,
-        ]);
+        const [lon, lat] = utmToLonLat(p.easting, p.northing);
         return turf.point([lon, lat], {
           pillarNumber: p.pillarNumber,
           easting: p.easting,
