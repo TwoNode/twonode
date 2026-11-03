@@ -199,8 +199,8 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/settings/reset`                                   | POST               | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/settings/revert/[id]`                             | POST               | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/subscription`                                     | GET                | any signed-in                                                                                               |
-| `/api/v1/surfboard/subscription-analytics`                           | GET                | any signed-in                                                                                               |
-| `/api/v1/surfboard/subscription/clear`                               | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/subscription-analytics`                           | GET                | ADMIN, SUPERADMIN (and USER on a development server)                                                        |
+| `/api/v1/surfboard/subscription/clear`                               | POST               | development server only (404 elsewhere)                                                                     |
 | `/api/v1/surfboard/subscription/disable`                             | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/subscription/initiate`                            | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/subscription/initiate-onetime`                    | POST               | any signed-in                                                                                               |
