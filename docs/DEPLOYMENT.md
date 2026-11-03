@@ -49,6 +49,8 @@ Schema lives in `prisma/schema/*.prisma` (one file per product plus `core`/`gis`
 
 Nothing touches production automatically: verify the migration on staging, merge to `prod`, then run `gh workflow run migrate-production.yml --ref prod` (or use the Actions tab).
 
+**When the new code reads a new column, the migration goes first.** The workflow only runs from `prod`, so the files have to be merged into `prod` before they can be applied. If the code in the same promotion selects the new column (any Prisma query on that model does), merging the code first leaves a gap in which those requests fail. Instead: merge a PR to `prod` that carries only the new `prisma/migrations/**` folders (identical files, no `schema.prisma`, no code; the migrations must be additive), run the workflow, check the post-flight `migrate status`, and only then merge the code. The identical files merge without a conflict later. This is the plan for the mobile batch (PR #533 first, then #521).
+
 ### The `0_init` baseline (2026-10-01)
 
 The historical migrations were squashed into one baseline, `prisma/migrations/0_init/migration.sql` (it includes `CREATE EXTENSION IF NOT EXISTS "postgis"`, which used to be set up out-of-band). A **fresh** database simply runs it. A database that already has the schema — staging and production — must be told the baseline is already applied, **once**, before the next `migrate deploy`, or Prisma will try to re-create everything:
