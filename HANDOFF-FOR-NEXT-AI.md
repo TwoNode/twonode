@@ -149,6 +149,13 @@ flowchart LR
   - Old REVA files: retain until after 2026-11-12.
 - Rules: Show exact counts and keys, test server-side copy, verify object sizes, and get explicit approval before deleting originals.
 
+### 4.3 S3 follow-ups found 2026-11-03
+
+- Which bucket policy is live is recorded inconsistently across the docs (different files name v1, v2 or v4 as the latest applied). Read it from AWS before relying on section 4.1.
+- With SDK 3.985.0 the Surfboard adapter's presigned PUT (viewer attachments) carries CRC32 checksum parameters; test an upload on staging.
+- Nothing cleans up unreferenced stored files, and the three server upload routes check neither size nor type.
+- Details and owners: the three items under "Follow-ups found 2026-11-03" in `docs/tasks/0011-s3-privacy-and-key-layout.md` and the TASK-0011 batch in `docs/tasks/current-tasks.md`.
+
 ---
 
 ### 3.5 The mobile app (in progress) and the paused association subscription
