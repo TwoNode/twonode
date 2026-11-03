@@ -20,6 +20,7 @@ import type { WalletSummary } from "@/surfboard/services/qrEarningsService";
 import type { SubscriptionSummary } from "@/surfboard/services/subscriptionService";
 import type { Paginated } from "@/lib/api/pagination";
 import type { DeviceSession } from "@/lib/auth/deviceSessions";
+import type { PushPreferences } from "@/lib/push/preferences";
 
 /**
  * What the mobile app is promised in each successful answer (TASK-0015 1C).
@@ -523,6 +524,65 @@ export const CoordinateShiftsData = z
       "Metres, keyed by the state's lower-case name. Empty when no state has a correction.",
   });
 
+const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+
+export const PushPreferencesData = z
+  .object({
+    categories: z
+      .object({
+        PLANS_NEED_YOU: z.boolean(),
+        PLAN_LODGED: z.boolean(),
+        PLAN_SHARED: z.boolean(),
+        SUBSCRIPTION: z.boolean(),
+        WITHDRAWALS: z.boolean(),
+      })
+      .describe(
+        "Which kinds of push the account wants. Everything is on until changed."
+      ),
+    quietHours: z.object({
+      enabled: z.boolean(),
+      start: time.describe('"HH:MM", 24 hour clock, in `timeZone`.'),
+      end: time.describe('"HH:MM", 24 hour clock, in `timeZone`.'),
+      timeZone: z.string().describe("An IANA time zone name, the phone's."),
+    }),
+  })
+  .meta({
+    id: "PushPreferences",
+    description:
+      "What the account wants pushed, the same on every phone it is signed in on. A push inside quiet hours is dropped, not delayed.",
+  });
+
+/** A change to the preferences: only what is sent changes. Unknown keys are refused. */
+export const PushPreferencesPatch = z
+  .object({
+    categories: z
+      .object({
+        PLANS_NEED_YOU: z.boolean().optional(),
+        PLAN_LODGED: z.boolean().optional(),
+        PLAN_SHARED: z.boolean().optional(),
+        SUBSCRIPTION: z.boolean().optional(),
+        WITHDRAWALS: z.boolean().optional(),
+      })
+      .strict()
+      .optional(),
+    quietHours: z
+      .object({
+        enabled: z.boolean().optional(),
+        start: time.optional(),
+        end: time.optional(),
+        timeZone: z.string().min(1).max(64).optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict()
+  .refine(
+    (patch) =>
+      Object.values(patch.categories ?? {}).some((v) => v !== undefined) ||
+      Object.values(patch.quietHours ?? {}).some((v) => v !== undefined),
+    "Nothing to change"
+  );
+
 // ------------------------------------------- the types and the schemas agree
 
 /** A value as JSON carries it: dates are text. */
@@ -553,5 +613,6 @@ export type ContractMatchesServices = [
   Must<Same<z.infer<typeof SubscriptionSummaryData>, SubscriptionSummary>>,
   Must<Same<z.infer<typeof WalletSummaryData>, WalletSummary>>,
   Must<Same<z.infer<typeof DeviceSessionData>, Json<DeviceSession>>>,
+  Must<Same<z.infer<typeof PushPreferencesData>, PushPreferences>>,
 ];
 /* eslint-enable @typescript-eslint/no-unused-vars */

@@ -149,15 +149,15 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/plans/[planId]/qr`                                | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/query`                             | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/plans/[planId]/record-copy`                       | PATCH              | USER                                                                                                        |
-| `/api/v1/surfboard/plans/[planId]/record-copy/download`              | GET                | any signed-in                                                                                               |
-| `/api/v1/surfboard/plans/[planId]/record-copy/verification`          | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/plans/[planId]/record-copy/download`              | GET                | USER (own plans), ADMIN, SUPERADMIN                                                                         |
+| `/api/v1/surfboard/plans/[planId]/record-copy/verification`          | POST               | USER (own plans), ADMIN, SUPERADMIN                                                                         |
 | `/api/v1/surfboard/plans/[planId]/red-copy`                          | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/restore`                           | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/resubmit`                          | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/share`                             | POST, DELETE       | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/share-response`                    | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/share/invite`                      | POST               | USER                                                                                                        |
-| `/api/v1/surfboard/plans/[planId]/status`                            | PATCH              | USER, ADMIN, SUPERADMIN                                                                                     |
+| `/api/v1/surfboard/plans/[planId]/status`                            | PATCH              | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/plans/[planId]/summary`                           | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/surveyor`                          | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/title`                             | PATCH              | ADMIN, SUPERADMIN                                                                                           |
@@ -308,7 +308,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/gbc/certificates/download`                  | POST          | public — ticket buyer / site visitor |
 | `/api/v1/gbc/certificates/request-code`              | POST          | public — ticket buyer / site visitor |
 | `/api/v1/gbc/certificates/verify-code`               | POST          | public — ticket buyer / site visitor |
-| `/api/v1/gbc/contact`                                | POST          | public — ticket buyer / site visitor |
+| `/api/v1/gbc/contact`                                | POST          | public — ticket buyer / site visitor; honeypot, minimum fill time, limits per IP, per sender and overall, Cloudflare Turnstile when its keys are set (I-057) |
 | `/api/v1/gbc/editions`                               | GET           | public — ticket buyer / site visitor |
 | `/api/v1/gbc/editions/[key]/recap`                   | GET           | public — ticket buyer / site visitor |
 | `/api/v1/gbc/editions/current`                       | GET           | public — ticket buyer / site visitor |

@@ -17,7 +17,13 @@ import { getActiveEdition } from "@/gbc/services/editionService";
  * instead — not migrated, per phase-4-gbc.md.
  */
 
-export async function submitContactForm(data: ContactFormInput) {
+export async function submitContactForm(
+  data: ContactFormInput,
+  // The confirmation mail goes to whatever address the sender typed, so the
+  // route turns it off once too many have gone out (I-057). The inquiry is
+  // still saved and the admin still notified.
+  opts: { sendConfirmation?: boolean } = {}
+) {
   // The public form never supplies an edition: tag the inquiry with the one
   // currently active, or leave the schema default when none is.
   const active = await getActiveEdition();
@@ -25,7 +31,9 @@ export async function submitContactForm(data: ContactFormInput) {
     data: active ? { ...data, edition: active.key } : data,
   });
 
-  await sendGBCContactConfirmation(data.name, data.email, data.subject);
+  if (opts.sendConfirmation !== false) {
+    await sendGBCContactConfirmation(data.email);
+  }
   await sendGBCAdminNotification(
     data.type,
     data.name,

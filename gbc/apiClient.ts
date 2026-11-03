@@ -139,6 +139,16 @@ export type ContactFormInput = {
   type: "GENERAL" | "SPONSORSHIP" | "TECHNICAL" | "MEDIA" | "SPEAKING";
 };
 
+/** What the public contact form posts: the inquiry plus the anti-abuse fields (I-057). */
+export type ContactSubmitInput = ContactFormInput & {
+  /** Hidden honeypot; a person leaves it empty. */
+  fax?: string;
+  /** Milliseconds the page was open before submit. */
+  fillTimeMs: number;
+  /** Cloudflare Turnstile token; absent when Turnstile is not switched on. */
+  turnstileToken?: string;
+};
+
 export type QRTicketData = {
   ticketNumber: string;
   name: string;
@@ -805,8 +815,8 @@ export const gbcApi = {
   },
 
   contact: {
-    submit: (input: ContactFormInput) =>
-      jsonFetch<{ inquiry: Inquiry; message: string }>(`${BASE}/contact`, {
+    submit: (input: ContactSubmitInput) =>
+      jsonFetch<{ inquiry?: Inquiry; message: string }>(`${BASE}/contact`, {
         method: "POST",
         body: JSON.stringify(input),
       }),

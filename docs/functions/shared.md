@@ -48,6 +48,12 @@ Logic used across two or more platforms, under the top-level `hooks/`,
 | `validate.ts`              | Request body/schema validation helpers                                                                                                                                                                                                                                                                                                                                                       |
 | `withAuth.ts`              | Auth wrapper for route handlers — session check from the JWT (no DB call), `roles` gating, error handling, and the email-verification gate: throws `EmailVerificationRequiredError` when the token's `mustVerifyNow && !emailVerified` unless the route opts out with `allowUnverified: true` (none do today). `Session` carries `sub`, `role`, `platform`, `emailVerified`, `mustVerifyNow` |
 
+## `lib/security/` — abuse protection
+
+| File           | Description |
+| -------------- | ----------- |
+| `turnstile.ts` | Cloudflare Turnstile, server side. `isTurnstileEnabled()` is true only when `TURNSTILE_SECRET` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` are both set. `verifyTurnstile({ token, action, remoteIp, requestHost })` redeems a widget token at Cloudflare's siteverify (form-encoded POST, 10 s timeout) and returns `{ ok: true }` or `{ ok: false, reason, codes? }` with `reason` one of `missing-token`, `rejected`, `wrong-action`, `wrong-hostname`, `unavailable`. Fails closed: a network error, timeout, non-2xx answer or non-JSON body is `unavailable`; success must be exactly `true`, the token's `action` must equal the surface's, and its `hostname` must be in `TURNSTILE_HOSTNAMES` (or, unset, the request's own host). Tokens are single-use, so a replay comes back `rejected` (`timeout-or-duplicate`). Never logs the token or the secret. Used by `app/api/v1/gbc/contact/route.ts` (action `contact`). |
+
 ## `lib/auth/` — authentication
 
 See [`docs/auth/technical.md`](../auth/technical.md) for the flows these implement.
