@@ -34,7 +34,9 @@ Why each priority: I-051 is destructive and has no check at all; the only brake 
 - **Sign-ins are not in the audit log.** `writeAudit` is used for admin invitations and settings changes, not for web or mobile sign-ins; mobile sign-ins are in the operations log only (`mobile.login`, with a device hash). Whether to audit sign-ins, and for how long to keep them, is a privacy and retention decision for the maintainer.
 - **The development JWT fallback.** `lib/auth/jwt.ts` falls back to a fixed development secret when `JWT_SECRET` is unset and `NODE_ENV` is not `production`. Every Vercel build, including the staging preview, has `NODE_ENV=production`, so staging and production refuse to start without a secret; a developer machine does not. No change needed; do not copy a production `.env` to a machine that exposes a port.
 
-## Suggested fixes (not done)
+## Suggested fixes
+
+**Status 2026-11-03:** items 2 to 6 are built as API PRs #541 (I-052, I-053), #542 (I-054), #543 (I-055) and #544 (I-056), merged to `dev` on 2026-11-04 (not yet on `main` or prod). Item 1 (I-051) still needs the maintainer's rule.
 
 1. **I-051.** Decide who may delete what. The simple rule is "only a file that is yours": an object the caller uploaded (record the uploader in the object's metadata or an `Upload` table when `files/upload*` writes it) or a file named by one of the caller's own plans, plus ADMIN and SUPERADMIN. Old objects have no uploader, so for those only "named by one of the caller's plans" can apply. The website deletes files in two situations, a plan being edited and an upload that was abandoned, and both must keep working. Needs the maintainer's choice, because it changes what the website may delete.
 2. **I-052.** Restrict to ADMIN and SUPERADMIN (the widget is only shown in development). Nothing in production calls it.
