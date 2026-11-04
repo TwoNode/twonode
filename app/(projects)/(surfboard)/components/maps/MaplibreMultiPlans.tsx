@@ -19,7 +19,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { Plan, PillarData, PLAN_TYPES } from "../../types/surfboardTypes";
 import { resolveCsvState } from "@/app/(projects)/(surfboard)/utils/csvState";
 import { shiftGeometryForDisplay } from "@/app/(projects)/(surfboard)/utils/geometryShift";
-import proj4 from "proj4";
+import { utmToLonLat } from "@/lib/geo/crs";
 import { surfboardApi } from "@/surfboard/apiClient";
 import {
   applyVisualizationShift,
@@ -49,12 +49,6 @@ interface TempPlan extends Omit<Plan, "status"> {
  * 1.32 m per pixel, which at Lagos (6.5°N) is zoom 15.8.
  */
 const PILLAR_LABEL_MIN_ZOOM = 15.8;
-
-// Define the coordinate reference system for pillar conversion
-proj4.defs(
-  "EPSG:26331",
-  "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-92,-93,122,0,0,0,0 +units=m +no_defs"
-);
 
 // Helper to generate a unique signature from pillar data to detect duplicates
 const generatePlanSignature = (pillars: PillarData[]): string => {
@@ -898,10 +892,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({
           }
 
           const coords = pillars.map((p) => {
-            const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
-              p.easting,
-              p.northing,
-            ]);
+            const [lon, lat] = utmToLonLat(p.easting, p.northing);
             return [lon, lat];
           });
           if (
@@ -1283,10 +1274,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({
 
           const groups: Record<number, any[]> = {};
           shiftedPillars.forEach((p) => {
-            const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
-              p.easting,
-              p.northing,
-            ]);
+            const [lon, lat] = utmToLonLat(p.easting, p.northing);
             pillarFeatures.push(
               turf.point([lon, lat], {
                 ...p,
