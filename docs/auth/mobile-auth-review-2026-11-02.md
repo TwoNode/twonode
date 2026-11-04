@@ -36,7 +36,7 @@ Why each priority: I-051 is destructive and has no check at all; the only brake 
 
 ## Suggested fixes
 
-**Status 2026-11-03:** items 2 to 6 are built as API PRs #541 (I-052, I-053), #542 (I-054), #543 (I-055) and #544 (I-056), open to `dev`, not merged. Item 1 (I-051) still needs the maintainer's rule.
+**Status 2026-11-03:** items 2 to 6 are built as API PRs #541 (I-052, I-053), #542 (I-054), #543 (I-055) and #544 (I-056), merged to `dev` on 2026-11-04 (not yet on `main` or prod). Item 1 (I-051) still needs the maintainer's rule.
 
 1. **I-051.** Decide who may delete what. The simple rule is "only a file that is yours": an object the caller uploaded (record the uploader in the object's metadata or an `Upload` table when `files/upload*` writes it) or a file named by one of the caller's own plans, plus ADMIN and SUPERADMIN. Old objects have no uploader, so for those only "named by one of the caller's plans" can apply. The website deletes files in two situations, a plan being edited and an upload that was abandoned, and both must keep working. Needs the maintainer's choice, because it changes what the website may delete.
 2. **I-052.** Restrict to ADMIN and SUPERADMIN (the widget is only shown in development). Nothing in production calls it.
