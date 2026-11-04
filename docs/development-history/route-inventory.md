@@ -86,8 +86,8 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/admin/users/[id]/status`                          | PATCH              | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/admin/users/[id]/subscription`                    | PATCH, DELETE      | SUPERADMIN                                                                                                  |
 | `/api/v1/surfboard/admin/users/stats`                                | GET                | ADMIN, SUPERADMIN                                                                                           |
-| `/api/v1/surfboard/ai/extract-survey-plan`                           | POST               | any signed-in                                                                                               |
-| `/api/v1/surfboard/ai/recognize-person-count`                        | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/ai/extract-survey-plan`                           | POST               | any signed-in (text up to 100,000 characters; 60 an hour per account)                                       |
+| `/api/v1/surfboard/ai/recognize-person-count`                        | POST               | any signed-in (title up to 1,000 characters; 120 an hour per account)                                       |
 | `/api/v1/surfboard/analytics`                                        | GET                | USER, ADMIN, SUPERADMIN                                                                                     |
 | `/api/v1/surfboard/cod/batches`                                      | GET, POST          | GET: USER, ADMIN, SUPERADMIN; POST: USER                                                                    |
 | `/api/v1/surfboard/cod/batches/[batchId]`                            | GET                | USER                                                                                                        |
@@ -125,8 +125,8 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/mda/pending-counts`                               | GET                | ADMIN, SUPERADMIN, ACCOUNTS, CHARTING, SURCON, RECORDS_I, INTAKE, RECORDS_II, ARCHIVE, MDA_SUPERADMIN       |
 | `/api/v1/surfboard/mda/records-ii/batches`                           | GET                | RECORDS_II, SUPERADMIN, MDA_SUPERADMIN                                                                      |
 | `/api/v1/surfboard/mda/records-ii/plans/[planId]/decision`           | POST               | RECORDS_II, SUPERADMIN                                                                                      |
-| `/api/v1/surfboard/mda/remarks/charting`                             | GET                | any signed-in                                                                                               |
-| `/api/v1/surfboard/mda/remarks/query-reasons`                        | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/mda/remarks/charting`                             | GET                | CHARTING, MDA_SUPERADMIN, ADMIN, SUPERADMIN                                                                 |
+| `/api/v1/surfboard/mda/remarks/query-reasons`                        | GET                | the stage's own reviewer role for `?role=` (ACCOUNTS, CHARTING, SURCON, RECORDS_I, RECORDS_II, INTAKE); MDA_SUPERADMIN, ADMIN, SUPERADMIN for any|
 | `/api/v1/surfboard/mda/stage-stats`                                  | GET                | STAGE_ROLES, MDA_SUPERADMIN, SUPERADMIN                                                                     |
 | `/api/v1/surfboard/notifications`                                    | GET, POST          | GET: any signed-in; POST: ADMIN, SUPERADMIN                                                                 |
 | `/api/v1/surfboard/notifications/[id]`                               | PATCH, DELETE      | ADMIN, SUPERADMIN                                                                                           |
@@ -199,8 +199,8 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/settings/reset`                                   | POST               | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/settings/revert/[id]`                             | POST               | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/subscription`                                     | GET                | any signed-in                                                                                               |
-| `/api/v1/surfboard/subscription-analytics`                           | GET                | any signed-in                                                                                               |
-| `/api/v1/surfboard/subscription/clear`                               | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/subscription-analytics`                           | GET                | ADMIN, SUPERADMIN (and USER on a development server)                                                        |
+| `/api/v1/surfboard/subscription/clear`                               | POST               | development server only (404 elsewhere)                                                                     |
 | `/api/v1/surfboard/subscription/disable`                             | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/subscription/initiate`                            | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/subscription/initiate-onetime`                    | POST               | any signed-in                                                                                               |

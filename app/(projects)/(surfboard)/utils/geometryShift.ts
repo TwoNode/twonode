@@ -1,10 +1,5 @@
-import proj4 from "proj4";
+import { shiftLonLatByMetres } from "@/lib/geo/crs";
 import type { Geometry, Position } from "geojson";
-
-proj4.defs(
-  "EPSG:26331",
-  "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-92,-93,122,0,0,0,0 +units=m +no_defs"
-);
 
 type Shifts = Record<string, { eastingShift: number; northingShift: number }>;
 
@@ -26,11 +21,12 @@ export function shiftGeometryForDisplay<T extends Geometry>(
   }
 
   const move = ([lon, lat, ...rest]: Position): Position => {
-    const [e, n] = proj4("EPSG:4326", "EPSG:26331", [lon, lat]);
-    const [lon2, lat2] = proj4("EPSG:26331", "EPSG:4326", [
-      e + shift.eastingShift,
-      n + shift.northingShift,
-    ]);
+    const [lon2, lat2] = shiftLonLatByMetres(
+      lon,
+      lat,
+      shift.eastingShift,
+      shift.northingShift
+    );
     return [lon2, lat2, ...rest];
   };
   const walk = (c: any): any =>

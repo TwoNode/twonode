@@ -146,6 +146,27 @@ describe("POST /api/v1/auth/mobile/login", () => {
     );
   });
 
+  it("hashes the password exactly once for an unknown email, a Kinde-only account and a wrong password alike (I-054)", async () => {
+    mockBcrypt.compare.mockReset();
+    mockBcrypt.compare.mockResolvedValue(false);
+
+    mockLookup.findUserByEmail.mockResolvedValueOnce(null);
+    await login(post("login", loginBody()));
+    mockLookup.findUserByEmail.mockResolvedValueOnce({
+      ...user,
+      passwordHash: null,
+    });
+    await login(post("login", loginBody()));
+    mockLookup.findUserByEmail.mockResolvedValueOnce(user);
+    await login(post("login", loginBody()));
+
+    expect(mockBcrypt.compare).toHaveBeenCalledTimes(3);
+    const hashes = mockBcrypt.compare.mock.calls.map((c) => c[1]);
+    expect(hashes[0]).toMatch(/^\$2b\$12\$/); // the stand-in, not "hash"
+    expect(hashes[1]).toBe(hashes[0]);
+    expect(hashes[2]).toBe("hash"); // the real account's own
+  });
+
   it.each(["ADMIN", "SUPERADMIN", "ACCOUNTS", "MDA_SUPERADMIN"])(
     "a %s account is refused on mobile with no session (staff stay on the web)",
     async (role) => {
