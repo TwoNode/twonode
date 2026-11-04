@@ -86,8 +86,8 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/admin/users/[id]/status`                          | PATCH              | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/admin/users/[id]/subscription`                    | PATCH, DELETE      | SUPERADMIN                                                                                                  |
 | `/api/v1/surfboard/admin/users/stats`                                | GET                | ADMIN, SUPERADMIN                                                                                           |
-| `/api/v1/surfboard/ai/extract-survey-plan`                           | POST               | any signed-in                                                                                               |
-| `/api/v1/surfboard/ai/recognize-person-count`                        | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/ai/extract-survey-plan`                           | POST               | any signed-in (text up to 100,000 characters; 60 an hour per account)                                       |
+| `/api/v1/surfboard/ai/recognize-person-count`                        | POST               | any signed-in (title up to 1,000 characters; 120 an hour per account)                                       |
 | `/api/v1/surfboard/analytics`                                        | GET                | USER, ADMIN, SUPERADMIN                                                                                     |
 | `/api/v1/surfboard/cod/batches`                                      | GET, POST          | GET: USER, ADMIN, SUPERADMIN; POST: USER                                                                    |
 | `/api/v1/surfboard/cod/batches/[batchId]`                            | GET                | USER                                                                                                        |
