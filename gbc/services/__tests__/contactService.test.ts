@@ -48,10 +48,9 @@ describe("submitContactForm", () => {
     await submitContactForm(data);
 
     expect(mockPrisma.gBCContactInquiry.create).toHaveBeenCalledWith({ data });
+    // Only the address: the mail repeats nothing the sender wrote (I-057).
     expect(mockEmail.sendGBCContactConfirmation).toHaveBeenCalledWith(
-      "Jane",
-      "jane@test.com",
-      "Hi"
+      "jane@test.com"
     );
     expect(mockEmail.sendGBCAdminNotification).toHaveBeenCalledWith(
       "GENERAL",
@@ -61,6 +60,26 @@ describe("submitContactForm", () => {
       "Hi",
       "Hello there"
     );
+  });
+});
+
+describe("submitContactForm confirmation switch", () => {
+  const data = {
+    name: "Jane",
+    email: "jane@test.com",
+    subject: "Hi there",
+    message: "Hello there",
+    type: "GENERAL",
+  } as any;
+
+  it("still saves the inquiry and notifies the admin when the confirmation is switched off", async () => {
+    mockPrisma.gBCContactInquiry.create.mockResolvedValue({ id: "i1" });
+
+    await submitContactForm(data, { sendConfirmation: false });
+
+    expect(mockPrisma.gBCContactInquiry.create).toHaveBeenCalled();
+    expect(mockEmail.sendGBCAdminNotification).toHaveBeenCalled();
+    expect(mockEmail.sendGBCContactConfirmation).not.toHaveBeenCalled();
   });
 });
 

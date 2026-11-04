@@ -1,0 +1,19 @@
+{
+  "status": 400,
+  "body": {
+    "success": false,
+    "error": "Invalid request",
+    "code": "VALIDATION_ERROR",
+    "details": {
+      "_errors": [],
+      "displayStatus": {
+        "0": {
+          "_errors": [
+            "Invalid enum value. Expected 'QUERIED' | 'LODGED' | 'PHYSICAL_SUBMITTED' | 'READY_FOR_PHYSICAL' | 'PARTLY_APPROVED' | 'IN_REVIEW' | 'PAYMENT_PENDING' | 'NOT_SUBMITTED' | 'SUBMISSION_FAILED', received 'DONE'"
+          ]
+        },
+        "_errors": []
+      }
+    }
+  }
+}

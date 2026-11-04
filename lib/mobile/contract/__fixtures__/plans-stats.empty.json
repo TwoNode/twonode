@@ -1,0 +1,48 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "total": 0,
+      "provisional": 0,
+      "undated": 0,
+      "byStatus": {
+        "QUERIED": 0,
+        "LODGED": 0,
+        "PHYSICAL_SUBMITTED": 0,
+        "READY_FOR_PHYSICAL": 0,
+        "PARTLY_APPROVED": 0,
+        "IN_REVIEW": 0,
+        "PAYMENT_PENDING": 0,
+        "NOT_SUBMITTED": 0,
+        "SUBMISSION_FAILED": 0
+      },
+      "pillars": {
+        "regular": 0,
+        "special": 0
+      },
+      "byMonth": [],
+      "facilitators": {
+        "rows": [],
+        "distinct": 0,
+        "missing": 0
+      },
+      "lgas": {
+        "rows": [],
+        "distinct": 0,
+        "missing": 0
+      },
+      "wards": {
+        "rows": [],
+        "distinct": 0,
+        "missing": 0
+      },
+      "lcdas": {
+        "rows": [],
+        "distinct": 0,
+        "missing": 0
+      },
+      "activeBatches": 4
+    }
+  }
+}

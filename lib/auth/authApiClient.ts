@@ -125,6 +125,8 @@ export type MeResponse = {
   mustVerifyNow: boolean;
   verificationMethod: "OTP" | "LINK";
   verificationGraceEndsAt: string | null;
+  /** When the code the person can still enter was sent; null when none is live (or no code is needed). */
+  verificationCodeSentAt?: string | null;
 };
 
 export async function getMe(

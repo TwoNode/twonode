@@ -259,6 +259,37 @@ export async function updatePasswordHash(
   }
 }
 
+/**
+ * Removes an account's password so it can no longer sign in with one (it can
+ * still use Kinde, and can set a fresh password through the reset flow, which
+ * treats a passwordless account as a first-time setup).
+ */
+export async function clearPasswordHash(
+  platform: Platform,
+  id: string
+): Promise<void> {
+  switch (platform) {
+    case Platform.REVA:
+      await prisma.revaUser.update({
+        where: { id },
+        data: { passwordHash: null },
+      });
+      return;
+    case Platform.SURFBOARD:
+      await prisma.surfboardUser.update({
+        where: { id },
+        data: { passwordHash: null },
+      });
+      return;
+    case Platform.GBC:
+      await prisma.gBCUser.update({
+        where: { id },
+        data: { passwordHash: null },
+      });
+      return;
+  }
+}
+
 export async function markEmailVerified(
   platform: Platform,
   id: string,

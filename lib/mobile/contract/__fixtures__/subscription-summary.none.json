@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "state": "NONE",
+      "planName": null,
+      "interval": null,
+      "validUntil": null
+    }
+  }
+}

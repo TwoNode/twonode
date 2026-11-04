@@ -1,0 +1,17 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "firstName": "Tunde",
+      "lastName": "Okafor",
+      "prefix": "Surv.",
+      "suffix": "MNIS",
+      "companyName": "Okafor Geomatics Ltd",
+      "surconRegNumber": "S/1234",
+      "surconRegName": "Okafor Tunde",
+      "residenceState": "Lagos",
+      "isKycValidated": false
+    }
+  }
+}

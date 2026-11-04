@@ -1,7 +1,7 @@
 // src/components/public/ContactForm.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,9 +16,29 @@ import {
 import { toast } from "sonner";
 import { Send } from "lucide-react";
 import { gbcApi } from "@/gbc/apiClient";
+import {
+  TurnstileWidget,
+  type TurnstileHandle,
+} from "@/components/security/TurnstileWidget";
+import {
+  CONTACT_TURNSTILE_ACTION,
+  fillTimeSince,
+} from "@/gbc/utils/contactGuard";
+
+// The widget's public site key; unset = no widget and the server asks for no token.
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // When the form appeared, so the server can tell a person from a script that
+  // submits within a second or two of loading the page (I-057).
+  const openedAt = useRef(0);
+  useEffect(() => {
+    openedAt.current = Date.now();
+  }, []);
+  // Cloudflare Turnstile: a token is single-use, so it is renewed after every send.
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstile = useRef<TurnstileHandle>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,12 +56,16 @@ export function ContactForm() {
         subject: formData.get("subject") as string,
         message: formData.get("message") as string,
         type: formData.get("type") as any,
+        fax: (formData.get("fax") as string) || "",
+        fillTimeMs: fillTimeSince(openedAt.current),
+        ...(TURNSTILE_SITE_KEY && { turnstileToken }),
       });
 
       if (result.success) {
         toast.success(result.data.message || "Message sent successfully!");
         // Reset form
         form.reset();
+        openedAt.current = Date.now();
       } else {
         toast.error(result.error || "Failed to send message");
       }
@@ -49,6 +73,8 @@ export function ContactForm() {
       toast.error("An error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
+      // Whatever happened, the token has been spent: get a fresh one.
+      turnstile.current?.reset();
     }
   }
 
@@ -146,10 +172,21 @@ export function ContactForm() {
         />
       </div>
 
+      {TURNSTILE_SITE_KEY && (
+        <TurnstileWidget
+          ref={turnstile}
+          siteKey={TURNSTILE_SITE_KEY}
+          action={CONTACT_TURNSTILE_ACTION}
+          onToken={setTurnstileToken}
+        />
+      )}
+
       {/* Submit Button */}
       <Button
         type="submit"
-        disabled={isSubmitting}
+        disabled={
+          isSubmitting || (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken)
+        }
         className="w-full"
         size="lg"
       >
@@ -166,6 +203,22 @@ export function ContactForm() {
       <p className="text-sm text-gray-500 text-center">
         We'll get back to you within 24-48 hours
       </p>
+      {/* Honeypot: off screen rather than display:none (some scripts skip
+          hidden fields), out of the tab order, and not autofilled. A person
+          never sees it; a script that fills every field gives itself away. */}
+      <div
+        aria-hidden="true"
+        className="absolute -left-2499.75 h-0 w-0 overflow-hidden"
+      >
+        <label htmlFor="fax">Fax (leave this empty)</label>
+        <input
+          id="fax"
+          name="fax"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+        />
+      </div>
     </form>
   );
 }

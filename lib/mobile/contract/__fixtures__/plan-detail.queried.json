@@ -1,0 +1,86 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "id": "d1068b67-a614-4d4f-a5ce-08279eef13e7",
+      "planNumber": "LA/2026/Q-TWO",
+      "surveyTitle": "Survey LA/2026/Q-TWO",
+      "planType": "APPROVED LAYOUT",
+      "facilitator": "Adeyemi & Partners",
+      "displayStatus": {
+        "code": "QUERIED",
+        "label": "Queried by Accounts, Records II"
+      },
+      "stages": {
+        "accounts": "QUERIED",
+        "charting": "PENDING",
+        "surcon": "PENDING",
+        "recordsI": "PENDING",
+        "intake": "PENDING",
+        "recordsII": "QUERIED"
+      },
+      "queries": [
+        {
+          "stage": "accounts",
+          "label": "Accounts",
+          "comment": "Receipt mismatch.",
+          "at": null
+        },
+        {
+          "stage": "recordsII",
+          "label": "Records II",
+          "comment": "Number differs.",
+          "at": null
+        }
+      ],
+      "physicalCopySubmitted": false,
+      "hasRecordCopy": true,
+      "lga": "Ikorodu",
+      "ward": "Ikorodu West",
+      "lcda": null,
+      "locality": null,
+      "state": null,
+      "dateOnSurveyPlan": "2026-08-30T08:00:00.000Z",
+      "dateLodged": null,
+      "createdAt": "2026-10-09T08:00:00.000Z",
+      "updatedAt": "2026-10-09T08:00:00.000Z",
+      "isOwner": true,
+      "sharedCount": 0,
+      "ownerName": null,
+      "deededArea": "1250",
+      "pillarType": "REGULAR",
+      "pillarCount": 3,
+      "referencePlanNumber": null,
+      "areaSqM": 1228620.4,
+      "centroid": {
+        "lat": 6.445,
+        "lng": 3.475
+      },
+      "submittedAt": null,
+      "physicalCopySubmittedAt": null,
+      "archiveReceivedAt": null,
+      "stageDecidedAt": {
+        "accounts": null,
+        "charting": null,
+        "surcon": null,
+        "recordsI": null,
+        "intake": null,
+        "recordsII": null
+      },
+      "files": [
+        {
+          "kind": "RECORD_COPY",
+          "name": "LA_2026_Q-TWO.pdf",
+          "format": "pdf",
+          "viewable": true,
+          "ref": "https://bucket.example/surfboard/88444b9d-9072-4ad3-9912-84846d8069cc/red/10.pdf"
+        }
+      ],
+      "batch": {
+        "id": "8437f09e-7a11-492b-919f-e4e645b74def",
+        "batchCode": "SurfCoD_aff0f9b9"
+      }
+    }
+  }
+}

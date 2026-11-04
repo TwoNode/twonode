@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "state": "ENDING",
+      "planName": "Surfboard Monthly",
+      "interval": "monthly",
+      "validUntil": "2026-10-26T07:43:13.103Z"
+    }
+  }
+}

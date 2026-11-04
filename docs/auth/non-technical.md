@@ -62,6 +62,7 @@ Every account should prove it owns its email address. Each platform's superadmin
 - **New accounts** created after enforcement starts must confirm before they can use the product. They land on a "confirm your email" screen with a Resend button.
 - **Existing accounts** are not locked out at once. They keep working, see a banner counting down the days, and are blocked only when the grace period (30 days by default, adjustable) ends.
 - **Google sign-in** counts as confirmed, and is marked as such so an administrator can tell it apart from our own confirmation.
+- **An old account that was never confirmed and has a password:** the first time its owner signs in with Google using the same email, the old password is removed (we cannot tell who chose it) and the person is emailed. They stay signed in through Google and can choose a new password with "Forgot password".
 
 ## 8. Password Reset and Staff Invitations
 
@@ -71,3 +72,14 @@ Every account should prove it owns its email address. Each platform's superadmin
 ---
 
 For technical specifics, see the [**Technical Guide**](./technical.md).
+
+## 9. The Surfboard Mobile App
+
+The Surfboard app for surveyors signs in with the same email and password as the website. A few points that differ from the website:
+
+- **Only surveyor accounts** can sign in on a phone. Administrators and government (MDA) staff keep using the website.
+- **No sign-up in the app.** Accounts are created on the website; the app only signs people in.
+- **Signed in for up to 30 days**, then the person signs in again. A phone that loses its connection at the wrong moment does not lose the session.
+- **Signed-in phones can be listed and signed out one by one**, so a lost phone can be cut off without affecting the others.
+- **Throttling** is per email address and per phone (not per network), because many phones share one mobile-network address. A side effect is that someone who knows an email address can block sign-in to the app for that account for 15 minutes.
+- **Google (Android) and Apple (iOS) sign-in** are planned, for existing accounts only.

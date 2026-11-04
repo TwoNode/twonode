@@ -1,0 +1,153 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "total": 42,
+      "provisional": 4,
+      "undated": 3,
+      "byStatus": {
+        "QUERIED": 7,
+        "LODGED": 7,
+        "PHYSICAL_SUBMITTED": 1,
+        "READY_FOR_PHYSICAL": 5,
+        "PARTLY_APPROVED": 1,
+        "IN_REVIEW": 3,
+        "PAYMENT_PENDING": 2,
+        "NOT_SUBMITTED": 15,
+        "SUBMISSION_FAILED": 1
+      },
+      "pillars": {
+        "regular": 106,
+        "special": 8
+      },
+      "byMonth": [
+        {
+          "period": "2025-11",
+          "count": 1
+        },
+        {
+          "period": "2025-12",
+          "count": 1
+        },
+        {
+          "period": "2026-01",
+          "count": 1
+        },
+        {
+          "period": "2026-02",
+          "count": 1
+        },
+        {
+          "period": "2026-03",
+          "count": 1
+        },
+        {
+          "period": "2026-04",
+          "count": 1
+        },
+        {
+          "period": "2026-05",
+          "count": 2
+        },
+        {
+          "period": "2026-06",
+          "count": 2
+        },
+        {
+          "period": "2026-07",
+          "count": 1
+        },
+        {
+          "period": "2026-08",
+          "count": 16
+        },
+        {
+          "period": "2026-09",
+          "count": 11
+        },
+        {
+          "period": "2026-10",
+          "count": 1
+        }
+      ],
+      "facilitators": {
+        "rows": [
+          {
+            "key": "Adeyemi & Partners",
+            "count": 25
+          },
+          {
+            "key": "Bello Surveys",
+            "count": 17
+          }
+        ],
+        "distinct": 2,
+        "missing": 0
+      },
+      "lgas": {
+        "rows": [
+          {
+            "key": "Ikorodu",
+            "count": 22
+          },
+          {
+            "key": "Ikeja",
+            "count": 15
+          },
+          {
+            "key": "Eti-Osa",
+            "count": 3
+          }
+        ],
+        "distinct": 3,
+        "missing": 2
+      },
+      "wards": {
+        "rows": [
+          {
+            "key": "Ikorodu West",
+            "count": 22
+          },
+          {
+            "key": "Alausa",
+            "count": 12
+          },
+          {
+            "key": "Ajah",
+            "count": 2
+          },
+          {
+            "key": "Zone_1",
+            "count": 2
+          },
+          {
+            "key": "Zone%2",
+            "count": 1
+          },
+          {
+            "key": "ZoneA1",
+            "count": 1
+          }
+        ],
+        "distinct": 6,
+        "missing": 2
+      },
+      "lcdas": {
+        "rows": [
+          {
+            "key": "Ikeja Central",
+            "count": 16
+          },
+          {
+            "key": "Eti-Osa West",
+            "count": 1
+          }
+        ],
+        "distinct": 2,
+        "missing": 25
+      },
+      "activeBatches": 4
+    }
+  }
+}

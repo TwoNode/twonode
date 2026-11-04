@@ -1,0 +1,15 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "data": [],
+      "pagination": {
+        "page": 1,
+        "pageSize": 20,
+        "total": 0,
+        "totalPages": 1
+      }
+    }
+  }
+}

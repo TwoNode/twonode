@@ -1,0 +1,533 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "data": [
+        {
+          "id": "06fd5984-77cf-416a-93e4-9d6ca104ee46",
+          "planNumber": "LA/2026/ST-016",
+          "surveyTitle": "Stats 16",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "QUERIED",
+            "label": "Queried by Accounts"
+          },
+          "stages": {
+            "accounts": "QUERIED",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [
+            {
+              "stage": "accounts",
+              "label": "Accounts",
+              "comment": null,
+              "at": null
+            }
+          ],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Alausa",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2025-11-07T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "0ed86953-21a7-4984-a2e2-c579bd40a336",
+          "planNumber": "LA/2026/ST-015",
+          "surveyTitle": "Stats 15",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "QUERIED",
+            "label": "Queried"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Alausa",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2025-12-06T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "1eb000e0-4c72-4e4c-bb48-ca4a20af01a2",
+          "planNumber": "LA/2026/ST-011",
+          "surveyTitle": "Stats 11",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Alausa",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-04-02T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "260d68c8-7aa5-45e3-8f16-ee44c091ca71",
+          "planNumber": "LA/2026/ST-008",
+          "surveyTitle": "Stats 8",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Zone_1",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-06-20T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "26c0ee1b-7443-4f43-aa52-b3f83966e3b5",
+          "planNumber": "LA/2026/ST-005",
+          "surveyTitle": "Stats 5",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": " bello surveys ",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "ikeja ",
+          "ward": "Alausa",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-31T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "28a76ddc-f661-4f5e-a6da-914ee212a9a5",
+          "planNumber": "LA/2026/ST-001",
+          "surveyTitle": "Stats 1",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Alausa",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-10-01T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "30bde5b8-b1b9-498b-8fab-0701009647f0",
+          "planNumber": "LA/2026/ST-012",
+          "surveyTitle": "Stats 12",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Alausa",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-03-03T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "38d173a2-e299-43e8-abc1-7f91205aaba9",
+          "planNumber": "LA/2026/ST-013",
+          "surveyTitle": "Stats 13",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Alausa",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-02-04T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "67d81bba-88be-4fb3-b8cb-af87f7b06158",
+          "planNumber": "LA/2026/ST-002",
+          "surveyTitle": "Stats 2",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Alausa",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-30T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "6a917bdf-981b-4368-a290-335d1a3491ca",
+          "planNumber": "LA/2026/ST-003",
+          "surveyTitle": "Stats 3",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Alausa",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-09-01T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "95a7ad71-206d-4271-aeb7-e2a066be03fb",
+          "planNumber": "LA/2026/ST-004",
+          "surveyTitle": "Stats 4",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "BELLO SURVEYS",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "IKEJA",
+          "ward": "Alausa",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-08-15T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "b10a26a2-9108-4b17-9b51-f0d407b62220",
+          "planNumber": "LA/2026/ST-009",
+          "surveyTitle": "Stats 9",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "ZoneA1",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-05-05T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "b714da5d-21b1-46ff-9656-4ac781554d54",
+          "planNumber": "LA/2026/ST-014",
+          "surveyTitle": "Stats 14",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Alausa",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-01-05T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "bdcd4285-ab1a-497d-ae98-d3a869fdc256",
+          "planNumber": "LA/2026/ST-010",
+          "surveyTitle": "Stats 10",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Zone%2",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-05-25T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        },
+        {
+          "id": "cdb8366f-5365-461d-ba92-83951ac2b856",
+          "planNumber": "LA/2026/ST-007",
+          "surveyTitle": "Stats 7",
+          "planType": "APPROVED LAYOUT",
+          "facilitator": "Bello Surveys",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "stages": {
+            "accounts": "PENDING",
+            "charting": "PENDING",
+            "surcon": "PENDING",
+            "recordsI": "PENDING",
+            "intake": "PENDING",
+            "recordsII": "PENDING"
+          },
+          "queries": [],
+          "physicalCopySubmitted": false,
+          "hasRecordCopy": false,
+          "lga": "Ikeja",
+          "ward": "Zone_1",
+          "lcda": "Ikeja Central",
+          "locality": null,
+          "state": null,
+          "dateOnSurveyPlan": "2026-06-06T00:00:00.000Z",
+          "dateLodged": null,
+          "createdAt": "2026-09-13T00:00:00.000Z",
+          "updatedAt": "2026-09-13T00:00:00.000Z",
+          "isOwner": true,
+          "sharedCount": 0,
+          "ownerName": null
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "pageSize": 20,
+        "total": 15,
+        "totalPages": 1
+      }
+    }
+  }
+}

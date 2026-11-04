@@ -1,0 +1,46 @@
+# Review of the mobile sign-in and API surface, 2026-11-02
+
+TASK-0015 **1A.11** (PR #531): a read of the code behind the Surfboard app's sign-in and of what a signed-in account can reach. Done on `dev` at `9968e28e`, by reading the code and running the tests added for 1A.10 (PR #530). Nothing was run against production and no real account was used. Findings are in the [issues register](../issues/index.md) as I-051 to I-056; none is fixed by this document.
+
+## What was read
+
+- Sign-in and session: `lib/auth/{session,jwt,bearer,csrf,rateLimit}.ts`, `app/api/v1/auth/mobile/login/route.ts`, the web `auth/login` route, and `lib/api/withAuth.ts`.
+- Every `withAuth` route that sets **no `roles` list** (35 of 242 handlers), because those admit any signed-in Surfboard account; that is the pattern behind I-046 and I-047. For each, who may call it, whose data it touches, and whether anything is checked beyond "signed in".
+
+## What held up
+
+- **One credential at a time.** A request with `Authorization: Bearer` is judged on that token alone; a bad token never falls back to a cookie, so the CSRF exemption for bearer requests cannot be used on a cookie session. A cookie session still needs a same-origin request (tests in PR #530).
+- **Tokens.** Access tokens are signed HS256, last 15 minutes and carry the product; a token for another product, an altered, unsigned, expired or foreign-secret token is refused. The expired-token verifier (30 days of tolerance) is used only by logout, and only for a token the server signed.
+- **Refresh tokens.** 32 random bytes, stored only as a SHA-256 hash, rotated in one transaction with a recorded successor, reuse revokes the family, and a lost response is handled by a 30-second grace window that re-rotates for a phone. (Known trade-offs I-032, I-034 and I-035 are unchanged.)
+- **Sign-in.** The version gate and the emergency switch come before the credentials are read; the rate limits are kept in the database (so they hold across serverless instances), per email and per device, and are not keyed on the IP address; the response is `no-store`; logs carry a hash of the device id, never the email, password or device id; only role `USER` can hold a mobile session, and a refresh refuses an account promoted since sign-in.
+- **Role-less routes that act on the caller's own data** (checked, nothing to fix): `profile`, `notifications` (read, dismiss and mark-read only record the caller's id on a per-user list), `qr/bank-details`, `qr/earnings-*`, `qr/withdrawals`, `settings`, `subscription` initiate, verify and disable (all use the session's user id), `settings/account-update-inquiry`, `auth/mobile/devices*`, and the three upload routes (an upload cannot replace an existing file: plan files are written only if the name is free, the others get a unique suffix).
+
+## Findings
+
+| ID    | P   | Where                                                                                 | What                                                                                                                                                                                                                                                                                                                       |
+| ----- | --- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I-051 | P1  | `POST surfboard/files/delete`                                                         | Any signed-in Surfboard account can delete **any stored file** whose key or URL it knows: the route passes the key straight to the storage provider's `delete`. Plan file keys have the form `surfboard/<user>/<type>/...`, and a plan shared with someone shows them its file links.                                      |
+| I-052 | P2  | `GET surfboard/subscription-analytics`                                                | A dev-only debug widget's route, open to any signed-in account. It returns the user ids and the Paystack subscription code and email token of subscriptions that are active but missing one of them, plus the day's webhook event counts.                                                                                  |
+| I-053 | P2  | `POST surfboard/subscription/clear`                                                   | A debug function open in production: any signed-in account can delete its own subscription and its subscription history rows. A Paystack subscription that is still running keeps charging with no record on our side.                                                                                                     |
+| I-054 | P2  | `POST auth/login`, `POST auth/mobile/login`                                           | Account enumeration by timing. When the email is unknown, or the account has no password hash, the password is never hashed, so the answer comes back much faster than for a wrong password on a real account. The comment in both routes says the two "fail exactly like" each other; the text does, the timing does not. |
+| I-055 | P2  | `POST surfboard/ai/extract-survey-plan`, `POST surfboard/ai/recognize-person-count`   | Any signed-in account can send text of any length to the language model, with no rate limit, so one account can run up the model bill.                                                                                                                                                                                     |
+| I-056 | P2  | `GET surfboard/mda/remarks/charting`, `GET surfboard/mda/remarks/query-reasons?role=` | The suggestion lists for the MDA reviewers' comment boxes return the 50 most recent **distinct free-text comments reviewers wrote on any plan**, to any signed-in Surfboard account, surveyors included. A comment can name a plan, a person or a place.                                                                   |
+
+Why each priority: I-051 is destructive and has no check at all; the only brake is that the caller must know a key. I-052 to I-056 are not yet known to have been used and need a precondition, in line with the register's P2 ("hardening, timing differences").
+
+## Not findings, but worth doing
+
+- **Pin the algorithm.** `verifyToken` calls `jwtVerify(token, secret)` with no `algorithms` list, `issuer` or `audience`. With a symmetric key `jose` only accepts HS256, HS384 and HS512 and never `none` (the `alg: none` case is in the PR #530 tests), so this is not exploitable; passing `{ algorithms: ["HS256"] }` makes the rule explicit.
+- **Sign-ins are not in the audit log.** `writeAudit` is used for admin invitations and settings changes, not for web or mobile sign-ins; mobile sign-ins are in the operations log only (`mobile.login`, with a device hash). Whether to audit sign-ins, and for how long to keep them, is a privacy and retention decision for the maintainer.
+- **The development JWT fallback.** `lib/auth/jwt.ts` falls back to a fixed development secret when `JWT_SECRET` is unset and `NODE_ENV` is not `production`. Every Vercel build, including the staging preview, has `NODE_ENV=production`, so staging and production refuse to start without a secret; a developer machine does not. No change needed; do not copy a production `.env` to a machine that exposes a port.
+
+## Suggested fixes
+
+**Status 2026-11-03:** items 2 to 6 are built as API PRs #541 (I-052, I-053), #542 (I-054), #543 (I-055) and #544 (I-056), merged to `dev` on 2026-11-04 (not yet on `main` or prod). Item 1 (I-051) still needs the maintainer's rule.
+
+1. **I-051.** Decide who may delete what. The simple rule is "only a file that is yours": an object the caller uploaded (record the uploader in the object's metadata or an `Upload` table when `files/upload*` writes it) or a file named by one of the caller's own plans, plus ADMIN and SUPERADMIN. Old objects have no uploader, so for those only "named by one of the caller's plans" can apply. The website deletes files in two situations, a plan being edited and an upload that was abandoned, and both must keep working. Needs the maintainer's choice, because it changes what the website may delete.
+2. **I-052.** Restrict to ADMIN and SUPERADMIN (the widget is only shown in development). Nothing in production calls it.
+3. **I-053.** Remove the route, or answer 404 outside development. The widget is development-only.
+4. **I-054.** Always compare against a fixed dummy hash when there is no user or no password hash, so every failure costs one hash. Both routes.
+5. **I-055.** A maximum length on the text and a rate limit per account (the database-backed `consumeRateLimit` is enough).
+6. **I-056.** Restrict both routes to the MDA reviewer roles that fill those comment boxes (and ADMIN and SUPERADMIN). Check which screens call them first.

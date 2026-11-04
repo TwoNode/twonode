@@ -36,6 +36,7 @@
      - The user owns the plan (`userId === session.sub`), or
      - The plan was explicitly shared with the user (`sharedTo.has(session.sub)`), or
      - The file key begins with the user's personal prefix (`surfboard/${userId}/`).
+   - **Update 2026-10-19 (I-037):** a plan shared with the user opens the plan's PDFs, drawings and certificates, but not its record copy. The record copy opens for the plan's owner and for staff only, in line with [ADR-0013](./0013-bucket-key-layout-public-and-private-prefixes.md) item 5. The plan page and `public/full` no longer send the link to someone the plan was shared with.
    - If authorized, generates a short-lived (5-minute TTL) signed download URL and redirects the browser, or returns `{ success: true, url }` if requested in JSON format.
 3. **Record Copy (Red Copy) CoD Availability:**
    - Updated `remitaVerificationService.ts` (`getUserBatches` and `USER_BATCH_SELECT`) to select `redCopyFileUrl`.

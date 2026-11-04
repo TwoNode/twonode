@@ -1,0 +1,21 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "categories": {
+        "PLANS_NEED_YOU": true,
+        "PLAN_LODGED": true,
+        "PLAN_SHARED": true,
+        "SUBSCRIPTION": true,
+        "WITHDRAWALS": true
+      },
+      "quietHours": {
+        "enabled": false,
+        "start": "22:00",
+        "end": "07:00",
+        "timeZone": "Africa/Lagos"
+      }
+    }
+  }
+}

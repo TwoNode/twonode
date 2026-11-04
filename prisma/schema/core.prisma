@@ -89,8 +89,97 @@ model RefreshToken {
   expiresAt  DateTime
   createdAt  DateTime  @default(now())
 
+  /// Set only for native-app sessions (POST /api/v1/auth/mobile/*); null for
+  /// browser sessions. Carried unchanged to each rotated successor so one
+  /// device's chain of tokens can be listed and revoked as a unit.
+  deviceId    String?
+  deviceLabel String?
+  appVersion  String?
+  lastUsedAt  DateTime?
+
   @@index([familyId])
   @@index([userId, platform])
+  @@index([userId, platform, deviceId])
+}
+
+/// A phone that can be sent a push notification (TASK-0015 1I.1). One row per
+/// app install: the token belongs to the install, so signing in as someone else
+/// on the same phone moves it to them (the upsert is by token). `deviceId` ties
+/// it to the device session (RefreshToken.deviceId): revoking or signing out
+/// that device deletes its token, and a token the push service reports as no
+/// longer registered is deleted too. The token is a delivery address, not a
+/// credential for the account, but it is still never logged or returned.
+model DeviceToken {
+  id         String   @id @default(uuid())
+  userId     String
+  platform   String
+  /// The app's own id for this install (the same one sent at mobile login).
+  deviceId   String
+  /// Expo push token, `ExponentPushToken[...]`.
+  token      String   @unique
+  /// "android" or "ios".
+  os         String
+  appVersion String?
+  createdAt  DateTime @default(now())
+  /// Last time the app registered this token (it re-registers on each launch).
+  lastSeenAt DateTime @default(now())
+
+  @@unique([userId, platform, deviceId])
+  @@index([userId, platform])
+}
+
+/// A push the push service accepted (TASK-0015 1I.6), kept until its receipt
+/// is looked up. Accepting a message only means the push service has it; a
+/// minute or more later its receipt says whether Google or Apple took it, and
+/// that is where a phone that was uninstalled shows up. Expo has the receipt
+/// about 15 minutes after the send and clears it after 24 hours, so a row is
+/// deleted once the receipt is read, or when it is too old to have one.
+model PushReceiptTicket {
+  id       String   @id @default(uuid())
+  /// The push service's receipt id for the message (not the push token).
+  ticketId String   @unique
+  /// The address the message went to: deleted from DeviceToken if the receipt
+  /// says the phone is gone. Never logged or returned, like DeviceToken.token.
+  token    String
+  sentAt   DateTime @default(now())
+
+  @@index([sentAt])
+}
+
+/// What a person wants pushed to the app (TASK-0015 1I.5), one row per person
+/// and platform, written only when they change something (no row = the
+/// defaults: everything on, no quiet hours). It is the account's choice, not a
+/// phone's, so it applies on every phone they are signed in on.
+model PushPreference {
+  id            String   @id @default(uuid())
+  userId        String
+  platform      String
+  /// Categories switched OFF (see lib/push/preferences.ts). Off rather than on,
+  /// so a category added later is on for everyone without touching any row.
+  categoriesOff String[]
+  quietEnabled  Boolean  @default(false)
+  /// Minutes after local midnight, 0 to 1439 (1320 is 22:00).
+  quietStart    Int      @default(1320)
+  /// Minutes after local midnight (420 is 07:00). May be before the start: the quiet hours run through midnight.
+  quietEnd      Int      @default(420)
+  /// The IANA zone the quiet hours are read in, taken from the phone when they were saved.
+  timeZone      String   @default("Africa/Lagos")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, platform])
+}
+
+/// One push to one person for one kind of event in one 5 minute window
+/// (TASK-0015 1I.4): the id is `userId:kind:window`, so claiming it twice is a
+/// unique-key conflict and the second push in the window is not sent. Stops a
+/// burst (a whole batch queried at once) from becoming a burst of identical
+/// notifications. Rows are deleted after a day by the receipts cron.
+model PushCooldown {
+  id     String   @id
+  sentAt DateTime @default(now())
+
+  @@index([sentAt])
 }
 
 /// One unified token for both a genuine forgotten-password reset and a

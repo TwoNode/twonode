@@ -1,6 +1,6 @@
 # Backend roadmap: Next.js now, NestJS later, Go much later
 
-> **Status: future plan, not a commitment.** No mobile code and no NestJS or Go code exists. This records the intended order so decisions made today don't block it. Nothing here has dates; each stage starts only when its entry conditions are met (see the gates).
+> **Status: future plan, not a commitment.** No NestJS or Go code exists. The Surfboard mobile app has started (its own repo, `TwoNode/twonode-mobile`, plus native auth on the Next.js API, 2026-10-19), which is stage 0 of the plan below. This records the intended order so decisions made today don't block it. Nothing here has dates; each stage starts only when its entry conditions are met (see the gates).
 
 ## 1. The order
 

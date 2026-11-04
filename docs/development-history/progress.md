@@ -334,11 +334,14 @@ Also resolved during spec-writing, not left open: `revaActions2.ts` (real depend
   - Added comprehensive `.env.example` template covering all 8 storage backends, database, auth, and payment gateways.
   - **Production Release Complete:** PR #318 and PR #321 merged to `prod`. Migration `20261009100000_gbc_certificate_access` applied to `twonode_db` via manual workflow dispatch (Run #38034359383). All 867 vitest tests pass.
 
+- **Phase 15 (Mobile App Foundations and Sign-in Hardening, Oct 18–19):** Dev build fixed (the one-off storage PDF script excluded from type checking) and promoted to prod (#488 to #490). Cloudflare R2 research recorded with corrections (paused; ADR-0016 / TASK-0014). Mobile app planned (TASK-0015, decisions D1 to D15) and native auth built and merged: bearer-token sessions, `/api/v1/auth/mobile/*`, device sessions, bearer-aware CSRF, role `USER` only (#495, ADR-0017). Kinde and Google sign-in researched (#496). Pre-hijack fix for Google sign-in linking to an unverified password account, with a notice email (#497, ADR-0018). The `twonode-mobile` repo created with the app foundation (Expo SDK 58). Association subscription paused. Full report: `docs/development-history/phases/phase-15-mobile-app-foundations-and-sign-in-hardening.md`.
+
 ---
 
 ## Next Up (Current Backlog)
 
 Live dashboard maintained in `docs/tasks/current-tasks.md` and `docs/tasks/0003-active-backlog.md`:
+
 1. `GOOGLE_MAPS_SERVER_API_KEY`: Waiting on Google Cloud project owner to enable billing before setting in Vercel.
 2. Paystack Renewal Webhook: Waiting on live renewal event payload log to verify payload schema.
 3. Activate GBC 3.0 on Prod: Configure edition in admin dashboard when ready.

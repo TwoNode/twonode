@@ -1,0 +1,76 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "currency": "NGN",
+      "availableBalance": 12500.5,
+      "pendingWithdrawal": 2000,
+      "totalWithdrawn": 30000,
+      "totalEarned": 44500.5,
+      "earnedThisMonth": 8028,
+      "recent": [
+        {
+          "planNumber": "LA/2026/LODGED-A",
+          "service": "LOCATION_AUTHENTICITY",
+          "amount": 1000,
+          "at": "2026-10-20T07:43:12.984Z"
+        },
+        {
+          "planNumber": "LA/2026/LODGED-A",
+          "service": "CERTIFICATE_OF_DEPOSIT",
+          "amount": 1001,
+          "at": "2026-10-17T19:43:12.997Z"
+        },
+        {
+          "planNumber": "LA/2026/LODGED-A",
+          "service": "LOCATION_AUTHENTICITY",
+          "amount": 1002,
+          "at": "2026-10-15T07:43:13.007Z"
+        },
+        {
+          "planNumber": "LA/2026/LODGED-A",
+          "service": "CERTIFICATE_OF_DEPOSIT",
+          "amount": 1003,
+          "at": "2026-10-12T19:43:13.014Z"
+        },
+        {
+          "planNumber": "LA/2026/LODGED-A",
+          "service": "LOCATION_AUTHENTICITY",
+          "amount": 1004,
+          "at": "2026-10-10T07:43:13.021Z"
+        },
+        {
+          "planNumber": "LA/2026/LODGED-A",
+          "service": "CERTIFICATE_OF_DEPOSIT",
+          "amount": 1005,
+          "at": "2026-10-07T19:43:13.029Z"
+        },
+        {
+          "planNumber": "LA/2026/LODGED-A",
+          "service": "LOCATION_AUTHENTICITY",
+          "amount": 1006,
+          "at": "2026-10-05T07:43:13.038Z"
+        },
+        {
+          "planNumber": "LA/2026/LODGED-A",
+          "service": "CERTIFICATE_OF_DEPOSIT",
+          "amount": 1007,
+          "at": "2026-10-02T19:43:13.044Z"
+        },
+        {
+          "planNumber": "LA/2026/LODGED-A",
+          "service": "LOCATION_AUTHENTICITY",
+          "amount": 1008,
+          "at": "2026-09-30T07:43:13.050Z"
+        },
+        {
+          "planNumber": "LA/2026/LODGED-A",
+          "service": "CERTIFICATE_OF_DEPOSIT",
+          "amount": 1009,
+          "at": "2026-09-27T19:43:13.057Z"
+        }
+      ]
+    }
+  }
+}

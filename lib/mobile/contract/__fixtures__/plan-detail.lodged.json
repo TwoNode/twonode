@@ -1,0 +1,73 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "id": "bc136eed-009e-4399-a989-d7b1b82d637f",
+      "planNumber": "LA/2026/LODGED-A",
+      "surveyTitle": "Survey LA/2026/LODGED-A",
+      "planType": "APPROVED LAYOUT",
+      "facilitator": "Adeyemi & Partners",
+      "displayStatus": {
+        "code": "LODGED",
+        "label": "Lodged"
+      },
+      "stages": {
+        "accounts": "APPROVED",
+        "charting": "APPROVED",
+        "surcon": "APPROVED",
+        "recordsI": "APPROVED",
+        "intake": "APPROVED",
+        "recordsII": "APPROVED"
+      },
+      "queries": [],
+      "physicalCopySubmitted": true,
+      "hasRecordCopy": true,
+      "lga": "Ikorodu",
+      "ward": "Ikorodu West",
+      "lcda": null,
+      "locality": null,
+      "state": null,
+      "dateOnSurveyPlan": "2026-09-08T08:00:00.000Z",
+      "dateLodged": null,
+      "createdAt": "2026-10-18T08:00:00.000Z",
+      "updatedAt": "2026-10-18T08:00:00.000Z",
+      "isOwner": true,
+      "sharedCount": 0,
+      "ownerName": null,
+      "deededArea": "1250",
+      "pillarType": "REGULAR",
+      "pillarCount": 3,
+      "referencePlanNumber": null,
+      "areaSqM": 1228620.4,
+      "centroid": {
+        "lat": 6.445,
+        "lng": 3.475
+      },
+      "submittedAt": null,
+      "physicalCopySubmittedAt": null,
+      "archiveReceivedAt": null,
+      "stageDecidedAt": {
+        "accounts": null,
+        "charting": null,
+        "surcon": null,
+        "recordsI": null,
+        "intake": null,
+        "recordsII": null
+      },
+      "files": [
+        {
+          "kind": "RECORD_COPY",
+          "name": "LA_2026_LODGED-A.pdf",
+          "format": "pdf",
+          "viewable": true,
+          "ref": "https://bucket.example/surfboard/88444b9d-9072-4ad3-9912-84846d8069cc/red/1.pdf"
+        }
+      ],
+      "batch": {
+        "id": "8437f09e-7a11-492b-919f-e4e645b74def",
+        "batchCode": "SurfCoD_aff0f9b9"
+      }
+    }
+  }
+}

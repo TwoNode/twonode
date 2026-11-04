@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { z } from "zod";
 import { Platform } from "@/utils/platform";
-import prisma from "@/lib/prisma";
 import { validateCSRF } from "@/lib/auth/csrf";
 import {
   checkRateLimit,
@@ -12,9 +10,7 @@ import {
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
 import { findUserByEmail } from "@/lib/auth/userLookup";
-import { sendPasswordResetEmail } from "@/utils/email";
-import { sendWhatsAppMessage } from "@/lib/whatsapp";
-import { getSiteUrl } from "@/lib/siteUrl";
+import { issuePasswordReset } from "@/lib/auth/passwordReset";
 
 const requestSchema = z.object({
   platform: z.nativeEnum(Platform),
@@ -63,54 +59,7 @@ export async function POST(req: NextRequest) {
 
     const user = await findUserByEmail(platform, email);
     if (user && user.isActive) {
-      const rawToken = crypto.randomBytes(32).toString("hex");
-      const tokenHash = crypto
-        .createHash("sha256")
-        .update(rawToken)
-        .digest("hex");
-
-      await prisma.passwordResetToken.create({
-        data: {
-          userId: user.id,
-          platform,
-          tokenHash,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        },
-      });
-
-      const siteUrl = getSiteUrl();
-      const resetPath =
-        platform === Platform.SURFBOARD
-          ? "/surfboard/reset-password"
-          : platform === Platform.REVA
-            ? "/reva/reset-password"
-            : "/gbc-restricted/reset-password";
-      const resetUrl = `${siteUrl}${resetPath}?token=${rawToken}`;
-
-      await sendPasswordResetEmail({
-        to: user.email,
-        firstName: user.firstName ?? "",
-        resetUrl,
-        isFirstTimeSetup: !user.passwordHash,
-        platform,
-      });
-
-      // Best-effort second channel — never blocks or fails the request;
-      // silently a no-op when the user has no phone on file, or no
-      // WhatsApp provider is configured (see lib/whatsapp).
-      if (user.phone) {
-        sendWhatsAppMessage(
-          user.phone,
-          `Hi ${user.firstName || ""}, here's your TwoNode password reset link:\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, ignore this message.`
-        ).catch(() => {});
-      }
-
-      // Local/dev convenience only — SMTP creds aren't always configured in
-      // dev, and the raw token is never persisted anywhere (only its hash
-      // is), so this is the one place it's ever visible after generation.
-      if (process.env.NODE_ENV !== "production") {
-        console.log(`[dev] password reset link for ${email}: ${resetUrl}`);
-      }
+      await issuePasswordReset(platform, user);
     }
 
     return genericResponse();

@@ -16,10 +16,22 @@ import {
   type EncryptedUserData,
 } from "@/utils/encryptedCookies";
 import { computeMustVerifyNow } from "@/lib/auth/emailVerificationGate";
+import { getRequestBearerToken } from "@/lib/auth/bearer";
 
 export async function getServerSession(
   platform: Platform
 ): Promise<JWTPayload | null> {
+  // A native app sends its access token as `Authorization: Bearer`. When that
+  // header is present it is the ONLY credential considered: an invalid bearer
+  // token must not fall back to cookies, or the CSRF exemption for bearer
+  // requests (lib/auth/csrf.ts) would apply to a cookie-authenticated request.
+  const bearer = await getRequestBearerToken();
+  if (bearer) {
+    const payload = await verifyToken(bearer);
+    if (!payload || payload.platform !== platform) return null;
+    return payload;
+  }
+
   const token = await getAccessTokenCookie(platform);
   if (!token) return null;
   const payload = await verifyToken(token);
@@ -90,25 +102,52 @@ export async function getEffectiveUserData(
   );
 }
 
+export type DeviceInfo = {
+  deviceId: string;
+  deviceLabel?: string | null;
+  appVersion?: string | null;
+};
+
+const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
+/** How long a native-app session lasts without signing in again (rotation inherits it, never extends it). */
+export const MOBILE_REFRESH_LIFETIME_SECONDS = 30 * 24 * 60 * 60;
+
 /**
- * Mints a native access+refresh pair and sets the cookies for it, regardless
- * of how the caller authenticated the user (native password login or a Kinde
- * callback) — the one place session issuance happens so both paths stay
- * identical.
+ * Roles that may hold a native-app session. Staff and admin roles stay on the
+ * web: the app is a surveyor companion, and a smaller set of accounts on a
+ * phone means a smaller blast radius if one is lost.
  */
-export async function issueSession(
+export const MOBILE_ALLOWED_ROLES: readonly string[] = ["USER"];
+
+function sha256(value: string): string {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+/**
+ * Creates a new refresh-token family and signs its first access token. Shared
+ * by the cookie path (issueSession) and the native-app path
+ * (issueMobileSession) so both mint identical sessions; neither this function
+ * nor its callers' security checks differ between them, only how the tokens
+ * are delivered (cookies vs response body).
+ */
+async function mintSessionTokens(
   userId: string,
   role: string,
   platform: Platform,
-  refreshMaxAgeSeconds: number = 30 * 24 * 60 * 60,
-  userVerification?: { emailVerified: boolean; createdAt: Date }
-): Promise<void> {
+  refreshMaxAgeSeconds: number,
+  userVerification?: { emailVerified: boolean; createdAt: Date },
+  device?: DeviceInfo
+): Promise<{
+  accessToken: string;
+  rawRefreshToken: string;
+  expiresAt: Date;
+  emailVerified: boolean;
+  mustVerifyNow: boolean;
+}> {
   const familyId = crypto.randomUUID();
   const rawRefreshToken = crypto.randomBytes(32).toString("hex");
-  const tokenHash = crypto
-    .createHash("sha256")
-    .update(rawRefreshToken)
-    .digest("hex");
+  const tokenHash = sha256(rawRefreshToken);
+  const expiresAt = new Date(Date.now() + refreshMaxAgeSeconds * 1000);
 
   await prisma.refreshToken.create({
     data: {
@@ -116,7 +155,15 @@ export async function issueSession(
       platform,
       tokenHash,
       familyId,
-      expiresAt: new Date(Date.now() + refreshMaxAgeSeconds * 1000),
+      expiresAt,
+      ...(device
+        ? {
+            deviceId: device.deviceId,
+            deviceLabel: device.deviceLabel ?? null,
+            appVersion: device.appVersion ?? null,
+            lastUsedAt: new Date(),
+          }
+        : {}),
     },
   });
 
@@ -133,12 +180,86 @@ export async function issueSession(
     emailVerified,
     mustVerifyNow,
   });
+  return {
+    accessToken,
+    rawRefreshToken,
+    expiresAt,
+    emailVerified,
+    mustVerifyNow,
+  };
+}
+
+/**
+ * Mints a native access+refresh pair and sets the cookies for it, regardless
+ * of how the caller authenticated the user (native password login or a Kinde
+ * callback) — the one place session issuance happens so both paths stay
+ * identical.
+ */
+export async function issueSession(
+  userId: string,
+  role: string,
+  platform: Platform,
+  refreshMaxAgeSeconds: number = 30 * 24 * 60 * 60,
+  userVerification?: { emailVerified: boolean; createdAt: Date }
+): Promise<void> {
+  const { accessToken, rawRefreshToken } = await mintSessionTokens(
+    userId,
+    role,
+    platform,
+    refreshMaxAgeSeconds,
+    userVerification
+  );
   await setAuthCookies(
     platform,
     accessToken,
     rawRefreshToken,
     refreshMaxAgeSeconds
   );
+}
+
+export type MobileSession = {
+  accessToken: string;
+  refreshToken: string;
+  accessExpiresIn: number;
+  refreshExpiresAt: Date;
+  emailVerified?: boolean;
+  mustVerifyNow?: boolean;
+};
+
+/**
+ * issueSession for a native app: same session, returned to the caller instead
+ * of being set as cookies, and tagged with the device so it can be listed and
+ * revoked on its own.
+ */
+export async function issueMobileSession(
+  userId: string,
+  role: string,
+  platform: Platform,
+  device: DeviceInfo,
+  userVerification?: { emailVerified: boolean; createdAt: Date }
+): Promise<MobileSession> {
+  const {
+    accessToken,
+    rawRefreshToken,
+    expiresAt,
+    emailVerified,
+    mustVerifyNow,
+  } = await mintSessionTokens(
+    userId,
+    role,
+    platform,
+    MOBILE_REFRESH_LIFETIME_SECONDS,
+    userVerification,
+    device
+  );
+  return {
+    accessToken,
+    refreshToken: rawRefreshToken,
+    accessExpiresIn: ACCESS_TOKEN_TTL_SECONDS,
+    refreshExpiresAt: expiresAt,
+    emailVerified,
+    mustVerifyNow,
+  };
 }
 
 /**
@@ -166,30 +287,43 @@ export async function currentRefreshLifetimeSeconds(
 export type RefreshResult =
   { ok: true } | { ok: false; reason: "invalid" | "inactive" };
 
+type RotationOutcome =
+  | {
+      kind: "rotated";
+      accessToken: string;
+      newRawRefreshToken: string;
+      expiresAt: Date;
+      role: string;
+    }
+  | { kind: "grace"; accessToken: string }
+  | { kind: "conflict" }
+  | { kind: "invalid" }
+  | { kind: "inactive" };
+
 /**
- * Rotates a refresh token into a fresh access+refresh pair, with reuse
- * detection (replaying an already-rotated token revokes the whole family —
- * theft response) and expiry-inheritance (rotation refreshes the token
- * value, it must not reset or extend the session length the original
- * login/rememberMe choice set). Extracted from POST /api/v1/auth/refresh so
- * proxy.ts's silent-refresh fast path (below) and the explicit client-
- * triggered route share one implementation of this security-critical logic
- * instead of two that can drift.
+ * The refresh-rotation logic itself, with no cookie handling, so the browser
+ * path (rotateRefreshToken, cookies) and the native-app path
+ * (rotateMobileRefreshToken, response body) share one implementation of this
+ * security-critical code instead of two that can drift. Database side
+ * effects (claiming the token, creating the successor, revoking a family on
+ * reuse) all happen here; the callers only deliver the result.
+ *
+ * `reRotateOnGrace` is the one behavioural difference. A token re-presented
+ * inside the 30-second grace window gets an access token only on the web
+ * (the successor cookie is already in that browser). A phone whose refresh
+ * response was lost still holds the OLD token and never saw the successor, so
+ * for the app the grace branch revokes the live successor and issues a fresh
+ * pair in the same family.
  */
-export async function rotateRefreshToken(
+async function rotateCore(
   platform: Platform,
-  rawRefreshToken: string
-): Promise<RefreshResult> {
-  const tokenHash = crypto
-    .createHash("sha256")
-    .update(rawRefreshToken)
-    .digest("hex");
+  rawRefreshToken: string,
+  opts: { reRotateOnGrace: boolean }
+): Promise<RotationOutcome> {
+  const tokenHash = sha256(rawRefreshToken);
 
   const newRawRefreshToken = crypto.randomBytes(32).toString("hex");
-  const newTokenHash = crypto
-    .createHash("sha256")
-    .update(newRawRefreshToken)
-    .digest("hex");
+  const newTokenHash = sha256(newRawRefreshToken);
 
   // Claim the old token AND create its replacement in one transaction, with
   // `replacedBy` set by the claim itself. Anything less leaves a window where
@@ -224,6 +358,11 @@ export async function rotateRefreshToken(
         // extend (or shorten) the session length the original login/
         // rememberMe choice set.
         expiresAt: current.expiresAt,
+        // A native-app session keeps its device across rotations.
+        deviceId: current.deviceId ?? null,
+        deviceLabel: current.deviceLabel ?? null,
+        appVersion: current.appVersion ?? null,
+        lastUsedAt: current.deviceId ? new Date() : null,
       },
     });
     return current;
@@ -236,10 +375,8 @@ export async function rotateRefreshToken(
 
     // Concurrency grace period (30 seconds): a token rotated moments ago whose
     // replacement is still live was presented again by a concurrent request
-    // (e.g. several tabs waking at once), not by a thief. Re-issue an access
-    // token only — never a second refresh token — for the active session.
-    // Platform must match: a token minted for another product is not ours to
-    // vouch for.
+    // (e.g. several tabs waking at once), not by a thief. Platform must match:
+    // a token minted for another product is not ours to vouch for.
     const GRACE_PERIOD_MS = 30 * 1000;
     if (
       existing &&
@@ -266,8 +403,48 @@ export async function rotateRefreshToken(
             emailVerified: user.emailVerified,
             mustVerifyNow,
           });
-          await setAccessTokenCookie(platform, newAccessToken);
-          return { ok: true };
+
+          if (!opts.reRotateOnGrace) {
+            // Web: access token only, never a second refresh token.
+            return { kind: "grace", accessToken: newAccessToken };
+          }
+
+          // App: replace the live successor with a fresh token, same family.
+          const reissued = await prisma.$transaction(async (tx) => {
+            const claim = await tx.refreshToken.updateMany({
+              where: {
+                tokenHash: replacement.tokenHash,
+                revokedAt: null,
+                expiresAt: { gt: new Date() },
+              },
+              data: { revokedAt: new Date(), replacedBy: newTokenHash },
+            });
+            if (claim.count === 0) return false;
+            await tx.refreshToken.create({
+              data: {
+                userId: replacement.userId,
+                platform,
+                tokenHash: newTokenHash,
+                familyId: replacement.familyId,
+                expiresAt: replacement.expiresAt,
+                deviceId: replacement.deviceId ?? null,
+                deviceLabel: replacement.deviceLabel ?? null,
+                appVersion: replacement.appVersion ?? null,
+                lastUsedAt: replacement.deviceId ? new Date() : null,
+              },
+            });
+            return true;
+          });
+          // Someone else rotated the successor first: not theft, but not
+          // ours to finish either. The caller can simply try again.
+          if (!reissued) return { kind: "conflict" };
+          return {
+            kind: "rotated",
+            accessToken: newAccessToken,
+            newRawRefreshToken,
+            expiresAt: replacement.expiresAt,
+            role: user.role,
+          };
         }
       }
     }
@@ -278,8 +455,7 @@ export async function rotateRefreshToken(
         data: { revokedAt: new Date() },
       });
     }
-    await clearAuthCookies(platform);
-    return { ok: false, reason: "invalid" };
+    return { kind: "invalid" };
   }
 
   const user = await findUserById(platform, claimed.userId);
@@ -288,8 +464,7 @@ export async function rotateRefreshToken(
       where: { tokenHash: newTokenHash },
       data: { revokedAt: new Date() },
     });
-    await clearAuthCookies(platform);
-    return { ok: false, reason: "inactive" };
+    return { kind: "inactive" };
   }
 
   const mustVerifyNow = await computeMustVerifyNow(platform, user);
@@ -300,18 +475,103 @@ export async function rotateRefreshToken(
     emailVerified: user.emailVerified,
     mustVerifyNow,
   });
-  const remainingSeconds = Math.max(
-    0,
-    Math.floor((claimed.expiresAt.getTime() - Date.now()) / 1000)
-  );
-  await setAuthCookies(
-    platform,
-    newAccessToken,
+  return {
+    kind: "rotated",
+    accessToken: newAccessToken,
     newRawRefreshToken,
-    remainingSeconds
-  );
+    expiresAt: claimed.expiresAt,
+    role: user.role,
+  };
+}
 
-  return { ok: true };
+/**
+ * Rotates a refresh token into a fresh access+refresh pair, with reuse
+ * detection (replaying an already-rotated token revokes the whole family —
+ * theft response) and expiry-inheritance (rotation refreshes the token
+ * value, it must not reset or extend the session length the original
+ * login/rememberMe choice set). Extracted from POST /api/v1/auth/refresh so
+ * proxy.ts's silent-refresh fast path (below) and the explicit client-
+ * triggered route share one implementation of this security-critical logic
+ * instead of two that can drift. Browser path: delivers the result as cookies.
+ */
+export async function rotateRefreshToken(
+  platform: Platform,
+  rawRefreshToken: string
+): Promise<RefreshResult> {
+  const outcome = await rotateCore(platform, rawRefreshToken, {
+    reRotateOnGrace: false,
+  });
+
+  switch (outcome.kind) {
+    case "rotated": {
+      const remainingSeconds = Math.max(
+        0,
+        Math.floor((outcome.expiresAt.getTime() - Date.now()) / 1000)
+      );
+      await setAuthCookies(
+        platform,
+        outcome.accessToken,
+        outcome.newRawRefreshToken,
+        remainingSeconds
+      );
+      return { ok: true };
+    }
+    case "grace":
+      await setAccessTokenCookie(platform, outcome.accessToken);
+      return { ok: true };
+    case "inactive":
+      await clearAuthCookies(platform);
+      return { ok: false, reason: "inactive" };
+    default:
+      // "invalid" (and "conflict", which only the app path can produce).
+      await clearAuthCookies(platform);
+      return { ok: false, reason: "invalid" };
+  }
+}
+
+export type MobileRefreshResult =
+  | { ok: true; session: MobileSession }
+  | { ok: false; reason: "invalid" | "inactive" | "conflict" | "role" };
+
+/**
+ * rotateRefreshToken for a native app: the new pair comes back to the caller
+ * instead of cookies, and a token re-presented inside the grace window is
+ * re-rotated so a lost response does not end the session.
+ */
+export async function rotateMobileRefreshToken(
+  platform: Platform,
+  rawRefreshToken: string
+): Promise<MobileRefreshResult> {
+  const outcome = await rotateCore(platform, rawRefreshToken, {
+    reRotateOnGrace: true,
+  });
+  if (outcome.kind === "rotated") {
+    // The role is read fresh at every rotation, so an account promoted to a
+    // staff role after signing in on a phone stops being refreshable there.
+    if (!MOBILE_ALLOWED_ROLES.includes(outcome.role)) {
+      try {
+        await prisma.refreshToken.updateMany({
+          where: { tokenHash: sha256(outcome.newRawRefreshToken) },
+          data: { revokedAt: new Date() },
+        });
+      } catch {
+        // The session is refused either way; the token just expires unused.
+      }
+      return { ok: false, reason: "role" };
+    }
+    return {
+      ok: true,
+      session: {
+        accessToken: outcome.accessToken,
+        refreshToken: outcome.newRawRefreshToken,
+        accessExpiresIn: ACCESS_TOKEN_TTL_SECONDS,
+        refreshExpiresAt: outcome.expiresAt,
+      },
+    };
+  }
+  if (outcome.kind === "conflict") return { ok: false, reason: "conflict" };
+  if (outcome.kind === "inactive") return { ok: false, reason: "inactive" };
+  return { ok: false, reason: "invalid" };
 }
 
 /**

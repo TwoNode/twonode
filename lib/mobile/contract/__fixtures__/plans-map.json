@@ -1,0 +1,715 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "data": {
+      "plans": [
+        {
+          "id": "1f3e0eb4-5519-4fec-9a4a-2c6f892f15ca",
+          "planNumber": "LA/2026/MP-001",
+          "surveyTitle": "Plot at Lekki",
+          "displayStatus": {
+            "code": "IN_REVIEW",
+            "label": "In review"
+          },
+          "state": "Lagos",
+          "lga": "Eti-Osa",
+          "locality": "Lekki",
+          "areaSqM": 904.54,
+          "centroid": {
+            "lat": 6.447171457017012,
+            "lng": 3.4736220239308944
+          },
+          "simplifiedGeometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  3.4734862,
+                  6.4470359
+                ],
+                [
+                  3.4737575,
+                  6.4470356
+                ],
+                [
+                  3.4737578,
+                  6.447307
+                ],
+                [
+                  3.4734865,
+                  6.4473073
+                ],
+                [
+                  3.4734862,
+                  6.4470359
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "id": "637c6fbe-fdcb-4cde-9171-12a2ce357ab2",
+          "planNumber": "LA/2026/MP-002",
+          "surveyTitle": "Plot at Ikoyi",
+          "displayStatus": {
+            "code": "QUERIED",
+            "label": "Queried by Charting"
+          },
+          "state": "Lagos",
+          "lga": "Eti-Osa",
+          "locality": "Ikoyi",
+          "areaSqM": 1005.05,
+          "centroid": {
+            "lat": 6.45143187005135,
+            "lng": 3.478690264558395
+          },
+          "simplifiedGeometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  3.4785093,
+                  6.451319
+                ],
+                [
+                  3.478871,
+                  6.4513186
+                ],
+                [
+                  3.4788712,
+                  6.4515448
+                ],
+                [
+                  3.4785095,
+                  6.4515451
+                ],
+                [
+                  3.4785093,
+                  6.451319
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "id": "27b78f91-ad41-4736-b2c1-754c11fee096",
+          "planNumber": "LA/2026/MP-003",
+          "surveyTitle": "Plot at Abeokuta",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "state": "Ogun",
+          "lga": "Abeokuta South",
+          "locality": "Ake",
+          "areaSqM": 1104.14,
+          "centroid": {
+            "lat": 7.15015,
+            "lng": 3.3501499999999997
+          },
+          "simplifiedGeometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  3.35,
+                  7.15
+                ],
+                [
+                  3.3503,
+                  7.15
+                ],
+                [
+                  3.3503,
+                  7.1503
+                ],
+                [
+                  3.35,
+                  7.1503
+                ],
+                [
+                  3.35,
+                  7.15
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "id": "8f39236b-57aa-4903-927e-0bd7c9b2356c",
+          "planNumber": "LA/2026/MP-004",
+          "surveyTitle": "Plot with no state",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "state": null,
+          "lga": null,
+          "locality": null,
+          "areaSqM": 1961.91,
+          "centroid": {
+            "lat": 7.3802,
+            "lng": 3.9002
+          },
+          "simplifiedGeometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  3.9,
+                  7.38
+                ],
+                [
+                  3.9004,
+                  7.38
+                ],
+                [
+                  3.9004,
+                  7.3804
+                ],
+                [
+                  3.9,
+                  7.3804
+                ],
+                [
+                  3.9,
+                  7.38
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "id": "e4e7cdb6-e310-45c6-b32b-095c553bc19c",
+          "planNumber": "LA/2026/MP-005",
+          "surveyTitle": "Two parcels in Abuja",
+          "displayStatus": {
+            "code": "IN_REVIEW",
+            "label": "In review"
+          },
+          "state": "FCT",
+          "lga": "AMAC",
+          "locality": "Garki",
+          "areaSqM": 2197.81,
+          "centroid": {
+            "lat": 9.06015,
+            "lng": 7.490449999999999
+          },
+          "simplifiedGeometry": {
+            "type": "MultiPolygon",
+            "coordinates": [
+              [
+                [
+                  [
+                    7.49,
+                    9.06
+                  ],
+                  [
+                    7.4903,
+                    9.06
+                  ],
+                  [
+                    7.4903,
+                    9.0603
+                  ],
+                  [
+                    7.49,
+                    9.0603
+                  ],
+                  [
+                    7.49,
+                    9.06
+                  ]
+                ]
+              ],
+              [
+                [
+                  [
+                    7.4906,
+                    9.06
+                  ],
+                  [
+                    7.4909,
+                    9.06
+                  ],
+                  [
+                    7.4909,
+                    9.0603
+                  ],
+                  [
+                    7.4906,
+                    9.0603
+                  ],
+                  [
+                    7.4906,
+                    9.06
+                  ]
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "id": "84b1633e-5763-4250-b807-eafa4287ae56",
+          "planNumber": "LA/2026/MP-006",
+          "surveyTitle": "Boundary stored as text",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "state": "Lagos",
+          "lga": "Ikeja",
+          "locality": "Ikeja",
+          "areaSqM": 1105.42,
+          "centroid": {
+            "lat": 6.60015,
+            "lng": 3.3501499999999997
+          },
+          "simplifiedGeometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  3.35,
+                  6.6
+                ],
+                [
+                  3.3503,
+                  6.6
+                ],
+                [
+                  3.3503,
+                  6.6003
+                ],
+                [
+                  3.35,
+                  6.6003
+                ],
+                [
+                  3.35,
+                  6.6
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "id": "d313548c-8543-4a4c-9378-2dbfb14cfe0f",
+          "planNumber": "LA/2026/MP-007",
+          "surveyTitle": "Round estate with 500 corners",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "state": "Lagos",
+          "lga": "Eti-Osa",
+          "locality": "Lekki",
+          "areaSqM": 11284.07,
+          "centroid": {
+            "lat": 6.450000000000003,
+            "lng": 3.5499999999999954
+          },
+          "simplifiedGeometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  3.5505424,
+                  6.45
+                ],
+                [
+                  3.5505397,
+                  6.4500541
+                ],
+                [
+                  3.5505315,
+                  6.4501076
+                ],
+                [
+                  3.5505199,
+                  6.4501536
+                ],
+                [
+                  3.5505018,
+                  6.4502047
+                ],
+                [
+                  3.5504786,
+                  6.4502537
+                ],
+                [
+                  3.5504543,
+                  6.4502945
+                ],
+                [
+                  3.5504223,
+                  6.4503383
+                ],
+                [
+                  3.550386,
+                  6.4503787
+                ],
+                [
+                  3.5503458,
+                  6.4504153
+                ],
+                [
+                  3.5503021,
+                  6.4504477
+                ],
+                [
+                  3.5502613,
+                  6.4504723
+                ],
+                [
+                  3.5502123,
+                  6.450496
+                ],
+                [
+                  3.5501611,
+                  6.4505147
+                ],
+                [
+                  3.5501083,
+                  6.4505281
+                ],
+                [
+                  3.5500544,
+                  6.4505363
+                ],
+                [
+                  3.55,
+                  6.450539
+                ],
+                [
+                  3.5499456,
+                  6.4505363
+                ],
+                [
+                  3.5498917,
+                  6.4505281
+                ],
+                [
+                  3.5498389,
+                  6.4505147
+                ],
+                [
+                  3.5497877,
+                  6.450496
+                ],
+                [
+                  3.5497387,
+                  6.4504723
+                ],
+                [
+                  3.5496979,
+                  6.4504477
+                ],
+                [
+                  3.5496542,
+                  6.4504153
+                ],
+                [
+                  3.549614,
+                  6.4503787
+                ],
+                [
+                  3.5495777,
+                  6.4503383
+                ],
+                [
+                  3.5495457,
+                  6.4502945
+                ],
+                [
+                  3.5495214,
+                  6.4502537
+                ],
+                [
+                  3.5494982,
+                  6.4502047
+                ],
+                [
+                  3.5494801,
+                  6.4501536
+                ],
+                [
+                  3.5494672,
+                  6.450101
+                ],
+                [
+                  3.5494597,
+                  6.4500474
+                ],
+                [
+                  3.5494576,
+                  6.4499932
+                ],
+                [
+                  3.549461,
+                  6.4499392
+                ],
+                [
+                  3.5494699,
+                  6.4498857
+                ],
+                [
+                  3.5494841,
+                  6.4498334
+                ],
+                [
+                  3.5495008,
+                  6.4497891
+                ],
+                [
+                  3.5495247,
+                  6.4497403
+                ],
+                [
+                  3.5495533,
+                  6.4496942
+                ],
+                [
+                  3.549614,
+                  6.4496213
+                ],
+                [
+                  3.5496542,
+                  6.4495847
+                ],
+                [
+                  3.5496979,
+                  6.4495523
+                ],
+                [
+                  3.5497387,
+                  6.4495277
+                ],
+                [
+                  3.5497877,
+                  6.449504
+                ],
+                [
+                  3.5498389,
+                  6.4494853
+                ],
+                [
+                  3.5498917,
+                  6.4494719
+                ],
+                [
+                  3.5499456,
+                  6.4494637
+                ],
+                [
+                  3.55,
+                  6.449461
+                ],
+                [
+                  3.5500544,
+                  6.4494637
+                ],
+                [
+                  3.5501083,
+                  6.4494719
+                ],
+                [
+                  3.5501611,
+                  6.4494853
+                ],
+                [
+                  3.5502123,
+                  6.449504
+                ],
+                [
+                  3.5502613,
+                  6.4495277
+                ],
+                [
+                  3.5503021,
+                  6.4495523
+                ],
+                [
+                  3.5503458,
+                  6.4495847
+                ],
+                [
+                  3.550386,
+                  6.4496213
+                ],
+                [
+                  3.5504223,
+                  6.4496617
+                ],
+                [
+                  3.5504543,
+                  6.4497055
+                ],
+                [
+                  3.5504786,
+                  6.4497463
+                ],
+                [
+                  3.5505018,
+                  6.4497953
+                ],
+                [
+                  3.5505199,
+                  6.4498464
+                ],
+                [
+                  3.5505315,
+                  6.4498924
+                ],
+                [
+                  3.5505397,
+                  6.4499459
+                ],
+                [
+                  3.5505424,
+                  6.45
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "id": "7ef9fcee-158a-4db1-a15f-f492edbcbad7",
+          "planNumber": "LA/2026/MP-011",
+          "surveyTitle": "Plot at Port Harcourt (zone 32 corners)",
+          "displayStatus": {
+            "code": "NOT_SUBMITTED",
+            "label": "Not submitted"
+          },
+          "state": "Rivers",
+          "lga": "Port Harcourt",
+          "locality": "GRA",
+          "areaSqM": 1606.72,
+          "centroid": {
+            "lat": 4.793858576197832,
+            "lng": 7.196165315530093
+          },
+          "simplifiedGeometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  7.1959855,
+                  4.7936773
+                ],
+                [
+                  7.1963461,
+                  4.7936782
+                ],
+                [
+                  7.1963451,
+                  4.7940399
+                ],
+                [
+                  7.1959846,
+                  4.7940389
+                ],
+                [
+                  7.1959855,
+                  4.7936773
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "id": "bd9433ff-2d7d-4514-86c6-efc2e81f9f10",
+          "planNumber": "LA/2026/SHARED-1",
+          "surveyTitle": "Shared Ajah survey",
+          "displayStatus": {
+            "code": "QUERIED",
+            "label": "Queried by Charting"
+          },
+          "state": null,
+          "lga": "Ikorodu",
+          "locality": null,
+          "areaSqM": 1228620.4,
+          "centroid": {
+            "lat": 6.445,
+            "lng": 3.475
+          },
+          "simplifiedGeometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  3.47,
+                  6.44
+                ],
+                [
+                  3.48,
+                  6.44
+                ],
+                [
+                  3.48,
+                  6.45
+                ],
+                [
+                  3.47,
+                  6.45
+                ],
+                [
+                  3.47,
+                  6.44
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "id": "6952bbb7-9754-4376-a2a2-08b2b6f100e7",
+          "planNumber": "LA/2026/B-PRIVATE",
+          "surveyTitle": "Not shared",
+          "displayStatus": {
+            "code": "PAYMENT_PENDING",
+            "label": "Payment pending"
+          },
+          "state": null,
+          "lga": "Ikorodu",
+          "locality": null,
+          "areaSqM": 1228620.4,
+          "centroid": {
+            "lat": 6.445,
+            "lng": 3.475
+          },
+          "simplifiedGeometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  3.47,
+                  6.44
+                ],
+                [
+                  3.48,
+                  6.44
+                ],
+                [
+                  3.48,
+                  6.45
+                ],
+                [
+                  3.47,
+                  6.45
+                ],
+                [
+                  3.47,
+                  6.44
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "total": 12,
+      "withoutOutline": 2,
+      "truncated": false
+    }
+  }
+}

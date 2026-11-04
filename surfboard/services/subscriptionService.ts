@@ -29,10 +29,11 @@ const GRACE_PERIOD_MS = 24 * 60 * 60 * 1000;
 /** Exported for bulk classification (e.g. analyticsService's sharedAccessStats) — getUserActiveSubscription/getUserAndActiveSub apply this same rule one row at a time via findUnique. */
 export function isSubActiveOrGrace(
   status: string | null | undefined,
-  expiresAt: Date | null
+  expiresAt: Date | null,
+  now: Date = new Date()
 ) {
   const isValid = expiresAt
-    ? new Date() <= new Date(expiresAt.getTime() + GRACE_PERIOD_MS)
+    ? now <= new Date(expiresAt.getTime() + GRACE_PERIOD_MS)
     : true;
   const isActive = (status === "active" || status === "past_due") && isValid;
   const isCancelledButValid = status === "canceled" && isValid;
@@ -90,6 +91,70 @@ export async function getUserAndActiveSub(userId: string) {
     return { subscription: null };
 
   return { subscription: sub };
+}
+
+export type SubscriptionState =
+  "NONE" | "ACTIVE" | "ENDING" | "GRACE" | "ENDED";
+
+export type SubscriptionSummary = {
+  /**
+   * NONE: never subscribed. ACTIVE: running. ENDING: cancelled, still running to
+   * `validUntil`. GRACE: past `validUntil` but inside the one-day grace the gate
+   * allows. ENDED: over.
+   */
+  state: SubscriptionState;
+  planName: string | null;
+  interval: string | null;
+  /** When the paid period ends (or ended). */
+  validUntil: string | null;
+};
+
+/** Pure, so the states can be tested at any time. Uses the same validity rule as the gate (`isSubActiveOrGrace`). */
+export function summariseSubscription(
+  sub: {
+    status: string;
+    planName: string;
+    interval: string;
+    currentEnd: Date | null;
+  } | null,
+  now: Date = new Date()
+): SubscriptionSummary {
+  if (!sub) {
+    return { state: "NONE", planName: null, interval: null, validUntil: null };
+  }
+  const currentEnd = sub.currentEnd ? new Date(sub.currentEnd) : null;
+  const base = {
+    planName: sub.planName,
+    interval: sub.interval,
+    validUntil: currentEnd ? currentEnd.toISOString() : null,
+  };
+  if (!isSubActiveOrGrace(sub.status, currentEnd, now)) {
+    return { state: "ENDED", ...base };
+  }
+  if (currentEnd && now > currentEnd) return { state: "GRACE", ...base };
+  if (sub.status === "canceled") return { state: "ENDING", ...base };
+  return { state: "ACTIVE", ...base };
+}
+
+/**
+ * What the mobile app shows of a surveyor's subscription (TASK-0015 1F.5): the
+ * state, plan name, interval and when it ends, and nothing about price, card or
+ * payment (the app shows status only, ADR-0003). Unlike `user-and-active` it also
+ * says when a subscription has ended, so the app can explain it.
+ */
+export async function getSubscriptionSummary(
+  userId: string
+): Promise<SubscriptionSummary> {
+  const sub = await prisma.subscription.findUnique({
+    where: { userId },
+    select: {
+      status: true,
+      planName: true,
+      interval: true,
+      currentEnd: true,
+    },
+  });
+  return summariseSubscription(sub);
 }
 
 /** What the history ledger calls a payment that bought time. Both are matched when looking for "has this payment already been applied?". */

@@ -1,5 +1,7 @@
 # Surfboard Mobile App — Technical Feasibility Analysis
 
+> **Update 2026-10-19:** the one real gap this analysis names, cookie-only authentication, is closed: bearer-token sessions and mobile login, refresh and logout shipped in PR #495 ([`docs/auth/technical.md` §1.5a](../auth/technical.md), [ADR-0017](../adr/0017-the-mobile-app-signs-in-with-bearer-tokens.md)). The analysis below is kept as written.
+
 ## Context
 
 The user shared a product brief ("Surfboard Mobile App Brief") proposing a native mobile companion app for Surfboard — survey plan submission and tracking, Certificate of Deposit (CoD) batch processing, physical record-copy submission, and a surveyor-facing profile/stats area — and asked for a technical feasibility read against the existing codebase. This document captures that analysis, re-verified against the `dev` branch.

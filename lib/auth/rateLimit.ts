@@ -3,12 +3,17 @@ import prisma from "@/lib/prisma";
 const WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_ATTEMPTS = 5;
 
-export async function checkRateLimit(identifier: string): Promise<boolean> {
-  const since = new Date(Date.now() - WINDOW_MS);
+export type RateLimitOptions = { max?: number; windowMs?: number };
+
+export async function checkRateLimit(
+  identifier: string,
+  opts: RateLimitOptions = {}
+): Promise<boolean> {
+  const since = new Date(Date.now() - (opts.windowMs ?? WINDOW_MS));
   const count = await prisma.loginAttempt.count({
     where: { identifier, createdAt: { gt: since } },
   });
-  return count < MAX_ATTEMPTS;
+  return count < (opts.max ?? MAX_ATTEMPTS);
 }
 
 /**
@@ -21,14 +26,15 @@ export async function checkRateLimit(identifier: string): Promise<boolean> {
  */
 export async function consumeRateLimit(
   identifier: string,
-  userId?: string
+  userId?: string,
+  opts: RateLimitOptions = {}
 ): Promise<boolean> {
   await prisma.loginAttempt.create({ data: { identifier, userId } });
-  const since = new Date(Date.now() - WINDOW_MS);
+  const since = new Date(Date.now() - (opts.windowMs ?? WINDOW_MS));
   const count = await prisma.loginAttempt.count({
     where: { identifier, createdAt: { gt: since } },
   });
-  return count <= MAX_ATTEMPTS;
+  return count <= (opts.max ?? MAX_ATTEMPTS);
 }
 
 export async function recordAttempt(identifier: string, userId?: string) {
