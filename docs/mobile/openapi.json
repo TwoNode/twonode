@@ -956,6 +956,166 @@
         }
       }
     },
+    "/api/v1/auth/mobile/verify-email-link": {
+      "post": {
+        "operationId": "verifyEmailLink",
+        "tags": [
+          "Account"
+        ],
+        "summary": "Use the emailed link",
+        "description": "For when the emailed link opened the app: send the link's `token` query value. Only records the verification: call `refresh` afterwards. The token must have been sent to the signed-in account; any other token answers `VERIFICATION_LINK_INVALID`. Also answers `{ verified: true }` for an account already verified. Five tries per five minutes per account.\n\nA signed-in surveyor (role USER). Allowed while the email is unverified.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "platform": {
+                    "type": "string",
+                    "const": "surfboard"
+                  },
+                  "token": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "platform",
+                  "token"
+                ]
+              },
+              "example": {
+                "platform": "surfboard",
+                "token": "3f9c0d2a7b41e8"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "verified": {
+                          "type": "boolean",
+                          "const": true
+                        }
+                      },
+                      "required": [
+                        "verified"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields. `VERIFICATION_LINK_INVALID`: The link's token is unknown, already used, expired, or was sent to another account. The route does not say which.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR",
+              "VERIFICATION_LINK_INVALID"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          }
+        }
+      }
+    },
     "/api/v1/auth/mobile/resend-verification": {
       "post": {
         "operationId": "resendVerification",
@@ -5149,6 +5309,11 @@
       "status": 400,
       "meaning": "Five wrong tries on that code.",
       "appDoes": "Offers to send a new one."
+    },
+    "VERIFICATION_LINK_INVALID": {
+      "status": 400,
+      "meaning": "The link's token is unknown, already used, expired, or was sent to another account. The route does not say which.",
+      "appDoes": "Offers to send a new link."
     }
   },
   "x-uncoded-failures": [

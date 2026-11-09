@@ -31,7 +31,7 @@ The auth column is a static reading of source, not an access-control test. The a
 
 <!-- BEGIN GENERATED: api-routes -->
 
-#### Auth (shared) (24)
+#### Auth (shared) (25)
 
 | Route                                        | Method(s)    | Auth                                     |
 | :------------------------------------------- | :----------- | :--------------------------------------- |
@@ -50,6 +50,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/auth/mobile/request-password-reset` | POST         | public                                   |
 | `/api/v1/auth/mobile/resend-verification`    | POST         | USER (unverified OK)                     |
 | `/api/v1/auth/mobile/verify-email`           | POST         | USER (unverified OK)                     |
+| `/api/v1/auth/mobile/verify-email-link`      | POST         | USER (unverified OK)                     |
 | `/api/v1/auth/refresh`                       | POST         | public (CSRF-checked)                    |
 | `/api/v1/auth/register`                      | POST         | public (CSRF-checked)                    |
 | `/api/v1/auth/register/resend-otp`           | POST         | public (CSRF-checked)                    |
@@ -86,8 +87,8 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/admin/users/[id]/status`                          | PATCH              | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/admin/users/[id]/subscription`                    | PATCH, DELETE      | SUPERADMIN                                                                                                  |
 | `/api/v1/surfboard/admin/users/stats`                                | GET                | ADMIN, SUPERADMIN                                                                                           |
-| `/api/v1/surfboard/ai/extract-survey-plan`                           | POST               | any signed-in (text up to 100,000 characters; 60 an hour per account)                                       |
-| `/api/v1/surfboard/ai/recognize-person-count`                        | POST               | any signed-in (title up to 1,000 characters; 120 an hour per account)                                       |
+| `/api/v1/surfboard/ai/extract-survey-plan`                           | POST               | any signed-in                                                                                               |
+| `/api/v1/surfboard/ai/recognize-person-count`                        | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/analytics`                                        | GET                | USER, ADMIN, SUPERADMIN                                                                                     |
 | `/api/v1/surfboard/cod/batches`                                      | GET, POST          | GET: USER, ADMIN, SUPERADMIN; POST: USER                                                                    |
 | `/api/v1/surfboard/cod/batches/[batchId]`                            | GET                | USER                                                                                                        |
@@ -126,7 +127,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/mda/records-ii/batches`                           | GET                | RECORDS_II, SUPERADMIN, MDA_SUPERADMIN                                                                      |
 | `/api/v1/surfboard/mda/records-ii/plans/[planId]/decision`           | POST               | RECORDS_II, SUPERADMIN                                                                                      |
 | `/api/v1/surfboard/mda/remarks/charting`                             | GET                | CHARTING, MDA_SUPERADMIN, ADMIN, SUPERADMIN                                                                 |
-| `/api/v1/surfboard/mda/remarks/query-reasons`                        | GET                | the stage's own reviewer role for `?role=` (ACCOUNTS, CHARTING, SURCON, RECORDS_I, RECORDS_II, INTAKE); MDA_SUPERADMIN, ADMIN, SUPERADMIN for any|
+| `/api/v1/surfboard/mda/remarks/query-reasons`                        | GET                | ACCOUNTS, CHARTING, SURCON, RECORDS_I, RECORDS_II, INTAKE, MDA_SUPERADMIN, ADMIN, SUPERADMIN                |
 | `/api/v1/surfboard/mda/stage-stats`                                  | GET                | STAGE_ROLES, MDA_SUPERADMIN, SUPERADMIN                                                                     |
 | `/api/v1/surfboard/notifications`                                    | GET, POST          | GET: any signed-in; POST: ADMIN, SUPERADMIN                                                                 |
 | `/api/v1/surfboard/notifications/[id]`                               | PATCH, DELETE      | ADMIN, SUPERADMIN                                                                                           |
@@ -149,8 +150,8 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/plans/[planId]/qr`                                | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/query`                             | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/plans/[planId]/record-copy`                       | PATCH              | USER                                                                                                        |
-| `/api/v1/surfboard/plans/[planId]/record-copy/download`              | GET                | USER (own plans), ADMIN, SUPERADMIN                                                                         |
-| `/api/v1/surfboard/plans/[planId]/record-copy/verification`          | POST               | USER (own plans), ADMIN, SUPERADMIN                                                                         |
+| `/api/v1/surfboard/plans/[planId]/record-copy/download`              | GET                | USER, ADMIN, SUPERADMIN                                                                                     |
+| `/api/v1/surfboard/plans/[planId]/record-copy/verification`          | POST               | USER, ADMIN, SUPERADMIN                                                                                     |
 | `/api/v1/surfboard/plans/[planId]/red-copy`                          | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/restore`                           | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/[planId]/resubmit`                          | POST               | USER                                                                                                        |
@@ -199,8 +200,8 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/settings/reset`                                   | POST               | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/settings/revert/[id]`                             | POST               | ADMIN, SUPERADMIN                                                                                           |
 | `/api/v1/surfboard/subscription`                                     | GET                | any signed-in                                                                                               |
-| `/api/v1/surfboard/subscription-analytics`                           | GET                | ADMIN, SUPERADMIN (and USER on a development server)                                                        |
-| `/api/v1/surfboard/subscription/clear`                               | POST               | development server only (404 elsewhere)                                                                     |
+| `/api/v1/surfboard/subscription-analytics`                           | GET                | any signed-in                                                                                               |
+| `/api/v1/surfboard/subscription/clear`                               | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/subscription/disable`                             | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/subscription/initiate`                            | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/subscription/initiate-onetime`                    | POST               | any signed-in                                                                                               |
@@ -308,7 +309,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/gbc/certificates/download`                  | POST          | public — ticket buyer / site visitor |
 | `/api/v1/gbc/certificates/request-code`              | POST          | public — ticket buyer / site visitor |
 | `/api/v1/gbc/certificates/verify-code`               | POST          | public — ticket buyer / site visitor |
-| `/api/v1/gbc/contact`                                | POST          | public — ticket buyer / site visitor; honeypot, minimum fill time, limits per IP, per sender and overall, Cloudflare Turnstile when its keys are set (I-057) |
+| `/api/v1/gbc/contact`                                | POST          | public — ticket buyer / site visitor |
 | `/api/v1/gbc/editions`                               | GET           | public — ticket buyer / site visitor |
 | `/api/v1/gbc/editions/[key]/recap`                   | GET           | public — ticket buyer / site visitor |
 | `/api/v1/gbc/editions/current`                       | GET           | public — ticket buyer / site visitor |

@@ -121,6 +121,12 @@ export const ERROR_CODES = {
     meaning: "Five wrong tries on that code.",
     appDoes: "Offers to send a new one.",
   },
+  VERIFICATION_LINK_INVALID: {
+    status: 400,
+    meaning:
+      "The link's token is unknown, already used, expired, or was sent to another account. The route does not say which.",
+    appDoes: "Offers to send a new link.",
+  },
 } as const satisfies Record<string, ErrorEntry>;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

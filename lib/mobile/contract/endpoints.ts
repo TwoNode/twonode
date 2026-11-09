@@ -354,6 +354,29 @@ export const ENDPOINTS: Endpoint[] = [
     noStore: true,
   },
   {
+    operationId: "verifyEmailLink",
+    method: "post",
+    path: "/api/v1/auth/mobile/verify-email-link",
+    tag: "Account",
+    summary: "Use the emailed link",
+    description:
+      "For when the emailed link opened the app: send the link's `token` query value. Only records the verification: call `refresh` afterwards. The token must have been sent to the signed-in account; any other token answers `VERIFICATION_LINK_INVALID`. Also answers `{ verified: true }` for an account already verified. Five tries per five minutes per account.",
+    access: "surveyor-unverified",
+    versionGate: true,
+    body: {
+      schema: z.object({ platform, token: z.string().min(1).max(256) }),
+      example: { platform: "surfboard", token: "3f9c0d2a7b41e8" },
+      invalid: [
+        { platform: "surfboard", token: "" },
+        { platform: "surfboard" },
+      ],
+    },
+    data: S.VerifyEmailData,
+    errors: ["VALIDATION_ERROR", "VERIFICATION_LINK_INVALID", "RATE_LIMITED"],
+    routeFile: "app/api/v1/auth/mobile/verify-email-link/route.ts",
+    noStore: true,
+  },
+  {
     operationId: "resendVerification",
     method: "post",
     path: "/api/v1/auth/mobile/resend-verification",
