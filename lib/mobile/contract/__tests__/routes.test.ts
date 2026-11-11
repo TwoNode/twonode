@@ -70,6 +70,8 @@ const ROUTES: Record<string, () => Promise<Record<string, unknown>>> = {
     import("@/app/api/v1/auth/mobile/devices/[familyId]/route"),
   "app/api/v1/auth/mobile/verify-email/route.ts": () =>
     import("@/app/api/v1/auth/mobile/verify-email/route"),
+  "app/api/v1/auth/mobile/verify-email-link/route.ts": () =>
+    import("@/app/api/v1/auth/mobile/verify-email-link/route"),
   "app/api/v1/auth/mobile/resend-verification/route.ts": () =>
     import("@/app/api/v1/auth/mobile/resend-verification/route"),
   "app/api/v1/auth/mobile/push-token/route.ts": () =>
