@@ -6,7 +6,7 @@ vi.mock("@/lib/prisma", () => ({
   default: { surfboardPlan: { findMany: mocks.findMany, count: mocks.count } },
 }));
 
-const { getPlanMap, MAP_PLAN_LIMIT } =
+const { getPlanMap, getMapPillars, readPillars, MAP_PLAN_LIMIT } =
   await import("@/surfboard/services/planMapService");
 
 // About 33 m by 33 m near Lagos, so roughly 1,100 square metres.
@@ -32,6 +32,7 @@ const row = (over: Record<string, unknown> = {}) => ({
   lga: "Eti-Osa",
   locality: "Ajah",
   geometry: SQUARE,
+  dateOnSurveyPlan: new Date("2026-09-12T00:00:00Z"),
   status: "PENDING",
   redCopyStatus: "SUBMITTED",
   physicalCopySubmitted: false,
@@ -76,6 +77,7 @@ describe("getPlanMap: what is read", () => {
         "lga",
         "locality",
         "geometry",
+        "dateOnSurveyPlan",
         // What the status is worked out from, with the owner's own batch.
         "status",
         "redCopyStatus",
@@ -108,6 +110,7 @@ describe("getPlanMap: what is returned", () => {
         "lga",
         "locality",
         "areaSqM",
+        "dateOnSurveyPlan",
         "centroid",
         "simplifiedGeometry",
       ].sort()
@@ -123,12 +126,19 @@ describe("getPlanMap: what is returned", () => {
       state: "Lagos",
       lga: "Eti-Osa",
       locality: "Ajah",
+      dateOnSurveyPlan: "2026-09-12T00:00:00.000Z",
       simplifiedGeometry: SQUARE,
     });
     expect(plan.areaSqM).toBeGreaterThan(1090);
     expect(plan.areaSqM).toBeLessThan(1120);
     expect(plan.centroid.lat).toBeCloseTo(6.50015, 8);
     expect(plan.centroid.lng).toBeCloseTo(3.40015, 8);
+  });
+
+  it("says null for a plan with no survey plan date, so the card can put it last", async () => {
+    mocks.findMany.mockResolvedValue([row({ dateOnSurveyPlan: null })]);
+    const { plans } = await getPlanMap("owner-1");
+    expect(plans[0].dateOnSurveyPlan).toBeNull();
   });
 
   it("gives the coordinates as stored: the display correction is the map's job", async () => {
@@ -272,5 +282,99 @@ describe("getPlanMap: totals", () => {
     const result = await getPlanMap("owner-1");
     expect(result.plans).toHaveLength(MAP_PLAN_LIMIT);
     expect(result.truncated).toBe(false);
+  });
+});
+
+describe("readPillars", () => {
+  it("keeps a pillar with a number and finite coordinates, and says which polygon it is in", () => {
+    expect(
+      readPillars([
+        {
+          pillarNumber: "PBN 1",
+          easting: 549432.5,
+          northing: 710699.25,
+          polygonIndex: 1,
+        },
+        { pillarNumber: 7, easting: "549433", northing: "710700" },
+      ])
+    ).toEqual([
+      {
+        pillarNumber: "PBN 1",
+        easting: 549432.5,
+        northing: 710699.25,
+        polygonIndex: 1,
+      },
+      { pillarNumber: "7", easting: 549433, northing: 710700, polygonIndex: 0 },
+    ]);
+  });
+
+  it("drops what cannot be drawn instead of passing it on", () => {
+    expect(
+      readPillars([
+        null,
+        "PP1",
+        { easting: 1, northing: 2 },
+        { pillarNumber: "  ", easting: 1, northing: 2 },
+        { pillarNumber: "PP2", easting: "x", northing: 2 },
+        { pillarNumber: "PP3", easting: 1 },
+        { pillarNumber: "PP4", easting: Infinity, northing: 2 },
+        { pillarNumber: "PP5", easting: 5, northing: 6, polygonIndex: -1 },
+        { pillarNumber: "PP6", easting: 5, northing: 6, polygonIndex: 1.5 },
+      ])
+    ).toEqual([
+      { pillarNumber: "PP5", easting: 5, northing: 6, polygonIndex: 0 },
+      { pillarNumber: "PP6", easting: 5, northing: 6, polygonIndex: 0 },
+    ]);
+  });
+
+  it("is empty for a column that is not an array", () => {
+    expect(readPillars(null)).toEqual([]);
+    expect(readPillars({ pillarNumber: "PP1" })).toEqual([]);
+  });
+});
+
+describe("getMapPillars", () => {
+  const pillarRow = (id: string, count = 3) => ({
+    id,
+    pillars: Array.from({ length: count }, (_, i) => ({
+      pillarNumber: `PP${i + 1}`,
+      easting: 549000 + i,
+      northing: 710000 + i,
+    })),
+  });
+
+  it("asks only for the caller's own plans that are not deleted, and only for what it sends", async () => {
+    mocks.findMany.mockResolvedValue([]);
+    await getMapPillars("owner-1", ["a", "b"]);
+    expect(mocks.findMany).toHaveBeenCalledWith({
+      where: { userId: "owner-1", deleted: false, id: { in: ["a", "b"] } },
+      select: { id: true, pillars: true },
+    });
+  });
+
+  it("answers in the order the ids were asked for", async () => {
+    mocks.findMany.mockResolvedValue([pillarRow("b"), pillarRow("a")]);
+    const { plans } = await getMapPillars("owner-1", ["a", "b"]);
+    expect(plans.map((p) => p.id)).toEqual(["a", "b"]);
+  });
+
+  it("leaves out a plan with no usable pillar, as it does a plan that is not the caller's", async () => {
+    mocks.findMany.mockResolvedValue([
+      pillarRow("a"),
+      { id: "b", pillars: [] },
+      { id: "c", pillars: [{ nonsense: true }] },
+    ]);
+    const { plans } = await getMapPillars("owner-1", [
+      "a",
+      "b",
+      "c",
+      "mine-not",
+    ]);
+    expect(plans.map((p) => p.id)).toEqual(["a"]);
+  });
+
+  it("does not read the database for no ids", async () => {
+    expect(await getMapPillars("owner-1", [])).toEqual({ plans: [] });
+    expect(mocks.findMany).not.toHaveBeenCalled();
   });
 });

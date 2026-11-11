@@ -88,6 +88,14 @@ const ROUTES: Record<string, () => Promise<Record<string, unknown>>> = {
     import("@/app/api/v1/surfboard/plans/[planId]/files/[n]/route"),
   "app/api/v1/surfboard/plans/map/route.ts": () =>
     import("@/app/api/v1/surfboard/plans/map/route"),
+  "app/api/v1/surfboard/plans/map/pillars/route.ts": () =>
+    import("@/app/api/v1/surfboard/plans/map/pillars/route"),
+  "app/api/v1/surfboard/users/search/route.ts": () =>
+    import("@/app/api/v1/surfboard/users/search/route"),
+  "app/api/v1/surfboard/plans/[planId]/share/route.ts": () =>
+    import("@/app/api/v1/surfboard/plans/[planId]/share/route"),
+  "app/api/v1/surfboard/plans/[planId]/share/invite/route.ts": () =>
+    import("@/app/api/v1/surfboard/plans/[planId]/share/invite/route"),
   "app/api/v1/surfboard/settings/coordinate-shifts/route.ts": () =>
     import("@/app/api/v1/surfboard/settings/coordinate-shifts/route"),
   "app/api/v1/surfboard/cod/batches/summary/route.ts": () =>

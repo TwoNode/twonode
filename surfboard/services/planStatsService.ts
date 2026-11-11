@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import type { Prisma } from "@/prisma/generated";
 import { ValidationError } from "@/lib/api/errors";
 import {
+  computeSharedAccessStats,
   pillarBucket,
   PROVISIONAL_TYPES,
 } from "@/surfboard/services/analyticsService";
@@ -71,6 +72,12 @@ export type PlanStats = {
   lcdas: Breakdown;
   /** Batches with a plan still to be lodged (not affected by the date range). */
   activeBatches: number;
+  /**
+   * The plans the caller has shared out, one count for each plan and person (3 plans shared with
+   * one person count 3), by that person's subscription right now, as the website's Shared Access
+   * card counts them. Not affected by the date range.
+   */
+  sharedAccess: { active: number; expired: number; none: number };
 };
 
 export const BREAKDOWN_ROW_LIMIT = 100;
@@ -157,7 +164,7 @@ export async function getPlanStats(
   };
   const where = await buildSummaryWhere(userId, params);
 
-  const [rows, activeBatches] = await Promise.all([
+  const [rows, activeBatches, sharedStats] = await Promise.all([
     prisma.surfboardPlan.findMany({
       where,
       select: STATS_SELECT,
@@ -166,6 +173,7 @@ export async function getPlanStats(
     prisma.certificateOfDepositBatch.count({
       where: userBatchWhere(userId, "active"),
     }),
+    computeSharedAccessStats(userId),
   ]);
   if (rows.length > STATUS_FILTER_SCAN_LIMIT) {
     throw new ValidationError({
@@ -219,5 +227,10 @@ export async function getPlanStats(
     wards: breakdown(counted.map((row) => row.ward)),
     lcdas: breakdown(counted.map((row) => row.lcda)),
     activeBatches,
+    sharedAccess: {
+      active: sharedStats.find((s) => s.status === "active")?.count ?? 0,
+      expired: sharedStats.find((s) => s.status === "expired")?.count ?? 0,
+      none: sharedStats.find((s) => s.status === "none")?.count ?? 0,
+    },
   };
 }

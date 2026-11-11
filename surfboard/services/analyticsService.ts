@@ -348,7 +348,7 @@ export async function getTimeTrend(
  * now. Deliberately per-share, not per-unique-recipient: sharing 3 plans
  * with the same unsubscribed facilitator counts 3 toward "none".
  */
-async function computeSharedAccessStats(
+export async function computeSharedAccessStats(
   userId: string
 ): Promise<{ status: "active" | "expired" | "none"; count: number }[]> {
   const sharedPlans = await prisma.surfboardPlan.findMany({

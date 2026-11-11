@@ -61,7 +61,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/auth/verify-email`                  | POST         | session (see source)                     |
 | `/api/v1/auth/verify-email-otp`              | POST         | session (see source)                     |
 
-#### Surfboard (146)
+#### Surfboard (147)
 
 | Route                                                                | Method(s)          | Auth                                                                                                        |
 | :------------------------------------------------------------------- | :----------------- | :---------------------------------------------------------------------------------------------------------- |
@@ -171,6 +171,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/plans/facilitators`                               | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/geo/boundaries`                             | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/map`                                        | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/plans/map/pillars`                                | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/physical-copy`                              | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/plans/queried`                                    | GET                | USER                                                                                                        |
 | `/api/v1/surfboard/plans/reference-numbers`                          | GET                | USER                                                                                                        |

@@ -9,7 +9,7 @@ import type {
 } from "@/surfboard/services/batchSummaryService";
 import type { PlanDetail } from "@/surfboard/services/planDetailService";
 import type { PlanFileLink } from "@/surfboard/services/planFileLinkService";
-import type { PlanMap } from "@/surfboard/services/planMapService";
+import type { MapPillars, PlanMap } from "@/surfboard/services/planMapService";
 import type {
   PlanCounts,
   PlanSummary,
@@ -360,6 +360,11 @@ export const MapPlan = z
     lga: nullableText,
     locality: nullableText,
     areaSqM: z.number().nullable(),
+    dateOnSurveyPlan: iso
+      .nullable()
+      .describe(
+        "The date printed on the survey plan. Several plans on one spot are shown newest first by it."
+      ),
     centroid: z.object({ lat: z.number(), lng: z.number() }),
     simplifiedGeometry: Outline,
   })
@@ -375,6 +380,75 @@ export const PlanMapData = z
     truncated: z.boolean().describe("There are more plans than were read."),
   })
   .meta({ id: "PlanMap" });
+
+export const MapPillar = z
+  .object({
+    pillarNumber: z.string(),
+    easting: z.number().describe("Metres, Minna / UTM zone 31N, as stored."),
+    northing: z.number().describe("Metres, Minna / UTM zone 31N, as stored."),
+    polygonIndex: count.describe(
+      "Which polygon of the plan the pillar belongs to (0 for a plan with one)."
+    ),
+  })
+  .meta({ id: "MapPillar" });
+
+export const MapPillarsData = z
+  .object({
+    plans: z.array(
+      z.object({ id: z.string(), pillars: z.array(MapPillar).min(1) })
+    ),
+  })
+  .describe(
+    "In the order the ids were asked for. A plan that is not the caller's, is deleted or has no usable pillar is not in it."
+  )
+  .meta({ id: "MapPillars" });
+
+export const SurveyorMatch = z
+  .object({
+    id: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+    email: z.string(),
+    surconRegNumber: nullableText.describe(
+      "A placeholder (`SURCON_` and five characters) until the surveyor enters their own."
+    ),
+  })
+  .meta({ id: "SurveyorMatch" });
+
+export const SurveyorSearchData = z
+  .array(SurveyorMatch)
+  .describe("At most 10, best match not guaranteed; the caller is never in it.")
+  .meta({ id: "SurveyorSearch" });
+
+export const PlanShareData = z
+  .object({
+    id: z.string(),
+    sharedTo: z
+      .array(z.string())
+      .describe("The ids of everyone the plan is now shared with."),
+    sharedUser: SurveyorMatch,
+  })
+  .meta({ id: "PlanShare" });
+
+export const PlanShareInviteData = z
+  .union([
+    PlanShareData,
+    z.object({
+      invited: z.literal(true),
+      email: z.string(),
+      expiresAt: iso,
+      inviteId: z.string(),
+      emailSent: z
+        .boolean()
+        .describe(
+          "False when the invitation was saved but its email did not go."
+        ),
+    }),
+  ])
+  .describe(
+    "An email that has an account is shared with at once (the same answer as sharing with a person); one that has none is sent an invitation, valid for 7 days, and gets access when it signs up."
+  )
+  .meta({ id: "PlanShareInvite" });
 
 export const Breakdown = z
   .object({
@@ -405,6 +479,11 @@ export const PlanStatsData = z
     wards: Breakdown,
     lcdas: Breakdown,
     activeBatches: count.describe("Not affected by the date range."),
+    sharedAccess: z
+      .object({ active: count, expired: count, none: count })
+      .describe(
+        "The plans the caller has shared out: one count for each plan and person, by that person's subscription now (the website's Shared Access card). Not affected by the date range."
+      ),
   })
   .meta({ id: "PlanStats" });
 
@@ -605,6 +684,7 @@ export type ContractMatchesServices = [
   Must<Same<z.infer<typeof PlanDetailData>, PlanDetail>>,
   Must<Same<z.infer<typeof PlanFileLinkData>, PlanFileLink>>,
   Must<Same<z.infer<typeof PlanMapData>, PlanMap>>,
+  Must<Same<z.infer<typeof MapPillarsData>, MapPillars>>,
   Must<Same<z.infer<typeof PlanStatsData>, PlanStats>>,
   Must<Same<z.infer<typeof BatchSummaryData>, BatchSummary>>,
   Must<Same<z.infer<typeof BatchDetailData>, BatchDetail>>,
