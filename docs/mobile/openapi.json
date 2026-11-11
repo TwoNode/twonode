@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Surfboard mobile API",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "The calls the Surfboard mobile app makes. Generated from `lib/mobile/contract` in the API repository: do not edit by hand. Every success is `{ success: true, data }`; every failure is `{ success: false, error, code?, details? }`. Dates are ISO 8601 in UTC. Objects are open: a newer server may add a field, and an app must ignore what it does not know."
   },
   "servers": [
@@ -2307,6 +2307,117 @@
         }
       }
     },
+    "/api/v1/surfboard/plans/map/pillars": {
+      "get": {
+        "operationId": "planMapPillars",
+        "tags": [
+          "Map"
+        ],
+        "summary": "The pillars of some of the caller's plans, for a zoomed-in map",
+        "description": "Up to 60 plan ids a call. `plans/map` leaves pillars out so its answer stays small; the app asks for the plans in view once the map is zoomed in far enough to number them (about 1:5,000). Coordinates are as stored: the map applies the state's display correction.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "description": "Plan ids, comma separated, 1 to 60. A plan that is not the caller's or is deleted is left out of the answer.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c,0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MapPillars"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
     "/api/v1/surfboard/settings/coordinate-shifts": {
       "get": {
         "operationId": "coordinateShifts",
@@ -2572,6 +2683,400 @@
             "x-error-codes": [
               "EMAIL_VERIFICATION_REQUIRED",
               "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "description": "`NOT_FOUND`: Unknown, deleted or someone else's record (these look the same on purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/users/search": {
+      "get": {
+        "operationId": "searchSurveyors",
+        "tags": [
+          "Plans"
+        ],
+        "summary": "Find a surveyor to share plans with",
+        "description": "By any part of an email address or SURCON number, capitals ignored; at most 10, and never the caller. Any surveyor's email and SURCON number can be found this way (the website does the same), so the app waits for 3 characters before it asks.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "description": "Part of an email address or SURCON number.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "ada@"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SurveyorSearch"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/plans/{planId}/share": {
+      "post": {
+        "operationId": "sharePlan",
+        "tags": [
+          "Plans"
+        ],
+        "summary": "Share one of the caller's plans with a surveyor who has an account",
+        "description": "Needs an active subscription (a 403 SUBSCRIPTION_REQUIRED stops every plan after it). Access is immediate, with no accept step, and the person is told by push and email. Sharing again is harmless. Only the owner can share: a plan that is someone else's, deleted or unknown is a 404. Sharing several plans is one call each.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "description": "The plan to share (a uuid).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "userId"
+                ]
+              },
+              "example": {
+                "userId": "9c1f0e52-6b7a-4d3e-8f21-5a4b3c2d1e0f"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlanShare"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route. `SUBSCRIPTION_REQUIRED`: An action that needs an active subscription. Reads never return this.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN",
+              "SUBSCRIPTION_REQUIRED"
+            ]
+          },
+          "404": {
+            "description": "`NOT_FOUND`: Unknown, deleted or someone else's record (these look the same on purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/plans/{planId}/share/invite": {
+      "post": {
+        "operationId": "invitePlanShare",
+        "tags": [
+          "Plans"
+        ],
+        "summary": "Share one of the caller's plans by email, account or not",
+        "description": "As `sharePlan`, for an email address. If it has a Surfboard account the plan is shared at once; if not, an invitation is emailed (valid for 7 days, replacing an earlier open one for the same plan and address) and access follows when that person signs up.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "description": "The plan to share (a uuid).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                },
+                "required": [
+                  "email"
+                ]
+              },
+              "example": {
+                "email": "ada@example.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlanShareInvite"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route. `SUBSCRIPTION_REQUIRED`: An action that needs an active subscription. Reads never return this.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN",
+              "SUBSCRIPTION_REQUIRED"
             ]
           },
           "404": {
@@ -3453,6 +3958,64 @@
           "user"
         ]
       },
+      "MapPillar": {
+        "type": "object",
+        "properties": {
+          "pillarNumber": {
+            "type": "string"
+          },
+          "easting": {
+            "description": "Metres, Minna / UTM zone 31N, as stored.",
+            "type": "number"
+          },
+          "northing": {
+            "description": "Metres, Minna / UTM zone 31N, as stored.",
+            "type": "number"
+          },
+          "polygonIndex": {
+            "description": "Which polygon of the plan the pillar belongs to (0 for a plan with one).",
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "pillarNumber",
+          "easting",
+          "northing",
+          "polygonIndex"
+        ]
+      },
+      "MapPillars": {
+        "description": "In the order the ids were asked for. A plan that is not the caller's, is deleted or has no usable pillar is not in it.",
+        "type": "object",
+        "properties": {
+          "plans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "pillars": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MapPillar"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "pillars"
+              ]
+            }
+          }
+        },
+        "required": [
+          "plans"
+        ]
+      },
       "MapPlan": {
         "type": "object",
         "properties": {
@@ -3508,6 +4071,19 @@
               }
             ]
           },
+          "dateOnSurveyPlan": {
+            "description": "The date printed on the survey plan. Several plans on one spot are shown newest first by it.",
+            "anyOf": [
+              {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "centroid": {
             "type": "object",
             "properties": {
@@ -3536,6 +4112,7 @@
           "lga",
           "locality",
           "areaSqM",
+          "dateOnSurveyPlan",
           "centroid",
           "simplifiedGeometry"
         ]
@@ -4312,6 +4889,68 @@
           "at"
         ]
       },
+      "PlanShare": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sharedTo": {
+            "description": "The ids of everyone the plan is now shared with.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sharedUser": {
+            "$ref": "#/components/schemas/SurveyorMatch"
+          }
+        },
+        "required": [
+          "id",
+          "sharedTo",
+          "sharedUser"
+        ]
+      },
+      "PlanShareInvite": {
+        "description": "An email that has an account is shared with at once (the same answer as sharing with a person); one that has none is sent an invitation, valid for 7 days, and gets access when it signs up.",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/PlanShare"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "invited": {
+                "type": "boolean",
+                "const": true
+              },
+              "email": {
+                "type": "string"
+              },
+              "expiresAt": {
+                "description": "ISO 8601 date and time, UTC",
+                "type": "string",
+                "format": "date-time"
+              },
+              "inviteId": {
+                "type": "string"
+              },
+              "emailSent": {
+                "description": "False when the invitation was saved but its email did not go.",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "invited",
+              "email",
+              "expiresAt",
+              "inviteId",
+              "emailSent"
+            ]
+          }
+        ]
+      },
       "PlanStats": {
         "type": "object",
         "properties": {
@@ -4435,6 +5074,29 @@
             "description": "Not affected by the date range.",
             "type": "integer",
             "minimum": 0
+          },
+          "sharedAccess": {
+            "description": "The plans the caller has shared out: one count for each plan and person, by that person's subscription now (the website's Shared Access card). Not affected by the date range.",
+            "type": "object",
+            "properties": {
+              "active": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "expired": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "none": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "active",
+              "expired",
+              "none"
+            ]
           }
         },
         "required": [
@@ -4448,7 +5110,8 @@
           "lgas",
           "wards",
           "lcdas",
-          "activeBatches"
+          "activeBatches",
+          "sharedAccess"
         ]
       },
       "PlanSummary": {
@@ -4989,6 +5652,48 @@
           "interval",
           "validUntil"
         ]
+      },
+      "SurveyorMatch": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "surconRegNumber": {
+            "description": "A placeholder (`SURCON_` and five characters) until the surveyor enters their own.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "firstName",
+          "lastName",
+          "email",
+          "surconRegNumber"
+        ]
+      },
+      "SurveyorSearch": {
+        "description": "At most 10, best match not guaranteed; the caller is never in it.",
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SurveyorMatch"
+        }
       },
       "WalletSummary": {
         "description": "Amounts are naira.",
