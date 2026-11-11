@@ -354,6 +354,29 @@ export const ENDPOINTS: Endpoint[] = [
     noStore: true,
   },
   {
+    operationId: "verifyEmailLink",
+    method: "post",
+    path: "/api/v1/auth/mobile/verify-email-link",
+    tag: "Account",
+    summary: "Use the emailed link",
+    description:
+      "For when the emailed link opened the app: send the link's `token` query value. Only records the verification: call `refresh` afterwards. The token must have been sent to the signed-in account; any other token answers `VERIFICATION_LINK_INVALID`. Also answers `{ verified: true }` for an account already verified. Five tries per five minutes per account.",
+    access: "surveyor-unverified",
+    versionGate: true,
+    body: {
+      schema: z.object({ platform, token: z.string().min(1).max(256) }),
+      example: { platform: "surfboard", token: "3f9c0d2a7b41e8" },
+      invalid: [
+        { platform: "surfboard", token: "" },
+        { platform: "surfboard" },
+      ],
+    },
+    data: S.VerifyEmailData,
+    errors: ["VALIDATION_ERROR", "VERIFICATION_LINK_INVALID", "RATE_LIMITED"],
+    routeFile: "app/api/v1/auth/mobile/verify-email-link/route.ts",
+    noStore: true,
+  },
+  {
     operationId: "resendVerification",
     method: "post",
     path: "/api/v1/auth/mobile/resend-verification",
@@ -649,6 +672,32 @@ export const ENDPOINTS: Endpoint[] = [
     routeFile: "app/api/v1/surfboard/plans/map/route.ts",
   },
   {
+    operationId: "planMapPillars",
+    method: "get",
+    path: "/api/v1/surfboard/plans/map/pillars",
+    tag: "Map",
+    summary: "The pillars of some of the caller's plans, for a zoomed-in map",
+    description:
+      "Up to 60 plan ids a call. `plans/map` leaves pillars out so its answer stays small; the app asks for the plans in view once the map is zoomed in far enough to number them (about 1:5,000). Coordinates are as stored: the map applies the state's display correction.",
+    access: "surveyor",
+    versionGate: true,
+    params: [
+      {
+        name: "ids",
+        in: "query",
+        required: true,
+        description:
+          "Plan ids, comma separated, 1 to 60. A plan that is not the caller's or is deleted is left out of the answer.",
+        schema: z.string(),
+        example:
+          "3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c,0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      },
+    ],
+    data: S.MapPillarsData,
+    errors: ["VALIDATION_ERROR"],
+    routeFile: "app/api/v1/surfboard/plans/map/pillars/route.ts",
+  },
+  {
     operationId: "coordinateShifts",
     method: "get",
     path: "/api/v1/surfboard/settings/coordinate-shifts",
@@ -715,6 +764,72 @@ export const ENDPOINTS: Endpoint[] = [
     data: S.BatchDetailData,
     errors: ["NOT_FOUND"],
     routeFile: "app/api/v1/surfboard/cod/batches/[batchId]/summary/route.ts",
+  },
+
+  // ----------------------------------------------------------- sharing
+  {
+    operationId: "searchSurveyors",
+    method: "get",
+    path: "/api/v1/surfboard/users/search",
+    tag: "Plans",
+    summary: "Find a surveyor to share plans with",
+    description:
+      "By any part of an email address or SURCON number, capitals ignored; at most 10, and never the caller. Any surveyor's email and SURCON number can be found this way (the website does the same), so the app waits for 3 characters before it asks.",
+    access: "surveyor",
+    versionGate: true,
+    params: [
+      {
+        name: "query",
+        in: "query",
+        required: true,
+        description: "Part of an email address or SURCON number.",
+        schema: z.string(),
+        example: "ada@",
+      },
+    ],
+    data: S.SurveyorSearchData,
+    routeFile: "app/api/v1/surfboard/users/search/route.ts",
+  },
+  {
+    operationId: "sharePlan",
+    method: "post",
+    path: "/api/v1/surfboard/plans/{planId}/share",
+    tag: "Plans",
+    summary:
+      "Share one of the caller's plans with a surveyor who has an account",
+    description:
+      "Needs an active subscription (a 403 SUBSCRIPTION_REQUIRED stops every plan after it). Access is immediate, with no accept step, and the person is told by push and email. Sharing again is harmless. Only the owner can share: a plan that is someone else's, deleted or unknown is a 404. Sharing several plans is one call each.",
+    access: "surveyor",
+    versionGate: true,
+    params: [planId("The plan to share (a uuid).")],
+    body: {
+      schema: z.object({ userId: z.string().min(1) }),
+      example: { userId: "9c1f0e52-6b7a-4d3e-8f21-5a4b3c2d1e0f" },
+      invalid: [{}, { userId: "" }],
+    },
+    data: S.PlanShareData,
+    errors: ["VALIDATION_ERROR", "SUBSCRIPTION_REQUIRED", "NOT_FOUND"],
+    routeFile: "app/api/v1/surfboard/plans/[planId]/share/route.ts",
+  },
+  {
+    operationId: "invitePlanShare",
+    method: "post",
+    path: "/api/v1/surfboard/plans/{planId}/share/invite",
+    tag: "Plans",
+    summary: "Share one of the caller's plans by email, account or not",
+    description:
+      "As `sharePlan`, for an email address. If it has a Surfboard account the plan is shared at once; if not, an invitation is emailed (valid for 7 days, replacing an earlier open one for the same plan and address) and access follows when that person signs up.",
+    access: "surveyor",
+    versionGate: true,
+    params: [planId("The plan to share (a uuid).")],
+    body: {
+      schema: z.object({ email: z.email() }),
+      example: { email: "ada@example.com" },
+      invalid: [{}, { email: "not-an-email" }],
+    },
+    data: S.PlanShareInviteData,
+    errors: ["VALIDATION_ERROR", "SUBSCRIPTION_REQUIRED", "NOT_FOUND"],
+    routeFile: "app/api/v1/surfboard/plans/[planId]/share/invite/route.ts",
   },
 
   // ----------------------------------------------------------- stats

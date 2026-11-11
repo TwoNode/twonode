@@ -17,6 +17,7 @@
 | [`surfboard/`](./surfboard/)           | Survey plan lodging + the MDA government approval workflow: user flow, technical flow, QR Earnings, and the association-subscription evaluation.                    |
 | [`reva/`](./reva/)                     | Property due-diligence requests: user flow, user stories, notifications.                                                                                            |
 | [`integrations/`](./integrations/)     | Third-party systems under evaluation — currently the NIPOST National Digital Postcode API.                                                                          |
+| [`storage/`](./storage/)               | AWS S3 blueprints: private files with presigned URLs, a hybrid public/private/vault bucket, and how TwoNode's own storage compares (checked against the code).      |
 | [`gbc/`](./gbc/)                       | Event ticketing — auth notes; see `development-history/phases/phase-4-gbc.md` for the fuller picture.                                                               |
 | [`adr/`](./adr/index.md)               | Architecture Decision Records (ADRs): why important technical and product choices were made, with status and consequences.                                          |
 | [`backend/`](./backend/)               | Plans for the backend itself: the order of Next.js, NestJS and Go, with the gates and the safe way to move between them.                                            |

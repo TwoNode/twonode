@@ -53,6 +53,7 @@ The list is in `errorCodes.ts` and, with each operation's own failures, in the d
 | :------ | :--------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1.0.0   | 2026-10-28 | First publication: the 23 operations the app calls on the day the contract was written down, including `/auth/me` with `verificationCodeSentAt` (1A.14).                                                                               |
 | 1.1.0   | 2026-11-02 | Two new operations, no change to an existing one: `getPushPreferences` and `changePushPreferences` (`/api/v1/surfboard/push/preferences`, 1I.8), with the `PushPreferences` answer and the `PATCH` method (the first in the document). |
+| 1.2.0   | 2026-11-11 | Additions only, nothing an existing app has to change: `PlanStats.sharedAccess` (`{active, expired, none}`, 1F.9), `MapPlan.dateOnSurveyPlan` (1E.6), and four new operations: `planMapPillars` (`GET plans/map/pillars?ids=`, 1E.5), `searchSurveyors` (`GET users/search?query=`), `sharePlan` (`POST plans/{planId}/share`) and `invitePlanShare` (`POST plans/{planId}/share/invite`), the last three being the website's own routes, now documented for the app's press-and-hold sharing. |
 
 ## Not done
 

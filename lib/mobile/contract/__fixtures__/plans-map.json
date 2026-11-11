@@ -16,6 +16,7 @@
           "lga": "Eti-Osa",
           "locality": "Lekki",
           "areaSqM": 904.54,
+          "dateOnSurveyPlan": "2026-03-14T00:00:00.000Z",
           "centroid": {
             "lat": 6.447171457017012,
             "lng": 3.4736220239308944
@@ -60,6 +61,7 @@
           "lga": "Eti-Osa",
           "locality": "Ikoyi",
           "areaSqM": 1005.05,
+          "dateOnSurveyPlan": "2026-02-02T00:00:00.000Z",
           "centroid": {
             "lat": 6.45143187005135,
             "lng": 3.478690264558395
@@ -104,6 +106,7 @@
           "lga": "Abeokuta South",
           "locality": "Ake",
           "areaSqM": 1104.14,
+          "dateOnSurveyPlan": "2026-01-20T00:00:00.000Z",
           "centroid": {
             "lat": 7.15015,
             "lng": 3.3501499999999997
@@ -148,6 +151,7 @@
           "lga": null,
           "locality": null,
           "areaSqM": 1961.91,
+          "dateOnSurveyPlan": null,
           "centroid": {
             "lat": 7.3802,
             "lng": 3.9002
@@ -192,6 +196,7 @@
           "lga": "AMAC",
           "locality": "Garki",
           "areaSqM": 2197.81,
+          "dateOnSurveyPlan": "2025-12-05T00:00:00.000Z",
           "centroid": {
             "lat": 9.06015,
             "lng": 7.490449999999999
@@ -262,6 +267,7 @@
           "lga": "Ikeja",
           "locality": "Ikeja",
           "areaSqM": 1105.42,
+          "dateOnSurveyPlan": "2025-11-18T00:00:00.000Z",
           "centroid": {
             "lat": 6.60015,
             "lng": 3.3501499999999997
@@ -306,6 +312,7 @@
           "lga": "Eti-Osa",
           "locality": "Lekki",
           "areaSqM": 11284.07,
+          "dateOnSurveyPlan": "2026-04-01T00:00:00.000Z",
           "centroid": {
             "lat": 6.450000000000003,
             "lng": 3.5499999999999954
@@ -586,6 +593,7 @@
           "lga": "Port Harcourt",
           "locality": "GRA",
           "areaSqM": 1606.72,
+          "dateOnSurveyPlan": "2025-10-09T00:00:00.000Z",
           "centroid": {
             "lat": 4.793858576197832,
             "lng": 7.196165315530093
@@ -630,6 +638,7 @@
           "lga": "Ikorodu",
           "locality": null,
           "areaSqM": 1228620.4,
+          "dateOnSurveyPlan": "2026-03-30T00:00:00.000Z",
           "centroid": {
             "lat": 6.445,
             "lng": 3.475
@@ -674,6 +683,7 @@
           "lga": "Ikorodu",
           "locality": null,
           "areaSqM": 1228620.4,
+          "dateOnSurveyPlan": "2025-09-22T00:00:00.000Z",
           "centroid": {
             "lat": 6.445,
             "lng": 3.475

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   findMany: vi.fn(),
   batchCount: vi.fn(),
+  sharedAccess: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -10,6 +11,12 @@ vi.mock("@/lib/prisma", () => ({
     surfboardPlan: { findMany: mocks.findMany },
     certificateOfDepositBatch: { count: mocks.batchCount },
   },
+}));
+
+// The shared access count is the website's own function (tested with it); here only what is done with its answer.
+vi.mock("@/surfboard/services/analyticsService", async (original) => ({
+  ...(await original<typeof import("@/surfboard/services/analyticsService")>()),
+  computeSharedAccessStats: mocks.sharedAccess,
 }));
 
 const { getPlanStats, BREAKDOWN_ROW_LIMIT } =
@@ -50,6 +57,11 @@ beforeEach(() => {
   vi.resetAllMocks();
   mocks.findMany.mockResolvedValue([]);
   mocks.batchCount.mockResolvedValue(0);
+  mocks.sharedAccess.mockResolvedValue([
+    { status: "active", count: 0 },
+    { status: "expired", count: 0 },
+    { status: "none", count: 0 },
+  ]);
 });
 
 describe("getPlanStats", () => {
@@ -117,6 +129,7 @@ describe("getPlanStats", () => {
       pillars: { regular: 0, special: 0 },
       byMonth: [],
       activeBatches: 0,
+      sharedAccess: { active: 0, expired: 0, none: 0 },
     });
     expect(Object.keys(stats.byStatus).sort()).toEqual(
       [...DISPLAY_STATUS_CODES].sort()
@@ -275,6 +288,20 @@ describe("getPlanStats", () => {
       dateFrom: new Date("2020-01-01T00:00:00Z"),
     });
     expect(stats.activeBatches).toBe(3);
+  });
+
+  it("reports the shared access counts as the website counts them, whatever the date range", async () => {
+    mocks.sharedAccess.mockResolvedValue([
+      { status: "active", count: 4 },
+      { status: "expired", count: 1 },
+      { status: "none", count: 2 },
+    ]);
+    const stats = await getPlanStats("u1", {
+      dateFrom: new Date("2020-01-01T00:00:00Z"),
+    });
+    expect(stats.sharedAccess).toEqual({ active: 4, expired: 1, none: 2 });
+    // It is the caller's own count: the function is asked about them, not about the range.
+    expect(mocks.sharedAccess).toHaveBeenCalledWith("u1");
   });
 
   it("refuses to summarise a huge account instead of silently cutting it off", async () => {

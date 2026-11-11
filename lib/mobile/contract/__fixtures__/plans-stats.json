@@ -147,7 +147,12 @@
         "distinct": 2,
         "missing": 25
       },
-      "activeBatches": 4
+      "activeBatches": 4,
+      "sharedAccess": {
+        "active": 2,
+        "expired": 1,
+        "none": 3
+      }
     }
   }
 }
