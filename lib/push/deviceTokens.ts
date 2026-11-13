@@ -21,6 +21,12 @@ export type RegisterDeviceTokenInput = {
   appVersion?: string | null;
 };
 
+/** How many times a registration is tried when another one gets in between (see below). */
+const REGISTER_TRIES = 3;
+
+const isUniqueViolation = (error: unknown) =>
+  (error as { code?: string } | null)?.code === "P2002";
+
 /**
  * Remembers this install's token for this user. The token belongs to the
  * install, so a phone someone else signs in on moves it to them (the old
@@ -28,6 +34,15 @@ export type RegisterDeviceTokenInput = {
  * token replaces the old one. Returns false, writing nothing, when `deviceId`
  * is not a live device session of the caller: a token is only ever kept for a
  * phone that is signed in as this user.
+ *
+ * Registrations of one install can overlap (the app asks again whenever the
+ * phone announces its address, and an older build asked dozens of times a
+ * second). Two of them both delete nothing and both create, and the second
+ * hits a unique index (P2002, which the route would answer as a 409). That is
+ * not a failure: when the row that got there first is this very install's, it
+ * already says what this call wanted, so it is only touched. When it is
+ * someone else's (two accounts signing in on one phone at once) the pair is
+ * written again over it, up to `REGISTER_TRIES` times.
  */
 export async function registerDeviceToken(
   userId: string,
@@ -55,20 +70,44 @@ export async function registerDeviceToken(
     appVersion: input.appVersion ?? null,
     lastSeenAt: new Date(),
   };
-  await prisma.$transaction([
-    // One token per install and one install per user: whatever this token or
-    // this user's device was tied to before goes, then the pair is written.
-    prisma.deviceToken.deleteMany({
-      where: {
-        OR: [
-          { token: input.token },
-          { userId, platform, deviceId: input.deviceId },
-        ],
-      },
-    }),
-    prisma.deviceToken.create({ data }),
-  ]);
-  return true;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await prisma.$transaction([
+        // One token per install and one install per user: whatever this token or
+        // this user's device was tied to before goes, then the pair is written.
+        prisma.deviceToken.deleteMany({
+          where: {
+            OR: [
+              { token: input.token },
+              { userId, platform, deviceId: input.deviceId },
+            ],
+          },
+        }),
+        prisma.deviceToken.create({ data }),
+      ]);
+      return true;
+    } catch (error) {
+      if (!isUniqueViolation(error)) throw error;
+      // Another registration got there first. If it was this install's own, it
+      // is already what this call wanted: only note that the app is still here.
+      const touched = await prisma.deviceToken.updateMany({
+        where: {
+          token: input.token,
+          userId,
+          platform,
+          deviceId: input.deviceId,
+        },
+        data: {
+          os: input.os,
+          appVersion: input.appVersion ?? null,
+          lastSeenAt: new Date(),
+        },
+      });
+      if (touched.count > 0) return true;
+      // Someone else's row (or one that has just gone): write the pair again.
+      if (attempt >= REGISTER_TRIES) throw error;
+    }
+  }
 }
 
 /** Forgets one device's token (the app turned push off, or is signing out). */
