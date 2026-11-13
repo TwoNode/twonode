@@ -2491,7 +2491,7 @@
             "name": "ids",
             "in": "query",
             "required": true,
-            "description": "Plan ids, comma separated, 1 to 60. A plan that is not the caller's or is deleted is left out of the answer.",
+            "description": "Plan ids, comma separated, 1 to 60. A plan that is neither the caller's nor shared with them, or is deleted, is left out of the answer.",
             "schema": {
               "type": "string"
             },

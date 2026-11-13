@@ -419,11 +419,15 @@ describe("getMapPillars", () => {
     })),
   });
 
-  it("asks only for the caller's own plans that are not deleted, and only for what it sends", async () => {
+  it("asks for the caller's own plans and the ones shared with them that are not deleted, and only for what it sends", async () => {
     mocks.findMany.mockResolvedValue([]);
     await getMapPillars("owner-1", ["a", "b"]);
     expect(mocks.findMany).toHaveBeenCalledWith({
-      where: { userId: "owner-1", deleted: false, id: { in: ["a", "b"] } },
+      where: {
+        OR: [{ userId: "owner-1" }, { sharedTo: { has: "owner-1" } }],
+        deleted: false,
+        id: { in: ["a", "b"] },
+      },
       select: { id: true, pillars: true },
     });
   });

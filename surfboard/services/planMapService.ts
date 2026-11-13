@@ -27,8 +27,9 @@ import {
  * so a shared viewer does not learn the owner's payment state.
  *
  * What it leaves out on purpose: pillars (the sheet shows the centre, and the
- * plan's own screen has the details; `getMapPillars` sends them for the plans in
- * view once the map is zoomed in), files and links, the share list, reviewer
+ * plan's own screen has the details; `getMapPillars` sends them, for the caller's
+ * own plans and the shared ones alike, for the plans in view once the map is
+ * zoomed in), files and links, the share list, reviewer
  * comments, other people's details, and altitude. The outline is simplified for
  * drawing and must not be used to measure anything.
  *
@@ -206,10 +207,12 @@ export function readPillars(raw: unknown): MapPillar[] {
 }
 
 /**
- * The pillars of some of the caller's own plans (TASK-0015 1E.4), in the order the ids were asked
+ * The pillars of some of the caller's plans, their own and the ones shared with them (TASK-0015
+ * 1E.4; a shared viewer sees the pillar numbers, the maintainer's decision of 2026-11-13), in the order the ids were asked
  * for. `getPlanMap` leaves pillars out to keep its answer small; the app asks for the plans in view
  * once the map is zoomed in far enough to number them. A plan that is not the caller's, is deleted
  * or has no usable pillar is left out, the same answer for each, so nobody can probe for plan ids.
+ * "Not the caller's" means neither owned by nor shared with them.
  */
 export async function getMapPillars(
   userId: string,
@@ -217,7 +220,11 @@ export async function getMapPillars(
 ): Promise<MapPillars> {
   if (ids.length === 0) return { plans: [] };
   const rows = await prisma.surfboardPlan.findMany({
-    where: { userId, deleted: false, id: { in: ids } },
+    where: {
+      OR: [{ userId }, { sharedTo: { has: userId } }],
+      deleted: false,
+      id: { in: ids },
+    },
     select: { id: true, pillars: true },
   });
   const plans = rows

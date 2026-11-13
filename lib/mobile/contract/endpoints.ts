@@ -687,7 +687,7 @@ export const ENDPOINTS: Endpoint[] = [
         in: "query",
         required: true,
         description:
-          "Plan ids, comma separated, 1 to 60. A plan that is not the caller's or is deleted is left out of the answer.",
+          "Plan ids, comma separated, 1 to 60. A plan that is neither the caller's nor shared with them, or is deleted, is left out of the answer.",
         schema: z.string(),
         example:
           "3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c,0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
