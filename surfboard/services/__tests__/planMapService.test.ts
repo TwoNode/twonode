@@ -26,6 +26,9 @@ const SQUARE = {
 /** A plan as the database returns it for the map's select. */
 const row = (over: Record<string, unknown> = {}) => ({
   id: "p1",
+  // The caller's own plan unless a test says another surveyor owns it.
+  userId: "owner-1",
+  user: { firstName: "Ada", lastName: "Owner" },
   planNumber: "LA/2026/0412",
   surveyTitle: "Survey of land at Ajah",
   state: "Lagos",
@@ -53,16 +56,18 @@ beforeEach(() => {
 });
 
 describe("getPlanMap: what is read", () => {
-  it("asks for the caller's own plans that are not deleted, most recently changed first, up to the limit", async () => {
+  it("asks for the caller's own plans and the ones shared with them that are not deleted, most recently changed first, up to the limit", async () => {
     await getPlanMap("owner-1");
     const call = mocks.findMany.mock.calls[0][0];
-    expect(call.where).toEqual({ userId: "owner-1", deleted: false });
+    const where = {
+      OR: [{ userId: "owner-1" }, { sharedTo: { has: "owner-1" } }],
+      deleted: false,
+    };
+    expect(call.where).toEqual(where);
     expect(call.orderBy).toEqual([{ updatedAt: "desc" }, { id: "asc" }]);
     expect(call.take).toBe(MAP_PLAN_LIMIT);
     // The total counts the same plans.
-    expect(mocks.count).toHaveBeenCalledWith({
-      where: { userId: "owner-1", deleted: false },
-    });
+    expect(mocks.count).toHaveBeenCalledWith({ where });
   });
 
   it("reads exactly what the map needs: no pillars, file links, share list, comments or other people's details", async () => {
@@ -71,6 +76,9 @@ describe("getPlanMap: what is read", () => {
     expect(Object.keys(select).sort()).toEqual(
       [
         "id",
+        // Who owns it, and the owner's name for a plan seen through a share.
+        "userId",
+        "user",
         "planNumber",
         "surveyTitle",
         "state",
@@ -92,6 +100,10 @@ describe("getPlanMap: what is read", () => {
       ].sort()
     );
     expect(select.batch).toEqual({ select: { paymentStatus: true } });
+    // The owner's name and nothing else about them.
+    expect(select.user).toEqual({
+      select: { firstName: true, lastName: true },
+    });
   });
 });
 
@@ -110,6 +122,8 @@ describe("getPlanMap: what is returned", () => {
         "lga",
         "locality",
         "areaSqM",
+        "isOwner",
+        "ownerName",
         "dateOnSurveyPlan",
         "centroid",
         "simplifiedGeometry",
@@ -171,6 +185,68 @@ describe("getPlanMap: what is returned", () => {
       ["lodged", "LODGED"],
       ["draft", "NOT_SUBMITTED"],
     ]);
+  });
+
+  it("says a plan is the caller's own, and names nobody for it", async () => {
+    const { plans } = await getPlanMap("owner-1");
+    expect(plans[0]).toMatchObject({ isOwner: true, ownerName: null });
+    // Not even the caller's own name is sent back as a "shared by".
+    expect(JSON.stringify(plans)).not.toContain("Ada");
+  });
+
+  it("includes a plan shared with the caller, says so, and says who shared it", async () => {
+    mocks.findMany.mockResolvedValue([
+      row({ id: "mine" }),
+      row({
+        id: "theirs",
+        userId: "owner-2",
+        user: { firstName: "Tunde", lastName: "Okafor" },
+      }),
+    ]);
+    mocks.count.mockResolvedValue(2);
+    const { plans, total } = await getPlanMap("owner-1");
+    expect(total).toBe(2);
+    expect(plans.map((p) => [p.id, p.isOwner, p.ownerName])).toEqual([
+      ["mine", true, null],
+      ["theirs", false, "Tunde Okafor"],
+    ]);
+  });
+
+  it("names a shared plan's owner by what is known of them, or says null", async () => {
+    mocks.findMany.mockResolvedValue([
+      row({
+        id: "first",
+        userId: "o2",
+        user: { firstName: "Tunde", lastName: null },
+      }),
+      row({ id: "none", userId: "o3", user: { firstName: "", lastName: "" } }),
+      row({ id: "gone", userId: "o4", user: null }),
+    ]);
+    mocks.count.mockResolvedValue(3);
+    const { plans } = await getPlanMap("owner-1");
+    expect(plans.map((p) => p.ownerName)).toEqual(["Tunde", null, null]);
+    expect(plans.every((p) => !p.isOwner)).toBe(true);
+  });
+
+  it("works a shared plan's status out without the owner's batch, so the owner's payment state is not learned", async () => {
+    mocks.findMany.mockResolvedValue([
+      // Unpaid: the owner sees "payment pending"; a shared viewer must not.
+      row({ id: "own", batch: { paymentStatus: "PENDING_USER_PAYMENT" } }),
+      row({
+        id: "shared",
+        userId: "owner-2",
+        batch: { paymentStatus: "PENDING_USER_PAYMENT" },
+      }),
+      // The same plan with no batch at all, which is how a shared one is read.
+      row({ id: "nobatch", userId: "owner-2", batch: null }),
+    ]);
+    mocks.count.mockResolvedValue(3);
+    const { plans } = await getPlanMap("owner-1");
+    const code = (id: string) =>
+      plans.find((p) => p.id === id)?.displayStatus.code;
+    expect(code("own")).toBe("PAYMENT_PENDING");
+    expect(code("shared")).not.toBe("PAYMENT_PENDING");
+    expect(code("shared")).toBe(code("nobatch"));
   });
 
   it("keeps a place that is missing as null", async () => {

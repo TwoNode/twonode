@@ -663,9 +663,9 @@ export const ENDPOINTS: Endpoint[] = [
     method: "get",
     path: "/api/v1/surfboard/plans/map",
     tag: "Map",
-    summary: "The caller's own plans for the Home map",
+    summary: "The caller's plans, and those shared with them, for the Home map",
     description:
-      "At most 2,000 plans, most recently changed first. The outline is for drawing and nothing else: never measure from it.",
+      "At most 2,000 plans, most recently changed first: the caller's own and the ones other surveyors shared with them (`isOwner: false`, with the owner's name in `ownerName`; its status is worked out without the owner's batch). The outline is for drawing and nothing else: never measure from it.",
     access: "surveyor",
     versionGate: true,
     data: S.PlanMapData,

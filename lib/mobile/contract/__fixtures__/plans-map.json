@@ -16,6 +16,8 @@
           "lga": "Eti-Osa",
           "locality": "Lekki",
           "areaSqM": 904.54,
+          "isOwner": true,
+          "ownerName": null,
           "dateOnSurveyPlan": "2026-03-14T00:00:00.000Z",
           "centroid": {
             "lat": 6.447171457017012,
@@ -61,6 +63,8 @@
           "lga": "Eti-Osa",
           "locality": "Ikoyi",
           "areaSqM": 1005.05,
+          "isOwner": true,
+          "ownerName": null,
           "dateOnSurveyPlan": "2026-02-02T00:00:00.000Z",
           "centroid": {
             "lat": 6.45143187005135,
@@ -106,6 +110,8 @@
           "lga": "Abeokuta South",
           "locality": "Ake",
           "areaSqM": 1104.14,
+          "isOwner": true,
+          "ownerName": null,
           "dateOnSurveyPlan": "2026-01-20T00:00:00.000Z",
           "centroid": {
             "lat": 7.15015,
@@ -151,6 +157,8 @@
           "lga": null,
           "locality": null,
           "areaSqM": 1961.91,
+          "isOwner": true,
+          "ownerName": null,
           "dateOnSurveyPlan": null,
           "centroid": {
             "lat": 7.3802,
@@ -196,6 +204,8 @@
           "lga": "AMAC",
           "locality": "Garki",
           "areaSqM": 2197.81,
+          "isOwner": true,
+          "ownerName": null,
           "dateOnSurveyPlan": "2025-12-05T00:00:00.000Z",
           "centroid": {
             "lat": 9.06015,
@@ -267,6 +277,8 @@
           "lga": "Ikeja",
           "locality": "Ikeja",
           "areaSqM": 1105.42,
+          "isOwner": true,
+          "ownerName": null,
           "dateOnSurveyPlan": "2025-11-18T00:00:00.000Z",
           "centroid": {
             "lat": 6.60015,
@@ -312,6 +324,8 @@
           "lga": "Eti-Osa",
           "locality": "Lekki",
           "areaSqM": 11284.07,
+          "isOwner": true,
+          "ownerName": null,
           "dateOnSurveyPlan": "2026-04-01T00:00:00.000Z",
           "centroid": {
             "lat": 6.450000000000003,
@@ -593,6 +607,8 @@
           "lga": "Port Harcourt",
           "locality": "GRA",
           "areaSqM": 1606.72,
+          "isOwner": true,
+          "ownerName": null,
           "dateOnSurveyPlan": "2025-10-09T00:00:00.000Z",
           "centroid": {
             "lat": 4.793858576197832,
@@ -638,6 +654,8 @@
           "lga": "Ikorodu",
           "locality": null,
           "areaSqM": 1228620.4,
+          "isOwner": true,
+          "ownerName": null,
           "dateOnSurveyPlan": "2026-03-30T00:00:00.000Z",
           "centroid": {
             "lat": 6.445,
@@ -683,6 +701,8 @@
           "lga": "Ikorodu",
           "locality": null,
           "areaSqM": 1228620.4,
+          "isOwner": true,
+          "ownerName": null,
           "dateOnSurveyPlan": "2025-09-22T00:00:00.000Z",
           "centroid": {
             "lat": 6.445,
@@ -715,9 +735,103 @@
               ]
             ]
           }
+        },
+        {
+          "id": "5a1b2c3d-0000-4000-8000-000000000001",
+          "planNumber": "LA/2026/SH-001",
+          "surveyTitle": "Plot at Ikeja (shared with you)",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "state": "Ogun",
+          "lga": "Abeokuta South",
+          "locality": "Ake",
+          "areaSqM": 1104.14,
+          "isOwner": false,
+          "ownerName": "Tunde Okafor",
+          "dateOnSurveyPlan": "2026-01-20T00:00:00.000Z",
+          "centroid": {
+            "lat": 7.19015,
+            "lng": 3.40015
+          },
+          "simplifiedGeometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  3.4,
+                  7.19
+                ],
+                [
+                  3.4002999999999997,
+                  7.19
+                ],
+                [
+                  3.4002999999999997,
+                  7.1903
+                ],
+                [
+                  3.4,
+                  7.1903
+                ],
+                [
+                  3.4,
+                  7.19
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "id": "5a1b2c3d-0000-4000-8000-000000000002",
+          "planNumber": "LA/2026/SH-002",
+          "surveyTitle": "Plot at Surulere (shared with you)",
+          "displayStatus": {
+            "code": "LODGED",
+            "label": "Lodged"
+          },
+          "state": "Ogun",
+          "lga": "Abeokuta South",
+          "locality": "Ake",
+          "areaSqM": 1104.14,
+          "isOwner": false,
+          "ownerName": "Ngozi Eze",
+          "dateOnSurveyPlan": "2026-01-20T00:00:00.000Z",
+          "centroid": {
+            "lat": 7.12015,
+            "lng": 3.40015
+          },
+          "simplifiedGeometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  3.4,
+                  7.12
+                ],
+                [
+                  3.4002999999999997,
+                  7.12
+                ],
+                [
+                  3.4002999999999997,
+                  7.120299999999999
+                ],
+                [
+                  3.4,
+                  7.120299999999999
+                ],
+                [
+                  3.4,
+                  7.12
+                ]
+              ]
+            ]
+          }
         }
       ],
-      "total": 12,
+      "total": 14,
       "withoutOutline": 2,
       "truncated": false
     }

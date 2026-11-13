@@ -13,11 +13,18 @@ import {
 } from "@/surfboard/utils/planStatus";
 
 /**
- * The caller's own plans for the mobile app's Home map (TASK-0015 1E.1): where
- * each one is, the outline to draw, and the few facts the details sheet shows,
- * all in one answer so the map is a single GeoJSON source on the phone. There
- * is no spatial index and no viewport filter, which is fine for the hundreds of
- * plans one surveyor has (1E.3 is for anything bigger).
+ * The caller's plans for the mobile app's Home map (TASK-0015 1E.1): their own
+ * and the ones other surveyors shared with them (the same two sets as the Plans
+ * tab's "mine" and "shared with me"), where each one is, the outline to draw,
+ * and the few facts the details sheet shows, all in one answer so the map is a
+ * single GeoJSON source on the phone. There is no spatial index and no viewport
+ * filter, which is fine for the hundreds of plans one surveyor has (1E.3 is for
+ * anything bigger).
+ *
+ * A plan seen through a share says so (`isOwner: false`) and who shared it
+ * (`ownerName`, the owner's name, as on the Plans tab). Its status is worked out
+ * without the owner's batch, as the shared list and the plan's own screen do,
+ * so a shared viewer does not learn the owner's payment state.
  *
  * What it leaves out on purpose: pillars (the sheet shows the centre, and the
  * plan's own screen has the details; `getMapPillars` sends them for the plans in
@@ -41,6 +48,10 @@ export type MapPlan = {
   locality: string | null;
   /** Square metres, from the stored boundary. */
   areaSqM: number | null;
+  /** False for a plan another surveyor shared with the caller. */
+  isOwner: boolean;
+  /** Who shared it, for a plan seen through a share; null for the caller's own. */
+  ownerName: string | null;
   /**
    * The date printed on the survey plan (ISO, UTC), or null. The card orders several plans on
    * one spot by it, newest first, as the website's map popup does.
@@ -54,7 +65,7 @@ export type MapPlan = {
 export type PlanMap = {
   /** The plans that can be drawn, most recently changed first. */
   plans: MapPlan[];
-  /** All the caller's plans (not deleted), drawn or not. */
+  /** All the caller's plans and the ones shared with them (not deleted), drawn or not. */
   total: number;
   /** Plans read here whose stored boundary cannot be drawn. They are not in `plans`. */
   withoutOutline: number;
@@ -62,11 +73,15 @@ export type PlanMap = {
   truncated: boolean;
 };
 
-/** A surveyor has hundreds of plans; this bounds the answer, and a larger account is told it is cut. */
+/** A surveyor has hundreds of plans (own and shared); this bounds the answer, and a larger account is told it is cut. */
 export const MAP_PLAN_LIMIT = 2000;
 
 const MAP_SELECT = {
   id: true,
+  // Who owns it, and the owner's name for a plan seen through a share; neither is sent for the
+  // caller's own plans.
+  userId: true,
+  user: { select: { firstName: true, lastName: true } },
   planNumber: true,
   surveyTitle: true,
   state: true,
@@ -79,7 +94,10 @@ const MAP_SELECT = {
 } as const satisfies Prisma.SurfboardPlanSelect;
 
 export async function getPlanMap(userId: string): Promise<PlanMap> {
-  const where = { userId, deleted: false };
+  const where = {
+    OR: [{ userId }, { sharedTo: { has: userId } }],
+    deleted: false,
+  };
   const [rows, total] = await Promise.all([
     prisma.surfboardPlan.findMany({
       where,
@@ -101,15 +119,24 @@ export async function getPlanMap(userId: string): Promise<PlanMap> {
       withoutOutline += 1;
       continue;
     }
+    const owner = row.userId === userId;
     plans.push({
       id: row.id,
       planNumber: row.planNumber,
       surveyTitle: row.surveyTitle,
-      displayStatus: computeDisplayStatus(row as unknown as PlanStatusRow),
+      // A shared viewer must not learn the owner's payment state: no batch goes into the status.
+      displayStatus: computeDisplayStatus(
+        (owner ? row : { ...row, batch: null }) as unknown as PlanStatusRow
+      ),
       state: row.state,
       lga: row.lga,
       locality: row.locality,
       areaSqM,
+      isOwner: owner,
+      ownerName: owner
+        ? null
+        : [row.user?.firstName, row.user?.lastName].filter(Boolean).join(" ") ||
+          null,
       dateOnSurveyPlan: row.dateOnSurveyPlan
         ? row.dateOnSurveyPlan.toISOString()
         : null,

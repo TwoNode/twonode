@@ -360,6 +360,12 @@ export const MapPlan = z
     lga: nullableText,
     locality: nullableText,
     areaSqM: z.number().nullable(),
+    isOwner: z
+      .boolean()
+      .describe("False for a plan another surveyor shared with the caller."),
+    ownerName: nullableText.describe(
+      "Who shared it, for a plan seen through a share; null for the caller's own."
+    ),
     dateOnSurveyPlan: iso
       .nullable()
       .describe(
@@ -373,7 +379,9 @@ export const MapPlan = z
 export const PlanMapData = z
   .object({
     plans: z.array(MapPlan),
-    total: count.describe("Every live plan the caller has, drawn or not."),
+    total: count.describe(
+      "Every live plan the caller has or has been shared, drawn or not."
+    ),
     withoutOutline: count.describe(
       "Plans left out because their boundary cannot be drawn."
     ),
