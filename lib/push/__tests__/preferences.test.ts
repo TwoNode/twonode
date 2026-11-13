@@ -61,6 +61,11 @@ describe("the switches", () => {
     for (const category of PUSH_CATEGORIES) expect(used).toContain(category);
   });
 
+  it("put a created plan and a lodged plan on one switch", () => {
+    expect(CATEGORY_OF_KIND.PLAN_CREATED).toBe("PLAN_LODGED");
+    expect(CATEGORY_OF_KIND.PLAN_LODGED).toBe("PLAN_LODGED");
+  });
+
   it("put a queried plan and a plan ready for physical submission on one switch", () => {
     expect(CATEGORY_OF_KIND.PLAN_QUERIED).toBe("PLANS_NEED_YOU");
     expect(CATEGORY_OF_KIND.READY_FOR_PHYSICAL).toBe("PLANS_NEED_YOU");

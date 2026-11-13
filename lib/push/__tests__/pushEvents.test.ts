@@ -75,6 +75,26 @@ describe("buildPushMessage", () => {
     });
   });
 
+  it("uses fixed, generic words for a created plan, and carries only its id", () => {
+    const message = buildPushMessage(T1, {
+      kind: "PLAN_CREATED",
+      planId: PLAN_ID,
+    });
+    expect(message).toMatchObject({
+      to: T1,
+      title: "Surfboard",
+      body: "A plan was created. Open the app to see it.",
+      channelId: "updates",
+    });
+    expect(message.data).toEqual({
+      v: 1,
+      kind: "PLAN_CREATED",
+      planId: PLAN_ID,
+    });
+    // A plan number, a title or a place never reaches the lock screen.
+    expect(JSON.stringify(message)).not.toMatch(/LA\/|Survey|Lekki/);
+  });
+
   it("carries a lodged plan's id, and an ending subscription's kind alone", () => {
     expect(
       buildPushMessage(T1, { kind: "PLAN_LODGED", planId: PLAN_ID }).data
