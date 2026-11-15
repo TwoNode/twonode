@@ -6,6 +6,7 @@ const mockPrisma = vi.hoisted(() => ({
     deleteMany: vi.fn(),
     create: vi.fn(),
     findMany: vi.fn(),
+    updateMany: vi.fn(),
   },
   $transaction: vi.fn(),
 }));
@@ -134,6 +135,72 @@ describe("registerDeviceToken", () => {
   });
 });
 
+describe("registerDeviceToken when registrations overlap (I-059)", () => {
+  const unique = () =>
+    Object.assign(new Error("Unique constraint failed"), { code: "P2002" });
+
+  it("counts a registration that lost to this install's own as kept, and only touches the row", async () => {
+    mockPrisma.$transaction.mockRejectedValueOnce(unique());
+    mockPrisma.deviceToken.updateMany.mockResolvedValue({ count: 1 });
+
+    expect(await registerDeviceToken("u1", Platform.SURFBOARD, INPUT)).toBe(
+      true
+    );
+    expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
+    const call = mockPrisma.deviceToken.updateMany.mock.calls[0][0];
+    // Only a row that is this very install's counts as "already registered".
+    expect(call.where).toEqual({
+      token: INPUT.token,
+      userId: "u1",
+      platform: "surfboard",
+      deviceId: "device-abcdef01",
+    });
+    expect(call.data).toMatchObject({ os: "android", appVersion: "1.0.0" });
+    expect(call.data.lastSeenAt).toBeInstanceOf(Date);
+  });
+
+  it("writes the pair again when the row that got there first is someone else's, then succeeds", async () => {
+    mockPrisma.$transaction
+      .mockRejectedValueOnce(unique())
+      .mockResolvedValueOnce([]);
+    mockPrisma.deviceToken.updateMany.mockResolvedValue({ count: 0 });
+
+    expect(await registerDeviceToken("u2", Platform.SURFBOARD, INPUT)).toBe(
+      true
+    );
+    expect(mockPrisma.$transaction).toHaveBeenCalledTimes(2);
+  });
+
+  it("gives up with the original error after three tries, so a real conflict is still seen", async () => {
+    const error = unique();
+    mockPrisma.$transaction.mockRejectedValue(error);
+    mockPrisma.deviceToken.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(
+      registerDeviceToken("u2", Platform.SURFBOARD, INPUT)
+    ).rejects.toBe(error);
+    expect(mockPrisma.$transaction).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not retry any other error", async () => {
+    const error = Object.assign(new Error("connection lost"), {
+      code: "P1001",
+    });
+    mockPrisma.$transaction.mockRejectedValue(error);
+
+    await expect(
+      registerDeviceToken("u1", Platform.SURFBOARD, INPUT)
+    ).rejects.toBe(error);
+    expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.deviceToken.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("is not asked to touch anything when the first try works", async () => {
+    await registerDeviceToken("u1", Platform.SURFBOARD, INPUT);
+    expect(mockPrisma.deviceToken.updateMany).not.toHaveBeenCalled();
+  });
+});
+
 describe("removeDeviceToken", () => {
   it("removes only this user's token for this device and platform", async () => {
     mockPrisma.deviceToken.deleteMany.mockResolvedValue({ count: 1 });
@@ -198,7 +265,12 @@ describe("tokensForUsers", () => {
   it("counts only a session that is not revoked and not expired, of these people, on this platform, for these devices", async () => {
     mockPrisma.deviceToken.findMany.mockResolvedValue([
       row(),
-      row({ id: "t2", userId: "u2", deviceId: "device-zzzzzz02", token: "ExponentPushToken[zzzzzzzz22222222]" }),
+      row({
+        id: "t2",
+        userId: "u2",
+        deviceId: "device-zzzzzz02",
+        token: "ExponentPushToken[zzzzzzzz22222222]",
+      }),
     ]);
     mockPrisma.refreshToken.findMany.mockResolvedValue([]);
 
@@ -218,7 +290,12 @@ describe("tokensForUsers", () => {
   it("does not return a token whose session ended, and deletes it by its row id", async () => {
     mockPrisma.deviceToken.findMany.mockResolvedValue([
       row(),
-      row({ id: "t2", userId: "u2", deviceId: "device-zzzzzz02", token: "ExponentPushToken[zzzzzzzz22222222]" }),
+      row({
+        id: "t2",
+        userId: "u2",
+        deviceId: "device-zzzzzz02",
+        token: "ExponentPushToken[zzzzzzzz22222222]",
+      }),
     ]);
     // Only u2's device still has a session.
     mockPrisma.refreshToken.findMany.mockResolvedValue([
@@ -261,7 +338,11 @@ describe("tokensForUsers", () => {
   it("returns every live token of a person with two phones", async () => {
     mockPrisma.deviceToken.findMany.mockResolvedValue([
       row(),
-      row({ id: "t2", deviceId: "device-zzzzzz02", token: "ExponentPushToken[zzzzzzzz22222222]" }),
+      row({
+        id: "t2",
+        deviceId: "device-zzzzzz02",
+        token: "ExponentPushToken[zzzzzzzz22222222]",
+      }),
     ]);
     mockPrisma.refreshToken.findMany.mockResolvedValue([
       { userId: "u1", deviceId: "device-abcdef01" },
@@ -280,7 +361,12 @@ describe("tokensForUsers", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockPrisma.deviceToken.findMany.mockResolvedValue([
       row(),
-      row({ id: "t2", userId: "u2", deviceId: "device-zzzzzz02", token: "ExponentPushToken[zzzzzzzz22222222]" }),
+      row({
+        id: "t2",
+        userId: "u2",
+        deviceId: "device-zzzzzz02",
+        token: "ExponentPushToken[zzzzzzzz22222222]",
+      }),
     ]);
     mockPrisma.refreshToken.findMany.mockResolvedValue([
       { userId: "u2", deviceId: "device-zzzzzz02" },

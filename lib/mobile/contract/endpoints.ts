@@ -663,9 +663,9 @@ export const ENDPOINTS: Endpoint[] = [
     method: "get",
     path: "/api/v1/surfboard/plans/map",
     tag: "Map",
-    summary: "The caller's own plans for the Home map",
+    summary: "The caller's plans, and those shared with them, for the Home map",
     description:
-      "At most 2,000 plans, most recently changed first. The outline is for drawing and nothing else: never measure from it.",
+      "At most 2,000 plans, most recently changed first: the caller's own and the ones other surveyors shared with them (`isOwner: false`, with the owner's name in `ownerName`; its status is worked out without the owner's batch). The outline is for drawing and nothing else: never measure from it.",
     access: "surveyor",
     versionGate: true,
     data: S.PlanMapData,
@@ -687,7 +687,7 @@ export const ENDPOINTS: Endpoint[] = [
         in: "query",
         required: true,
         description:
-          "Plan ids, comma separated, 1 to 60. A plan that is not the caller's or is deleted is left out of the answer.",
+          "Plan ids, comma separated, 1 to 60. A plan that is neither the caller's nor shared with them, or is deleted, is left out of the answer.",
         schema: z.string(),
         example:
           "3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c,0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",

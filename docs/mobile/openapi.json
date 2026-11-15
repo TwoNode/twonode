@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Surfboard mobile API",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "description": "The calls the Surfboard mobile app makes. Generated from `lib/mobile/contract` in the API repository: do not edit by hand. Every success is `{ success: true, data }`; every failure is `{ success: false, error, code?, details? }`. Dates are ISO 8601 in UTC. Objects are open: a newer server may add a field, and an app must ignore what it does not know."
   },
   "servers": [
@@ -2385,8 +2385,8 @@
         "tags": [
           "Map"
         ],
-        "summary": "The caller's own plans for the Home map",
-        "description": "At most 2,000 plans, most recently changed first. The outline is for drawing and nothing else: never measure from it.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "summary": "The caller's plans, and those shared with them, for the Home map",
+        "description": "At most 2,000 plans, most recently changed first: the caller's own and the ones other surveyors shared with them (`isOwner: false`, with the owner's name in `ownerName`; its status is worked out without the owner's batch). The outline is for drawing and nothing else: never measure from it.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
         "security": [
           {
             "bearer": []
@@ -2491,7 +2491,7 @@
             "name": "ids",
             "in": "query",
             "required": true,
-            "description": "Plan ids, comma separated, 1 to 60. A plan that is not the caller's or is deleted is left out of the answer.",
+            "description": "Plan ids, comma separated, 1 to 60. A plan that is neither the caller's nor shared with them, or is deleted, is left out of the answer.",
             "schema": {
               "type": "string"
             },
@@ -4231,6 +4231,21 @@
               }
             ]
           },
+          "isOwner": {
+            "description": "False for a plan another surveyor shared with the caller.",
+            "type": "boolean"
+          },
+          "ownerName": {
+            "description": "Who shared it, for a plan seen through a share; null for the caller's own.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "dateOnSurveyPlan": {
             "description": "The date printed on the survey plan. Several plans on one spot are shown newest first by it.",
             "anyOf": [
@@ -4272,6 +4287,8 @@
           "lga",
           "locality",
           "areaSqM",
+          "isOwner",
+          "ownerName",
           "dateOnSurveyPlan",
           "centroid",
           "simplifiedGeometry"
@@ -4980,7 +4997,7 @@
             }
           },
           "total": {
-            "description": "Every live plan the caller has, drawn or not.",
+            "description": "Every live plan the caller has or has been shared, drawn or not.",
             "type": "integer",
             "minimum": 0
           },

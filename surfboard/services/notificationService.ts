@@ -868,6 +868,9 @@ export async function notifyPlanCreated(params: {
         planNumber: params.planNumber,
         surveyTitle: params.surveyTitle,
       },
+      // The fixed words only; a tap opens the plan. Several plans created together are one push
+      // (the five-minute window per kind).
+      push: { kind: "PLAN_CREATED", planId: params.planId },
       sendEmail: params.sendEmail ?? true,
       sendWhatsApp: true,
     });
