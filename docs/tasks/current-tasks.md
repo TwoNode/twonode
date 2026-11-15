@@ -197,6 +197,10 @@ State as of 2026-11-11 (this header was first written 2026-10-29 and corrected o
 
 ## Open Tasks Waiting on Action
 
+- [x] **Second domain `twonodetechnologies.tech` connected (2026-11-15; registrar and Vercel settings only, no code).** Bought on Namify; the maintainer set its nameservers to Vercel's; the apex (serves the site itself) and `www` (308 to the apex) were added to the `twonodetech` project with the CLI. Six pages are byte-identical to the main site; the main site's behaviour, environment variables, code and deployments are untouched (the latest production deployment is still 2026-11-04). Commands and caveats: `docs/DEPLOYMENT.md` (Domains).
+- [ ] **`.tech` address: Kinde sign-in does not complete (I-060, P2).** Decide whether the REVA login pages (and any page that links to `/api/auth/login`) should send the visitor to the main domain when reached on the `.tech` host (a `vercel.json` redirect with a `host` condition, a PR to `dev`; the main site is not touched) or be left alone. Not run end to end. _(Waiting on: roji-tech)_
+- [ ] **`.tech` address: two identical sites for search engines (I-061, P3).** Decide: a canonical link or `noindex` for the `.tech` host only (a PR to `dev`). `og:url` is `https://twonode.tech` on both addresses already; setting `NEXT_PUBLIC_SITE_URL` to the live address would fix that but changes the main site, so it needs the maintainer's word. _(Waiting on: roji-tech)_
+- [ ] **`.tech` address, only if wanted:** email on the domain (MX records with `vercel dns add`), and the `.tech` hostname for Turnstile if the contact-form check is switched on. _(Waiting on: roji-tech)_
 - **GOOGLE_MAPS_SERVER_API_KEY:** Waiting on Google Cloud project owner to enable billing before setting in Vercel. _(Waiting on: roji-tech / Cloud Admin)_
 - **Paystack Renewal Webhook:** Waiting on live renewal event payload log to verify payload schema. _(Waiting on: roji-tech)_
 - **Trigger Vercel Prod Deploy:** Done 2026-10-12 (PR #362, TASK-0010). Remaining: later `dev` work (/v4 responsive, certificate email) reaches prod through the next `dev` → `main` → `prod` promotion.
