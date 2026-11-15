@@ -175,6 +175,8 @@ Shape: `{ enabled: boolean, method: "OTP" | "LINK", gracePeriodDays: number, enf
 
 Kinde remains the identity provider behind every "Continue with Google" button, and is the **only** mechanism behind a few surfaces that haven't been migrated onto native auth yet (see §9.2).
 
+> **Kinde knows one address only.** It returns to `KINDE_SITE_URL` (the main domain, `https://www.twonodetechnologies.com`) and nowhere else. A sign-in begun on another address that serves the site (`https://twonodetechnologies.tech`, since 2026-11-15) comes back to the main domain without the state cookies it started with, so it is expected to fail (I-060, not run end to end). The native email and password sign-in has no such pin: it only checks that the request is same-origin (`lib/auth/csrf.ts`). Do not change `KINDE_*` to suit the second address; see `docs/DEPLOYMENT.md` (Domains).
+
 ### 2.1 High-level flow
 
 ```mermaid
