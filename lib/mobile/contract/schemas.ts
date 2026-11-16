@@ -492,6 +492,7 @@ export const PlanStatsData = z
     lgas: Breakdown,
     wards: Breakdown,
     lcdas: Breakdown,
+    states: Breakdown,
     activeBatches: count.describe("Not affected by the date range."),
     sharedAccess: z
       .object({ active: count, expired: count, none: count })

@@ -1889,6 +1889,17 @@
             "example": "Ibeju"
           },
           {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "description": "As `facilitator`. Added in contract 1.4.0.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "example": "Lagos"
+          },
+          {
             "name": "provisional",
             "in": "query",
             "required": false,
@@ -5271,6 +5282,9 @@
           "lcdas": {
             "$ref": "#/components/schemas/Breakdown"
           },
+          "states": {
+            "$ref": "#/components/schemas/Breakdown"
+          },
           "activeBatches": {
             "description": "Not affected by the date range.",
             "type": "integer",
@@ -5311,6 +5325,7 @@
           "lgas",
           "wards",
           "lcdas",
+          "states",
           "activeBatches",
           "sharedAccess"
         ]
