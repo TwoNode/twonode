@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockTx = vi.hoisted(() => ({
   pendingRegistration: { updateMany: vi.fn() },
+  legalConsent: { create: vi.fn() },
 }));
 
 const mockPrisma = vi.hoisted(() => ({
@@ -43,6 +44,8 @@ const {
   completePendingRegistration,
 } = await import("@/lib/auth/pendingRegistration");
 
+const { LEGAL_VERSION } = await import("@/lib/legal/surfboard");
+
 const sha256 = (v: string) =>
   crypto.createHash("sha256").update(v).digest("hex");
 
@@ -64,6 +67,7 @@ describe("pendingRegistration", () => {
           password: "password123",
           firstName: "John",
           lastName: "Doe",
+          acceptedLegalVersion: LEGAL_VERSION,
         })
       ).rejects.toMatchObject({
         status: 409,
@@ -88,6 +92,7 @@ describe("pendingRegistration", () => {
         password: "password123",
         firstName: "  John  ",
         lastName: "  Doe  ",
+        acceptedLegalVersion: LEGAL_VERSION,
       });
 
       expect(res).toEqual({ pendingRegistrationId: "preg_1", method: "OTP" });
@@ -105,6 +110,8 @@ describe("pendingRegistration", () => {
           method: "OTP",
           codeHash: expect.any(String),
           attempts: 0,
+          legalVersion: LEGAL_VERSION,
+          legalAcceptedAt: expect.any(Date),
         }),
         create: expect.objectContaining({
           platform: Platform.SURFBOARD,
@@ -122,6 +129,55 @@ describe("pendingRegistration", () => {
         code: expect.stringMatching(/^\d{6}$/),
         platform: Platform.SURFBOARD,
       });
+    });
+  });
+
+  describe("legal agreement on registration", () => {
+    const signup = {
+      email: "new@example.com",
+      password: "password123",
+      firstName: "John",
+      lastName: "Doe",
+    };
+
+    it.each([
+      ["missing", undefined],
+      ["an old version", "2020-01-01"],
+    ])(
+      "refuses a Surfboard registration whose agreement is %s, before any email or write",
+      async (_n, v) => {
+        mockUserLookup.findUserByEmail.mockResolvedValue(null);
+        await expect(
+          issuePendingRegistration(Platform.SURFBOARD, {
+            ...signup,
+            acceptedLegalVersion: v,
+          })
+        ).rejects.toMatchObject({ status: 400 });
+        expect(mockPrisma.pendingRegistration.upsert).not.toHaveBeenCalled();
+        expect(mockEmail.sendEmailVerificationOtp).not.toHaveBeenCalled();
+      }
+    );
+
+    it("does not ask for an agreement where a product has no legal text (REVA), and stores none", async () => {
+      mockUserLookup.findUserByEmail.mockResolvedValueOnce(null);
+      mockSettings.getEmailVerificationSettings.mockResolvedValueOnce({
+        method: "OTP",
+      });
+      mockPrisma.pendingRegistration.upsert.mockResolvedValueOnce({
+        id: "preg_2",
+        email: "new@example.com",
+        firstName: "John",
+        method: "OTP",
+      });
+      await issuePendingRegistration(Platform.REVA, signup);
+      expect(mockPrisma.pendingRegistration.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({
+            legalVersion: null,
+            legalAcceptedAt: null,
+          }),
+        })
+      );
     });
   });
 
@@ -229,6 +285,53 @@ describe("pendingRegistration", () => {
         mockTx
       );
       expect(user.emailVerified).toBe(true);
+    });
+
+    it("records the agreement in the same transaction as the account, with the account's id", async () => {
+      const acceptedAt = new Date("2026-11-16T10:00:00Z");
+      mockPrisma.pendingRegistration.findUnique.mockResolvedValueOnce({
+        ...baseRow(),
+        legalVersion: LEGAL_VERSION,
+        legalAcceptedAt: acceptedAt,
+      });
+      mockUserLookup.createNativeUser.mockResolvedValueOnce({
+        id: "usr_9",
+        email: "user@example.com",
+        role: "USER",
+      });
+      await completePendingRegistration(
+        Platform.SURFBOARD,
+        "preg_1",
+        CODE,
+        PASSWORD
+      );
+      expect(mockTx.legalConsent.create).toHaveBeenCalledWith({
+        data: {
+          platform: Platform.SURFBOARD,
+          userId: "usr_9",
+          email: "user@example.com",
+          version: LEGAL_VERSION,
+          acceptedAt,
+        },
+      });
+    });
+
+    it("writes no consent row for a registration that carried none", async () => {
+      mockPrisma.pendingRegistration.findUnique.mockResolvedValueOnce(
+        baseRow()
+      );
+      mockUserLookup.createNativeUser.mockResolvedValueOnce({
+        id: "u",
+        email: "e",
+        role: "USER",
+      });
+      await completePendingRegistration(
+        Platform.SURFBOARD,
+        "preg_1",
+        CODE,
+        PASSWORD
+      );
+      expect(mockTx.legalConsent.create).not.toHaveBeenCalled();
     });
 
     it("reserves an attempt atomically (conditional on attempts < cap) before comparing the code", async () => {

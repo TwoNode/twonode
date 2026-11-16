@@ -111,8 +111,14 @@ describe("POST /api/v1/auth/mobile/push-token", () => {
     ["no token", registerBody({ token: undefined })],
     ["an unknown platform", registerBody({ os: "windows" })],
     ["a device id that is too short", registerBody({ deviceId: "short" })],
-    ["a device id that is too long", registerBody({ deviceId: "d".repeat(129) })],
-    ["an app version that is too long", registerBody({ appVersion: "9".repeat(33) })],
+    [
+      "a device id that is too long",
+      registerBody({ deviceId: "d".repeat(129) }),
+    ],
+    [
+      "an app version that is too long",
+      registerBody({ appVersion: "9".repeat(33) }),
+    ],
   ])("answers 400 and keeps nothing for %s", async (_name, body) => {
     const res = await call(POST, "POST", body);
 
@@ -121,7 +127,11 @@ describe("POST /api/v1/auth/mobile/push-token", () => {
   });
 
   it("takes an install that sends no app version", async () => {
-    const res = await call(POST, "POST", registerBody({ appVersion: undefined }));
+    const res = await call(
+      POST,
+      "POST",
+      registerBody({ appVersion: undefined })
+    );
     expect(res.status).toBe(200);
   });
 

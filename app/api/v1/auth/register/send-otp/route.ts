@@ -13,6 +13,9 @@ const sendOtpSchema = z.object({
   password: z.string().min(6),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
+  // The version of the Terms and Privacy Policy the person agreed to (lib/legal/consent.ts).
+  // Optional in the shape; required by issuePendingRegistration for a product that has legal text.
+  acceptedLegalVersion: z.string().max(32).optional(),
   // No `role` field, deliberately — same reasoning as the account-creation
   // path this feeds: a public route accepting a client-chosen role would
   // be a privilege-escalation bug.
@@ -50,8 +53,14 @@ export async function POST(req: NextRequest) {
       return tooMany();
     }
 
-    const { platform, email, password, firstName, lastName } =
-      await validateBody(req, sendOtpSchema);
+    const {
+      platform,
+      email,
+      password,
+      firstName,
+      lastName,
+      acceptedLegalVersion,
+    } = await validateBody(req, sendOtpSchema);
 
     // Second bucket keyed on the TARGET address (not the caller), so a
     // distributed attacker can't mail-bomb one inbox from many IPs.
@@ -65,7 +74,7 @@ export async function POST(req: NextRequest) {
 
     const { pendingRegistrationId, method } = await issuePendingRegistration(
       platform,
-      { email, password, firstName, lastName }
+      { email, password, firstName, lastName, acceptedLegalVersion }
     );
     return NextResponse.json({
       success: true,
