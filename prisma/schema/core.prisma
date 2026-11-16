@@ -295,8 +295,30 @@ model PendingRegistration {
   usedAt       DateTime?
   createdAt    DateTime  @default(now())
 
+  /// The legal-text version (lib/legal/surfboard.ts LEGAL_VERSION) the person agreed to on the
+  /// register form, and when. Null for a platform that has no legal text yet. Copied into a
+  /// LegalConsent row when the account is created.
+  legalVersion    String?
+  legalAcceptedAt DateTime?
+
   @@unique([platform, email])
   @@index([expiresAt])
+}
+
+/// A person's agreement to a product's Terms of Use and Privacy Policy, written in the same
+/// transaction that creates their account. One row per acceptance; a new version of the text
+/// adds a new row, never edits an old one. No IP address or user agent is kept (data minimisation).
+model LegalConsent {
+  id         String   @id @default(uuid())
+  platform   String
+  userId     String
+  email      String
+  /// LEGAL_VERSION of the text that was shown.
+  version    String
+  acceptedAt DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([platform, userId])
 }
 
 model LoginAttempt {

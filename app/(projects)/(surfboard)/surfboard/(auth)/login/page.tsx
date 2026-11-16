@@ -11,6 +11,7 @@ import { GoogleIcon } from "@/components/auth/GoogleIcon";
 import { Platform, SurfboardRole } from "@/utils/platform";
 import { SURFBOARD_GRADIENTS } from "@/surfboard/colors";
 import {
+  LEGAL_VERSION,
   SURFBOARD_PRIVACY_PATH,
   SURFBOARD_TERMS_PATH,
 } from "@/lib/legal/surfboard";
@@ -49,6 +50,7 @@ export default function SurfboardLoginPage() {
           legal={{
             termsHref: SURFBOARD_TERMS_PATH,
             privacyHref: SURFBOARD_PRIVACY_PATH,
+            version: LEGAL_VERSION,
           }}
           resolveRedirect={(role) =>
             role.toUpperCase() === SurfboardRole.USER

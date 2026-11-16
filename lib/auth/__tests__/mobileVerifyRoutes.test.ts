@@ -426,7 +426,10 @@ describe("GET /api/v1/auth/me", () => {
     });
 
     it("is null, and looks nothing up, for an account that is already verified", async () => {
-      mockLookup.findUserById.mockResolvedValue({ ...user, emailVerified: true });
+      mockLookup.findUserById.mockResolvedValue({
+        ...user,
+        emailVerified: true,
+      });
       mockOtp.getLiveVerificationCodeSentAt.mockResolvedValue(new Date());
 
       const json = await (await me(get())).json();

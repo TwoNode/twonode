@@ -49,7 +49,7 @@ export type NativeAuthCardProps = {
    * Where this product's Terms and Privacy Policy are. When both are given, the register form shows
    * a checkbox the person must tick before an account is made. Without them, no checkbox is shown.
    */
-  legal?: { termsHref: string; privacyHref: string };
+  legal?: { termsHref: string; privacyHref: string; version: string };
 };
 
 // useSearchParams() requires a Suspense boundary above it or Next.js bails
@@ -187,6 +187,7 @@ function NativeAuthCardInner({
           password,
           firstName,
           lastName,
+          acceptedLegalVersion: legal?.version,
         });
         if (!result.success) {
           setError(describeFailure(result));
