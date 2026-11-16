@@ -10,6 +10,7 @@ import {
   type ClipboardEvent,
   type ReactNode,
 } from "react";
+import { ConsentCheckbox } from "@/components/auth/ConsentCheckbox";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,11 @@ export type NativeAuthCardProps = {
   /** Rendered below the "or" divider — typically a Kinde LoginLink/RegisterLink button. */
   alternateAuth?: ReactNode;
   registerNotice?: string;
+  /**
+   * Where this product's Terms and Privacy Policy are. When both are given, the register form shows
+   * a checkbox the person must tick before an account is made. Without them, no checkbox is shown.
+   */
+  legal?: { termsHref: string; privacyHref: string };
 };
 
 // useSearchParams() requires a Suspense boundary above it or Next.js bails
@@ -71,6 +77,7 @@ function NativeAuthCardInner({
   allowRegister = false,
   alternateAuth,
   registerNotice,
+  legal,
 }: NativeAuthCardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -84,6 +91,7 @@ function NativeAuthCardInner({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [forgotSubmitted, setForgotSubmitted] = useState(false);
@@ -160,6 +168,13 @@ function NativeAuthCardInner({
       } finally {
         setIsSubmitting(false);
       }
+      return;
+    }
+
+    if (mode === "register" && legal && !acceptedLegal) {
+      setError(
+        "Please agree to the Terms of Use and the Privacy Policy to create an account."
+      );
       return;
     }
 
@@ -571,6 +586,17 @@ function NativeAuthCardInner({
                 autoComplete="new-password"
               />
             </div>
+          )}
+
+          {mode === "register" && legal && (
+            <ConsentCheckbox
+              checked={acceptedLegal}
+              onChange={setAcceptedLegal}
+              termsHref={legal.termsHref}
+              privacyHref={legal.privacyHref}
+              accent={accent}
+              invalid={!!error && !acceptedLegal}
+            />
           )}
 
           {mode === "login" && (
