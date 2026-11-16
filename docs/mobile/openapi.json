@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Surfboard mobile API",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "description": "The calls the Surfboard mobile app makes. Generated from `lib/mobile/contract` in the API repository: do not edit by hand. Every success is `{ success: true, data }`; every failure is `{ success: false, error, code?, details? }`. Dates are ISO 8601 in UTC. Objects are open: a newer server may add a field, and an app must ignore what it does not know."
   },
   "servers": [
@@ -4191,6 +4191,28 @@
           "displayStatus": {
             "$ref": "#/components/schemas/DisplayStatus"
           },
+          "facilitator": {
+            "description": "The surveyor or firm that facilitated the plan; null when it is blank.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deededArea": {
+            "description": "The area written on the deed, as typed (for example `672.256 SQ. MTS`); null when blank. Not the same figure as `areaSqM`, which is worked out from the stored boundary.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "state": {
             "anyOf": [
               {
@@ -4283,6 +4305,8 @@
           "planNumber",
           "surveyTitle",
           "displayStatus",
+          "facilitator",
+          "deededArea",
           "state",
           "lga",
           "locality",

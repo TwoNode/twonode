@@ -43,6 +43,13 @@ export type MapPlan = {
   planNumber: string;
   surveyTitle: string;
   displayStatus: DisplayStatus;
+  /** The surveyor or firm that facilitated the plan, as stored; null when it is blank. */
+  facilitator: string | null;
+  /**
+   * The area written on the deed, as typed ("672.256 SQ. MTS"); null when blank. It is not the area
+   * worked out from the boundary (`areaSqM`), and the two are different figures.
+   */
+  deededArea: string | null;
   /** Free text as stored; the display correction is looked up by it, capitals ignored. */
   state: string | null;
   lga: string | null;
@@ -85,6 +92,8 @@ const MAP_SELECT = {
   user: { select: { firstName: true, lastName: true } },
   planNumber: true,
   surveyTitle: true,
+  facilitator: true,
+  deededArea: true,
   state: true,
   lga: true,
   locality: true,
@@ -129,6 +138,8 @@ export async function getPlanMap(userId: string): Promise<PlanMap> {
       displayStatus: computeDisplayStatus(
         (owner ? row : { ...row, batch: null }) as unknown as PlanStatusRow
       ),
+      facilitator: row.facilitator?.trim() || null,
+      deededArea: row.deededArea?.trim() || null,
       state: row.state,
       lga: row.lga,
       locality: row.locality,
