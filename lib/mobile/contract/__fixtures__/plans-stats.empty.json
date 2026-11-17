@@ -42,6 +42,11 @@
         "distinct": 0,
         "missing": 0
       },
+      "states": {
+        "rows": [],
+        "distinct": 0,
+        "missing": 0
+      },
       "activeBatches": 4,
       "sharedAccess": {
         "active": 0,

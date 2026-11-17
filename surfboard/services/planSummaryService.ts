@@ -248,6 +248,7 @@ export async function buildSummaryWhere(
     ["lga", params.lga],
     ["ward", params.ward],
     ["lcda", params.lcda],
+    ["state", params.state],
   ];
   for (const [column, value] of exact) {
     if (!value) continue;

@@ -42,12 +42,18 @@ describe("findColumnMatchIds", () => {
     expect(lastQuery().sql).not.toContain(`"userId" =`);
   });
 
-  it("accepts exactly the four drill-down columns", async () => {
-    expect([...MATCH_COLUMNS]).toEqual(["facilitator", "lga", "ward", "lcda"]);
+  it("accepts exactly the five drill-down columns", async () => {
+    expect([...MATCH_COLUMNS]).toEqual([
+      "facilitator",
+      "lga",
+      "ward",
+      "lcda",
+      "state",
+    ]);
     for (const column of MATCH_COLUMNS) {
       await findColumnMatchIds(column, "x", "u1", "mine");
     }
-    expect(mocks.queryRaw).toHaveBeenCalledTimes(4);
+    expect(mocks.queryRaw).toHaveBeenCalledTimes(5);
   });
 
   it("refuses any other column rather than putting a name from outside into the SQL", async () => {

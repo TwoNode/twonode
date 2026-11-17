@@ -356,6 +356,12 @@ export const MapPlan = z
     planNumber: z.string(),
     surveyTitle: z.string(),
     displayStatus: DisplayStatus,
+    facilitator: nullableText.describe(
+      "The surveyor or firm that facilitated the plan; null when it is blank."
+    ),
+    deededArea: nullableText.describe(
+      "The area written on the deed, as typed (for example `672.256 SQ. MTS`); null when blank. Not the same figure as `areaSqM`, which is worked out from the stored boundary."
+    ),
     state: nullableText,
     lga: nullableText,
     locality: nullableText,
@@ -486,6 +492,7 @@ export const PlanStatsData = z
     lgas: Breakdown,
     wards: Breakdown,
     lcdas: Breakdown,
+    states: Breakdown,
     activeBatches: count.describe("Not affected by the date range."),
     sharedAccess: z
       .object({ active: count, expired: count, none: count })

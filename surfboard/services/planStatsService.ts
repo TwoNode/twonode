@@ -70,6 +70,8 @@ export type PlanStats = {
   lgas: Breakdown;
   wards: Breakdown;
   lcdas: Breakdown;
+  /** Plans per state, as stored (added with contract 1.4.0). */
+  states: Breakdown;
   /** Batches with a plan still to be lodged (not affected by the date range). */
   activeBatches: number;
   /**
@@ -88,6 +90,7 @@ const STATS_SELECT = {
   lga: true,
   ward: true,
   lcda: true,
+  state: true,
   dateOnSurveyPlan: true,
   pillarType: true,
   pillars: true,
@@ -226,6 +229,7 @@ export async function getPlanStats(
     lgas: breakdown(counted.map((row) => row.lga)),
     wards: breakdown(counted.map((row) => row.ward)),
     lcdas: breakdown(counted.map((row) => row.lcda)),
+    states: breakdown(counted.map((row) => row.state)),
     activeBatches,
     sharedAccess: {
       active: sharedStats.find((s) => s.status === "active")?.count ?? 0,

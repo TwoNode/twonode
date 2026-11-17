@@ -257,7 +257,7 @@ describe("buildSummaryWhere", () => {
     const where = (await buildSummaryWhere(
       "u1",
       params(
-        "planType=DEED&provisional=exclude&facilitator=Adeyemi&lga=Eti-Osa&ward=Ajah&lcda=Ibeju&dateFrom=2026-01-01&dateTo=2026-10-19"
+        "planType=DEED&provisional=exclude&facilitator=Adeyemi&lga=Eti-Osa&ward=Ajah&lcda=Ibeju&state=Lagos&dateFrom=2026-01-01&dateTo=2026-10-19"
       )
     )) as { AND: unknown[] };
     expect(where.AND).toEqual([
@@ -267,6 +267,7 @@ describe("buildSummaryWhere", () => {
       { id: { in: ["lga-1", "lga-2"] } },
       { id: { in: ["ward-1", "ward-2"] } },
       { id: { in: ["lcda-1", "lcda-2"] } },
+      { id: { in: ["state-1", "state-2"] } },
       {
         dateOnSurveyPlan: {
           gte: new Date("2026-01-01T00:00:00.000Z"),

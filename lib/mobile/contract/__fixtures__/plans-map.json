@@ -12,6 +12,8 @@
             "code": "IN_REVIEW",
             "label": "In review"
           },
+          "facilitator": "Ayo Bello Surveys",
+          "deededArea": "1,100 SQ. MTS",
           "state": "Lagos",
           "lga": "Eti-Osa",
           "locality": "Lekki",
@@ -59,6 +61,8 @@
             "code": "QUERIED",
             "label": "Queried by Charting"
           },
+          "facilitator": "Ayo Bello Surveys",
+          "deededArea": "450 SQ. MTS",
           "state": "Lagos",
           "lga": "Eti-Osa",
           "locality": "Ikoyi",
@@ -106,6 +110,8 @@
             "code": "LODGED",
             "label": "Lodged"
           },
+          "facilitator": "Ayo Bello Surveys",
+          "deededArea": "2,304.5 SQ. MTS",
           "state": "Ogun",
           "lga": "Abeokuta South",
           "locality": "Ake",
@@ -153,6 +159,8 @@
             "code": "NOT_SUBMITTED",
             "label": "Not submitted"
           },
+          "facilitator": "Ayo Bello Surveys",
+          "deededArea": "672.256 SQ. MTS",
           "state": null,
           "lga": null,
           "locality": null,
@@ -200,6 +208,8 @@
             "code": "IN_REVIEW",
             "label": "In review"
           },
+          "facilitator": "Ayo Bello Surveys",
+          "deededArea": null,
           "state": "FCT",
           "lga": "AMAC",
           "locality": "Garki",
@@ -273,6 +283,8 @@
             "code": "NOT_SUBMITTED",
             "label": "Not submitted"
           },
+          "facilitator": "Ayo Bello Surveys",
+          "deededArea": "450 SQ. MTS",
           "state": "Lagos",
           "lga": "Ikeja",
           "locality": "Ikeja",
@@ -320,6 +332,8 @@
             "code": "NOT_SUBMITTED",
             "label": "Not submitted"
           },
+          "facilitator": "Ayo Bello Surveys",
+          "deededArea": "2,304.5 SQ. MTS",
           "state": "Lagos",
           "lga": "Eti-Osa",
           "locality": "Lekki",
@@ -603,6 +617,8 @@
             "code": "NOT_SUBMITTED",
             "label": "Not submitted"
           },
+          "facilitator": "Ayo Bello Surveys",
+          "deededArea": "672.256 SQ. MTS",
           "state": "Rivers",
           "lga": "Port Harcourt",
           "locality": "GRA",
@@ -650,6 +666,8 @@
             "code": "QUERIED",
             "label": "Queried by Charting"
           },
+          "facilitator": "Ayo Bello Surveys",
+          "deededArea": "1,100 SQ. MTS",
           "state": null,
           "lga": "Ikorodu",
           "locality": null,
@@ -697,6 +715,8 @@
             "code": "PAYMENT_PENDING",
             "label": "Payment pending"
           },
+          "facilitator": "Ayo Bello Surveys",
+          "deededArea": null,
           "state": null,
           "lga": "Ikorodu",
           "locality": null,
@@ -744,6 +764,8 @@
             "code": "LODGED",
             "label": "Lodged"
           },
+          "facilitator": "Ayo Bello Surveys",
+          "deededArea": "2,304.5 SQ. MTS",
           "state": "Ogun",
           "lga": "Abeokuta South",
           "locality": "Ake",
@@ -791,6 +813,8 @@
             "code": "LODGED",
             "label": "Lodged"
           },
+          "facilitator": "Ayo Bello Surveys",
+          "deededArea": "672.256 SQ. MTS",
           "state": "Ogun",
           "lga": "Abeokuta South",
           "locality": "Ake",
