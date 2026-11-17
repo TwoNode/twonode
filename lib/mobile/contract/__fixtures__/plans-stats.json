@@ -147,7 +147,22 @@
         "distinct": 2,
         "missing": 25
       },
-      "activeBatches": 4
+      "states": {
+        "rows": [
+          {
+            "key": "Lagos",
+            "count": 40
+          }
+        ],
+        "distinct": 1,
+        "missing": 2
+      },
+      "activeBatches": 4,
+      "sharedAccess": {
+        "active": 2,
+        "expired": 1,
+        "none": 3
+      }
     }
   }
 }

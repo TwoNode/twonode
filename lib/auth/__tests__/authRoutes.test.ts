@@ -73,6 +73,33 @@ beforeEach(() => {
   });
 });
 
+describe("POST /register/send-otp: the agreement", () => {
+  it("passes the version the page sent on to the registration", async () => {
+    const res = await sendOtp(
+      post("/api/v1/auth/register/send-otp", {
+        ...signup,
+        acceptedLegalVersion: "2026-11-16",
+      })
+    );
+    expect(res.status).toBe(200);
+    expect(mockPending.issuePendingRegistration).toHaveBeenCalledWith(
+      "surfboard",
+      expect.objectContaining({ acceptedLegalVersion: "2026-11-16" })
+    );
+  });
+
+  it("refuses a version string that is not a short plain string", async () => {
+    const res = await sendOtp(
+      post("/api/v1/auth/register/send-otp", {
+        ...signup,
+        acceptedLegalVersion: "x".repeat(200),
+      })
+    );
+    expect(res.status).toBe(400);
+    expect(mockPending.issuePendingRegistration).not.toHaveBeenCalled();
+  });
+});
+
 describe("POST /register/send-otp", () => {
   it("counts the request even though it succeeds — against both the caller's IP and the TARGET address", async () => {
     const res = await sendOtp(post("/api/v1/auth/register/send-otp", signup));

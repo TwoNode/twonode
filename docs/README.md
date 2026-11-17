@@ -2,7 +2,7 @@
 
 ## Start here
 
-**[`DEPLOYMENT.md`](./DEPLOYMENT.md)** — the branch-to-environment mapping (`main` is staging, `prod` is live production — not what the names suggest) and what to check before merging into `prod`, plus database migrations (the `0_init` baseline and the staging/production workflows), cron and connection-pool settings.
+**[`DEPLOYMENT.md`](./DEPLOYMENT.md)** — the branch-to-environment mapping (`main` is staging, `prod` is live production — not what the names suggest) and what to check before merging into `prod`, plus database migrations (the `0_init` baseline and the staging/production workflows), cron and connection-pool settings, and the domains the site answers on (a second address, `twonodetechnologies.tech`, since 2026-11-15).
 
 **[`issues/`](./issues/index.md)** — the issues register: known and suspected problems ranked P0–P3, a checklist of issue types to search for, and the template for a detailed entry. Add to it whenever a review finds something.
 
@@ -17,6 +17,7 @@
 | [`surfboard/`](./surfboard/)           | Survey plan lodging + the MDA government approval workflow: user flow, technical flow, QR Earnings, and the association-subscription evaluation.                    |
 | [`reva/`](./reva/)                     | Property due-diligence requests: user flow, user stories, notifications.                                                                                            |
 | [`integrations/`](./integrations/)     | Third-party systems under evaluation — currently the NIPOST National Digital Postcode API.                                                                          |
+| [`storage/`](./storage/)               | AWS S3 blueprints: private files with presigned URLs, a hybrid public/private/vault bucket, and how TwoNode's own storage compares (checked against the code).      |
 | [`gbc/`](./gbc/)                       | Event ticketing — auth notes; see `development-history/phases/phase-4-gbc.md` for the fuller picture.                                                               |
 | [`adr/`](./adr/index.md)               | Architecture Decision Records (ADRs): why important technical and product choices were made, with status and consequences.                                          |
 | [`backend/`](./backend/)               | Plans for the backend itself: the order of Next.js, NestJS and Go, with the gates and the safe way to move between them.                                            |

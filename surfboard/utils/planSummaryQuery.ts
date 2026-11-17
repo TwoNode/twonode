@@ -27,6 +27,7 @@ export type PlanSummaryParams = {
   lga?: string;
   ward?: string;
   lcda?: string;
+  state?: string;
   /** Whether provisional plan types are in the list ("exclude" matches the Stats "Total plans" figure). */
   provisional: "include" | "exclude" | "only";
   /** On the date printed on the survey plan, inclusive. */
@@ -109,6 +110,7 @@ const querySchema = z.object({
   lga: text(200),
   ward: text(200),
   lcda: text(200),
+  state: text(200),
   provisional: z.enum(["include", "exclude", "only"]).default("include"),
   dateFrom: dateParam(false),
   dateTo: dateParam(true),

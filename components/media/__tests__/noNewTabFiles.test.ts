@@ -14,6 +14,11 @@ import { describe, expect, it } from "vitest";
  * a reason.
  */
 const REVIEWED: Record<string, { count: number; reason: string }> = {
+  "components/auth/ConsentCheckbox.tsx": {
+    count: 2,
+    reason:
+      "Terms and Privacy pages, opened aside so the half-filled form is kept",
+  },
   "app/(legacy)/signup/SurfBoardSubscriptionPlans.tsx": {
     count: 1,
     reason: "external page",

@@ -18,9 +18,8 @@ vi.mock("@/surfboard/utils/subscriptionEmails", () => ({
   expiryReminderEmail: () => ({ subject: "s", text: "t", html: "h" }),
 }));
 
-const { sendExpiringSubscriptionReminders } = await import(
-  "@/surfboard/services/subscriptionReminderService"
-);
+const { sendExpiringSubscriptionReminders } =
+  await import("@/surfboard/services/subscriptionReminderService");
 
 const DAY = 24 * 60 * 60 * 1000;
 const subscription = (over: Record<string, unknown> = {}) => ({
@@ -85,6 +84,24 @@ describe("the expiry reminder and push", () => {
     await sendExpiringSubscriptionReminders();
 
     expect(mockPush.sendPush).not.toHaveBeenCalled();
+  });
+
+  it("sends no email or WhatsApp on a later day of the same window either", async () => {
+    mockPrisma.subscription.findMany.mockResolvedValue([
+      subscription({
+        currentEnd: new Date(Date.now() + 1 * DAY),
+        expiryReminderSentAt: new Date(Date.now() - 1 * DAY),
+      }),
+    ]);
+
+    const result = await sendExpiringSubscriptionReminders();
+
+    expect(result).toEqual({ checked: 1, reminded: 0, failed: 0 });
+    expect(mockMail.sendMail).not.toHaveBeenCalled();
+    expect(
+      mockWhatsApp.sendWhatsAppSubscriptionExpiryReminder
+    ).not.toHaveBeenCalled();
+    expect(mockPrisma.subscription.update).not.toHaveBeenCalled();
   });
 
   it("does not push a subscriber whose reminder is stamped at or after the end", async () => {

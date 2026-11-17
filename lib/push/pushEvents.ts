@@ -20,6 +20,7 @@ export type PushKind =
   | "PLAN_QUERIED"
   | "READY_FOR_PHYSICAL"
   | "PLAN_SHARED"
+  | "PLAN_CREATED"
   | "PLAN_LODGED"
   | "SUBSCRIPTION_ENDING"
   | "WITHDRAWAL_UPDATED";
@@ -42,6 +43,10 @@ const COPY: Record<PushKind, { title: string; body: string }> = {
   PLAN_SHARED: {
     title: "Surfboard",
     body: "A plan was shared with you.",
+  },
+  PLAN_CREATED: {
+    title: "Surfboard",
+    body: "A plan was created. Open the app to see it.",
   },
   PLAN_LODGED: {
     title: "Surfboard",

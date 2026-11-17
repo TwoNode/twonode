@@ -19,6 +19,7 @@ const {
   notifyReadyForPhysicalSubmission,
   notifyPlanShared,
   notifyPlanApproved,
+  notifyPlanCreated,
 } = await import("@/surfboard/services/notificationService");
 
 const PLAN_ID = "3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c";
@@ -184,6 +185,29 @@ describe("which events push", () => {
     const json = JSON.stringify(mockPush.sendPush.mock.calls[0]);
     expect(json).not.toContain("LA/2026/0412");
     expect(json).not.toContain("B-0007");
+  });
+
+  it("pushes a created plan to its creator as PLAN_CREATED with the plan id, and not its number or title", async () => {
+    await notifyPlanCreated({
+      userId: "u1",
+      planId: PLAN_ID,
+      planNumber: "LA/2026/0412",
+      surveyTitle: "Survey of land at Ajah",
+      sendEmail: false,
+    } as Parameters<typeof notifyPlanCreated>[0]);
+
+    expect(mockPush.sendPush).toHaveBeenCalledTimes(1);
+    expect(mockPush.sendPush).toHaveBeenCalledWith(["u1"], {
+      kind: "PLAN_CREATED",
+      planId: PLAN_ID,
+    });
+    const json = JSON.stringify(mockPush.sendPush.mock.calls[0]);
+    expect(json).not.toContain("LA/2026/0412");
+    expect(json).not.toContain("Ajah");
+    // The bell notification still carries its own words, for the website.
+    expect(
+      mockPrisma.surfboardNotification.create.mock.calls[0][0].data.title
+    ).toBe("Plan Created Successfully");
   });
 
   it("pushes 'ready for physical submission' with the plan id", async () => {

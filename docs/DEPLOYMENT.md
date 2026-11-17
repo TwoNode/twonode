@@ -24,12 +24,103 @@ first.
 
 ## Vercel deploy notes
 
-The `twonodetech` Vercel project deploys from `main`. See
+The `twonodetech` Vercel project (team `rojitechs-projects`) has `prod`
+as its production branch (checked 2026-11-15 with the project API);
+`main` is the staging (Preview) deployment. See
 [`development-history/`](development-history/) for the write-up of the
 "Deploying outputs" platform failure that was traced to
 `outputFileTracingIncludes`'s `node_modules/@react-pdf` glob (fixed via
 PR #166) — worth checking first if a deploy starts failing at the
 "Extracting deployment files" step again.
+
+## Domains
+
+Six names answer on the `twonodetech` project. Checked 2026-11-16 with
+the project's domain list
+(`vercel api "/v9/projects/twonodetech/domains" --scope rojitechs-projects`).
+
+| Name                              | What it does                                                                                                                                                                                                                                                                                                    |
+| :-------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `www.twonodetechnologies.com`     | **The main address.** Serves the site itself.                                                                                                                                                                                                                                                                   |
+| `twonodetechnologies.com`         | 308 to `www.twonodetechnologies.com`.                                                                                                                                                                                                                                                                           |
+| `twonodetech.vercel.app`          | 308 to `www.twonodetechnologies.com`.                                                                                                                                                                                                                                                                           |
+| `twonodetechnologies.tech`        | **Second address, added 2026-11-15.** Serves the same site itself (no redirect), so the browser keeps `.tech` in the address bar.                                                                                                                                                                               |
+| `www.twonodetechnologies.tech`    | 308 to `twonodetechnologies.tech`.                                                                                                                                                                                                                                                                              |
+| `staging.twonodetechnologies.com` | **Staging, added 2026-11-16.** Linked to the `main` branch (`gitBranch: main`): it always shows the latest `main` preview deployment. Behind Vercel preview protection, so a browser logs in with Vercel and the mobile app sends the project's bypass header. It is the address the app's staging builds call. |
+
+**The `.tech` address is an alias, and the maintainer's rule is that it
+must not change how the main site behaves** (2026-11-15: "without
+tampering with the behaviour of https://www.twonodetechnologies.com/").
+Adding it changed only the project's domain list: no environment
+variable, no code and no deployment changed (the production deployment
+of 2026-11-04 is still the latest). Keep it that way: never set
+`BASE_URL`, `NEXT_PUBLIC_SITE_URL` or any `KINDE_*` variable to the
+`.tech` address. Emails, payment callbacks and share links are built by
+`lib/siteUrl.ts` from `BASE_URL`, never from the request's `Host`, so
+they point at the main domain whichever address the visitor used.
+
+**Registrar and DNS.** `twonodetechnologies.tech` is registered at
+Namify (namify.get.tech). Its nameservers are `ns1.vercel-dns.com` and
+`ns2.vercel-dns.com`, set by hand in the registrar's panel (Your domains
+\> Manage \> DNS \> Nameservers \> Edit nameservers \> Custom nameservers;
+Namify blocks the change while the domain is being transferred). The
+zone is therefore Vercel's: change records with `vercel dns`, not in
+Namify, whose own DNS records are ignored once custom nameservers are
+set. Vercel issues the certificate by itself. The zone has no MX records
+(no email on this domain) and no DNSSEC record (Vercel's nameservers do
+not sign zones according to community posts; Vercel states nothing
+either way).
+
+**What differs on the `.tech` address.** Six pages (`/`, `/contact`,
+`/our-story`, `/surfboard`, `/reva`, `/gbc`) were byte-identical on both
+addresses on 2026-11-15. These are the differences found:
+
+- **Kinde sign-in does not complete from `.tech` (I-060).**
+  `KINDE_SITE_URL` fixes Kinde's return address to
+  `https://www.twonodetechnologies.com/api/auth/kinde_callback`, and the
+  sign-in's state cookies belong to the host the person started on. The
+  REVA login pages link to it; the other login pages showed no Kinde
+  link. Not run end to end.
+- **Search engines see two identical sites (I-061).** Neither address
+  has a `<link rel="canonical">`, and `og:url` is `https://twonode.tech`
+  on both (the fallback in `app/(site)/layout.tsx`).
+- **Cloudflare Turnstile** is not on the live contact page (2026-11-15).
+  If it is switched on, add the `.tech` hostname to the widget in
+  Cloudflare and to `TURNSTILE_HOSTNAMES`.
+- **No email on the `.tech` domain.** Add MX records with
+  `vercel dns add` if wanted.
+
+**Commands.** The Vercel CLI must be logged in (the maintainer's machine
+has 65.8.0 in the npx cache). Run it from a scratch folder, always with
+the team scope. `vercel api` prints a banner line before the JSON.
+
+```bash
+S="--scope rojitechs-projects"; D=twonodetechnologies.tech
+
+vercel domains add $D $S                    # adds it to the team and creates its DNS zone
+vercel domains add $D twonodetech $S        # attaches the apex to the project
+vercel domains add www.$D twonodetech $S    # attaches www
+# www forwards to the apex (the apex serves the site):
+vercel api "/v9/projects/twonodetech/domains/www.$D" -X PATCH -F redirect=$D -F redirectStatusCode=308 $S
+# a name that forwards can serve the site itself again; a JSON body is needed to null the redirect:
+echo '{"redirect":null}' | vercel api "/v9/projects/twonodetech/domains/$D" -X PATCH -H "Content-Type: application/json" --input - $S
+
+# check:
+vercel api "/v6/domains/$D/config" $S       # "misconfigured": false
+dig +short NS $D @1.1.1.1                   # ns1.vercel-dns.com. ns2.vercel-dns.com.
+curl -sI https://$D/ | head -1              # HTTP/2 200
+```
+
+`vercel domains inspect` kept listing the old registrar nameservers with
+a red cross after the domain was already live: trust the config call and
+`dig`, not that screen. To undo, remove the two `.tech` names from the
+project (dashboard: `twonodetech` > Settings > Domains, or
+`vercel api "/v9/projects/twonodetech/domains/<name>" -X DELETE $S`);
+`vercel domains remove $D $S` also drops the domain from the team. The
+undo commands were not run. The main site's entries are not involved. A
+longer copy with the checks used on 2026-11-15 is in
+`out/domain-twonodetechnologies-tech-commands.md`; `out/` is git-ignored,
+so it is not on a fresh clone.
 
 ## Database migrations
 
@@ -72,7 +163,7 @@ _(The maintainer verified this against the databases; it is recorded here becaus
 
 ## Runtime configuration worth knowing
 
-- **Cron** (`vercel.json`): `/api/cron/subscription-expiry-reminders` daily at **08:00 UTC**. It is guarded by the cron secret and scans `active` subscriptions by `currentEnd`, stamping `expiryReminderSentAt` once per expiry date. `/api/cron/push-receipts` daily at **10:00 UTC** (TASK-0015 1I.6): reads the delivery receipts of pushes to the mobile app and deletes the push tokens of uninstalled phones; guarded by the same secret, and it does nothing unless `PUSH_ENABLED=1`. **A Hobby plan allows only daily crons and runs them anywhere in the hour, so a push sent in the 15 minutes before a run, or run late, can miss its receipt (Expo keeps receipts 24 hours); a dead token is still found on a later push. On a Pro plan, change the schedule to `0 * * * *`.** The same run deletes push cool-down rows over a day old. The migrations `20261029100000_push_receipt_tickets` and `20261029110000_push_preferences` (two new tables each, additive) run before the code.
+- **Cron** (`vercel.json`): `/api/cron/subscription-expiry-reminders` daily at **08:00 UTC**. It is guarded by the cron secret and scans `active` subscriptions by `currentEnd`, stamping `expiryReminderSentAt`; a stamp from the cycle's 3-day window (or later) means the reminder is done, so each expiry cycle is reminded once. `/api/cron/push-receipts` daily at **10:00 UTC** (TASK-0015 1I.6): reads the delivery receipts of pushes to the mobile app and deletes the push tokens of uninstalled phones; guarded by the same secret, and it does nothing unless `PUSH_ENABLED=1`. **A Hobby plan allows only daily crons and runs them anywhere in the hour, so a push sent in the 15 minutes before a run, or run late, can miss its receipt (Expo keeps receipts 24 hours); a dead token is still found on a later push. On a Pro plan, change the schedule to `0 * * * *`.** The same run deletes push cool-down rows over a day old. The migrations `20261029100000_push_receipt_tickets` and `20261029110000_push_preferences` (two new tables each, additive) run before the code.
 - **Connection pool**: `lib/prisma.ts` appends `connection_limit=7&pool_timeout=30` to `DATABASE_URL` for each serverless instance (its header comment still says 5). Each warm lambda holds up to 7 connections, so concurrency × 7 must stay under the database's `max_connections`.
 - **Interactive transactions**: Prisma Client 6 defaults to `maxWait` 2 s / `timeout` 5 s. Anything that loops over many rows inside `prisma.$transaction(async tx => …)` (bulk fulfilment, imports) must chunk the work and pass an explicit `timeout`.
 - **Environment variables** (Vercel, set per environment: Production, Preview which is staging, Development):

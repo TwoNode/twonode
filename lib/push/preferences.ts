@@ -27,6 +27,10 @@ export type PushCategory = (typeof PUSH_CATEGORIES)[number];
 export const CATEGORY_OF_KIND: Record<PushKind, PushCategory> = {
   PLAN_QUERIED: "PLANS_NEED_YOU",
   READY_FOR_PHYSICAL: "PLANS_NEED_YOU",
+  // A plan's life from creation to lodging is one switch ("A plan is created or lodged" in the
+  // app): a person who does not want to hear that a plan was lodged does not want to hear it was
+  // created either, and a new switch would change the published contract.
+  PLAN_CREATED: "PLAN_LODGED",
   PLAN_LODGED: "PLAN_LODGED",
   PLAN_SHARED: "PLAN_SHARED",
   SUBSCRIPTION_ENDING: "SUBSCRIPTION",

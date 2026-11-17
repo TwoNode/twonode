@@ -1025,10 +1025,10 @@ export default function SurfboardLandingPage() {
             <h4>Legal</h4>
             <ul>
               <li>
-                <a href="#">Privacy Policy</a>
+                <Link href="/surfboard/privacy">Privacy Policy</Link>
               </li>
               <li>
-                <a href="#">Terms of Service</a>
+                <Link href="/surfboard/terms">Terms of Use</Link>
               </li>
             </ul>
           </div>
