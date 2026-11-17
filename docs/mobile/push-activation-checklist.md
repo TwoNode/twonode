@@ -53,11 +53,13 @@ The EAS command line cannot create a token; it is made on the website.
 
 ## 3. Production is a separate step, and it has an order
 
-Production has neither the push work nor API PRs #550 to #553. Redeploying production now would run push code against tables that do not exist there. The order:
+**Status 2026-11-17: steps 1 and 2 are done.** PR #568 promoted `main` to `prod` (merged 15:41 UTC) and `migrate-production.yml` applied the device-token, push-receipt and push-preference tables (with the other pending migrations) at 15:43 UTC (run 44117370647). The production deploy of 15:45 UTC therefore runs the push code, and `PUSH_ENABLED` exists on Vercel's Production environment (created 2026-11-16; its value was not read, step 3 expects `1`), so push is switched on in production. No production app build exists yet to register a phone, so nothing is sent until step 4. What follows is the order as it was written, before the promotion.
 
-1. **Promote** the API from `main` to `prod` (a draft pull request the maintainer merges).
-2. **Run the migrations on the production database first**, then the code: `20261028100000_device_tokens`, `20261029100000_push_receipt_tickets` and `20261029110000_push_preferences` (all additive, so safe before the code). The production migration workflow has not been run before; see [`../DEPLOYMENT.md`](../DEPLOYMENT.md).
-3. Then the production deploy picks up `PUSH_ENABLED=1`, which is already set.
+Before 2026-11-17 production had neither the push work nor API PRs #550 to #553, and redeploying it would have run push code against tables that did not exist there. The order:
+
+1. **Promote** the API from `main` to `prod` (a draft pull request the maintainer merges). Done 2026-11-17, PR #568.
+2. **Run the migrations on the production database first**, then the code: `20261028100000_device_tokens`, `20261029100000_push_receipt_tickets` and `20261029110000_push_preferences` (all additive, so safe before the code). Done 2026-11-17, but after the merge rather than before it; see [`../DEPLOYMENT.md`](../DEPLOYMENT.md).
+3. Then the production deploy picks up `PUSH_ENABLED=1`, which is already set. Done by the 2026-11-17 deploy.
 4. Build the store apps from the `production` profile with the credentials from 2.1 and 2.2.
 
 ## 4. If a push must be stopped
