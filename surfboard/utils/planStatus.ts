@@ -248,8 +248,9 @@ export function isQueried(row: PlanStatusRow): boolean {
  * The surveyor can hand in the physical copy: red copy submitted, not handed in
  * yet, the four parallel reviews approved, nothing queried, and the batch paid
  * and accepted for review. This is the website's rule (PhysicalSubmissionModal
- * and SubmittedBatchesModal); the server does not enforce it on
- * `POST plans/physical-copy` yet (decision D16).
+ * and SubmittedBatchesModal), and since decision D16 (2026-11-17) the server
+ * enforces it too: `submitPhysicalCopies` (`POST plans/physical-copy`) accepts
+ * only plans that pass this function.
  */
 export function readyForPhysicalSubmission(row: PlanStatusRow): boolean {
   return (
