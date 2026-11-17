@@ -48,7 +48,9 @@ describe("the .tech address: I-061 noindex", () => {
 describe("the .tech address: I-060 sign-in goes to the main domain", () => {
   it("redirects the four sign-in start points, for the .tech host only, temporarily", async () => {
     const { redirects } = await rules();
-    const toMain = redirects.filter((r) => r.destination?.startsWith("https://"));
+    const toMain = redirects.filter((r) =>
+      r.destination?.startsWith("https://")
+    );
     expect(toMain.map((r) => r.source).sort()).toEqual([
       "/api/auth/login",
       "/api/auth/register",
@@ -58,21 +60,30 @@ describe("the .tech address: I-060 sign-in goes to the main domain", () => {
     for (const r of toMain) {
       expect(r.has).toEqual([TECH_HOST]);
       expect(r.permanent).toBe(false);
-      expect(r.destination).toBe(`https://www.twonodetechnologies.com${r.source}`);
+      expect(r.destination).toBe(
+        `https://www.twonodetechnologies.com${r.source}`
+      );
     }
   });
 
   it("does not redirect the rest of /api/auth: the pages fetch logout_redirect on their own host", async () => {
     const { redirects } = await rules();
-    const authSources = redirects.map((r) => r.source).filter((s) => s.startsWith("/api/auth"));
-    expect(authSources.sort()).toEqual(["/api/auth/login", "/api/auth/register"]);
+    const authSources = redirects
+      .map((r) => r.source)
+      .filter((s) => s.startsWith("/api/auth"));
+    expect(authSources.sort()).toEqual([
+      "/api/auth/login",
+      "/api/auth/register",
+    ]);
     expect(authSources.join(" ")).not.toContain("logout_redirect");
     expect(authSources.join(" ")).not.toContain("kinde_callback");
   });
 
   it("leaves every redirect that existed before (page renames) without a host condition", async () => {
     const { redirects } = await rules();
-    const renames = redirects.filter((r) => !r.destination?.startsWith("https://"));
+    const renames = redirects.filter(
+      (r) => !r.destination?.startsWith("https://")
+    );
     expect(renames.length).toBeGreaterThanOrEqual(10);
     for (const r of renames) {
       expect(r.has).toBeUndefined();
