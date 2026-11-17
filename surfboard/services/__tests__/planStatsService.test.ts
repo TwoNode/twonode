@@ -37,6 +37,7 @@ const row = (over: Record<string, unknown> = {}) => ({
   lga: "Eti-Osa",
   ward: "Ajah",
   lcda: "Ibeju",
+  state: "Lagos",
   dateOnSurveyPlan: new Date("2026-09-12T00:00:00Z"),
   pillarType: "REGULAR",
   pillars: [{ pillarNumber: "PP1" }, { pillarNumber: "PP2" }],
@@ -113,6 +114,7 @@ describe("getPlanStats", () => {
         "recordsIIStatus",
         "recordsIStatus",
         "redCopyStatus",
+        "state",
         "status",
         "surconStatus",
         "ward",
@@ -206,6 +208,24 @@ describe("getPlanStats", () => {
       { key: "Eti-Osa", count: 3 },
     ]);
     expect(stats.lgas.distinct).toBe(2);
+  });
+
+  it("counts plans per state, grouped as the other places are", async () => {
+    mocks.findMany.mockResolvedValue([
+      row({ state: "Lagos" }),
+      row({ state: "LAGOS " }),
+      row({ state: "Ogun" }),
+      row({ state: null }),
+    ]);
+    const stats = await getPlanStats("u1", noRange);
+    expect(stats.states).toEqual({
+      rows: [
+        { key: "Lagos", count: 2 },
+        { key: "Ogun", count: 1 },
+      ],
+      distinct: 2,
+      missing: 1,
+    });
   });
 
   it("breaks a tie between spellings, and between rows, alphabetically", async () => {

@@ -17,6 +17,7 @@ describe("parsePlanSummaryQuery", () => {
       lga: undefined,
       ward: undefined,
       lcda: undefined,
+      state: undefined,
       provisional: "include",
       dateFrom: undefined,
       dateTo: undefined,
@@ -59,7 +60,7 @@ describe("parsePlanSummaryQuery", () => {
   it("reads plan types and exact filters", () => {
     expect(
       parse(
-        "planType=APPROVED%20LAYOUT,DEED&facilitator=Adeyemi%20%26%20Partners&lga=Eti-Osa&ward=Ajah&lcda=Ibeju"
+        "planType=APPROVED%20LAYOUT,DEED&facilitator=Adeyemi%20%26%20Partners&lga=Eti-Osa&ward=Ajah&lcda=Ibeju&state=Lagos"
       )
     ).toMatchObject({
       planType: ["APPROVED LAYOUT", "DEED"],
@@ -67,6 +68,7 @@ describe("parsePlanSummaryQuery", () => {
       lga: "Eti-Osa",
       ward: "Ajah",
       lcda: "Ibeju",
+      state: "Lagos",
     });
   });
 

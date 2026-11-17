@@ -53,6 +53,8 @@ export function registerSendOtp(input: {
   password: string;
   firstName: string;
   lastName: string;
+  /** The version of the Terms and Privacy Policy the person agreed to (required where the product has them). */
+  acceptedLegalVersion?: string;
 }): Promise<
   ApiResult<{ pendingRegistrationId: string; method: "OTP" | "LINK" }>
 > {

@@ -31,6 +31,8 @@ const row = (over: Record<string, unknown> = {}) => ({
   user: { firstName: "Ada", lastName: "Owner" },
   planNumber: "LA/2026/0412",
   surveyTitle: "Survey of land at Ajah",
+  facilitator: "ARA Surveys Ltd",
+  deededArea: "1,100 SQ. MTS",
   state: "Lagos",
   lga: "Eti-Osa",
   locality: "Ajah",
@@ -81,6 +83,8 @@ describe("getPlanMap: what is read", () => {
         "user",
         "planNumber",
         "surveyTitle",
+        "facilitator",
+        "deededArea",
         "state",
         "lga",
         "locality",
@@ -118,6 +122,8 @@ describe("getPlanMap: what is returned", () => {
         "planNumber",
         "surveyTitle",
         "displayStatus",
+        "facilitator",
+        "deededArea",
         "state",
         "lga",
         "locality",
@@ -137,6 +143,8 @@ describe("getPlanMap: what is returned", () => {
         code: "READY_FOR_PHYSICAL",
         label: "Ready for physical submission",
       },
+      facilitator: "ARA Surveys Ltd",
+      deededArea: "1,100 SQ. MTS",
       state: "Lagos",
       lga: "Eti-Osa",
       locality: "Ajah",
@@ -147,6 +155,15 @@ describe("getPlanMap: what is returned", () => {
     expect(plan.areaSqM).toBeLessThan(1120);
     expect(plan.centroid.lat).toBeCloseTo(6.50015, 8);
     expect(plan.centroid.lng).toBeCloseTo(3.40015, 8);
+  });
+
+  it("says null for a facilitator or a deeded area that is blank, so the card leaves the line out", async () => {
+    mocks.findMany.mockResolvedValue([
+      row({ facilitator: "  ", deededArea: "" }),
+    ]);
+    const { plans } = await getPlanMap("owner-1");
+    expect(plans[0].facilitator).toBeNull();
+    expect(plans[0].deededArea).toBeNull();
   });
 
   it("says null for a plan with no survey plan date, so the card can put it last", async () => {

@@ -35,17 +35,18 @@ PR #166) — worth checking first if a deploy starts failing at the
 
 ## Domains
 
-Five names answer on the `twonodetech` project. Checked 2026-11-15 with
+Six names answer on the `twonodetech` project. Checked 2026-11-16 with
 the project's domain list
 (`vercel api "/v9/projects/twonodetech/domains" --scope rojitechs-projects`).
 
-| Name                           | What it does                                                                                                                      |
-| :----------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
-| `www.twonodetechnologies.com`  | **The main address.** Serves the site itself.                                                                                     |
-| `twonodetechnologies.com`      | 308 to `www.twonodetechnologies.com`.                                                                                             |
-| `twonodetech.vercel.app`       | 308 to `www.twonodetechnologies.com`.                                                                                             |
-| `twonodetechnologies.tech`     | **Second address, added 2026-11-15.** Serves the same site itself (no redirect), so the browser keeps `.tech` in the address bar. |
-| `www.twonodetechnologies.tech` | 308 to `twonodetechnologies.tech`.                                                                                                |
+| Name                              | What it does                                                                                                                                                                                                                                                                                                    |
+| :-------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `www.twonodetechnologies.com`     | **The main address.** Serves the site itself.                                                                                                                                                                                                                                                                   |
+| `twonodetechnologies.com`         | 308 to `www.twonodetechnologies.com`.                                                                                                                                                                                                                                                                           |
+| `twonodetech.vercel.app`          | 308 to `www.twonodetechnologies.com`.                                                                                                                                                                                                                                                                           |
+| `twonodetechnologies.tech`        | **Second address, added 2026-11-15.** Serves the same site itself (no redirect), so the browser keeps `.tech` in the address bar.                                                                                                                                                                               |
+| `www.twonodetechnologies.tech`    | 308 to `twonodetechnologies.tech`.                                                                                                                                                                                                                                                                              |
+| `staging.twonodetechnologies.com` | **Staging, added 2026-11-16.** Linked to the `main` branch (`gitBranch: main`): it always shows the latest `main` preview deployment. Behind Vercel preview protection, so a browser logs in with Vercel and the mobile app sends the project's bypass header. It is the address the app's staging builds call. |
 
 **The `.tech` address is an alias, and the maintainer's rule is that it
 must not change how the main site behaves** (2026-11-15: "without

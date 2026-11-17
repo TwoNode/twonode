@@ -46,8 +46,14 @@ export async function findPillarMatchIds(
   return rows.map((r) => r.id);
 }
 
-/** The text columns a drill-down can match exactly. A fixed list: the name goes into the SQL, so it is never taken from the caller. */
-export const MATCH_COLUMNS = ["facilitator", "lga", "ward", "lcda"] as const;
+/** The text columns a drill-down can match exactly (the state was added with contract 1.4.0). A fixed list: the name goes into the SQL, so it is never taken from the caller. */
+export const MATCH_COLUMNS = [
+  "facilitator",
+  "lga",
+  "ward",
+  "lcda",
+  "state",
+] as const;
 export type MatchColumn = (typeof MATCH_COLUMNS)[number];
 
 /**

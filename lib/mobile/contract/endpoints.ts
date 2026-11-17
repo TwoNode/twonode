@@ -570,6 +570,13 @@ export const ENDPOINTS: Endpoint[] = [
         example: "Ibeju",
       },
       {
+        name: "state",
+        in: "query",
+        description: "As `facilitator`. Added in contract 1.4.0.",
+        schema: z.string().max(200),
+        example: "Lagos",
+      },
+      {
         name: "provisional",
         in: "query",
         description:

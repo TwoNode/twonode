@@ -11,6 +11,7 @@ import {
   type NativeAuthUser,
 } from "@/lib/auth/userLookup";
 import { getSiteUrl } from "@/lib/siteUrl";
+import { currentLegalVersion } from "@/lib/legal/consent";
 
 /**
  * OTP-first registration: no User row — verified or not — exists until the
@@ -105,8 +106,26 @@ async function sendPendingRegistrationSecret(
 
 export async function issuePendingRegistration(
   platform: Platform,
-  data: { email: string; password: string; firstName: string; lastName: string }
+  data: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    /** The legal-text version the person agreed to. Required when the product has legal text. */
+    acceptedLegalVersion?: string;
+  }
 ): Promise<{ pendingRegistrationId: string; method: "OTP" | "LINK" }> {
+  const requiredLegalVersion = currentLegalVersion(platform);
+  if (
+    requiredLegalVersion &&
+    data.acceptedLegalVersion !== requiredLegalVersion
+  ) {
+    throw new ValidationError({
+      legal: data.acceptedLegalVersion
+        ? "The Terms of Use and Privacy Policy have changed. Please reload the page and read them again."
+        : "Please agree to the Terms of Use and the Privacy Policy to create an account.",
+    });
+  }
   const normalizedEmail = data.email.trim().toLowerCase();
   const existing = await findUserByEmail(platform, normalizedEmail);
   if (existing) {
@@ -131,6 +150,8 @@ export async function issuePendingRegistration(
       attempts: 0,
       expiresAt,
       usedAt: null,
+      legalVersion: requiredLegalVersion,
+      legalAcceptedAt: requiredLegalVersion ? new Date() : null,
     },
     create: {
       platform,
@@ -141,6 +162,8 @@ export async function issuePendingRegistration(
       method,
       codeHash: hashSecret(secret),
       expiresAt,
+      legalVersion: requiredLegalVersion,
+      legalAcceptedAt: requiredLegalVersion ? new Date() : null,
     },
   });
 
@@ -276,7 +299,7 @@ export async function completePendingRegistration(
         data: { usedAt: new Date() },
       });
       if (claim.count === 0) return null;
-      return createNativeUser(
+      const created = await createNativeUser(
         platform,
         {
           email: row.email,
@@ -287,6 +310,20 @@ export async function completePendingRegistration(
         },
         tx
       );
+      // The agreement is recorded with the account, in the same transaction: no account without
+      // its record, no record without an account.
+      if (row.legalVersion && row.legalAcceptedAt) {
+        await tx.legalConsent.create({
+          data: {
+            platform,
+            userId: created.id,
+            email: row.email,
+            version: row.legalVersion,
+            acceptedAt: row.legalAcceptedAt,
+          },
+        });
+      }
+      return created;
     });
   } catch (err) {
     // Someone registered this address between send-otp and now.
