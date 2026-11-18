@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Surfboard mobile API",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "description": "The calls the Surfboard mobile app makes. Generated from `lib/mobile/contract` in the API repository: do not edit by hand. Every success is `{ success: true, data }`; every failure is `{ success: false, error, code?, details? }`. Dates are ISO 8601 in UTC. Objects are open: a newer server may add a field, and an app must ignore what it does not know."
   },
   "servers": [
@@ -529,6 +529,727 @@
             },
             "x-error-codes": [
               "VALIDATION_ERROR"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mobile/legal": {
+      "get": {
+        "operationId": "legalVersion",
+        "tags": [
+          "Session"
+        ],
+        "summary": "The current Terms and Privacy Policy",
+        "description": "The version a new account must agree to, and where to read both texts. Ask for it when the sign-up screen opens and send `version` back when starting the sign-up: the server refuses any other.\n\nNo session needed.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/LegalVersion"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mobile/register/start": {
+      "post": {
+        "operationId": "registerStart",
+        "tags": [
+          "Session"
+        ],
+        "summary": "Start creating an account",
+        "description": "Step 1 of 2. Nothing is created yet: the details are held and a six-digit code is emailed (always a code, never a link). Rate limited per email and per device. An address that already has an account is `EMAIL_ALREADY_REGISTERED`, including one made through Google on the website (such a person signs in after choosing Forgot password). `acceptedLegalVersion` must be the `version` from `legalVersion`: a missing or old one is a `VALIDATION_ERROR` with `details.legal`.\n\nNo session needed.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "platform": {
+                    "type": "string",
+                    "const": "surfboard"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 72
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "acceptedLegalVersion": {
+                    "type": "string",
+                    "maxLength": 32
+                  },
+                  "deviceId": {
+                    "description": "The id the app sends at sign-in.",
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "platform",
+                  "email",
+                  "password",
+                  "firstName",
+                  "lastName",
+                  "acceptedLegalVersion",
+                  "deviceId"
+                ]
+              },
+              "example": {
+                "platform": "surfboard",
+                "email": "ada@example.com",
+                "password": "a-long-password",
+                "firstName": "Ada",
+                "lastName": "Obi",
+                "acceptedLegalVersion": "2026-11-18",
+                "deviceId": "device-12345678"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RegisterStartResult"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "409": {
+            "description": "`EMAIL_ALREADY_REGISTERED`: An account already exists for this email, made on the website or the app (Google included).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_ALREADY_REGISTERED"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "503": {
+            "description": "`MOBILE_SIGN_IN_DISABLED`: New sign-ins are paused (an emergency switch). Open sessions carry on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "MOBILE_SIGN_IN_DISABLED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mobile/register/verify": {
+      "post": {
+        "operationId": "registerVerify",
+        "tags": [
+          "Session"
+        ],
+        "summary": "Enter the code and finish creating the account",
+        "description": "Step 2 of 2. Creates the verified account and signs the person in on this phone: the answer is the same as `login`. `password` must be the one the sign-up was started with. Five wrong codes lock the registration (`VERIFICATION_CODE_LOCKED`): ask for a new code. A registration that lapsed, was used, or never existed is `VERIFICATION_CODE_EXPIRED`: if a new code does not help, start over.\n\nNo session needed.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "platform": {
+                    "type": "string",
+                    "const": "surfboard"
+                  },
+                  "pendingRegistrationId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 6
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 72
+                  },
+                  "deviceId": {
+                    "description": "The id the app sends at sign-in.",
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  },
+                  "deviceLabel": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "appVersion": {
+                    "type": "string",
+                    "maxLength": 32
+                  }
+                },
+                "required": [
+                  "platform",
+                  "pendingRegistrationId",
+                  "code",
+                  "password",
+                  "deviceId"
+                ]
+              },
+              "example": {
+                "platform": "surfboard",
+                "pendingRegistrationId": "pending-1",
+                "code": "123456",
+                "password": "a-long-password",
+                "deviceId": "device-12345678"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/LoginResult"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields. `VERIFICATION_CODE_INVALID`: The code is not six characters long once the spaces around it are trimmed. Six wrong characters, digits or not, are INCORRECT. `VERIFICATION_CODE_INCORRECT`: The code is wrong. `VERIFICATION_CODE_EXPIRED`: No live code: it lapsed after 10 minutes, was used, or was replaced. `VERIFICATION_CODE_LOCKED`: Five wrong tries on that code.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR",
+              "VERIFICATION_CODE_INVALID",
+              "VERIFICATION_CODE_INCORRECT",
+              "VERIFICATION_CODE_EXPIRED",
+              "VERIFICATION_CODE_LOCKED"
+            ]
+          },
+          "403": {
+            "description": "`ACCOUNT_TYPE_NOT_SUPPORTED`: The account is not a surveyor, so it cannot use the app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "ACCOUNT_TYPE_NOT_SUPPORTED"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "503": {
+            "description": "`MOBILE_SIGN_IN_DISABLED`: New sign-ins are paused (an emergency switch). Open sessions carry on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "MOBILE_SIGN_IN_DISABLED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mobile/register/resend": {
+      "post": {
+        "operationId": "registerResend",
+        "tags": [
+          "Session"
+        ],
+        "summary": "Email a new code for a sign-up",
+        "description": "The old code stops working. Always answers 200 with the same words, whether or not the registration exists or is still open. Five per hour per registration and ten per hour per device.\n\nNo session needed.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "platform": {
+                    "type": "string",
+                    "const": "surfboard"
+                  },
+                  "pendingRegistrationId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "deviceId": {
+                    "description": "The id the app sends at sign-in.",
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "platform",
+                  "pendingRegistrationId",
+                  "deviceId"
+                ]
+              },
+              "example": {
+                "platform": "surfboard",
+                "pendingRegistrationId": "pending-1",
+                "deviceId": "device-12345678"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Empty"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/auth/mobile/delete-account": {
+      "post": {
+        "operationId": "deleteAccount",
+        "tags": [
+          "Account"
+        ],
+        "summary": "Close the account",
+        "description": "Closes the signed-in surveyor's whole account (the website's side too): the name, email, password, phone, address, company, logo, signature, bank details, sign-ins, devices and push settings are erased, the paid subscription is cancelled first, and the address can be used again for a new account. Survey plans (even those never submitted), batches, payments, withdrawals and audit entries are kept without the person's details. Refused with `ACCOUNT_CLOSURE_BLOCKED` (`details.reasons`: `WALLET_BALANCE`, `PENDING_WITHDRAWAL`) while there is money in the wallet or an unpaid withdrawal, and with `SUBSCRIPTION_CANCEL_FAILED` when the card could not be stopped (the account stays open). A wrong password is a `VALIDATION_ERROR` with `details.password`. Five tries an hour per account. After a success the app discards its session and everything it stored.\n\nA signed-in surveyor (role USER). Allowed while the email is unverified.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "platform": {
+                    "type": "string",
+                    "const": "surfboard"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 72
+                  }
+                },
+                "required": [
+                  "platform",
+                  "password"
+                ]
+              },
+              "example": {
+                "platform": "surfboard",
+                "password": "a-long-password"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AccountClosedResult"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "409": {
+            "description": "`ACCOUNT_CLOSURE_BLOCKED`: The account cannot be closed yet. `details.reasons` lists `WALLET_BALANCE` (money in the wallet) and `PENDING_WITHDRAWAL` (a withdrawal not yet paid).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "ACCOUNT_CLOSURE_BLOCKED"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "502": {
+            "description": "`SUBSCRIPTION_CANCEL_FAILED`: The paid subscription could not be cancelled (the payment provider did not answer), so the account was not closed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "SUBSCRIPTION_CANCEL_FAILED"
             ]
           }
         }
@@ -3698,6 +4419,18 @@
       }
     },
     "schemas": {
+      "AccountClosedResult": {
+        "type": "object",
+        "properties": {
+          "closed": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "closed"
+        ]
+      },
       "ApprovalState": {
         "type": "string",
         "enum": [
@@ -4095,6 +4828,28 @@
         "required": [
           "success",
           "error"
+        ]
+      },
+      "LegalVersion": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "description": "Send it back as `acceptedLegalVersion` when starting a sign-up.",
+            "type": "string"
+          },
+          "termsUrl": {
+            "description": "The Terms of Use, to open in the browser.",
+            "type": "string"
+          },
+          "privacyUrl": {
+            "description": "The Privacy Policy, to open in the browser.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "termsUrl",
+          "privacyUrl"
         ]
       },
       "LoginResult": {
@@ -5691,6 +6446,30 @@
           "refreshExpiresAt"
         ]
       },
+      "RegisterStartResult": {
+        "type": "object",
+        "properties": {
+          "pendingRegistrationId": {
+            "description": "Send it back with the code, and when asking for a new code.",
+            "type": "string"
+          },
+          "method": {
+            "description": "Always a six-digit code for the app, whatever the website uses.",
+            "type": "string",
+            "const": "OTP"
+          },
+          "codeExpiresInSeconds": {
+            "description": "How long the emailed code works.",
+            "type": "integer",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "pendingRegistrationId",
+          "method",
+          "codeExpiresInSeconds"
+        ]
+      },
       "ResendVerificationResult": {
         "anyOf": [
           {
@@ -6026,6 +6805,16 @@
       "meaning": "Unknown, deleted or someone else's record (these look the same on purpose).",
       "appDoes": "Shows \"This isn't available\"."
     },
+    "EMAIL_ALREADY_REGISTERED": {
+      "status": 409,
+      "meaning": "An account already exists for this email, made on the website or the app (Google included).",
+      "appDoes": "Says the address already has an account and offers Sign in, and Forgot password for one made through Google."
+    },
+    "ACCOUNT_CLOSURE_BLOCKED": {
+      "status": 409,
+      "meaning": "The account cannot be closed yet. `details.reasons` lists `WALLET_BALANCE` (money in the wallet) and `PENDING_WITHDRAWAL` (a withdrawal not yet paid).",
+      "appDoes": "Names each reason in its own words and says to withdraw the money or wait for the payout, then try again."
+    },
     "REFRESH_CONFLICT": {
       "status": 409,
       "meaning": "Two refreshes of the same token raced.",
@@ -6035,6 +6824,11 @@
       "status": 422,
       "meaning": "The file is a drawing or another format a phone cannot open.",
       "appDoes": "Says the file cannot be opened on a phone."
+    },
+    "SUBSCRIPTION_CANCEL_FAILED": {
+      "status": 502,
+      "meaning": "The paid subscription could not be cancelled (the payment provider did not answer), so the account was not closed.",
+      "appDoes": "Says nothing was closed and asks the person to try again."
     },
     "RATE_LIMITED": {
       "status": 429,
