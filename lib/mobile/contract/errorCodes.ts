@@ -71,6 +71,20 @@ export const ERROR_CODES = {
       "Unknown, deleted or someone else's record (these look the same on purpose).",
     appDoes: 'Shows "This isn\'t available".',
   },
+  EMAIL_ALREADY_REGISTERED: {
+    status: 409,
+    meaning:
+      "An account already exists for this email, made on the website or the app (Google included).",
+    appDoes:
+      "Says the address already has an account and offers Sign in, and Forgot password for one made through Google.",
+  },
+  ACCOUNT_CLOSURE_BLOCKED: {
+    status: 409,
+    meaning:
+      "The account cannot be closed yet. `details.reasons` lists `WALLET_BALANCE` (money in the wallet) and `PENDING_WITHDRAWAL` (a withdrawal not yet paid).",
+    appDoes:
+      "Names each reason in its own words and says to withdraw the money or wait for the payout, then try again.",
+  },
   REFRESH_CONFLICT: {
     status: 409,
     meaning: "Two refreshes of the same token raced.",
@@ -80,6 +94,12 @@ export const ERROR_CODES = {
     status: 422,
     meaning: "The file is a drawing or another format a phone cannot open.",
     appDoes: "Says the file cannot be opened on a phone.",
+  },
+  SUBSCRIPTION_CANCEL_FAILED: {
+    status: 502,
+    meaning:
+      "The paid subscription could not be cancelled (the payment provider did not answer), so the account was not closed.",
+    appDoes: "Says nothing was closed and asks the person to try again.",
   },
   RATE_LIMITED: {
     status: 429,

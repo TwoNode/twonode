@@ -156,6 +156,42 @@ export const LoginData = TokenPair.extend({ user: SessionUser }).meta({
 });
 export const RefreshData = TokenPair.meta({ id: "RefreshResult" });
 
+export const RegisterStartData = z
+  .object({
+    pendingRegistrationId: z
+      .string()
+      .describe("Send it back with the code, and when asking for a new code."),
+    method: z
+      .literal("OTP")
+      .describe(
+        "Always a six-digit code for the app, whatever the website uses."
+      ),
+    codeExpiresInSeconds: z
+      .number()
+      .int()
+      .positive()
+      .describe("How long the emailed code works."),
+  })
+  .meta({ id: "RegisterStartResult" });
+
+export const LegalVersionData = z
+  .object({
+    version: z
+      .string()
+      .describe(
+        "Send it back as `acceptedLegalVersion` when starting a sign-up."
+      ),
+    termsUrl: z.string().describe("The Terms of Use, to open in the browser."),
+    privacyUrl: z
+      .string()
+      .describe("The Privacy Policy, to open in the browser."),
+  })
+  .meta({ id: "LegalVersion" });
+
+export const AccountClosedData = z
+  .object({ closed: z.literal(true) })
+  .meta({ id: "AccountClosedResult" });
+
 export const MeData = z
   .object({
     id: z.string(),

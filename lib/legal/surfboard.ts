@@ -7,8 +7,8 @@
  * the same pull request and raise LEGAL_VERSION.
  */
 
-export const LEGAL_VERSION = "2026-11-16";
-export const LEGAL_EFFECTIVE_DATE = "16 November 2026";
+export const LEGAL_VERSION = "2026-11-18";
+export const LEGAL_EFFECTIVE_DATE = "18 November 2026";
 export const LEGAL_CONTACT_EMAIL = "info@twonodetechnologies.com";
 
 export const SURFBOARD_PRIVACY_PATH = "/surfboard/privacy";
@@ -87,7 +87,8 @@ export const SURFBOARD_PRIVACY: LegalDoc = {
       heading: "How long we keep it",
       items: [
         "Account and plan data: for as long as your account is open, and afterwards for as long as we need it to meet legal, accounting and record-keeping duties or to resolve disputes.",
-        "Plans lodged with the government, payment and withdrawal records, and audit entries are records we may have to keep after you ask to close your account.",
+        "If you close your account (in the app: Profile, then Delete account), we erase your name, email address, phone number, address, company details, logo, signature, bank details, sign-ins and devices, and we cancel any subscription. We keep the survey plans on your account, including plans you never submitted, and payment and withdrawal records and audit entries, with no personal details attached to the account. Plans you shared stay shared with the people you shared them with. A record we keep may still contain names you typed into it, such as a plan's title or a client's name.",
+        "We cannot close an account while it holds money in the wallet or a withdrawal that has not been paid out; withdraw the money first.",
         "Sign-in attempt and security records are kept for a limited period for security and then removed.",
         "Verification codes and pending registrations expire within minutes and are removed after use or expiry.",
       ],
@@ -102,6 +103,7 @@ export const SURFBOARD_PRIVACY: LegalDoc = {
       heading: "Your rights",
       paragraphs: [
         `Under the Nigeria Data Protection Act 2023 you may ask us to give you access to your data, correct it, delete it, restrict or object to how we use it, and give it to you in a portable form, and you may withdraw consent. Write to ${LEGAL_CONTACT_EMAIL}; we will answer within a reasonable time and may first need to confirm it is you. You can correct most details yourself in Profile and Settings.`,
+        "You can close your account yourself in the app (Profile, then Delete account); what that erases and what we keep is described under How long we keep it. For anything else, write to us.",
         "You may also complain to the Nigeria Data Protection Commission (NDPC).",
       ],
     },

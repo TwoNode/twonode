@@ -63,6 +63,16 @@ const ROUTES: Record<string, () => Promise<Record<string, unknown>>> = {
     import("@/app/api/v1/auth/mobile/logout/route"),
   "app/api/v1/auth/mobile/request-password-reset/route.ts": () =>
     import("@/app/api/v1/auth/mobile/request-password-reset/route"),
+  "app/api/v1/auth/mobile/legal/route.ts": () =>
+    import("@/app/api/v1/auth/mobile/legal/route"),
+  "app/api/v1/auth/mobile/register/start/route.ts": () =>
+    import("@/app/api/v1/auth/mobile/register/start/route"),
+  "app/api/v1/auth/mobile/register/verify/route.ts": () =>
+    import("@/app/api/v1/auth/mobile/register/verify/route"),
+  "app/api/v1/auth/mobile/register/resend/route.ts": () =>
+    import("@/app/api/v1/auth/mobile/register/resend/route"),
+  "app/api/v1/auth/mobile/delete-account/route.ts": () =>
+    import("@/app/api/v1/auth/mobile/delete-account/route"),
   "app/api/v1/auth/me/route.ts": () => import("@/app/api/v1/auth/me/route"),
   "app/api/v1/auth/mobile/devices/route.ts": () =>
     import("@/app/api/v1/auth/mobile/devices/route"),
@@ -411,10 +421,11 @@ describe("the failure codes", () => {
     }
   });
 
-  it("are exactly the codes written in the documented routes and the file-link service", () => {
+  it("are exactly the codes written in the documented routes, the file-link service and the account closure service", () => {
     const sources = [
       ...new Set(ENDPOINTS.map((e) => e.routeFile)),
       "surfboard/services/planFileLinkService.ts",
+      "surfboard/services/accountClosureService.ts",
     ];
     const found = new Map<string, number>();
     for (const file of sources) {
