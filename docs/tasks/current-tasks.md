@@ -4,6 +4,8 @@ State as of 2026-11-17 (this header was first written 2026-10-29 and corrected o
 
 ---
 
+- [ ] **IN PROGRESS 2026-11-18: real run of mobile sign-up and account closure on a throwaway local database and an Android emulator** (API #574 and app #65 are merged; nothing touches staging or production). Result will replace this line.
+
 ## Active Session Batch: TASK-0010 — Vercel env cleanup, staging promotion, /v4 responsive _(stale heading: /v4 now lives at the root under `app/(site)/`; superseded 2026-10-15)_
 
 **Batch Reference:** [TASK-0010](./0010-env-cleanup-staging-promotion-v4-responsive.md)  

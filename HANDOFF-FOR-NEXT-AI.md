@@ -9,6 +9,8 @@
 
 ---
 
+> **IN PROGRESS (2026-11-18, a Claude session): a real run of mobile sign-up and account closure (API PR #574 and app PR #65, both merged to `dev` / app `main`) on a THROWAWAY local database (docker `tn-live-pg`, API on :3211) with the app on an Android emulator. Nothing here touches staging or production. If this note is still here, the run did not finish: stop the API/Metro/emulator by PID, then see `out/dev/WIP-resume.md` in the app checkout.**
+
 ## 1. Ground Rules & Next.js Conventions
 
 1. **Read `AGENTS.md` first:**
