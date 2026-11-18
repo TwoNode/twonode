@@ -542,6 +542,59 @@ export const sendPasswordRemovedNotice = async ({
 };
 
 /**
+ * Sent to the address of a Surfboard account that was just closed from the app (decision D13,
+ * `closeSurveyorAccount`). It says what happened and what is kept, so a person who did not do it
+ * hears about it, and it carries no link: the account cannot be reopened.
+ */
+export const sendAccountClosedNotice = async ({
+  to,
+  firstName,
+  platform,
+}: {
+  to: string;
+  firstName: string;
+  platform: Platform;
+}) => {
+  const brand = PLATFORM_BRAND[platform];
+  const subject = `Your ${brand.name} account was closed`;
+  const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+  const bodyLine = `Your ${brand.name} account was closed from the app. Your name, email address, phone number, address, bank details and sign-ins have been removed, and the account cannot be opened again.`;
+  const keptLine =
+    "Survey plans, payment and withdrawal records and audit entries are kept, without your personal details, as our privacy policy explains.";
+  const warnLine =
+    "If you did not do this, write to info@twonodetechnologies.com right away.";
+
+  const text = `${greeting}\n\n${bodyLine}\n\n${keptLine}\n\n${warnLine}\n\nTwoNode Technologies — https://www.twonodetechnologies.com`;
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
+      <div style="padding: 20px 0; border-bottom: 3px solid ${brand.accent};">
+        <span style="font-size: 15px; font-weight: 700; color: ${brand.accentDark}; letter-spacing: .02em;">${brand.name}</span>
+        <span style="font-size: 12px; color: #888; margin-left: 8px;">by TwoNode Technologies</span>
+      </div>
+      <div style="padding: 28px 0;">
+        <p>${escapeHtml(greeting)}</p>
+        <p>${escapeHtml(bodyLine)}</p>
+        <p>${escapeHtml(keptLine)}</p>
+        <p style="color:#666;font-size:13px;">${escapeHtml(warnLine)}</p>
+      </div>
+      <div style="padding: 20px 0; border-top: 1px solid #e5e5e5; color: #888; font-size: 12px;">
+        <a href="https://www.twonodetechnologies.com" style="color: ${brand.accentDark}; text-decoration: none; font-weight: 600;">TwoNode Technologies</a>
+        &nbsp;&middot;&nbsp;
+        <a href="mailto:info@twonodetechnologies.com" style="color: #888; text-decoration: none;">info@twonodetechnologies.com</a>
+      </div>
+    </div>
+  `;
+
+  return sendMail({
+    to,
+    subject,
+    text,
+    html,
+    fromName: `${brand.name} · TwoNode Technologies`,
+  });
+};
+
+/**
  * A download-gate code, requested fresh every time someone tries to
  * download a report or document — not a login/verification token, so it's
  * a short human-typed code rather than a link.
