@@ -9,6 +9,8 @@
 
 ---
 
+> **PAUSED (2026-11-18/19, a Claude session; nothing is running): the real run of mobile sign-up and account closure (API PR #574 and app PR #65, both merged).** The API half is DONE: every check passed against a throwaway local database (`out/live/signup-closure-check.mjs`, `closure-blocked-check.mjs`, `closed-token-check.mjs`, git-ignored; results in `docs/mobile/runbook.md` section 6 and I-062). The emulator half is NOT done: the old development build lacked the native SVG module (crash), and the 2026-11-19 run with a fresh build (`twonode-mobile-live/android/app/build/outputs/apk/debug/app-debug.apk`) was stopped because the host was overloaded (the maintainer's machine had gone down once that day). Resume steps: the app checkout's `out/dev/WIP-resume.md`. Nothing touched staging or production.
+
 ## 1. Ground Rules & Next.js Conventions
 
 1. **Read `AGENTS.md` first:**
