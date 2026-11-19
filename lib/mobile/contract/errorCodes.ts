@@ -107,6 +107,13 @@ export const ERROR_CODES = {
     appDoes:
       "Asks the person to wait, without a countdown the server did not promise.",
   },
+  MAP_SERVICE_UNAVAILABLE: {
+    status: 503,
+    meaning:
+      "The map's Google services (directions, place search, the address under a tap) are not set up or did not answer.",
+    appDoes:
+      "Carries on without them: no route preview (Direction opens the maps app at once), no suggestions, the coordinates for a tapped point.",
+  },
   APP_UPDATE_REQUIRED: {
     status: 426,
     meaning:
