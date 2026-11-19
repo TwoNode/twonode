@@ -29,6 +29,35 @@ import { currentLegalVersion } from "@/lib/legal/consent";
  * delivery differ by method.
  */
 
+/**
+ * Why a registration could not be completed, for a client that must tell the cases apart without
+ * reading English (the mobile app words each one itself).
+ *
+ * - MALFORMED: the code is too short to be either kind of secret.
+ * - INCORRECT: the code does not match.
+ * - EXPIRED: no live registration: unknown, lapsed, used, or replaced by a newer one.
+ * - TOO_MANY_ATTEMPTS: five wrong tries on this registration.
+ * - WRONG_PASSWORD: the password is not the one the registration was started with.
+ */
+export type RegistrationRejection =
+  | "MALFORMED"
+  | "INCORRECT"
+  | "EXPIRED"
+  | "TOO_MANY_ATTEMPTS"
+  | "WRONG_PASSWORD";
+
+/**
+ * A ValidationError (400, same `details`, so the website's route and its tests are untouched) that
+ * also carries the reason.
+ */
+export class PendingRegistrationRejectedError extends ValidationError {
+  readonly reason: RegistrationRejection;
+  constructor(reason: RegistrationRejection, details: Record<string, string>) {
+    super(details);
+    this.reason = reason;
+  }
+}
+
 const OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes — matches EmailVerificationOtp
 const LINK_EXPIRY_MS = 60 * 60 * 1000; // 1 hour — matches EmailVerificationToken
 const MAX_ATTEMPTS = 5;
@@ -113,7 +142,14 @@ export async function issuePendingRegistration(
     lastName: string;
     /** The legal-text version the person agreed to. Required when the product has legal text. */
     acceptedLegalVersion?: string;
-  }
+  },
+  options: {
+    /**
+     * Send this kind of secret whatever the platform's setting says. The mobile app can only
+     * type a code (a link opens the website), so its sign-up forces "OTP".
+     */
+    method?: "OTP" | "LINK";
+  } = {}
 ): Promise<{ pendingRegistrationId: string; method: "OTP" | "LINK" }> {
   const requiredLegalVersion = currentLegalVersion(platform);
   if (
@@ -132,7 +168,8 @@ export async function issuePendingRegistration(
     throw new ConflictError("Email address is already registered");
   }
 
-  const { method } = await getEmailVerificationSettings(platform);
+  const method =
+    options.method ?? (await getEmailVerificationSettings(platform)).method;
   const passwordHash = await bcrypt.hash(data.password, 12);
   const secret = method === "OTP" ? generateOtpCode() : generateLinkToken();
   const expiresAt = new Date(
@@ -226,14 +263,18 @@ export async function completePendingRegistration(
   // 64-char hex link token both satisfy it; the real check is the hash
   // comparison below, which doesn't care which kind of secret this is.
   if (cleanSecret.length < 6) {
-    throw new ValidationError({ code: "Invalid verification code" });
+    throw new PendingRegistrationRejectedError("MALFORMED", {
+      code: "Invalid verification code",
+    });
   }
 
   const row = await prisma.pendingRegistration.findUnique({
     where: { id: pendingRegistrationId },
   });
   if (!row || row.platform !== platform || row.expiresAt < new Date()) {
-    throw new ValidationError({ code: EXPIRED_MESSAGE });
+    throw new PendingRegistrationRejectedError("EXPIRED", {
+      code: EXPIRED_MESSAGE,
+    });
   }
   const via = row.method === "LINK" ? "LINK" : "OTP";
 
@@ -252,7 +293,9 @@ export async function completePendingRegistration(
         return { ...existing, emailVerified: true, emailVerifiedVia: via };
       }
     }
-    throw new ValidationError({ code: EXPIRED_MESSAGE });
+    throw new PendingRegistrationRejectedError("EXPIRED", {
+      code: EXPIRED_MESSAGE,
+    });
   }
 
   // Reserve an attempt atomically BEFORE comparing anything. A read-then-
@@ -266,20 +309,24 @@ export async function completePendingRegistration(
     const fresh = await prisma.pendingRegistration.findUnique({
       where: { id: row.id },
     });
-    throw new ValidationError({
-      code:
-        fresh && !fresh.usedAt && fresh.attempts >= MAX_ATTEMPTS
-          ? "Too many attempts — please request a new code"
-          : EXPIRED_MESSAGE,
+    if (fresh && !fresh.usedAt && fresh.attempts >= MAX_ATTEMPTS) {
+      throw new PendingRegistrationRejectedError("TOO_MANY_ATTEMPTS", {
+        code: "Too many attempts — please request a new code",
+      });
+    }
+    throw new PendingRegistrationRejectedError("EXPIRED", {
+      code: EXPIRED_MESSAGE,
     });
   }
 
   if (!secretMatches(row.codeHash, cleanSecret)) {
-    throw new ValidationError({ code: "Incorrect or expired code" });
+    throw new PendingRegistrationRejectedError("INCORRECT", {
+      code: "Incorrect or expired code",
+    });
   }
 
   if (!(await bcrypt.compare(password, row.passwordHash))) {
-    throw new ValidationError({
+    throw new PendingRegistrationRejectedError("WRONG_PASSWORD", {
       password: "That isn't the password this registration was started with",
     });
   }
@@ -345,5 +392,7 @@ export async function completePendingRegistration(
   if (existing) {
     return { ...existing, emailVerified: true, emailVerifiedVia: via };
   }
-  throw new ValidationError({ code: EXPIRED_MESSAGE });
+  throw new PendingRegistrationRejectedError("EXPIRED", {
+    code: EXPIRED_MESSAGE,
+  });
 }

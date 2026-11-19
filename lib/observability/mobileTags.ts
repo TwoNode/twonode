@@ -64,7 +64,11 @@ export function deviceHash(deviceId: string): string {
     .slice(0, 12);
 }
 
-export type MobileAuthEvent = "mobile.login" | "mobile.refresh";
+export type MobileAuthEvent =
+  | "mobile.login"
+  | "mobile.refresh"
+  | "mobile.register"
+  | "mobile.account_closed";
 
 /**
  * One line for a sign-in or refresh outcome. `ok` is `info`; every refusal is

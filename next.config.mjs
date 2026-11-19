@@ -1,3 +1,27 @@
+/**
+ * The second address, https://twonodetechnologies.tech (docs/DEPLOYMENT.md "Domains"; issues
+ * I-060 and I-061). Every rule below that mentions TECH_HOST matches that host only, so
+ * www.twonodetechnologies.com, the staging host and the preview URLs never match them and
+ * behave exactly as before.
+ */
+const TECH_HOST = { type: "host", value: "twonodetechnologies.tech" };
+const MAIN_ORIGIN = "https://www.twonodetechnologies.com";
+
+/**
+ * Where a sign-in starts. Kinde's return address is fixed (KINDE_SITE_URL) to the main domain
+ * and a sign-in's state cookies belong to the host it started on, so a Kinde sign-in begun on
+ * .tech cannot finish. `/api/auth/login` and `/api/auth/register` are what every Kinde
+ * LoginLink/RegisterLink points at (Surfboard, GBC restricted, MDA and REVA login pages); the
+ * two REVA login pages are sent over as well. The rest of /api/auth is NOT redirected: the
+ * pages call /api/auth/logout_redirect with fetch, which must stay on the host they are on.
+ */
+const TECH_SIGN_IN_PATHS = [
+  "/api/auth/login",
+  "/api/auth/register",
+  "/reva/login",
+  "/reva-restricted/login",
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async headers() {
@@ -10,6 +34,14 @@ const nextConfig = {
             value: "index, follow", // Customize the value as needed
           },
         ],
+      },
+      // I-061: .tech serves the same pages as the main site, so only the main address is
+      // indexed. Next applies the LAST matching rule for a header key, so this must stay
+      // after the rule above.
+      {
+        source: "/:path*",
+        has: [TECH_HOST],
+        headers: [{ key: "X-Robots-Tag", value: "noindex" }],
       },
     ];
   },
@@ -85,6 +117,15 @@ const nextConfig = {
         destination: "/gbc-restricted/login",
         permanent: true,
       },
+      // I-060: a sign-in begun on the .tech address finishes on the main domain (the query
+      // string, such as post_login_redirect_url, is passed through). Temporary (307) so a
+      // browser never caches it.
+      ...TECH_SIGN_IN_PATHS.map((source) => ({
+        source,
+        has: [TECH_HOST],
+        destination: `${MAIN_ORIGIN}${source}`,
+        permanent: false,
+      })),
     ];
   },
 

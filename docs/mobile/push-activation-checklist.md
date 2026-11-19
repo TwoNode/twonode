@@ -14,7 +14,7 @@
 | Android push credentials (Firebase)                                                                                      | **Missing.** The EAS project has no `GOOGLE_SERVICES_JSON` in Preview or Production                                                                                          |
 | iPhone push credentials (Apple push key, APNs)                                                                           | **Unknown.** The iOS build is entitled for push; whether EAS holds a key can be seen only with `eas credentials -p ios` in a terminal signed in to Apple                     |
 | `EXPO_ACCESS_TOKEN` on Vercel                                                                                            | Not set. Optional (the sender works without it); needed only if "Enhanced push security" is turned on at Expo                                                                |
-| A build made after all of the above, and a real test                                                                     | Not done. The iOS build `a7c8138f` and the Android build `3264197b` were made before the staging rebuild                                                                     |
+| A build made after all of the above, and a real test                                                                     | Not done. The iOS build `a7c8138f` and the Android build `3264197b` were made before the staging rebuild. **2026-11-17:** new preview builds of `main` 7ad305d: iOS `ed833778` (finished; carries the push entitlement) and Android `841d927d` (queued on EAS when this was written; it has no Firebase file, so it cannot receive push) |
 
 ## 2. What the maintainer does, in order
 
@@ -24,13 +24,15 @@
 
 1. In your own terminal (Apple asks for the Apple ID and a code, so a script cannot do it): `npx eas-cli@latest credentials -p ios`.
 2. Choose the `preview` profile, then the push notifications key. If EAS shows an APNs key, you are done; if not, let EAS create one (it signs in to your Apple Developer account and makes the key) or upload an existing `.p8` file.
-3. Nothing else changes in the app: the bundle already carries the push entitlement.
+3. Nothing else changes in the app: the bundle already carries the push entitlement (checked 2026-11-17 on the preview build `ed833778`: its ad-hoc provisioning profile has `aps-environment` and one registered device). The key lives in EAS, not in the app, so **no new iOS build is needed after the key is added**.
+4. Apple allows **two push keys per team**. If two already exist (for another app, say), EAS cannot create a third: upload an existing `.p8` file together with its Key ID and Team ID (a `.p8` can be downloaded only once, when it is made), or revoke an unused key under Keys in Apple Developer first.
+5. Install the build, open Profile, then Push notifications, turn it on and tap Allow. "On" with no yellow note means the phone's address reached the server.
 
 ### 2.2 Android: the Firebase file
 
-1. Create a Firebase project (the console is at firebase.google.com) and add an Android app with the package name `com.twonode.surfboard`.
-2. Download **`google-services.json`** for that app.
-3. In the Firebase project settings, open Service accounts and generate a private key (this is the FCM v1 credential). Upload it to EAS: `npx eas-cli@latest credentials -p android`, then the Google service account key for push notifications (FCM V1).
+1. Create a Firebase project (the console is at firebase.google.com; Google Analytics can be left off) and click Add app, then Android, with the package name `com.twonode.surfboard` exactly. The SHA-1 field is optional and can be skipped.
+2. Download **`google-services.json`** for that app (Register app, then Download); skip the Gradle steps Firebase then shows.
+3. In the Firebase project settings (gear icon), open the Service accounts tab and click Generate new private key (this is the FCM v1 credential, a second JSON file, not the same as `google-services.json`). Upload it to EAS (menu names as in Expo's FCM V1 guide, checked 2026-11-17): `npx eas-cli@latest credentials -p android`, pick the profile, then Google Service Account, "Manage your Google Service Account Key for Push Notifications (FCM V1)", "Set up a Google Service Account Key for Push Notifications (FCM V1)", "Upload a new service account key", and give it the file. If the API key inside `google-services.json` is restricted, allow the FCM Registration API and the Firebase Installations API (an unrestricted key also works). Keep both JSON files out of git and out of chat.
 4. Hand me `google-services.json` in a local file (not in chat). I add it as an EAS **file variable** named `GOOGLE_SERVICES_JSON` for the Preview and Production environments (`app.config.js` reads it and sets `android.googleServicesFile`; never commit the file), then rebuild Android.
 5. Without this file an Android build has no push address at all (the earlier Android build has no `google_app_id`).
 
@@ -53,11 +55,13 @@ The EAS command line cannot create a token; it is made on the website.
 
 ## 3. Production is a separate step, and it has an order
 
-Production has neither the push work nor API PRs #550 to #553. Redeploying production now would run push code against tables that do not exist there. The order:
+**Status 2026-11-17: steps 1 and 2 are done.** PR #568 promoted `main` to `prod` (merged 15:41 UTC) and `migrate-production.yml` applied the device-token, push-receipt and push-preference tables (with the other pending migrations) at 15:43 UTC (run 44117370647). The production deploy of 15:45 UTC therefore runs the push code, and `PUSH_ENABLED` exists on Vercel's Production environment (created 2026-11-16; its value was not read, step 3 expects `1`), so push is switched on in production. No production app build exists yet to register a phone, so nothing is sent until step 4. What follows is the order as it was written, before the promotion.
 
-1. **Promote** the API from `main` to `prod` (a draft pull request the maintainer merges).
-2. **Run the migrations on the production database first**, then the code: `20261028100000_device_tokens`, `20261029100000_push_receipt_tickets` and `20261029110000_push_preferences` (all additive, so safe before the code). The production migration workflow has not been run before; see [`../DEPLOYMENT.md`](../DEPLOYMENT.md).
-3. Then the production deploy picks up `PUSH_ENABLED=1`, which is already set.
+Before 2026-11-17 production had neither the push work nor API PRs #550 to #553, and redeploying it would have run push code against tables that did not exist there. The order:
+
+1. **Promote** the API from `main` to `prod` (a draft pull request the maintainer merges). Done 2026-11-17, PR #568.
+2. **Run the migrations on the production database first**, then the code: `20261028100000_device_tokens`, `20261029100000_push_receipt_tickets` and `20261029110000_push_preferences` (all additive, so safe before the code). Done 2026-11-17, but after the merge rather than before it; see [`../DEPLOYMENT.md`](../DEPLOYMENT.md).
+3. Then the production deploy picks up `PUSH_ENABLED=1`, which is already set. Done by the 2026-11-17 deploy.
 4. Build the store apps from the `production` profile with the credentials from 2.1 and 2.2.
 
 ## 4. If a push must be stopped
