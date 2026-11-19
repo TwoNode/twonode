@@ -4,7 +4,7 @@ State as of 2026-11-17 (this header was first written 2026-10-29 and corrected o
 
 ---
 
-- [ ] **IN PROGRESS 2026-11-18: real run of mobile sign-up and account closure on a throwaway local database and an Android emulator** (API #574 and app #65 are merged; nothing touches staging or production). Result will replace this line.
+- [ ] **Real run of mobile sign-up and account closure (API #574 and app #65, merged). API half DONE 2026-11-18: every check passed on a throwaway local database (runbook section 6, I-062). Emulator half PAUSED 2026-11-19:** the host was overloaded, so the screens (sign-up at 2.0x text and 320 pt, dark mode, Delete account) are still unseen; a fresh debug build is ready in the app's `twonode-mobile-live` worktree. Nothing touched staging or production. _(Resume when the machine is quiet, or on a phone)_
 
 ## Active Session Batch: TASK-0010 — Vercel env cleanup, staging promotion, /v4 responsive _(stale heading: /v4 now lives at the root under `app/(site)/`; superseded 2026-10-15)_
 
