@@ -11,6 +11,12 @@ import type { PlanDetail } from "@/surfboard/services/planDetailService";
 import type { PlanFileLink } from "@/surfboard/services/planFileLinkService";
 import type { MapPillars, PlanMap } from "@/surfboard/services/planMapService";
 import type {
+  MapRoute,
+  PlaceDetails,
+  PlaceSuggestion as PlaceSuggestionType,
+  ReverseGeocoded,
+} from "@/surfboard/services/googleMapsService";
+import type {
   PlanCounts,
   PlanSummary,
 } from "@/surfboard/services/planSummaryService";
@@ -431,6 +437,62 @@ export const PlanMapData = z
   })
   .meta({ id: "PlanMap" });
 
+export const MapRouteData = z
+  .object({
+    distanceMeters: count.describe("Metres by road."),
+    durationSeconds: count.describe(
+      "Seconds by road at a normal speed (no live traffic)."
+    ),
+    polyline: z
+      .string()
+      .describe(
+        "The route as Google's encoded polyline (precision 5: latitude and longitude in degrees, times 100,000, as text)."
+      ),
+  })
+  .meta({ id: "MapRoute" });
+
+export const PlaceSuggestion = z
+  .object({
+    placeId: z.string(),
+    text: z.string().describe("The name, such as `Mende Market`."),
+    secondaryText: z
+      .string()
+      .describe("The area under it, such as `Maryland, Lagos`; may be empty."),
+    types: z
+      .array(z.string())
+      .describe("Google's kinds (`school`, `neighborhood`, ...) for the icon."),
+  })
+  .meta({ id: "PlaceSuggestion" });
+
+export const PlaceSuggestionsData = z
+  .object({ suggestions: z.array(PlaceSuggestion).max(5) })
+  .meta({ id: "PlaceSuggestions" });
+
+export const PlaceDetailsData = z
+  .object({
+    placeId: z.string(),
+    address: z.string(),
+    location: z.object({ lat: z.number(), lng: z.number() }),
+  })
+  .meta({ id: "PlaceDetails" });
+
+export const ReverseGeocodeData = z
+  .object({
+    address: z
+      .string()
+      .nullable()
+      .describe(
+        "The short address under the point; null where Google knows none."
+      ),
+    name: z
+      .string()
+      .nullable()
+      .describe(
+        "The nearest named place (a shop, a school, a landmark), or null."
+      ),
+  })
+  .meta({ id: "ReverseGeocode" });
+
 export const MapPillar = z
   .object({
     pillarNumber: z.string(),
@@ -745,5 +807,14 @@ export type ContractMatchesServices = [
   Must<Same<z.infer<typeof WalletSummaryData>, WalletSummary>>,
   Must<Same<z.infer<typeof DeviceSessionData>, Json<DeviceSession>>>,
   Must<Same<z.infer<typeof PushPreferencesData>, PushPreferences>>,
+  Must<Same<z.infer<typeof MapRouteData>, MapRoute>>,
+  Must<
+    Same<
+      z.infer<typeof PlaceSuggestionsData>,
+      { suggestions: PlaceSuggestionType[] }
+    >
+  >,
+  Must<Same<z.infer<typeof PlaceDetailsData>, PlaceDetails>>,
+  Must<Same<z.infer<typeof ReverseGeocodeData>, ReverseGeocoded>>,
 ];
 /* eslint-enable @typescript-eslint/no-unused-vars */

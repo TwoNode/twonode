@@ -919,6 +919,163 @@ export const ENDPOINTS: Endpoint[] = [
     routeFile: "app/api/v1/surfboard/plans/map/pillars/route.ts",
   },
   {
+    operationId: "mapRoute",
+    method: "post",
+    path: "/api/v1/surfboard/map/route",
+    tag: "Map",
+    summary: "A driving route between two places, for Navigate's preview",
+    description:
+      "Both places must be in Nigeria (a point outside is a 400). Without live traffic, so the time is a normal-speed estimate. Google bills each call, so an account has 60 a day (429 RATE_LIMITED after that); no place is logged or stored. 404 when Google finds no route; 503 MAP_SERVICE_UNAVAILABLE when Google is not set up or does not answer.",
+    access: "surveyor",
+    versionGate: true,
+    body: {
+      schema: z.object({
+        origin: z.object({
+          lat: z.number().min(4).max(14),
+          lng: z.number().min(2.5).max(15),
+        }),
+        destination: z.object({
+          lat: z.number().min(4).max(14),
+          lng: z.number().min(2.5).max(15),
+        }),
+      }),
+      example: {
+        origin: { lat: 6.4474, lng: 3.4739 },
+        destination: { lat: 6.5682, lng: 3.3768 },
+      },
+      invalid: [
+        {},
+        { origin: { lat: 6.4474, lng: 3.4739 } },
+        {
+          origin: { lat: 51.5, lng: -0.12 },
+          destination: { lat: 6.5, lng: 3.4 },
+        },
+        {
+          origin: { lat: "6.4", lng: 3.4 },
+          destination: { lat: 6.5, lng: 3.4 },
+        },
+      ],
+    },
+    data: S.MapRouteData,
+    errors: [
+      "VALIDATION_ERROR",
+      "NOT_FOUND",
+      "RATE_LIMITED",
+      "MAP_SERVICE_UNAVAILABLE",
+    ],
+    routeFile: "app/api/v1/surfboard/map/route/route.ts",
+  },
+  {
+    operationId: "mapPlaceSuggestions",
+    method: "get",
+    path: "/api/v1/surfboard/map/places/autocomplete",
+    tag: "Map",
+    summary: "Places in Nigeria that match what is being typed",
+    description:
+      "Up to five streets, addresses, landmarks, businesses or neighbourhoods, nearest to `near` (where the map is looking) first. One `sessionToken` per search, kept until a result is picked, because Google bills a session's suggestions together. The app waits for 3 characters and about 300 ms of no typing. An account has 400 a day; nothing typed is logged or stored.",
+    access: "surveyor",
+    versionGate: true,
+    params: [
+      {
+        name: "input",
+        in: "query",
+        required: true,
+        description: "What the person typed, 3 to 100 characters.",
+        schema: z.string().min(3).max(100),
+        example: "Mende Maryland",
+      },
+      {
+        name: "sessionToken",
+        in: "query",
+        required: true,
+        description:
+          "A random token (16 to 64 letters, digits, `-` or `_`) made by the app for one search.",
+        schema: z.string(),
+        example: "0b1f6c2e-7a54-4f0e-9d21-3c5a8e7b6d10",
+      },
+      {
+        name: "near",
+        in: "query",
+        description:
+          "Where the map is looking, as `lat,lng` inside Nigeria: suggestions near it come first. Left out, they are not biased.",
+        schema: z.string(),
+        example: "6.5,3.4",
+      },
+    ],
+    data: S.PlaceSuggestionsData,
+    errors: ["VALIDATION_ERROR", "RATE_LIMITED", "MAP_SERVICE_UNAVAILABLE"],
+    routeFile: "app/api/v1/surfboard/map/places/autocomplete/route.ts",
+  },
+  {
+    operationId: "mapPlaceDetails",
+    method: "get",
+    path: "/api/v1/surfboard/map/places/{placeId}",
+    tag: "Map",
+    summary: "Where one of the suggested places is",
+    description:
+      "The position and address of a place from the suggestions; it ends the search's session (send the same `sessionToken`). An account has 100 a day. 404 for a place Google does not know.",
+    access: "surveyor",
+    versionGate: true,
+    params: [
+      {
+        name: "placeId",
+        in: "path",
+        required: true,
+        description: "A suggestion's `placeId`.",
+        schema: z.string(),
+        example: "ChIJq6qqqt2LOxARvZkbJk1dKUY",
+      },
+      {
+        name: "sessionToken",
+        in: "query",
+        required: true,
+        description: "The token the suggestions were asked with.",
+        schema: z.string(),
+        example: "0b1f6c2e-7a54-4f0e-9d21-3c5a8e7b6d10",
+      },
+    ],
+    data: S.PlaceDetailsData,
+    errors: [
+      "VALIDATION_ERROR",
+      "NOT_FOUND",
+      "RATE_LIMITED",
+      "MAP_SERVICE_UNAVAILABLE",
+    ],
+    routeFile: "app/api/v1/surfboard/map/places/[placeId]/route.ts",
+  },
+  {
+    operationId: "mapReverseGeocode",
+    method: "get",
+    path: "/api/v1/surfboard/map/reverse-geocode",
+    tag: "Map",
+    summary: "The address and nearest named place under a point",
+    description:
+      "For a tap on the map that lands on no plan. `address` and `name` are each null where Google knows nothing: that is an answer, not an error (the app shows the coordinates). An account has 300 a day; nothing about the point is logged or stored.",
+    access: "surveyor",
+    versionGate: true,
+    params: [
+      {
+        name: "lat",
+        in: "query",
+        required: true,
+        description: "Latitude in degrees, inside Nigeria.",
+        schema: z.number(),
+        example: "6.4474",
+      },
+      {
+        name: "lng",
+        in: "query",
+        required: true,
+        description: "Longitude in degrees, inside Nigeria.",
+        schema: z.number(),
+        example: "3.4739",
+      },
+    ],
+    data: S.ReverseGeocodeData,
+    errors: ["VALIDATION_ERROR", "RATE_LIMITED", "MAP_SERVICE_UNAVAILABLE"],
+    routeFile: "app/api/v1/surfboard/map/reverse-geocode/route.ts",
+  },
+  {
     operationId: "coordinateShifts",
     method: "get",
     path: "/api/v1/surfboard/settings/coordinate-shifts",

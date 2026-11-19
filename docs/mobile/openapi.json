@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Surfboard mobile API",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "description": "The calls the Surfboard mobile app makes. Generated from `lib/mobile/contract` in the API repository: do not edit by hand. Every success is `{ success: true, data }`; every failure is `{ success: false, error, code?, details? }`. Dates are ISO 8601 in UTC. Objects are open: a newer server may add a field, and an app must ignore what it does not know."
   },
   "servers": [
@@ -3310,6 +3310,676 @@
         }
       }
     },
+    "/api/v1/surfboard/map/route": {
+      "post": {
+        "operationId": "mapRoute",
+        "tags": [
+          "Map"
+        ],
+        "summary": "A driving route between two places, for Navigate's preview",
+        "description": "Both places must be in Nigeria (a point outside is a 400). Without live traffic, so the time is a normal-speed estimate. Google bills each call, so an account has 60 a day (429 RATE_LIMITED after that); no place is logged or stored. 404 when Google finds no route; 503 MAP_SERVICE_UNAVAILABLE when Google is not set up or does not answer.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "origin": {
+                    "type": "object",
+                    "properties": {
+                      "lat": {
+                        "type": "number",
+                        "minimum": 4,
+                        "maximum": 14
+                      },
+                      "lng": {
+                        "type": "number",
+                        "minimum": 2.5,
+                        "maximum": 15
+                      }
+                    },
+                    "required": [
+                      "lat",
+                      "lng"
+                    ]
+                  },
+                  "destination": {
+                    "type": "object",
+                    "properties": {
+                      "lat": {
+                        "type": "number",
+                        "minimum": 4,
+                        "maximum": 14
+                      },
+                      "lng": {
+                        "type": "number",
+                        "minimum": 2.5,
+                        "maximum": 15
+                      }
+                    },
+                    "required": [
+                      "lat",
+                      "lng"
+                    ]
+                  }
+                },
+                "required": [
+                  "origin",
+                  "destination"
+                ]
+              },
+              "example": {
+                "origin": {
+                  "lat": 6.4474,
+                  "lng": 3.4739
+                },
+                "destination": {
+                  "lat": 6.5682,
+                  "lng": 3.3768
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MapRoute"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "description": "`NOT_FOUND`: Unknown, deleted or someone else's record (these look the same on purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "503": {
+            "description": "`MAP_SERVICE_UNAVAILABLE`: The map's Google services (directions, place search, the address under a tap) are not set up or did not answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "MAP_SERVICE_UNAVAILABLE"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/map/places/autocomplete": {
+      "get": {
+        "operationId": "mapPlaceSuggestions",
+        "tags": [
+          "Map"
+        ],
+        "summary": "Places in Nigeria that match what is being typed",
+        "description": "Up to five streets, addresses, landmarks, businesses or neighbourhoods, nearest to `near` (where the map is looking) first. One `sessionToken` per search, kept until a result is picked, because Google bills a session's suggestions together. The app waits for 3 characters and about 300 ms of no typing. An account has 400 a day; nothing typed is logged or stored.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "description": "What the person typed, 3 to 100 characters.",
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 100
+            },
+            "example": "Mende Maryland"
+          },
+          {
+            "name": "sessionToken",
+            "in": "query",
+            "required": true,
+            "description": "A random token (16 to 64 letters, digits, `-` or `_`) made by the app for one search.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "0b1f6c2e-7a54-4f0e-9d21-3c5a8e7b6d10"
+          },
+          {
+            "name": "near",
+            "in": "query",
+            "required": false,
+            "description": "Where the map is looking, as `lat,lng` inside Nigeria: suggestions near it come first. Left out, they are not biased.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "6.5,3.4"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlaceSuggestions"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "503": {
+            "description": "`MAP_SERVICE_UNAVAILABLE`: The map's Google services (directions, place search, the address under a tap) are not set up or did not answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "MAP_SERVICE_UNAVAILABLE"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/map/places/{placeId}": {
+      "get": {
+        "operationId": "mapPlaceDetails",
+        "tags": [
+          "Map"
+        ],
+        "summary": "Where one of the suggested places is",
+        "description": "The position and address of a place from the suggestions; it ends the search's session (send the same `sessionToken`). An account has 100 a day. 404 for a place Google does not know.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "placeId",
+            "in": "path",
+            "required": true,
+            "description": "A suggestion's `placeId`.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "ChIJq6qqqt2LOxARvZkbJk1dKUY"
+          },
+          {
+            "name": "sessionToken",
+            "in": "query",
+            "required": true,
+            "description": "The token the suggestions were asked with.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "0b1f6c2e-7a54-4f0e-9d21-3c5a8e7b6d10"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlaceDetails"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "description": "`NOT_FOUND`: Unknown, deleted or someone else's record (these look the same on purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "503": {
+            "description": "`MAP_SERVICE_UNAVAILABLE`: The map's Google services (directions, place search, the address under a tap) are not set up or did not answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "MAP_SERVICE_UNAVAILABLE"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/map/reverse-geocode": {
+      "get": {
+        "operationId": "mapReverseGeocode",
+        "tags": [
+          "Map"
+        ],
+        "summary": "The address and nearest named place under a point",
+        "description": "For a tap on the map that lands on no plan. `address` and `name` are each null where Google knows nothing: that is an answer, not an error (the app shows the coordinates). An account has 300 a day; nothing about the point is logged or stored.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "required": true,
+            "description": "Latitude in degrees, inside Nigeria.",
+            "schema": {
+              "type": "number"
+            },
+            "example": "6.4474"
+          },
+          {
+            "name": "lng",
+            "in": "query",
+            "required": true,
+            "description": "Longitude in degrees, inside Nigeria.",
+            "schema": {
+              "type": "number"
+            },
+            "example": "3.4739"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ReverseGeocode"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "503": {
+            "description": "`MAP_SERVICE_UNAVAILABLE`: The map's Google services (directions, place search, the address under a tap) are not set up or did not answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "MAP_SERVICE_UNAVAILABLE"
+            ]
+          }
+        }
+      }
+    },
     "/api/v1/surfboard/settings/coordinate-shifts": {
       "get": {
         "operationId": "coordinateShifts",
@@ -5084,6 +5754,30 @@
           "simplifiedGeometry"
         ]
       },
+      "MapRoute": {
+        "type": "object",
+        "properties": {
+          "distanceMeters": {
+            "description": "Metres by road.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "durationSeconds": {
+            "description": "Seconds by road at a normal speed (no live traffic).",
+            "type": "integer",
+            "minimum": 0
+          },
+          "polyline": {
+            "description": "The route as Google's encoded polyline (precision 5: latitude and longitude in degrees, times 100,000, as text).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "distanceMeters",
+          "durationSeconds",
+          "polyline"
+        ]
+      },
       "Me": {
         "type": "object",
         "properties": {
@@ -5281,6 +5975,81 @@
           "pageSize",
           "total",
           "totalPages"
+        ]
+      },
+      "PlaceDetails": {
+        "type": "object",
+        "properties": {
+          "placeId": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lng": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "lat",
+              "lng"
+            ]
+          }
+        },
+        "required": [
+          "placeId",
+          "address",
+          "location"
+        ]
+      },
+      "PlaceSuggestion": {
+        "type": "object",
+        "properties": {
+          "placeId": {
+            "type": "string"
+          },
+          "text": {
+            "description": "The name, such as `Mende Market`.",
+            "type": "string"
+          },
+          "secondaryText": {
+            "description": "The area under it, such as `Maryland, Lagos`; may be empty.",
+            "type": "string"
+          },
+          "types": {
+            "description": "Google's kinds (`school`, `neighborhood`, ...) for the icon.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "placeId",
+          "text",
+          "secondaryText",
+          "types"
+        ]
+      },
+      "PlaceSuggestions": {
+        "type": "object",
+        "properties": {
+          "suggestions": {
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaceSuggestion"
+            }
+          }
+        },
+        "required": [
+          "suggestions"
         ]
       },
       "PlanCounts": {
@@ -6511,6 +7280,37 @@
           }
         ]
       },
+      "ReverseGeocode": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "description": "The short address under the point; null where Google knows none.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "description": "The nearest named place (a shop, a school, a landmark), or null.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "address",
+          "name"
+        ]
+      },
       "SessionUser": {
         "type": "object",
         "properties": {
@@ -6834,6 +7634,11 @@
       "status": 429,
       "meaning": "Too many tries.",
       "appDoes": "Asks the person to wait, without a countdown the server did not promise."
+    },
+    "MAP_SERVICE_UNAVAILABLE": {
+      "status": 503,
+      "meaning": "The map's Google services (directions, place search, the address under a tap) are not set up or did not answer.",
+      "appDoes": "Carries on without them: no route preview (Direction opens the maps app at once), no suggestions, the coordinates for a tapped point."
     },
     "APP_UPDATE_REQUIRED": {
       "status": 426,
