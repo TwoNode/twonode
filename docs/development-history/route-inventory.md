@@ -31,7 +31,7 @@ The auth column is a static reading of source, not an access-control test. The a
 
 <!-- BEGIN GENERATED: api-routes -->
 
-#### Auth (shared) (25)
+#### Auth (shared) (30)
 
 | Route                                        | Method(s)    | Auth                                     |
 | :------------------------------------------- | :----------- | :--------------------------------------- |
@@ -41,12 +41,17 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/auth/login`                         | POST         | public (CSRF-checked)                    |
 | `/api/v1/auth/logout`                        | POST         | session (see source)                     |
 | `/api/v1/auth/me`                            | GET          | session (see source)                     |
+| `/api/v1/auth/mobile/delete-account`         | POST         | USER (unverified OK)                     |
 | `/api/v1/auth/mobile/devices`                | GET          | any signed-in (unverified OK)            |
 | `/api/v1/auth/mobile/devices/[familyId]`     | DELETE       | any signed-in (unverified OK)            |
+| `/api/v1/auth/mobile/legal`                  | GET          | public                                   |
 | `/api/v1/auth/mobile/login`                  | POST         | public                                   |
 | `/api/v1/auth/mobile/logout`                 | POST         | public                                   |
 | `/api/v1/auth/mobile/push-token`             | POST, DELETE | POST: USER; DELETE: USER (unverified OK) |
 | `/api/v1/auth/mobile/refresh`                | POST         | public                                   |
+| `/api/v1/auth/mobile/register/resend`        | POST         | public                                   |
+| `/api/v1/auth/mobile/register/start`         | POST         | public                                   |
+| `/api/v1/auth/mobile/register/verify`        | POST         | public                                   |
 | `/api/v1/auth/mobile/request-password-reset` | POST         | public                                   |
 | `/api/v1/auth/mobile/resend-verification`    | POST         | USER (unverified OK)                     |
 | `/api/v1/auth/mobile/verify-email`           | POST         | USER (unverified OK)                     |
@@ -61,7 +66,7 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/auth/verify-email`                  | POST         | session (see source)                     |
 | `/api/v1/auth/verify-email-otp`              | POST         | session (see source)                     |
 
-#### Surfboard (147)
+#### Surfboard (151)
 
 | Route                                                                | Method(s)          | Auth                                                                                                        |
 | :------------------------------------------------------------------- | :----------------- | :---------------------------------------------------------------------------------------------------------- |
@@ -115,6 +120,10 @@ The auth column is a static reading of source, not an access-control test. The a
 | `/api/v1/surfboard/files/upload-multi`                               | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/files/upload-with-auth`                           | POST               | any signed-in                                                                                               |
 | `/api/v1/surfboard/files/view`                                       | GET                | USER, ACCOUNTS, CHARTING, SURCON, RECORDS_I, INTAKE, RECORDS_II, ARCHIVE, ADMIN, SUPERADMIN, MDA_SUPERADMIN |
+| `/api/v1/surfboard/map/places/[placeId]`                             | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/map/places/autocomplete`                          | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/map/reverse-geocode`                              | GET                | USER                                                                                                        |
+| `/api/v1/surfboard/map/route`                                        | POST               | USER                                                                                                        |
 | `/api/v1/surfboard/mda/[role]/plans`                                 | GET                | CHARTING, SURCON, RECORDS_I, RECORDS_II, SUPERADMIN, MDA_SUPERADMIN                                         |
 | `/api/v1/surfboard/mda/[role]/plans/[planId]/decision`               | POST               | CHARTING, SURCON, RECORDS_I, INTAKE, SUPERADMIN                                                             |
 | `/api/v1/surfboard/mda/accounts/batches`                             | GET                | ACCOUNTS, SUPERADMIN, MDA_SUPERADMIN                                                                        |
@@ -389,9 +398,9 @@ The auth column is a static reading of source, not an access-control test. The a
 
 `/` · `/about-us` · `/contact` · `/events` · `/featurednews` · `/gallery` · `/grid/calculate` · `/grid/generate` · `/grid/route` · `/grid/search` · `/grid/verify` · `/industries/[slug]` · `/insights` · `/insights/[slug]` · `/login` · `/our-story` · `/present` · `/previous-landing-page-contact` · `/redirect` · `/services` · `/signup`
 
-#### Surfboard (56)
+#### Surfboard (58)
 
-`/surfboard` · `/surfboard-mda/dashboard` · `/surfboard-mda/dashboard/accounts` · `/surfboard-mda/dashboard/archive` · `/surfboard-mda/dashboard/charting` · `/surfboard-mda/dashboard/intake` · `/surfboard-mda/dashboard/notifications` · `/surfboard-mda/dashboard/profile` · `/surfboard-mda/dashboard/records-i` · `/surfboard-mda/dashboard/records-ii` · `/surfboard-mda/dashboard/settings` · `/surfboard-mda/dashboard/surcon` · `/surfboard-mda/error-login` · `/surfboard-mda/login` · `/surfboard-restricted/dashboard` · `/surfboard-restricted/dashboard/admin-tools` · `/surfboard-restricted/dashboard/analytics` · `/surfboard-restricted/dashboard/audit-logs` · `/surfboard-restricted/dashboard/certificates` · `/surfboard-restricted/dashboard/cod` · `/surfboard-restricted/dashboard/cod/batches` · `/surfboard-restricted/dashboard/kyc` · `/surfboard-restricted/dashboard/map` · `/surfboard-restricted/dashboard/notifications` · `/surfboard-restricted/dashboard/qr-earnings` · `/surfboard-restricted/dashboard/qr-earnings/settings` · `/surfboard-restricted/dashboard/secure-plans` · `/surfboard-restricted/dashboard/settings` · `/surfboard-restricted/dashboard/superadmin` · `/surfboard-restricted/dashboard/surf-plans` · `/surfboard-restricted/dashboard/surf-plans/update/[id]` · `/surfboard-restricted/dashboard/user-management` · `/surfboard-restricted/error-login` · `/surfboard-restricted/login` · `/surfboard/accept-invite` · `/surfboard/badge` · `/surfboard/dashboard` · `/surfboard/dashboard/map` · `/surfboard/dashboard/newplan` · `/surfboard/dashboard/notifications` · `/surfboard/dashboard/payment/callback` · `/surfboard/dashboard/plan` · `/surfboard/dashboard/plan/edit` · `/surfboard/dashboard/plans` · `/surfboard/dashboard/qr-earnings` · `/surfboard/dashboard/queried-plans` · `/surfboard/dashboard/settings` · `/surfboard/dashboard/spcode-verification` · `/surfboard/dashboard/subscription` · `/surfboard/dashboard/subscription/callback` · `/surfboard/dashboard/viewmap` · `/surfboard/error-login` · `/surfboard/login` · `/surfboard/reset-password` · `/surfboard/verify-email` · `/surfboardplan/[id]`
+`/surfboard` · `/surfboard-mda/dashboard` · `/surfboard-mda/dashboard/accounts` · `/surfboard-mda/dashboard/archive` · `/surfboard-mda/dashboard/charting` · `/surfboard-mda/dashboard/intake` · `/surfboard-mda/dashboard/notifications` · `/surfboard-mda/dashboard/profile` · `/surfboard-mda/dashboard/records-i` · `/surfboard-mda/dashboard/records-ii` · `/surfboard-mda/dashboard/settings` · `/surfboard-mda/dashboard/surcon` · `/surfboard-mda/error-login` · `/surfboard-mda/login` · `/surfboard-restricted/dashboard` · `/surfboard-restricted/dashboard/admin-tools` · `/surfboard-restricted/dashboard/analytics` · `/surfboard-restricted/dashboard/audit-logs` · `/surfboard-restricted/dashboard/certificates` · `/surfboard-restricted/dashboard/cod` · `/surfboard-restricted/dashboard/cod/batches` · `/surfboard-restricted/dashboard/kyc` · `/surfboard-restricted/dashboard/map` · `/surfboard-restricted/dashboard/notifications` · `/surfboard-restricted/dashboard/qr-earnings` · `/surfboard-restricted/dashboard/qr-earnings/settings` · `/surfboard-restricted/dashboard/secure-plans` · `/surfboard-restricted/dashboard/settings` · `/surfboard-restricted/dashboard/superadmin` · `/surfboard-restricted/dashboard/surf-plans` · `/surfboard-restricted/dashboard/surf-plans/update/[id]` · `/surfboard-restricted/dashboard/user-management` · `/surfboard-restricted/error-login` · `/surfboard-restricted/login` · `/surfboard/accept-invite` · `/surfboard/badge` · `/surfboard/dashboard` · `/surfboard/dashboard/map` · `/surfboard/dashboard/newplan` · `/surfboard/dashboard/notifications` · `/surfboard/dashboard/payment/callback` · `/surfboard/dashboard/plan` · `/surfboard/dashboard/plan/edit` · `/surfboard/dashboard/plans` · `/surfboard/dashboard/qr-earnings` · `/surfboard/dashboard/queried-plans` · `/surfboard/dashboard/settings` · `/surfboard/dashboard/spcode-verification` · `/surfboard/dashboard/subscription` · `/surfboard/dashboard/subscription/callback` · `/surfboard/dashboard/viewmap` · `/surfboard/error-login` · `/surfboard/login` · `/surfboard/privacy` · `/surfboard/reset-password` · `/surfboard/terms` · `/surfboard/verify-email` · `/surfboardplan/[id]`
 
 #### REVA (34)
 

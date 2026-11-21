@@ -2,6 +2,11 @@ import prisma from "@/lib/prisma";
 import { ApprovalStatus, BatchPaymentStatus } from "@/prisma/generated";
 import { transmitToOSSG } from "@/surfboard/utils/ossg";
 import {
+  PLAN_STATUS_SELECT,
+  computeDisplayStatus,
+  readyForPhysicalSubmission,
+} from "@/surfboard/utils/planStatus";
+import {
   notifyAccountsDisapproval,
   notifyConsolidatedQueries,
   notifyPlanApproved,
@@ -1551,25 +1556,78 @@ async function checkAndDispatchQueries(planId: string) {
 // Physical copy
 // ---------------------------------------------------------------------------
 
-export async function submitPhysicalCopies(userId: string, planIds: string[]) {
+/**
+ * Why a plan from the request was not handed in. `NOT_FOUND` covers an id that does not exist,
+ * is not the caller's or is deleted (the three look the same on purpose).
+ */
+export type PhysicalCopyRefusalReason =
+  "NOT_FOUND" | "ALREADY_SUBMITTED" | "NOT_READY";
+
+export type PhysicalCopyResult = {
+  /** How many plans were handed in by this request (the website's modal reads this). */
+  count: number;
+  /** Which ones, so a client can show the server-confirmed outcome and retry safely. */
+  acceptedIds: string[];
+  /** Every other id of the request, with why. `status` is the plan's display label, for the caller's own plans. */
+  refused: {
+    id: string;
+    reason: PhysicalCopyRefusalReason;
+    status: string | null;
+  }[];
+};
+
+/**
+ * A surveyor hands in the physical copy of their own plans (decision D16, TASK-0015 1F.2). Only
+ * a plan that passes `readyForPhysicalSubmission` (red copy submitted, not yet handed in, not
+ * queried or lodged, Accounts, Charting, SURCON and Records I approved, the batch paid) is
+ * accepted: the same function the lists and the batch detail use, so what is offered is what is
+ * allowed. The others are returned in `refused`; if none qualifies the request fails with a 400.
+ */
+export async function submitPhysicalCopies(
+  userId: string,
+  planIds: string[]
+): Promise<PhysicalCopyResult> {
+  const ids = [...new Set(planIds)];
   const plans = await prisma.surfboardPlan.findMany({
-    where: {
-      id: { in: planIds },
-      userId,
-      redCopyStatus: "SUBMITTED",
-      physicalCopySubmitted: false,
-      deleted: false,
-    },
-    select: { id: true },
+    where: { id: { in: ids }, userId, deleted: false },
+    select: { id: true, ...PLAN_STATUS_SELECT },
   });
-  if (plans.length === 0)
+  const byId = new Map(plans.map((p) => [p.id, p]));
+  const readyIds = plans
+    .filter((p) => readyForPhysicalSubmission(p))
+    .map((p) => p.id);
+  if (readyIds.length === 0)
     throw new ValidationError({ planIds: "No eligible plans found to submit" });
 
-  const validPlanIds = plans.map((p) => p.id);
+  // One timestamp for the whole request, so the plans this request flipped can be told apart
+  // from one that another request flipped in between.
+  const at = new Date();
   const result = await prisma.surfboardPlan.updateMany({
-    where: { id: { in: validPlanIds } },
-    data: { physicalCopySubmitted: true, physicalCopySubmittedAt: new Date() },
+    where: { id: { in: readyIds }, userId, physicalCopySubmitted: false },
+    data: { physicalCopySubmitted: true, physicalCopySubmittedAt: at },
   });
+  let acceptedIds = readyIds;
+  if (result.count !== readyIds.length) {
+    const handedIn = await prisma.surfboardPlan.findMany({
+      where: { id: { in: readyIds }, userId, physicalCopySubmittedAt: at },
+      select: { id: true },
+    });
+    acceptedIds = handedIn.map((p) => p.id);
+  }
 
-  return { count: result.count };
+  const accepted = new Set(acceptedIds);
+  const ready = new Set(readyIds);
+  const refused = ids
+    .filter((id) => !accepted.has(id))
+    .map((id) => {
+      const plan = byId.get(id);
+      if (!plan) return { id, reason: "NOT_FOUND" as const, status: null };
+      const status = computeDisplayStatus(plan).label;
+      // `ready` but not accepted: another request handed it in between our read and our write.
+      if (plan.physicalCopySubmitted || ready.has(id))
+        return { id, reason: "ALREADY_SUBMITTED" as const, status };
+      return { id, reason: "NOT_READY" as const, status };
+    });
+
+  return { count: acceptedIds.length, acceptedIds, refused };
 }

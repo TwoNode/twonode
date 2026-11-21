@@ -7,8 +7,8 @@
  * the same pull request and raise LEGAL_VERSION.
  */
 
-export const LEGAL_VERSION = "2026-11-16";
-export const LEGAL_EFFECTIVE_DATE = "16 November 2026";
+export const LEGAL_VERSION = "2026-11-21";
+export const LEGAL_EFFECTIVE_DATE = "21 November 2026";
 export const LEGAL_CONTACT_EMAIL = "info@twonodetechnologies.com";
 
 export const SURFBOARD_PRIVACY_PATH = "/surfboard/privacy";
@@ -49,6 +49,7 @@ export const SURFBOARD_PRIVACY: LegalDoc = {
         "Your survey plans: plan number, title, type, area, facilitator, pillar type, the plan's outline and location, and the files you upload (plan PDF, CAD file, certificates, record copy).",
         "Payments and earnings: subscription and Certificate of Deposit payment status and references, wallet balances and QR-earnings transactions. If you request a withdrawal, your bank name, account number and account name. We never see or store your card details: card payments are taken by Paystack, and Remita payments on Remita's own pages.",
         "Sharing and comments: the people you share a plan with (by email), their responses, and comments on a plan.",
+        "Map features in the app, only when you use them: when you tap Navigate or Direction, the position of your phone and the nearest corner of the plan; when you search for a place, the words you type and roughly where the map is looking; when you tap the map to find out what is there, the point you tapped. We send these through our server to Google to draw the route, list matching places and name the address. Our application does not store them, and we only count how many such requests an account makes in a day, to limit abuse, not what they contained. The map itself is drawn by Google's Maps software inside the app, which contacts Google directly (see Who we share it with).",
         "App and device data: a push-notification address for your phone, your device type and app version, the devices signed in to your account, and crash or error notes from the app.",
         "Security records: sign-in attempts, audit entries of important actions on your account and plans, and the network address (IP) of requests, used to keep the service safe.",
       ],
@@ -74,6 +75,7 @@ export const SURFBOARD_PRIVACY: LegalDoc = {
         "Government bodies and the offices involved in reviewing and recording a plan you submit (the MDAs), who see the plan, its files and your professional details as part of that review.",
         "People you choose: when you share a plan, the person you share it with can see that plan and the comments on it. A plan's public page shows plan details to anyone who opens its link or scans its QR code.",
         "Service providers who process data for us: cloud hosting and database services, cloud file storage, email delivery, push-notification delivery (Expo, and Apple and Google's push services), Paystack and Remita for payments, and Kinde for Google sign-in. They may use your data only to provide their service to us.",
+        "Google (Google Maps Platform), for the map, routes, place search and address lookup in the app. The map shown in the app is drawn by Google's Maps software, which contacts Google directly and so receives the usual technical information from your phone (such as its network address) and the area you are viewing. Your position, searches and taps for the map features described above reach Google through our server. Like every request to our servers, they also pass through our hosting provider, whose standard request records may keep the address of a request, including the position it carries, for a short time. Google handles this data under its own terms and privacy policy: Google Maps and Google Earth Additional Terms of Service (https://www.google.com/intl/en-US_US/help/terms_maps/) and Google Privacy Policy (https://policies.google.com/privacy).",
         "Authorities, courts or professional advisers, where the law requires or to protect rights, safety and the service.",
       ],
     },
@@ -87,7 +89,8 @@ export const SURFBOARD_PRIVACY: LegalDoc = {
       heading: "How long we keep it",
       items: [
         "Account and plan data: for as long as your account is open, and afterwards for as long as we need it to meet legal, accounting and record-keeping duties or to resolve disputes.",
-        "Plans lodged with the government, payment and withdrawal records, and audit entries are records we may have to keep after you ask to close your account.",
+        "If you close your account (in the app: Profile, then Delete account), we erase your name, email address, phone number, address, company details, logo, signature, bank details, sign-ins and devices, and we cancel any subscription. We keep the survey plans on your account, including plans you never submitted, and payment and withdrawal records and audit entries, with no personal details attached to the account. Plans you shared stay shared with the people you shared them with. A record we keep may still contain names you typed into it, such as a plan's title or a client's name.",
+        "We cannot close an account while it holds money in the wallet or a withdrawal that has not been paid out; withdraw the money first.",
         "Sign-in attempt and security records are kept for a limited period for security and then removed.",
         "Verification codes and pending registrations expire within minutes and are removed after use or expiry.",
       ],
@@ -102,6 +105,7 @@ export const SURFBOARD_PRIVACY: LegalDoc = {
       heading: "Your rights",
       paragraphs: [
         `Under the Nigeria Data Protection Act 2023 you may ask us to give you access to your data, correct it, delete it, restrict or object to how we use it, and give it to you in a portable form, and you may withdraw consent. Write to ${LEGAL_CONTACT_EMAIL}; we will answer within a reasonable time and may first need to confirm it is you. You can correct most details yourself in Profile and Settings.`,
+        "You can close your account yourself in the app (Profile, then Delete account); what that erases and what we keep is described under How long we keep it. For anything else, write to us.",
         "You may also complain to the Nigeria Data Protection Commission (NDPC).",
       ],
     },

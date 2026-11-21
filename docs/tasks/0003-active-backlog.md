@@ -23,7 +23,7 @@ Track open integrations, deferred configurations, and operational housekeeping i
 
 ### Module A: Payments & REVA
 
-- [ ] **Set GOOGLE_MAPS_SERVER_API_KEY:** Set on Vercel (staging first, then prod) to enable server-side REVA address checks. Waiting on Google Cloud project owner to enable billing (current key returns REQUEST_DENIED; setting prematurely would 503 REVA payments). _(Assignee: roji-tech)_
+- [ ] **Set GOOGLE_MAPS_SERVER_API_KEY:** Set on Vercel (staging first, then prod) to enable server-side REVA address checks. Waiting on Google Cloud project owner to enable billing (current key returns REQUEST_DENIED; setting prematurely would 503 REVA payments). **2026-11-19:** the maintainer has a new key; the old key in `.env` still answers REQUEST_DENIED, so nothing was set; see `current-tasks.md`. _(Assignee: roji-tech)_
 - [ ] **Paystack renewal webhook payload verification:** Verify Paystack subscription renewal webhook payload against live event signatures once test renewal triggers. _(Assignee: roji-tech)_
 
 ### Module B: GBC Administration

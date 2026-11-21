@@ -11,6 +11,12 @@ import type { PlanDetail } from "@/surfboard/services/planDetailService";
 import type { PlanFileLink } from "@/surfboard/services/planFileLinkService";
 import type { MapPillars, PlanMap } from "@/surfboard/services/planMapService";
 import type {
+  MapRoute,
+  PlaceDetails,
+  PlaceSuggestion as PlaceSuggestionType,
+  ReverseGeocoded,
+} from "@/surfboard/services/googleMapsService";
+import type {
   PlanCounts,
   PlanSummary,
 } from "@/surfboard/services/planSummaryService";
@@ -155,6 +161,42 @@ export const LoginData = TokenPair.extend({ user: SessionUser }).meta({
   id: "LoginResult",
 });
 export const RefreshData = TokenPair.meta({ id: "RefreshResult" });
+
+export const RegisterStartData = z
+  .object({
+    pendingRegistrationId: z
+      .string()
+      .describe("Send it back with the code, and when asking for a new code."),
+    method: z
+      .literal("OTP")
+      .describe(
+        "Always a six-digit code for the app, whatever the website uses."
+      ),
+    codeExpiresInSeconds: z
+      .number()
+      .int()
+      .positive()
+      .describe("How long the emailed code works."),
+  })
+  .meta({ id: "RegisterStartResult" });
+
+export const LegalVersionData = z
+  .object({
+    version: z
+      .string()
+      .describe(
+        "Send it back as `acceptedLegalVersion` when starting a sign-up."
+      ),
+    termsUrl: z.string().describe("The Terms of Use, to open in the browser."),
+    privacyUrl: z
+      .string()
+      .describe("The Privacy Policy, to open in the browser."),
+  })
+  .meta({ id: "LegalVersion" });
+
+export const AccountClosedData = z
+  .object({ closed: z.literal(true) })
+  .meta({ id: "AccountClosedResult" });
 
 export const MeData = z
   .object({
@@ -394,6 +436,62 @@ export const PlanMapData = z
     truncated: z.boolean().describe("There are more plans than were read."),
   })
   .meta({ id: "PlanMap" });
+
+export const MapRouteData = z
+  .object({
+    distanceMeters: count.describe("Metres by road."),
+    durationSeconds: count.describe(
+      "Seconds by road at a normal speed (no live traffic)."
+    ),
+    polyline: z
+      .string()
+      .describe(
+        "The route as Google's encoded polyline (precision 5: latitude and longitude in degrees, times 100,000, as text)."
+      ),
+  })
+  .meta({ id: "MapRoute" });
+
+export const PlaceSuggestion = z
+  .object({
+    placeId: z.string(),
+    text: z.string().describe("The name, such as `Mende Market`."),
+    secondaryText: z
+      .string()
+      .describe("The area under it, such as `Maryland, Lagos`; may be empty."),
+    types: z
+      .array(z.string())
+      .describe("Google's kinds (`school`, `neighborhood`, ...) for the icon."),
+  })
+  .meta({ id: "PlaceSuggestion" });
+
+export const PlaceSuggestionsData = z
+  .object({ suggestions: z.array(PlaceSuggestion).max(5) })
+  .meta({ id: "PlaceSuggestions" });
+
+export const PlaceDetailsData = z
+  .object({
+    placeId: z.string(),
+    address: z.string(),
+    location: z.object({ lat: z.number(), lng: z.number() }),
+  })
+  .meta({ id: "PlaceDetails" });
+
+export const ReverseGeocodeData = z
+  .object({
+    address: z
+      .string()
+      .nullable()
+      .describe(
+        "The short address under the point; null where Google knows none."
+      ),
+    name: z
+      .string()
+      .nullable()
+      .describe(
+        "The nearest named place (a shop, a school, a landmark), or null."
+      ),
+  })
+  .meta({ id: "ReverseGeocode" });
 
 export const MapPillar = z
   .object({
@@ -709,5 +807,14 @@ export type ContractMatchesServices = [
   Must<Same<z.infer<typeof WalletSummaryData>, WalletSummary>>,
   Must<Same<z.infer<typeof DeviceSessionData>, Json<DeviceSession>>>,
   Must<Same<z.infer<typeof PushPreferencesData>, PushPreferences>>,
+  Must<Same<z.infer<typeof MapRouteData>, MapRoute>>,
+  Must<
+    Same<
+      z.infer<typeof PlaceSuggestionsData>,
+      { suggestions: PlaceSuggestionType[] }
+    >
+  >,
+  Must<Same<z.infer<typeof PlaceDetailsData>, PlaceDetails>>,
+  Must<Same<z.infer<typeof ReverseGeocodeData>, ReverseGeocoded>>,
 ];
 /* eslint-enable @typescript-eslint/no-unused-vars */

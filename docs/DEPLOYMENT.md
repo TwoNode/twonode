@@ -59,6 +59,29 @@ of 2026-11-04 is still the latest). Keep it that way: never set
 `lib/siteUrl.ts` from `BASE_URL`, never from the request's `Host`, so
 they point at the main domain whichever address the visitor used.
 
+**Two rules apply to the `.tech` host only** (API PR #570, 2026-11-17; both
+are in `next.config.mjs` with a `has: [{ type: "host", value:
+"twonodetechnologies.tech" }]` condition, so the main site, staging and
+previews never match them, and `tests/functional/tech-domain-config.test.ts`
+pins that):
+
+- **Sign-in starts on the main domain (I-060).** `/api/auth/login`,
+  `/api/auth/register`, `/reva/login` and `/reva-restricted/login` answer 307
+  to the same path on `https://www.twonodetechnologies.com`, query string
+  kept. Kinde returns to `KINDE_SITE_URL` only, and a sign-in's state cookies
+  belong to the host it began on, so it has to begin and end on the main
+  domain. The rest of `/api/auth` is not redirected: pages call
+  `/api/auth/logout_redirect` with `fetch`, which must stay on its own host.
+- **Only the main address is indexed (I-061).** `X-Robots-Tag: noindex` is
+  sent on the `.tech` host. The file's own `index, follow` rule for every
+  route stays first (Next applies the last matching rule for a header key, so
+  the `.tech` rule has to stay after it). `og:url` still says
+  `https://twonode.tech` on both addresses (a hard-coded fallback in two
+  layouts); fixing it changes the main site, so it waits for the maintainer.
+
+Not yet seen: a real Kinde sign-in from the `.tech` login page on the live
+host (checked with `curl` and a `Host` header on a local server only).
+
 **Registrar and DNS.** `twonodetechnologies.tech` is registered at
 Namify (namify.get.tech). Its nameservers are `ns1.vercel-dns.com` and
 `ns2.vercel-dns.com`, set by hand in the registrar's panel (Your domains
