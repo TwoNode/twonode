@@ -45,6 +45,23 @@ describe("Surfboard legal text", () => {
     expect(text).toContain("Nigeria Data Protection Commission");
   });
 
+  it("the privacy policy says what the map features send to Google, and points to Google's own terms (I-067)", () => {
+    const text = JSON.stringify(SURFBOARD_PRIVACY);
+    // What goes to Google: a position, searches and taps, through our server.
+    expect(text).toContain("position of your phone");
+    expect(text).toContain("the words you type");
+    expect(text).toContain("the point you tapped");
+    expect(text).toContain("Google Maps Platform");
+    // That our application keeps none of it, and that the hosting provider may.
+    expect(text).toContain("Our application does not store them");
+    expect(text).toContain("hosting provider");
+    // Google's terms ask that its terms and privacy policy are linked.
+    expect(text).toContain("https://policies.google.com/privacy");
+    expect(text).toContain(
+      "https://www.google.com/intl/en-US_US/help/terms_maps/"
+    );
+  });
+
   it("the pages are where the register form and the footer point", () => {
     expect(SURFBOARD_PRIVACY_PATH).toBe("/surfboard/privacy");
     expect(SURFBOARD_TERMS_PATH).toBe("/surfboard/terms");

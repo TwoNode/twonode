@@ -29,6 +29,21 @@ vi.mock("@/lib/observability/logger", () => ({
 vi.mock("@/lib/auth/rateLimit", () => ({
   consumeRateLimit: vi.fn(async () => true),
 }));
+// Google is never called from these tests: the map's service answers nothing.
+vi.mock("@/surfboard/services/googleMapsService", () => ({
+  computeRoute: vi.fn(async () => ({
+    distanceMeters: 1,
+    durationSeconds: 1,
+    polyline: "_p~iF~ps|U",
+  })),
+  autocompletePlaces: vi.fn(async () => []),
+  getPlaceDetails: vi.fn(async () => ({
+    placeId: "x",
+    address: "",
+    location: { lat: 6.5, lng: 3.4 },
+  })),
+  reverseGeocode: vi.fn(async () => ({ address: null, name: null })),
+}));
 vi.mock("@/lib/auth/session", async (original) => ({
   ...(await original<typeof import("@/lib/auth/session")>()),
   getServerSession: mocks.session,
@@ -49,6 +64,8 @@ const { parsePlanStatsQuery } =
   await import("@/surfboard/utils/planStatsQuery");
 const { parseBatchSummaryQuery } =
   await import("@/surfboard/utils/batchSummaryQuery");
+const { parseAutocompleteQuery } =
+  await import("@/surfboard/utils/mapGoogleInput");
 const { SurfboardRole } = await import("@/utils/platform");
 
 type Endpoint = (typeof ENDPOINTS)[number];
@@ -100,6 +117,14 @@ const ROUTES: Record<string, () => Promise<Record<string, unknown>>> = {
     import("@/app/api/v1/surfboard/plans/map/route"),
   "app/api/v1/surfboard/plans/map/pillars/route.ts": () =>
     import("@/app/api/v1/surfboard/plans/map/pillars/route"),
+  "app/api/v1/surfboard/map/route/route.ts": () =>
+    import("@/app/api/v1/surfboard/map/route/route"),
+  "app/api/v1/surfboard/map/places/autocomplete/route.ts": () =>
+    import("@/app/api/v1/surfboard/map/places/autocomplete/route"),
+  "app/api/v1/surfboard/map/places/[placeId]/route.ts": () =>
+    import("@/app/api/v1/surfboard/map/places/[placeId]/route"),
+  "app/api/v1/surfboard/map/reverse-geocode/route.ts": () =>
+    import("@/app/api/v1/surfboard/map/reverse-geocode/route"),
   "app/api/v1/surfboard/users/search/route.ts": () =>
     import("@/app/api/v1/surfboard/users/search/route"),
   "app/api/v1/surfboard/plans/[planId]/share/route.ts": () =>
@@ -297,6 +322,14 @@ const PARSERS: Record<string, (params: URLSearchParams) => unknown> = {
   listPlanSummaries: parsePlanSummaryQuery,
   planStats: parsePlanStatsQuery,
   listBatchSummaries: parseBatchSummaryQuery,
+  // The two parameters the real parser needs are filled in when absent, so each of the others can
+  // be shown to change what it returns.
+  mapPlaceSuggestions: (params) => {
+    const all = new URLSearchParams(params);
+    if (!all.has("input")) all.set("input", "abc");
+    if (!all.has("sessionToken")) all.set("sessionToken", "0123456789abcdef");
+    return parseAutocompleteQuery(all);
+  },
 };
 const plain = (value: unknown) => JSON.stringify(value);
 
@@ -426,6 +459,7 @@ describe("the failure codes", () => {
       ...new Set(ENDPOINTS.map((e) => e.routeFile)),
       "surfboard/services/planFileLinkService.ts",
       "surfboard/services/accountClosureService.ts",
+      "surfboard/services/googleMapsService.ts",
     ];
     const found = new Map<string, number>();
     for (const file of sources) {
