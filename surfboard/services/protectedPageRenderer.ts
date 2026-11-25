@@ -97,13 +97,6 @@ function standardFonts(): string {
   return `${STANDARD_FONTS_DIR}${path.sep}`;
 }
 
-/** TEMPORARY (2026-11-25, while a render failure on Vercel is being understood): what went wrong, in a few words. */
-function reason(error: unknown): { reason: string } {
-  const text =
-    error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-  return { reason: text.slice(0, 160) };
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function openPdf(bytes: Uint8Array): Promise<any> {
   const lib = await canvasLib();
@@ -130,12 +123,7 @@ async function openPdf(bytes: Uint8Array): Promise<any> {
   } catch (error) {
     // What went wrong is logged (never the file or who asked); the caller gets the same words.
     logger.error("protected file: the PDF could not be opened", {}, error);
-    throw new ApiError(
-      422,
-      "FILE_NOT_VIEWABLE",
-      "This file can't be opened",
-      reason(error)
-    );
+    throw new ApiError(422, "FILE_NOT_VIEWABLE", "This file can't be opened");
   }
 }
 
@@ -200,12 +188,7 @@ export async function renderPage(
       image = await lib.loadImage(Buffer.from(bytes));
     } catch (error) {
       logger.error("protected file: the picture could not be read", {}, error);
-      throw new ApiError(
-        422,
-        "FILE_NOT_VIEWABLE",
-        "This file can't be opened",
-        reason(error)
-      );
+      throw new ApiError(422, "FILE_NOT_VIEWABLE", "This file can't be opened");
     }
     // A picture is only ever made smaller (a tiny photo is not blown up).
     const scale = Math.min(1, pageScale(image.width, image.height));
@@ -245,12 +228,7 @@ export async function renderPage(
         { page },
         error
       );
-      throw new ApiError(
-        422,
-        "FILE_NOT_VIEWABLE",
-        "This file can't be opened",
-        reason(error)
-      );
+      throw new ApiError(422, "FILE_NOT_VIEWABLE", "This file can't be opened");
     }
     drawWatermark(ctx, width, height, watermark);
     return canvas.encode("jpeg", JPEG_QUALITY);
