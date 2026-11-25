@@ -108,6 +108,12 @@ function reason(error: unknown): { reason: string } {
 async function openPdf(bytes: Uint8Array): Promise<any> {
   const lib = await canvasLib();
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  // pdfjs looks for its worker file by a path it builds at run time, which is not in the deployed
+  // bundle ("Setting up fake worker failed"). Importing the worker here puts it in the bundle, and
+  // handing it over as a global is what pdfjs's own "fake worker" reads first (as `pdfUtils.ts` does).
+  const worker = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
+  const scope = globalThis as unknown as Record<string, unknown>;
+  scope.pdfjsWorker ??= worker;
   const task = pdfjs.getDocument({
     // pdfjs takes ownership of the buffer it is given, so it is given a copy.
     data: new Uint8Array(bytes),
