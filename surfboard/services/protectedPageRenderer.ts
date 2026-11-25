@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { ApiError } from "@/lib/api/errors";
+import { logger } from "@/lib/observability/logger";
 import {
   markGrid,
   pageScale,
@@ -107,7 +108,9 @@ async function openPdf(bytes: Uint8Array): Promise<any> {
   } as any);
   try {
     return await task.promise;
-  } catch {
+  } catch (error) {
+    // What went wrong is logged (never the file or who asked); the caller gets the same words.
+    logger.error("protected file: the PDF could not be opened", {}, error);
     throw new ApiError(422, "FILE_NOT_VIEWABLE", "This file can't be opened");
   }
 }
@@ -171,7 +174,8 @@ export async function renderPage(
     let image;
     try {
       image = await lib.loadImage(Buffer.from(bytes));
-    } catch {
+    } catch (error) {
+      logger.error("protected file: the picture could not be read", {}, error);
       throw new ApiError(422, "FILE_NOT_VIEWABLE", "This file can't be opened");
     }
     // A picture is only ever made smaller (a tiny photo is not blown up).
@@ -206,7 +210,12 @@ export async function renderPage(
     try {
       await pdfPage.render({ canvasContext: ctx, viewport, canvas: null })
         .promise;
-    } catch {
+    } catch (error) {
+      logger.error(
+        "protected file: a page could not be drawn",
+        { page },
+        error
+      );
       throw new ApiError(422, "FILE_NOT_VIEWABLE", "This file can't be opened");
     }
     drawWatermark(ctx, width, height, watermark);
