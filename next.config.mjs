@@ -184,13 +184,16 @@ const nextConfig = {
    */
   outputFileTracingIncludes: {
     // The watermark font of the protected pages for plans shared with someone
-    // (TASK-0015): read from disk at run time, so it is named here. One file,
-    // no node_modules glob (that kind of glob broke a deploy once, DEPLOYMENT.md).
+    // (TASK-0015) and pdfjs's standard font files: read from disk at run time, so
+    // they are named here. Both live under public/; no node_modules glob (that kind
+    // of glob broke a deploy once, DEPLOYMENT.md).
     "/api/v1/surfboard/plans/\\[planId\\]/files/\\[n\\]/pages": [
       "./public/fonts/BricolageGrotesque-Bold.ttf",
+      "./public/pdfjs/standard_fonts/*",
     ],
     "/api/v1/surfboard/plans/\\[planId\\]/files/\\[n\\]/pages/\\[p\\]": [
       "./public/fonts/BricolageGrotesque-Bold.ttf",
+      "./public/pdfjs/standard_fonts/*",
     ],
     "/api/v1/gbc/admin/certificates/send": [
       "./gbc/pdf-worker/**/*",

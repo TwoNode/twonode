@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
+import fs from "node:fs";
+import path from "node:path";
 import {
   countPages,
   renderPage,
+  STANDARD_FONTS_DIR,
 } from "@/surfboard/services/protectedPageRenderer";
 
 /** A valid PDF of `pages` blank pages of 600 x 800 points, made by hand (no PDF library needed). */
@@ -154,5 +157,58 @@ describe("renderPage: a picture", () => {
     await expect(
       renderPage(new TextEncoder().encode("nope"), "png", 1, "Draft_X")
     ).rejects.toMatchObject({ status: 422, code: "FILE_NOT_VIEWABLE" });
+  });
+});
+
+describe("a PDF that uses a font it does not embed", () => {
+  /** One page with text in Helvetica, which the file does not carry: pdfjs must supply the letters. */
+  function helveticaPdf(): Uint8Array {
+    const content =
+      "BT /F1 40 Tf 50 700 Td (Survey plan text in Helvetica) Tj ET";
+    const objects = [
+      "<< /Type /Catalog /Pages 2 0 R >>",
+      "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 800] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+      `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
+      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    ];
+    let body = "%PDF-1.4\n";
+    const offsets: number[] = [];
+    objects.forEach((object, index) => {
+      offsets.push(body.length);
+      body += `${index + 1} 0 obj\n${object}\nendobj\n`;
+    });
+    const xref = body.length;
+    body += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+    for (const offset of offsets)
+      body += `${String(offset).padStart(10, "0")} 00000 n \n`;
+    body += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+    return new TextEncoder().encode(body);
+  }
+
+  it("keeps pdfjs's standard font files in the repository, with their licences", () => {
+    for (const file of [
+      "LiberationSans-Regular.ttf",
+      "FoxitSerif.pfb",
+      "LICENSE_LIBERATION",
+      "LICENSE_FOXIT",
+    ]) {
+      expect(fs.existsSync(path.join(STANDARD_FONTS_DIR, file)), file).toBe(
+        true
+      );
+    }
+  });
+
+  it("still draws its text (the watermark is light grey; only real text is dark)", async () => {
+    const image = await loadImage(
+      await renderPage(helveticaPdf(), "pdf", 1, "Draft_AB123")
+    );
+    const canvas = createCanvas(image.width, image.height);
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(image, 0, 0);
+    const { data } = ctx.getImageData(0, 0, image.width, image.height);
+    let dark = 0;
+    for (let i = 0; i < data.length; i += 4) if (data[i] < 100) dark += 1;
+    expect(dark).toBeGreaterThan(200);
   });
 });
