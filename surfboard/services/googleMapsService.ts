@@ -59,10 +59,20 @@ const unavailable = () =>
     "The map's search and directions are not available right now."
   );
 
+/**
+ * The map's own switch (I-066): `GOOGLE_MAPS_MAP_API_KEY`, falling back to the server key so an
+ * environment that only has `GOOGLE_MAPS_SERVER_API_KEY` (staging) keeps working. REVA's address
+ * check reads `GOOGLE_MAPS_SERVER_API_KEY` alone, so production can switch the map on by setting
+ * only the map key, without turning the REVA check on (or the reverse).
+ */
 function key(): string {
-  const value = process.env.GOOGLE_MAPS_SERVER_API_KEY?.trim();
+  const value =
+    process.env.GOOGLE_MAPS_MAP_API_KEY?.trim() ||
+    process.env.GOOGLE_MAPS_SERVER_API_KEY?.trim();
   if (!value) {
-    console.warn("[map-google] GOOGLE_MAPS_SERVER_API_KEY is not set");
+    console.warn(
+      "[map-google] neither GOOGLE_MAPS_MAP_API_KEY nor GOOGLE_MAPS_SERVER_API_KEY is set"
+    );
     throw unavailable();
   }
   return value;

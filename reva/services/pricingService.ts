@@ -73,13 +73,67 @@ export async function getRevaPriceForLocation(
 const GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
 
 /**
+ * How exact Google's answer for an address is (I-066, measured 2026-11-19 against the real
+ * geocoder). Google never says "not found" for words inside Nigeria: it falls back to a district,
+ * a city, a state or the country, and for a half-matched street it guesses a point.
+ *
+ * - `broad`: the answer is a place, not a property: only a country, state, local government or
+ *   city, with nothing finer (no street, premise, district or landmark). A bare "Lagos", and
+ *   nonsense that Google resolved to the country, land here. The address proves nothing about
+ *   where the property is, so it is refused (400) whatever price it falls in.
+ * - `imprecise`: Google matched only part of the address (`partial_match`) or gave the middle of
+ *   an area (`APPROXIMATE`, `GEOMETRIC_CENTER`). Its guessed point may sit in a differently
+ *   priced LGA than the real property, so a price difference is then not proof of a cheat: the
+ *   payer is asked for a fuller address (400) instead of being told it "does not match" (422).
+ *
+ * A result that carries no type or location type (an older fixture, a changed response) counts
+ * as precise and exact: the old behaviour.
+ */
+const BROAD_TYPES = new Set([
+  "country",
+  "administrative_area_level_1",
+  "administrative_area_level_2",
+  "locality",
+]);
+const FINER_TYPES = [
+  "street_address",
+  "route",
+  "premise",
+  "subpremise",
+  "neighborhood",
+  "sublocality",
+  "intersection",
+  "establishment",
+  "point_of_interest",
+  "plus_code",
+];
+
+export const FULLER_ADDRESS_MESSAGE =
+  "Please give a fuller address: the street or estate, the area and the town, not only the city.";
+
+function describeGeocode(result: any): { broad: boolean; imprecise: boolean } {
+  const types: string[] = Array.isArray(result?.types) ? result.types : [];
+  const hasFiner = types.some((type) =>
+    FINER_TYPES.some((finer) => type === finer || type.startsWith(`${finer}_`))
+  );
+  const broad = !hasFiner && types.some((type) => BROAD_TYPES.has(type));
+  const kind = result?.geometry?.location_type;
+  const imprecise =
+    result?.partial_match === true ||
+    kind === "APPROXIMATE" ||
+    kind === "GEOMETRIC_CENTER";
+  return { broad, imprecise };
+}
+
+/**
  * The browser posts both an address and map coordinates, and the price comes
  * from the coordinates. Nothing tied the two together, so a payer could drop
  * the pin in a cheaper LGA while naming the real property in the address. The
  * server therefore geocodes the address itself and requires it to fall in a
  * location with the same price as the pin.
  *
- * Needs `GOOGLE_MAPS_SERVER_API_KEY`: a key without an HTTP-referrer
+ * Needs `GOOGLE_MAPS_SERVER_API_KEY` (this check ONLY: the app's map routes have their own
+ * `GOOGLE_MAPS_MAP_API_KEY`, I-066, so one can be on without the other): a key without an HTTP-referrer
  * restriction (the NEXT_PUBLIC browser key is referrer-restricted and Google
  * rejects it from a server). If it is unset the check is skipped with a
  * warning, so deploying this code cannot by itself block payments.
@@ -143,6 +197,11 @@ export async function assertAddressMatchesPrice(
     );
   }
 
+  const { broad, imprecise } = describeGeocode(body.results[0]);
+  if (broad) {
+    throw new ValidationError({ address: FULLER_ADDRESS_MESSAGE });
+  }
+
   let addressPrice: RevaPrice;
   try {
     addressPrice = await getRevaPriceForLocation(
@@ -158,6 +217,11 @@ export async function assertAddressMatchesPrice(
   }
 
   if (addressPrice.price !== pinPrice.price) {
+    // Google only guessed (part of the address matched, or the middle of an area): the guess is not
+    // evidence of a different price, so ask for more detail instead of accusing the payer.
+    if (imprecise) {
+      throw new ValidationError({ address: FULLER_ADDRESS_MESSAGE });
+    }
     throw new ApiError(
       422,
       "ADDRESS_LOCATION_MISMATCH",

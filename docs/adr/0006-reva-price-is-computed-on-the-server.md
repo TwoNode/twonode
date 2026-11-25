@@ -19,3 +19,7 @@ REVA's price depends on the Lagos LGA of the pinned location (₦30,000 to ₦50
 - The address check is a comparison of prices, not of distance, so an address on an LGA boundary that geocodes into a differently priced neighbour is refused.
 - If the key is set while its Google project has no billing, Google answers `REQUEST_DENIED` and every REVA payment fails with 503. Enable billing and test on staging first.
 - Until the key is set, the check is skipped with a logged warning.
+
+## Update 2026-11-21 (I-066, decided by the maintainer: options A and D)
+
+Measured against the real geocoder on 2026-11-19, the check was too strict (a real but vague address such as "Plot 5 Block C, Ikorodu, Lagos" was refused because Google's partial, interpolated guess fell in a dearer LGA), too loose (a bare "Lagos" passed for any top-price pin) and gave nonsense the wrong message (Google falls back to a city or the country instead of ZERO_RESULTS). Changes: (A) a city-only answer is refused with 400 "give a fuller address"; a price difference on an answer Google only guessed (`partial_match`, `APPROXIMATE`, `GEOMETRIC_CENTER`) is also 400 "give a fuller address", and only an exact answer in a differently priced LGA is 422 as before, so the genuine cheat is still caught; (D) the check is switched on by `GOOGLE_MAPS_SERVER_API_KEY` alone, and the mobile map's routes read their own `GOOGLE_MAPS_MAP_API_KEY` (falling back to the server key), so production can have the map without the REVA check, or the reverse.
