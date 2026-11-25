@@ -30,6 +30,7 @@ import type {
   Plan,
 } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 import { SharePlanModal } from "./SharePlanModal";
+import { ProtectedFileCard } from "./ProtectedFileCard";
 import {
   Dialog,
   DialogContent,
@@ -178,8 +179,8 @@ const FileCard = ({
             {type === "pdf"
               ? "View PDF"
               : type === "redcopy"
-              ? "View Record Copy"
-              : "View Certificate"}
+                ? "View Record Copy"
+                : "View Certificate"}
           </MediaLink>
         ) : (
           <>
@@ -1558,19 +1559,34 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
               <div>
                 <h4 className="font-medium mb-2">PDF Documents</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {plan.pdfFilePaths.map((filePath, index) => (
-                    <FileCard
-                      key={index}
-                      filePath={filePath}
-                      planNumber={plan.planNumber}
-                      index={index}
-                      type="pdf"
-                      onDelete={async () => {
-                        await handleDeleteFile(filePath, "pdf");
-                      }}
-                      showDelete={plan.isOwner}
-                    />
-                  ))}
+                  {plan.isOwner
+                    ? plan.pdfFilePaths.map((filePath, index) => (
+                        <FileCard
+                          key={index}
+                          filePath={filePath}
+                          planNumber={plan.planNumber}
+                          index={index}
+                          type="pdf"
+                          onDelete={async () => {
+                            await handleDeleteFile(filePath, "pdf");
+                          }}
+                          showDelete={plan.isOwner}
+                        />
+                      ))
+                    : // A plan shared with you: watermarked pages only, never the original (TASK-0015).
+                      plan.pdfFilePaths
+                        .filter(Boolean)
+                        .map((filePath, index) => (
+                          <ProtectedFileCard
+                            key={index}
+                            planId={planId}
+                            position={index}
+                            kind="pdf"
+                            planNumber={plan.planNumber}
+                            filePath={filePath}
+                            index={index}
+                          />
+                        ))}
                 </div>
               </div>
             )}
@@ -1580,25 +1596,42 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
               <div>
                 <h4 className="font-medium mb-2">Certificates</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {plan.certificateFilePaths.map((filePath, index) => (
-                    <FileCard
-                      key={index}
-                      filePath={filePath}
-                      planNumber={plan.planNumber}
-                      index={index}
-                      type="cert"
-                      onDelete={async () => {
-                        await handleDeleteFile(filePath, "certificate");
-                      }}
-                      showDelete={plan.isOwner}
-                    />
-                  ))}
+                  {plan.isOwner
+                    ? plan.certificateFilePaths.map((filePath, index) => (
+                        <FileCard
+                          key={index}
+                          filePath={filePath}
+                          planNumber={plan.planNumber}
+                          index={index}
+                          type="cert"
+                          onDelete={async () => {
+                            await handleDeleteFile(filePath, "certificate");
+                          }}
+                          showDelete={plan.isOwner}
+                        />
+                      ))
+                    : // The Certificates come after the survey plans in a recipient's file list.
+                      plan.certificateFilePaths
+                        .filter(Boolean)
+                        .map((filePath, index) => (
+                          <ProtectedFileCard
+                            key={index}
+                            planId={planId}
+                            position={
+                              plan.pdfFilePaths.filter(Boolean).length + index
+                            }
+                            kind="cert"
+                            planNumber={plan.planNumber}
+                            filePath={filePath}
+                            index={index}
+                          />
+                        ))}
                 </div>
               </div>
             )}
 
-            {/* CAD Files */}
-            {plan.cadFilePaths?.length > 0 && (
+            {/* CAD Files: the owner's only; a plan shared with you holds none for you (TASK-0015) */}
+            {plan.isOwner && plan.cadFilePaths?.length > 0 && (
               <div>
                 <h4 className="font-medium mb-2">CAD Files</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

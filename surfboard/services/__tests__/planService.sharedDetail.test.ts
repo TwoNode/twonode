@@ -120,3 +120,27 @@ describe("getSurfPlanById: someone the plan was shared with (I-037)", () => {
     });
   });
 });
+
+describe("getSurfPlanById: a drawing (CAD) is never listed for a recipient (TASK-0015)", () => {
+  const withFiles = {
+    pdfFilePaths: ["https://b/surfboard/owner-1/pdf/a.pdf"],
+    cadFilePaths: ["https://b/surfboard/owner-1/cad/a.dwg"],
+    certificateFilePaths: ["https://b/surfboard/owner-1/cert/c.pdf"],
+  };
+
+  it("gives a recipient the survey plan and Certificate paths but no drawing", async () => {
+    mocks.findUnique.mockResolvedValue(plan(withFiles));
+    const out = await getSurfPlanById("viewer-1", "p1");
+    expect(out.isOwner).toBe(false);
+    expect(out.cadFilePaths).toEqual([]);
+    expect(out.pdfFilePaths).toEqual(withFiles.pdfFilePaths);
+    expect(out.certificateFilePaths).toEqual(withFiles.certificateFilePaths);
+    expect(JSON.stringify(out)).not.toContain("a.dwg");
+  });
+
+  it("still gives the owner the drawing", async () => {
+    mocks.findUnique.mockResolvedValue(plan(withFiles));
+    const out = await getSurfPlanById("owner-1", "p1");
+    expect(out.cadFilePaths).toEqual(withFiles.cadFilePaths);
+  });
+});

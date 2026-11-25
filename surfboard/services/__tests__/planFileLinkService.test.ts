@@ -59,18 +59,18 @@ describe("getPlanFileLink: which plan", () => {
 
   it("is not found for a plan that is not the caller's or not there", async () => {
     mocks.findFirst.mockResolvedValue(null);
-    await expect(getPlanFileLink("owner-1", PLAN_ID, "1")).rejects.toBeInstanceOf(
-      NotFoundError
-    );
+    await expect(
+      getPlanFileLink("owner-1", PLAN_ID, "1")
+    ).rejects.toBeInstanceOf(NotFoundError);
     expect(mocks.sign).not.toHaveBeenCalled();
   });
 
   it.each(["not-a-uuid", "", "../etc"])(
     "does not even ask the database for a plan id of %j",
     async (planId) => {
-      await expect(getPlanFileLink("owner-1", planId, "0")).rejects.toBeInstanceOf(
-        NotFoundError
-      );
+      await expect(
+        getPlanFileLink("owner-1", planId, "0")
+      ).rejects.toBeInstanceOf(NotFoundError);
       expect(mocks.findFirst).not.toHaveBeenCalled();
     }
   );
@@ -81,15 +81,19 @@ describe("getPlanFileLink: which file", () => {
     await getPlanFileLink("owner-1", PLAN_ID, "0");
     await getPlanFileLink("owner-1", PLAN_ID, "1");
     await getPlanFileLink("owner-1", PLAN_ID, "3");
-    expect(mocks.sign.mock.calls.map((c) => c[0])).toEqual([RECORD_COPY, PDF, CERT]);
+    expect(mocks.sign.mock.calls.map((c) => c[0])).toEqual([
+      RECORD_COPY,
+      PDF,
+      CERT,
+    ]);
   });
 
   it.each(["4", "99", "-1", "1.5", "abc", "", "00000", " 1"])(
     "is not found for a file number of %j, signing nothing",
     async (n) => {
-      await expect(getPlanFileLink("owner-1", PLAN_ID, n)).rejects.toBeInstanceOf(
-        NotFoundError
-      );
+      await expect(
+        getPlanFileLink("owner-1", PLAN_ID, n)
+      ).rejects.toBeInstanceOf(NotFoundError);
       expect(mocks.sign).not.toHaveBeenCalled();
     }
   );
@@ -110,7 +114,9 @@ describe("getPlanFileLink: which file", () => {
   });
 
   it("keeps a drawing off a phone with FILE_NOT_VIEWABLE, signing nothing", async () => {
-    await expect(getPlanFileLink("owner-1", PLAN_ID, "2")).rejects.toMatchObject({
+    await expect(
+      getPlanFileLink("owner-1", PLAN_ID, "2")
+    ).rejects.toMatchObject({
       status: 422,
       code: "FILE_NOT_VIEWABLE",
     });
@@ -118,38 +124,65 @@ describe("getPlanFileLink: which file", () => {
   });
 });
 
-describe("getPlanFileLink: someone the plan is shared with", () => {
+describe("getPlanFileLink: someone the plan is shared with (TASK-0015)", () => {
   beforeEach(() => {
     mocks.findFirst.mockResolvedValue(row());
   });
 
-  it("never gets the record copy: the file numbers start at the survey plan", async () => {
-    await getPlanFileLink("viewer-1", PLAN_ID, "0");
-    expect(mocks.sign).toHaveBeenCalledWith(PDF, FILE_LINK_SECONDS);
+  it("is refused the original of the survey plan: it opens only as watermarked pages", async () => {
+    // Owner: 0 record copy, 1 survey plan, 2 drawing, 3 certificate. Shared: 0 survey plan, 1 certificate.
+    await expect(
+      getPlanFileLink("viewer-1", PLAN_ID, "0")
+    ).rejects.toMatchObject({
+      status: 403,
+      code: "FILE_PROTECTED",
+    });
+    expect(mocks.sign).not.toHaveBeenCalled();
   });
 
-  it("finds nothing at the record copy's old number when it was the last file", async () => {
-    mocks.findFirst.mockResolvedValue(row({ pdfFilePaths: [], certificateFilePaths: [] }));
-    // Owner: 0 = record copy, 1 = drawing. Shared: 0 = drawing, and nothing after it.
-    await expect(getPlanFileLink("viewer-1", PLAN_ID, "1")).rejects.toBeInstanceOf(
-      NotFoundError
+  it("is refused the original of the Certificate too", async () => {
+    await expect(
+      getPlanFileLink("viewer-1", PLAN_ID, "1")
+    ).rejects.toMatchObject({
+      status: 403,
+      code: "FILE_PROTECTED",
+    });
+    expect(mocks.sign).not.toHaveBeenCalled();
+  });
+
+  it("never reaches the drawing or the record copy at any number", async () => {
+    for (const n of ["2", "3", "4", "9"]) {
+      await expect(
+        getPlanFileLink("viewer-1", PLAN_ID, n)
+      ).rejects.toBeInstanceOf(NotFoundError);
+    }
+    expect(mocks.sign).not.toHaveBeenCalled();
+  });
+
+  it("finds nothing at the old number of the last file when the plan has no survey plan or certificate", async () => {
+    mocks.findFirst.mockResolvedValue(
+      row({ pdfFilePaths: [], certificateFilePaths: [] })
     );
+    await expect(
+      getPlanFileLink("viewer-1", PLAN_ID, "0")
+    ).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  it("still opens the plan's survey plans and certificates", async () => {
-    await getPlanFileLink("viewer-1", PLAN_ID, "2");
-    expect(mocks.sign).toHaveBeenCalledWith(CERT, FILE_LINK_SECONDS);
+  it("still gives the owner a link to the same file (nothing is protected for the owner)", async () => {
+    await getPlanFileLink("owner-1", PLAN_ID, "1");
+    expect(mocks.sign).toHaveBeenCalledWith(PDF, FILE_LINK_SECONDS);
   });
 });
 
 describe("getPlanFileLink: a stored reference the owner could have edited (ADR-0012)", () => {
-  const OTHERS = "https://bucket.s3.amazonaws.com/surfboard/someone-else/pdf/x.pdf";
+  const OTHERS =
+    "https://bucket.s3.amazonaws.com/surfboard/someone-else/pdf/x.pdf";
 
   it("refuses a file in another person's folder", async () => {
     mocks.findFirst.mockResolvedValue(row({ pdfFilePaths: [OTHERS] }));
-    await expect(getPlanFileLink("owner-1", PLAN_ID, "1")).rejects.toBeInstanceOf(
-      NotFoundError
-    );
+    await expect(
+      getPlanFileLink("owner-1", PLAN_ID, "1")
+    ).rejects.toBeInstanceOf(NotFoundError);
     expect(mocks.sign).not.toHaveBeenCalled();
   });
 
@@ -167,37 +200,42 @@ describe("getPlanFileLink: a stored reference the owner could have edited (ADR-0
           "https://bucket.s3.amazonaws.com/surfboard/LA/2026/9999/redcopy/rc.pdf",
       })
     );
-    await expect(getPlanFileLink("owner-1", PLAN_ID, "0")).rejects.toBeInstanceOf(
-      NotFoundError
-    );
+    await expect(
+      getPlanFileLink("owner-1", PLAN_ID, "0")
+    ).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  it.each(["surfboard/owner-1/pdf/../../other/x.pdf", "surfboard/owner-1/pdf/./x.pdf", "a.pdf"])(
-    "refuses an unsafe reference %j",
-    async (ref) => {
-      mocks.findFirst.mockResolvedValue(row({ pdfFilePaths: [ref] }));
-      await expect(getPlanFileLink("owner-1", PLAN_ID, "1")).rejects.toBeInstanceOf(
-        NotFoundError
-      );
-      expect(mocks.sign).not.toHaveBeenCalled();
-    }
-  );
+  it.each([
+    "surfboard/owner-1/pdf/../../other/x.pdf",
+    "surfboard/owner-1/pdf/./x.pdf",
+    "a.pdf",
+  ])("refuses an unsafe reference %j", async (ref) => {
+    mocks.findFirst.mockResolvedValue(row({ pdfFilePaths: [ref] }));
+    await expect(
+      getPlanFileLink("owner-1", PLAN_ID, "1")
+    ).rejects.toBeInstanceOf(NotFoundError);
+    expect(mocks.sign).not.toHaveBeenCalled();
+  });
 
   it("does not let the record copy's own-number rule open a survey plan under someone else's folder", async () => {
     mocks.findFirst.mockResolvedValue(
       row({
-        pdfFilePaths: ["https://bucket.s3.amazonaws.com/surfboard/LA/2026/0412/redcopy/x.pdf"],
+        pdfFilePaths: [
+          "https://bucket.s3.amazonaws.com/surfboard/LA/2026/0412/redcopy/x.pdf",
+        ],
       })
     );
-    await expect(getPlanFileLink("owner-1", PLAN_ID, "1")).rejects.toBeInstanceOf(
-      NotFoundError
-    );
+    await expect(
+      getPlanFileLink("owner-1", PLAN_ID, "1")
+    ).rejects.toBeInstanceOf(NotFoundError);
   });
 });
 
 describe("getPlanFileLink: a failure of the storage service", () => {
   it("is passed on, not turned into an address", async () => {
     mocks.sign.mockRejectedValue(new Error("storage down"));
-    await expect(getPlanFileLink("owner-1", PLAN_ID, "1")).rejects.toThrow("storage down");
+    await expect(getPlanFileLink("owner-1", PLAN_ID, "1")).rejects.toThrow(
+      "storage down"
+    );
   });
 });

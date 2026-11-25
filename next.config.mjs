@@ -46,7 +46,7 @@ const nextConfig = {
     ];
   },
 
-  serverExternalPackages: ["pdfjs-dist", "pdf-parse"],
+  serverExternalPackages: ["pdfjs-dist", "pdf-parse", "@napi-rs/canvas"],
 
   /**
    * Surfboard naming standardization (proposal §4.8, Phase 2): the page
@@ -183,6 +183,15 @@ const nextConfig = {
    * runtime-loaded public/ images/fonts.
    */
   outputFileTracingIncludes: {
+    // The watermark font of the protected pages for plans shared with someone
+    // (TASK-0015): read from disk at run time, so it is named here. One file,
+    // no node_modules glob (that kind of glob broke a deploy once, DEPLOYMENT.md).
+    "/api/v1/surfboard/plans/\\[planId\\]/files/\\[n\\]/pages": [
+      "./public/fonts/BricolageGrotesque-Bold.ttf",
+    ],
+    "/api/v1/surfboard/plans/\\[planId\\]/files/\\[n\\]/pages/\\[p\\]": [
+      "./public/fonts/BricolageGrotesque-Bold.ttf",
+    ],
     "/api/v1/gbc/admin/certificates/send": [
       "./gbc/pdf-worker/**/*",
       "./public/fonts/**/*",

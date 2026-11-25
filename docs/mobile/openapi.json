@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Surfboard mobile API",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "description": "The calls the Surfboard mobile app makes. Generated from `lib/mobile/contract` in the API repository: do not edit by hand. Every success is `{ success: true, data }`; every failure is `{ success: false, error, code?, details? }`. Dates are ISO 8601 in UTC. Objects are open: a newer server may add a field, and an app must ignore what it does not know."
   },
   "servers": [
@@ -3056,6 +3056,151 @@
             ]
           },
           "403": {
+            "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route. `FILE_PROTECTED`: The file belongs to a plan shared with the caller (the survey plan or the Certificate): its original is never handed over; it opens only as watermarked pages.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "EMAIL_VERIFICATION_REQUIRED",
+              "FORBIDDEN",
+              "FILE_PROTECTED"
+            ]
+          },
+          "404": {
+            "description": "`NOT_FOUND`: Unknown, deleted or someone else's record (these look the same on purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "422": {
+            "description": "`FILE_NOT_VIEWABLE`: The file is a drawing or another format a phone cannot open.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "FILE_NOT_VIEWABLE"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/plans/{planId}/files/{n}/pages": {
+      "get": {
+        "operationId": "planFilePages",
+        "tags": [
+          "Files"
+        ],
+        "summary": "How many pages a protected file of a plan shared with the caller has",
+        "description": "For the files marked `protected` in the plan's `files` list (the survey plan(s) and the Certificate of a plan shared with the caller). `n` is the file's place (from 0) in that list. Each page is then a watermarked JPEG at `GET /api/v1/surfboard/plans/{planId}/files/{n}/pages/{p}` (`p` from 1; `Content-Type: image/jpeg`, `Cache-Control: no-store`; the sharing surveyor's `Draft_{SURCON No}` is part of the picture; an account may ask for a limited number of pages an hour, 429 `RATE_LIMITED`). The original file is never sent; a plan the caller owns, or any other file, is a 404.\n\nA signed-in surveyor (role USER). Held at the email verification gate while enforcement is on: an unverified account whose grace has ended gets 403 EMAIL_VERIFICATION_REQUIRED.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "description": "A plan's id (a uuid).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "3f2b8c1e-9d4a-4e6b-8a7c-1d2e3f4a5b6c"
+          },
+          {
+            "name": "n",
+            "in": "path",
+            "required": true,
+            "description": "Place in the plan's `files` list, from 0.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "example": "0"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlanFilePages"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
             "description": "`EMAIL_VERIFICATION_REQUIRED`: Enforcement is on and this account must verify its email first. `FORBIDDEN`: The signed-in role may not use this route.",
             "content": {
               "application/json": {
@@ -3106,6 +3251,19 @@
             },
             "x-error-codes": [
               "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
             ]
           }
         }
@@ -6489,6 +6647,10 @@
             "description": "PDF and common images. Drawings are not.",
             "type": "boolean"
           },
+          "protected": {
+            "description": "True for a file of a plan shared with the caller (the survey plan and the Certificate): it opens only as watermarked pages through `files/{n}/pages`, never as the original. False for the owner's own files.",
+            "type": "boolean"
+          },
           "ref": {
             "description": "The stored reference. The app never shows or logs it.",
             "type": "string"
@@ -6499,6 +6661,7 @@
           "name",
           "format",
           "viewable",
+          "protected",
           "ref"
         ]
       },
@@ -6526,6 +6689,31 @@
           "expiresAt",
           "name",
           "format"
+        ]
+      },
+      "PlanFilePages": {
+        "type": "object",
+        "properties": {
+          "pages": {
+            "description": "How many pages there are (1 for a picture). Page `p` (from 1) is the JPEG at `files/{n}/pages/{p}`.",
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "SURVEY_PLAN",
+              "CERTIFICATE"
+            ]
+          }
+        },
+        "required": [
+          "pages",
+          "name",
+          "kind"
         ]
       },
       "PlanList": {
@@ -7624,6 +7812,11 @@
       "status": 422,
       "meaning": "The file is a drawing or another format a phone cannot open.",
       "appDoes": "Says the file cannot be opened on a phone."
+    },
+    "FILE_PROTECTED": {
+      "status": 403,
+      "meaning": "The file belongs to a plan shared with the caller (the survey plan or the Certificate): its original is never handed over; it opens only as watermarked pages.",
+      "appDoes": "Opens the protected viewer instead of the phone's browser."
     },
     "SUBSCRIPTION_CANCEL_FAILED": {
       "status": 502,
