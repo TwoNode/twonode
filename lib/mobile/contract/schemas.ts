@@ -9,6 +9,7 @@ import type {
 } from "@/surfboard/services/batchSummaryService";
 import type { PlanDetail } from "@/surfboard/services/planDetailService";
 import type { PlanFileLink } from "@/surfboard/services/planFileLinkService";
+import type { ProtectedFileInfo } from "@/surfboard/services/protectedFileService";
 import type { MapPillars, PlanMap } from "@/surfboard/services/planMapService";
 import type {
   MapRoute,
@@ -325,6 +326,11 @@ export const PlanFile = z
       .string()
       .describe("Lower-case extension; empty when the stored name has none."),
     viewable: z.boolean().describe("PDF and common images. Drawings are not."),
+    protected: z
+      .boolean()
+      .describe(
+        "True for a file of a plan shared with the caller (the survey plan and the Certificate): it opens only as watermarked pages through `files/{n}/pages`, never as the original. False for the owner's own files."
+      ),
     ref: z
       .string()
       .describe("The stored reference. The app never shows or logs it."),
@@ -373,6 +379,20 @@ export const PlanFileLinkData = z
     format: z.string(),
   })
   .meta({ id: "PlanFileLink" });
+
+export const PlanFilePagesData = z
+  .object({
+    pages: z
+      .number()
+      .int()
+      .positive()
+      .describe(
+        "How many pages there are (1 for a picture). Page `p` (from 1) is the JPEG at `files/{n}/pages/{p}`."
+      ),
+    name: z.string(),
+    kind: z.enum(["SURVEY_PLAN", "CERTIFICATE"]),
+  })
+  .meta({ id: "PlanFilePages" });
 
 const Position = z.tuple([z.number(), z.number()]);
 export const Outline = z
@@ -796,6 +816,7 @@ export type ContractMatchesServices = [
   Must<Same<z.infer<typeof PlanCountsData>, PlanCounts>>,
   Must<Same<z.infer<typeof PlanDetailData>, PlanDetail>>,
   Must<Same<z.infer<typeof PlanFileLinkData>, PlanFileLink>>,
+  Must<Same<z.infer<typeof PlanFilePagesData>, ProtectedFileInfo>>,
   Must<Same<z.infer<typeof PlanMapData>, PlanMap>>,
   Must<Same<z.infer<typeof MapPillarsData>, MapPillars>>,
   Must<Same<z.infer<typeof PlanStatsData>, PlanStats>>,

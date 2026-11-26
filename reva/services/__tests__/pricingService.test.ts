@@ -148,6 +148,19 @@ describe("assertAddressMatchesPrice", () => {
     }
   };
 
+  it("is NOT switched on by the map's own key (I-066): only GOOGLE_MAPS_SERVER_API_KEY runs it", async () => {
+    process.env.GOOGLE_MAPS_MAP_API_KEY = "map-only-key";
+    try {
+      const f = world(found, 30000);
+      await expect(
+        assertAddressMatchesPrice("1 Rd", pin, f)
+      ).resolves.toBeUndefined();
+      expect(f).not.toHaveBeenCalled();
+    } finally {
+      delete process.env.GOOGLE_MAPS_MAP_API_KEY;
+    }
+  });
+
   it("skips the check, without calling out, when no server key is configured", async () => {
     const f = world(found, 50000);
     await expect(
@@ -199,6 +212,147 @@ describe("assertAddressMatchesPrice", () => {
       await expect(
         assertAddressMatchesPrice("  ", pin, world(found, 50000))
       ).rejects.toMatchObject({ status: 400 });
+    });
+  });
+
+  describe("how exact the geocoder's answer is (I-066)", () => {
+    const answer = (
+      types: string[],
+      extra: { partial_match?: boolean; location_type?: string } = {}
+    ) => ({
+      status: "OK",
+      results: [
+        {
+          types,
+          partial_match: extra.partial_match,
+          geometry: {
+            location: { lat: 6.6, lng: 3.35 },
+            location_type: extra.location_type ?? "ROOFTOP",
+          },
+        },
+      ],
+    });
+    const fuller = { status: 400, message: expect.any(String) };
+
+    it("refuses a city-only address (a bare 'Lagos') with 400 even when its price matches the pin", async () => {
+      await withKey(async () => {
+        const f = world(answer(["locality", "political"]), 50000);
+        await expect(
+          assertAddressMatchesPrice("Lagos", pin, f)
+        ).rejects.toMatchObject({ status: 400 });
+        // the price layer is not even asked: there is nothing to compare
+        expect(
+          (f as any).mock.calls.some((c: unknown[]) =>
+            String(c[0]).includes("arcgis")
+          )
+        ).toBe(false);
+      });
+    });
+
+    it.each([
+      ["a state", ["administrative_area_level_1", "political"]],
+      ["a local government", ["administrative_area_level_2", "political"]],
+      ["the country (what nonsense falls back to)", ["country", "political"]],
+    ])("refuses an answer that is only %s", async (_n, types) => {
+      await withKey(async () => {
+        await expect(
+          assertAddressMatchesPrice(
+            "asdf qwer",
+            pin,
+            world(
+              answer(types, {
+                partial_match: true,
+                location_type: "APPROXIMATE",
+              }),
+              50000
+            )
+          )
+        ).rejects.toMatchObject({ status: 400 });
+      });
+    });
+
+    it("accepts a district or a landmark that matches the pin's price (finer than a city)", async () => {
+      await withKey(async () => {
+        for (const types of [
+          ["sublocality_level_1", "sublocality", "political"],
+          ["neighborhood", "political"],
+          ["point_of_interest", "establishment"],
+          ["locality", "political", "sublocality"],
+        ]) {
+          await expect(
+            assertAddressMatchesPrice(
+              "Lekki Phase 1",
+              pin,
+              world(answer(types), 50000)
+            )
+          ).resolves.toBeUndefined();
+        }
+      });
+    });
+
+    it("asks for a fuller address (400, not 422) when Google only guessed and the price differs", async () => {
+      await withKey(async () => {
+        for (const guess of [
+          answer(["route"], {
+            partial_match: true,
+            location_type: "RANGE_INTERPOLATED",
+          }),
+          answer(["street_address"], { location_type: "APPROXIMATE" }),
+          answer(["route"], { location_type: "GEOMETRIC_CENTER" }),
+        ]) {
+          await expect(
+            assertAddressMatchesPrice(
+              "Plot 5 Block C, Ikorodu, Lagos",
+              pin,
+              world(guess, 30000)
+            )
+          ).rejects.toMatchObject(fuller);
+        }
+      });
+    });
+
+    it("still says 'does not match' (422) when Google found the exact place and its price differs: the real cheat", async () => {
+      await withKey(async () => {
+        await expect(
+          assertAddressMatchesPrice(
+            "12 Adeola Odeku St, Victoria Island",
+            pin,
+            world(
+              answer(["street_address"], { location_type: "ROOFTOP" }),
+              30000
+            )
+          )
+        ).rejects.toMatchObject({
+          status: 422,
+          code: "ADDRESS_LOCATION_MISMATCH",
+        });
+      });
+    });
+
+    it("lets a vague address through when its guess happens to be in the pin's price (nothing to lose)", async () => {
+      await withKey(async () => {
+        await expect(
+          assertAddressMatchesPrice(
+            "Plot 5 Block C, Ikorodu, Lagos",
+            pin,
+            world(
+              answer(["route"], {
+                partial_match: true,
+                location_type: "RANGE_INTERPOLATED",
+              }),
+              50000
+            )
+          )
+        ).resolves.toBeUndefined();
+      });
+    });
+
+    it("treats a result with no type information as precise (the old behaviour)", async () => {
+      await withKey(async () => {
+        await expect(
+          assertAddressMatchesPrice("1 Rd", pin, world(found, 30000))
+        ).rejects.toMatchObject({ status: 422 });
+      });
     });
   });
 

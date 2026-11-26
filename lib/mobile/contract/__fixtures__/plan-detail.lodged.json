@@ -61,6 +61,7 @@
           "name": "LA_2026_LODGED-A.pdf",
           "format": "pdf",
           "viewable": true,
+          "protected": false,
           "ref": "https://bucket.example/surfboard/88444b9d-9072-4ad3-9912-84846d8069cc/red/1.pdf"
         }
       ],

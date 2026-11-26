@@ -113,6 +113,8 @@ const ROUTES: Record<string, () => Promise<Record<string, unknown>>> = {
     import("@/app/api/v1/surfboard/plans/[planId]/summary/route"),
   "app/api/v1/surfboard/plans/[planId]/files/[n]/route.ts": () =>
     import("@/app/api/v1/surfboard/plans/[planId]/files/[n]/route"),
+  "app/api/v1/surfboard/plans/[planId]/files/[n]/pages/route.ts": () =>
+    import("@/app/api/v1/surfboard/plans/[planId]/files/[n]/pages/route"),
   "app/api/v1/surfboard/plans/map/route.ts": () =>
     import("@/app/api/v1/surfboard/plans/map/route"),
   "app/api/v1/surfboard/plans/map/pillars/route.ts": () =>
@@ -458,6 +460,8 @@ describe("the failure codes", () => {
     const sources = [
       ...new Set(ENDPOINTS.map((e) => e.routeFile)),
       "surfboard/services/planFileLinkService.ts",
+      "surfboard/services/protectedFileService.ts",
+      "surfboard/services/protectedPageRenderer.ts",
       "surfboard/services/accountClosureService.ts",
       "surfboard/services/googleMapsService.ts",
     ];

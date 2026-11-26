@@ -61,21 +61,16 @@
           "name": "LA_2026_FILES-A.pdf",
           "format": "pdf",
           "viewable": true,
-          "ref": "https://throwaway-bucket.s3.us-east-1.amazonaws.com/surfboard/88444b9d-9072-4ad3-9912-84846d8069cc/pdf/1700000000001-survey.pdf"
-        },
-        {
-          "kind": "DRAWING",
-          "name": "LA_2026_FILES-A.dwg",
-          "format": "dwg",
-          "viewable": false,
-          "ref": "https://throwaway-bucket.s3.us-east-1.amazonaws.com/surfboard/88444b9d-9072-4ad3-9912-84846d8069cc/cad/1700000000002-drawing.DWG"
+          "protected": true,
+          "ref": ""
         },
         {
           "kind": "CERTIFICATE",
           "name": "LA_2026_FILES-A.png",
           "format": "png",
           "viewable": true,
-          "ref": "https://throwaway-bucket.s3.us-east-1.amazonaws.com/surfboard/88444b9d-9072-4ad3-9912-84846d8069cc/certificate/1700000000003-cert.png"
+          "protected": true,
+          "ref": ""
         }
       ],
       "batch": null

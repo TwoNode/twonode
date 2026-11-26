@@ -8,6 +8,7 @@ import {
   type SummaryRow,
 } from "@/surfboard/services/planSummaryService";
 import { planFileDisplayName } from "@/surfboard/utils/planFileName";
+import { isRecipientKind } from "@/surfboard/utils/sharedFileView";
 import { boundaryFacts } from "@/surfboard/utils/planGeometry";
 import {
   PLAN_QUERY_SELECT,
@@ -24,8 +25,10 @@ import {
  * website's full row.
  *
  * What a viewer gets depends on whose plan it is. The owner sees everything
- * here. Someone the plan was shared with sees the plan and its files but never
- * the record copy (the Shared tab says "the file is not shared with you"),
+ * here. Someone the plan was shared with sees the plan and only two kinds of
+ * file, the survey plan(s) and the Certificate, and those open only as
+ * watermarked pages (`protected`, TASK-0015): never the record copy (the Shared
+ * tab says "the file is not shared with you"), never a drawing (CAD), and never
  * reviewer comments, the batch or payment, or who else it is shared with.
  */
 
@@ -40,6 +43,12 @@ export type PlanFile = {
   format: string;
   /** Opens on a phone (PDF and common images). Drawings do not. */
   viewable: boolean;
+  /**
+   * True for what a person a plan was shared with may open: it opens only as
+   * watermarked page pictures (`files/{n}/pages`), never as the original file.
+   * False for the owner's own files.
+   */
+  protected: boolean;
   /** The stored reference: pass it back, unchanged, to `files/view?url=`. Never show it. */
   ref: string;
 };
@@ -84,7 +93,8 @@ const DETAIL_SELECT = {
 } as const satisfies Prisma.SurfboardPlanSelect;
 
 /** `id` is a database uuid column: any other text would be a 500 instead of "not found". */
-export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const iso = (date: Date | null | undefined) =>
   date ? date.toISOString() : null;
@@ -123,14 +133,16 @@ export function planFiles(
           }),
           format,
           viewable: VIEWABLE_FORMATS.has(format),
+          protected: !owner && isRecipientKind(kind),
           ref,
         });
       });
 
-  // The record copy is the owner's: a shared viewer only learns that one exists.
+  // The record copy and the drawings are the owner's: a shared viewer only gets
+  // the survey plan(s) and the Certificate, as watermarked pages (TASK-0015).
   if (owner && row.redCopyFileUrl) add("RECORD_COPY", [row.redCopyFileUrl]);
   add("SURVEY_PLAN", row.pdfFilePaths);
-  add("DRAWING", row.cadFilePaths);
+  if (owner) add("DRAWING", row.cadFilePaths);
   add("CERTIFICATE", row.certificateFilePaths);
   return files;
 }
@@ -194,7 +206,11 @@ export async function getPlanDetail(
     physicalCopySubmittedAt: iso(row.physicalCopySubmittedAt),
     archiveReceivedAt: iso(row.archiveReceivedAt),
     stageDecidedAt: decidedAt(row, summary.stages),
-    files: planFiles(row, owner),
+    // A recipient never learns where the original is stored: the protected pages
+    // are asked for by the file's place in this list, never by its reference.
+    files: planFiles(row, owner).map((file) =>
+      file.protected ? { ...file, ref: "" } : file
+    ),
     batch:
       owner && row.batch
         ? { id: row.batch.id, batchCode: row.batch.batchCode }
