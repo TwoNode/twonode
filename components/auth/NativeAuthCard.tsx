@@ -28,6 +28,13 @@ import {
 } from "@/lib/auth/authApiClient";
 import { useTheme } from "@/hooks/useTheme";
 import type { Platform } from "@/utils/platform";
+import {
+  TurnstileWidget,
+  type TurnstileHandle,
+} from "@/components/security/TurnstileWidget";
+import { WEB_LOGIN_TURNSTILE_ACTION } from "@/lib/auth/loginChallenge";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export type NativeAuthCardProps = {
   platform: Platform;
@@ -95,6 +102,20 @@ function NativeAuthCardInner({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [forgotSubmitted, setForgotSubmitted] = useState(false);
+
+  // Cloudflare Turnstile on the sign-in (I-058). Nobody sees it until the
+  // server asks (`CHALLENGE_REQUIRED`: this account has failed sign-ins already,
+  // from here or anywhere), and only when the keys are set. A token is
+  // single-use, so the widget is renewed after every attempt.
+  const [challengeAsked, setChallengeAsked] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstile = useRef<TurnstileHandle>(null);
+  const challengeShown =
+    mode === "login" && challengeAsked && Boolean(TURNSTILE_SITE_KEY);
+  useEffect(() => {
+    // A token from a widget that is no longer on screen is no use.
+    if (!challengeShown) setTurnstileToken("");
+  }, [challengeShown]);
 
   // register-otp: step 2 of registration, verifying the code/link sent to
   // `email`. `registrationMethod` decides which UI this step shows — OTP
@@ -211,9 +232,17 @@ function NativeAuthCardInner({
 
     setIsSubmitting(true);
     try {
-      const result = await login({ platform, email, password, rememberMe });
+      const result = await login({
+        platform,
+        email,
+        password,
+        rememberMe,
+        ...(challengeShown && turnstileToken && { turnstileToken }),
+      });
 
       if (!result.success) {
+        if (result.code === "CHALLENGE_REQUIRED") setChallengeAsked(true);
+        turnstile.current?.reset();
         setError(result.error || "Something went wrong. Please try again.");
         setIsSubmitting(false);
         return;
@@ -613,9 +642,19 @@ function NativeAuthCardInner({
             </label>
           )}
 
+          {challengeShown && TURNSTILE_SITE_KEY && (
+            <TurnstileWidget
+              ref={turnstile}
+              siteKey={TURNSTILE_SITE_KEY}
+              action={WEB_LOGIN_TURNSTILE_ACTION}
+              onToken={setTurnstileToken}
+              className="flex justify-center"
+            />
+          )}
+
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || (challengeShown && !turnstileToken)}
             className="w-full px-6 py-3 h-auto text-white dark:text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
             style={{ background: `linear-gradient(90deg, ${dark}, ${accent})` }}
           >

@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// What registerDeviceToken does inside its transaction (I-059): two advisory locks, a delete, a create.
+const mockTx = vi.hoisted(() => ({
+  $executeRaw: vi.fn(),
+  deviceToken: { deleteMany: vi.fn(), create: vi.fn() },
+}));
 const mockPrisma = vi.hoisted(() => ({
   refreshToken: { findFirst: vi.fn(), findMany: vi.fn() },
   deviceToken: {
@@ -34,7 +39,13 @@ beforeEach(() => {
   mockPrisma.refreshToken.findFirst.mockResolvedValue({ id: "rt1" });
   mockPrisma.deviceToken.deleteMany.mockReturnValue("deleted");
   mockPrisma.deviceToken.create.mockReturnValue("created");
-  mockPrisma.$transaction.mockResolvedValue([]);
+  mockTx.$executeRaw.mockResolvedValue(1);
+  mockTx.deviceToken.deleteMany.mockResolvedValue({ count: 0 });
+  mockTx.deviceToken.create.mockResolvedValue({});
+  // The interactive form: the callback runs with the transaction's own client.
+  mockPrisma.$transaction.mockImplementation(
+    async (run: (tx: typeof mockTx) => Promise<unknown>) => run(mockTx)
+  );
 });
 
 describe("EXPO_TOKEN", () => {
@@ -91,12 +102,12 @@ describe("registerDeviceToken", () => {
   it("moves a token that was another person's: the old rows go by token alone, then the pair is written", async () => {
     await registerDeviceToken("u2", Platform.SURFBOARD, INPUT);
 
-    // Both writes go in one transaction, delete first.
-    expect(mockPrisma.$transaction).toHaveBeenCalledWith([
-      "deleted",
-      "created",
-    ]);
-    const where = mockPrisma.deviceToken.deleteMany.mock.calls[0][0].where;
+    // Both writes go in one transaction, delete first, then create.
+    expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(
+      mockTx.deviceToken.deleteMany.mock.invocationCallOrder[0]
+    ).toBeLessThan(mockTx.deviceToken.create.mock.invocationCallOrder[0]);
+    const where = mockTx.deviceToken.deleteMany.mock.calls[0][0].where;
     // The first branch names the token only (no user), so u1's row for the same
     // phone is removed when u2 signs in on it.
     expect(where.OR).toContainEqual({ token: INPUT.token });
@@ -112,7 +123,7 @@ describe("registerDeviceToken", () => {
   it("stores the install's details and a fresh lastSeenAt", async () => {
     await registerDeviceToken("u1", Platform.SURFBOARD, INPUT);
 
-    const data = mockPrisma.deviceToken.create.mock.calls[0][0].data;
+    const data = mockTx.deviceToken.create.mock.calls[0][0].data;
     expect(data).toMatchObject({
       userId: "u1",
       platform: "surfboard",
@@ -129,9 +140,76 @@ describe("registerDeviceToken", () => {
       ...INPUT,
       appVersion: undefined,
     });
-    expect(mockPrisma.deviceToken.create.mock.calls[0][0].data.appVersion).toBe(
+    expect(mockTx.deviceToken.create.mock.calls[0][0].data.appVersion).toBe(
       null
     );
+  });
+});
+
+describe("registerDeviceToken takes its turn (I-059, M6)", () => {
+  // The values handed to each `$executeRaw` tagged-template call, in order: the lock keys.
+  const lockKeys = () =>
+    mockTx.$executeRaw.mock.calls.map((call) => call.slice(1)[0] as string);
+
+  it("locks the install and the token, in one fixed order, before it deletes or creates anything", async () => {
+    await registerDeviceToken("u1", Platform.SURFBOARD, INPUT);
+
+    expect(lockKeys()).toEqual([
+      "push-install:u1:surfboard:device-abcdef01",
+      `push-token:${INPUT.token}`,
+    ]);
+    const lastLock = Math.max(...mockTx.$executeRaw.mock.invocationCallOrder);
+    expect(lastLock).toBeLessThan(
+      mockTx.deviceToken.deleteMany.mock.invocationCallOrder[0]
+    );
+    expect(lastLock).toBeLessThan(
+      mockTx.deviceToken.create.mock.invocationCallOrder[0]
+    );
+  });
+
+  it("takes the two locks in the same order whatever the install and token are, so two calls cannot deadlock", async () => {
+    const cases: [string, string, string][] = [
+      ["u1", "device-abcdef01", "ExponentPushToken[abcdefgh12345678]"],
+      ["zzz-user", "device-zzzzzzzz", "ExponentPushToken[aaaaaaaaaaaaaaaa]"],
+      ["a", "d-aaaaaaaa", "ExponentPushToken[zzzzzzzzzzzzzzzz]"],
+    ];
+    for (const [user, device, token] of cases) {
+      mockTx.$executeRaw.mockClear();
+      await registerDeviceToken(user, Platform.SURFBOARD, {
+        ...INPUT,
+        deviceId: device,
+        token,
+      });
+      const keys = lockKeys();
+      expect(keys).toHaveLength(2);
+      expect(keys).toEqual([...keys].sort());
+    }
+  });
+
+  it("asks Postgres for transaction-scoped advisory locks (released when the transaction ends)", async () => {
+    await registerDeviceToken("u1", Platform.SURFBOARD, INPUT);
+    for (const [strings] of mockTx.$executeRaw.mock.calls) {
+      expect((strings as unknown as string[]).join("?")).toMatch(
+        /pg_advisory_xact_lock\(hashtextextended\(\?, 0\)\)/
+      );
+    }
+  });
+
+  it("lets a registration wait for its turn without the transaction timing out first", async () => {
+    await registerDeviceToken("u1", Platform.SURFBOARD, INPUT);
+    expect(mockPrisma.$transaction.mock.calls[0][1]).toEqual({
+      maxWait: 8000,
+      timeout: 8000,
+    });
+  });
+
+  it("takes no lock and writes nothing for a device that is not a live session", async () => {
+    mockPrisma.refreshToken.findFirst.mockResolvedValue(null);
+    expect(await registerDeviceToken("u1", Platform.SURFBOARD, INPUT)).toBe(
+      false
+    );
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+    expect(mockTx.$executeRaw).not.toHaveBeenCalled();
   });
 });
 
