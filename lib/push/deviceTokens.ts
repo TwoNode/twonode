@@ -24,6 +24,36 @@ export type RegisterDeviceTokenInput = {
 /** How many times a registration is tried when another one gets in between (see below). */
 const REGISTER_TRIES = 3;
 
+/** How long a registration may wait for its turn and then run (a lock is held only for the transaction). */
+const TRANSACTION_LIMITS = { maxWait: 8_000, timeout: 8_000 };
+
+/**
+ * Takes, for the rest of this transaction, a Postgres advisory lock on the install and another on the
+ * token, so that two registrations that could hit one of the two unique indexes run one after the
+ * other. The two locks are always taken in the same (sorted) order, so two registrations can never each
+ * hold one and wait for the other (no deadlock). Registrations for different installs and different
+ * tokens do not wait for each other. The locks are released when the transaction ends.
+ */
+async function serialise(
+  tx: {
+    $executeRaw: (
+      query: TemplateStringsArray,
+      ...values: unknown[]
+    ) => Promise<number>;
+  },
+  userId: string,
+  platform: Platform,
+  input: RegisterDeviceTokenInput
+) {
+  const keys = [
+    `push-install:${userId}:${platform}:${input.deviceId}`,
+    `push-token:${input.token}`,
+  ].sort();
+  for (const key of keys) {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`;
+  }
+}
+
 const isUniqueViolation = (error: unknown) =>
   (error as { code?: string } | null)?.code === "P2002";
 
@@ -37,12 +67,18 @@ const isUniqueViolation = (error: unknown) =>
  *
  * Registrations of one install can overlap (the app asks again whenever the
  * phone announces its address, and an older build asked dozens of times a
- * second). Two of them both delete nothing and both create, and the second
- * hits a unique index (P2002, which the route would answer as a 409). That is
- * not a failure: when the row that got there first is this very install's, it
- * already says what this call wanted, so it is only touched. When it is
- * someone else's (two accounts signing in on one phone at once) the pair is
- * written again over it, up to `REGISTER_TRIES` times.
+ * second), and so can two different tokens of one install (the address changed
+ * while an earlier call was in flight) or two accounts signing in on one phone.
+ * "Delete the old rows, then create the new one" is not safe against that: each
+ * call deletes what the others just created, and the loser hits a unique index
+ * (P2002, a 409 from the route) or a deadlock (a 500). So registrations that
+ * could collide, the same install or the same token, are taken one at a time
+ * with Postgres advisory locks inside the transaction (`serialise` below), and
+ * the last one to run wins, as it would have if they had arrived one by one.
+ * A P2002 that still gets through (another server running older code during a
+ * deploy) is handled as before: when the row that got there first is this very
+ * install's, it is only touched; otherwise the pair is written again, up to
+ * `REGISTER_TRIES` times.
  */
 export async function registerDeviceToken(
   userId: string,
@@ -72,19 +108,20 @@ export async function registerDeviceToken(
   };
   for (let attempt = 1; ; attempt++) {
     try {
-      await prisma.$transaction([
+      await prisma.$transaction(async (tx) => {
+        await serialise(tx, userId, platform, input);
         // One token per install and one install per user: whatever this token or
         // this user's device was tied to before goes, then the pair is written.
-        prisma.deviceToken.deleteMany({
+        await tx.deviceToken.deleteMany({
           where: {
             OR: [
               { token: input.token },
               { userId, platform, deviceId: input.deviceId },
             ],
           },
-        }),
-        prisma.deviceToken.create({ data }),
-      ]);
+        });
+        await tx.deviceToken.create({ data });
+      }, TRANSACTION_LIMITS);
       return true;
     } catch (error) {
       if (!isUniqueViolation(error)) throw error;
