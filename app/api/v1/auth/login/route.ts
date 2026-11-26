@@ -8,6 +8,14 @@ import {
   recordAttempt,
   getClientIp,
 } from "@/lib/auth/rateLimit";
+import {
+  ACCOUNT_CHALLENGE_AFTER,
+  WEB_LOGIN_TURNSTILE_ACTION,
+  accountFailureKey,
+  getAccountGuardState,
+  logWebLogin,
+} from "@/lib/auth/loginGuard";
+import { isTurnstileEnabled, verifyTurnstile } from "@/lib/security/turnstile";
 import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
 import { findUserByEmail } from "@/lib/auth/userLookup";
@@ -18,7 +26,11 @@ const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
   rememberMe: z.boolean().optional().default(true),
+  /** Only sent after the server asked for it (`code: "CHALLENGE_REQUIRED"`). */
+  turnstileToken: z.string().max(2048).optional(),
 });
+
+const TOO_MANY = "Too many attempts. Try again later.";
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,18 +41,71 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { platform, email, password, rememberMe } = await validateBody(
-      req,
-      loginSchema
-    );
+    const { platform, email, password, rememberMe, turnstileToken } =
+      await validateBody(req, loginSchema);
     // Lowercased so varying the casing of one address can't reset its limit.
-    const identifier = `${getClientIp(req)}:${email.trim().toLowerCase()}`;
+    const normalizedEmail = email.trim().toLowerCase();
+    const clientIp = getClientIp(req);
+    const identifier = `${clientIp}:${normalizedEmail}`;
+    const logFields = { platform, email: normalizedEmail, clientIp };
 
     if (!(await checkRateLimit(identifier))) {
+      logWebLogin("rate_limited", logFields);
       return NextResponse.json(
-        { success: false, error: "Too many attempts. Try again later." },
+        { success: false, error: TOO_MANY },
         { status: 429 }
       );
+    }
+
+    // The same account from every address together (I-058): the limit above
+    // never sees a script that changes address on each try.
+    const account = await getAccountGuardState(normalizedEmail);
+    if (account.state === "blocked") {
+      logWebLogin("account_limited", logFields);
+      return NextResponse.json(
+        { success: false, error: TOO_MANY },
+        { status: 429 }
+      );
+    }
+    // Before the password is looked at, so a guess cannot be tried without the
+    // challenge. Off until both Turnstile keys are set; then only an account
+    // that already failed (here or elsewhere) is asked, everyone else signs in
+    // exactly as before.
+    if (account.failures >= ACCOUNT_CHALLENGE_AFTER && isTurnstileEnabled()) {
+      const check = await verifyTurnstile({
+        token: turnstileToken,
+        action: WEB_LOGIN_TURNSTILE_ACTION,
+        remoteIp: clientIp,
+        requestHost:
+          req.headers.get("x-forwarded-host") || req.headers.get("host"),
+      });
+      if (!check.ok) {
+        if (check.reason === "unavailable") {
+          logWebLogin("challenge_unavailable", logFields);
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                "Verification is temporarily unavailable. Please try again in a moment.",
+            },
+            { status: 503 }
+          );
+        }
+        logWebLogin(
+          check.reason === "missing-token"
+            ? "challenge_required"
+            : "challenge_failed",
+          { ...logFields, reason: check.reason }
+        );
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Please confirm you are not a robot, then sign in again.",
+            code: "CHALLENGE_REQUIRED",
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const user = await findUserByEmail(platform, email);
@@ -53,6 +118,8 @@ export async function POST(req: NextRequest) {
 
     if (!valid) {
       await recordAttempt(identifier, user?.id);
+      await recordAttempt(accountFailureKey(normalizedEmail), user?.id);
+      logWebLogin("invalid_credentials", logFields);
       return NextResponse.json(
         { success: false, error: "Invalid email or password" },
         { status: 401 }
@@ -60,6 +127,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!user!.isActive) {
+      logWebLogin("inactive", { ...logFields, userId: user!.id });
       return NextResponse.json(
         { success: false, error: "Account is inactive" },
         { status: 403 }
@@ -70,6 +138,7 @@ export async function POST(req: NextRequest) {
     const refreshMaxAgeSeconds = refreshDays * 24 * 60 * 60;
 
     await issueSession(user!.id, user!.role, platform, refreshMaxAgeSeconds);
+    logWebLogin("ok", { ...logFields, userId: user!.id });
 
     return NextResponse.json({
       success: true,

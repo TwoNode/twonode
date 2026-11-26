@@ -42,6 +42,8 @@ export function login(input: {
   email: string;
   password: string;
   rememberMe?: boolean;
+  /** A solved Turnstile token, sent only after the server answered `CHALLENGE_REQUIRED`. */
+  turnstileToken?: string;
 }): Promise<ApiResult<SessionUser>> {
   return jsonFetch("/api/v1/auth/login", input);
 }
