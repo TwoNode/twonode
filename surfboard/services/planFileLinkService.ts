@@ -42,7 +42,8 @@ export async function getPlanFileLink(
   position: string
 ): Promise<PlanFileLink> {
   // Anything that cannot be a file of a plan is the same answer as a file that is not there.
-  if (!UUID.test(planId) || !INDEX.test(position)) throw new NotFoundError("File");
+  if (!UUID.test(planId) || !INDEX.test(position))
+    throw new NotFoundError("File");
 
   const row = await prisma.surfboardPlan.findFirst({
     where: {
@@ -65,6 +66,16 @@ export async function getPlanFileLink(
   const owner = row.userId === userId;
   const file = planFiles(row, owner)[Number(position)];
   if (!file) throw new NotFoundError("File");
+
+  // What a plan shared with the caller holds (the survey plan and the Certificate) is never handed
+  // over as the original: it opens as watermarked pages (`files/{n}/pages`, TASK-0015).
+  if (file.protected) {
+    throw new ApiError(
+      403,
+      "FILE_PROTECTED",
+      "This file opens only in Surfboard's protected view"
+    );
+  }
 
   if (!file.viewable) {
     throw new ApiError(

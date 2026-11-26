@@ -875,8 +875,35 @@ export const ENDPOINTS: Endpoint[] = [
       },
     ],
     data: S.PlanFileLinkData,
-    errors: ["NOT_FOUND", "FILE_NOT_VIEWABLE"],
+    errors: ["NOT_FOUND", "FILE_NOT_VIEWABLE", "FILE_PROTECTED"],
     routeFile: "app/api/v1/surfboard/plans/[planId]/files/[n]/route.ts",
+    noStore: true,
+  },
+  {
+    operationId: "planFilePages",
+    method: "get",
+    path: "/api/v1/surfboard/plans/{planId}/files/{n}/pages",
+    tag: "Files",
+    summary:
+      "How many pages a protected file of a plan shared with the caller has",
+    description:
+      "For the files marked `protected` in the plan's `files` list (the survey plan(s) and the Certificate of a plan shared with the caller). `n` is the file's place (from 0) in that list. Each page is then a watermarked JPEG at `GET /api/v1/surfboard/plans/{planId}/files/{n}/pages/{p}` (`p` from 1; `Content-Type: image/jpeg`, `Cache-Control: no-store`; the sharing surveyor's `Draft_{SURCON No}` is part of the picture; an account may ask for a limited number of pages an hour, 429 `RATE_LIMITED`). The original file is never sent; a plan the caller owns, or any other file, is a 404.",
+    access: "surveyor",
+    versionGate: true,
+    params: [
+      planId(),
+      {
+        name: "n",
+        in: "path",
+        required: true,
+        description: "Place in the plan's `files` list, from 0.",
+        schema: z.number().int().nonnegative(),
+        example: "0",
+      },
+    ],
+    data: S.PlanFilePagesData,
+    errors: ["NOT_FOUND", "FILE_NOT_VIEWABLE", "RATE_LIMITED"],
+    routeFile: "app/api/v1/surfboard/plans/[planId]/files/[n]/pages/route.ts",
     noStore: true,
   },
   {

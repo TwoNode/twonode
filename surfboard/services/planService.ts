@@ -911,7 +911,9 @@ export async function getSurfPlanById(
   if (plan.userId !== userId) {
     const { redCopyFileUrl, user, ...rest } = plan;
     return {
-      ...withGeometry({ ...rest, sharedTo: [userId] }),
+      // No drawings (CAD) for a recipient (TASK-0015): the survey plan(s) and the Certificate
+      // open only as watermarked pages through `files/{n}/pages`.
+      ...withGeometry({ ...rest, cadFilePaths: [], sharedTo: [userId] }),
       user: user && {
         id: user.id,
         firstName: user.firstName,

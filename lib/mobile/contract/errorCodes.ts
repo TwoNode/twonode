@@ -95,6 +95,12 @@ export const ERROR_CODES = {
     meaning: "The file is a drawing or another format a phone cannot open.",
     appDoes: "Says the file cannot be opened on a phone.",
   },
+  FILE_PROTECTED: {
+    status: 403,
+    meaning:
+      "The file belongs to a plan shared with the caller (the survey plan or the Certificate): its original is never handed over; it opens only as watermarked pages.",
+    appDoes: "Opens the protected viewer instead of the phone's browser.",
+  },
   SUBSCRIPTION_CANCEL_FAILED: {
     status: 502,
     meaning:

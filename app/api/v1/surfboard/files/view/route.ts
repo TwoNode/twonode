@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api/withAuth";
-import { getPresignedDownloadUrl, extractS3KeyFromUrl } from "@/surfboard/services/awsService";
+import {
+  getPresignedDownloadUrl,
+  extractS3KeyFromUrl,
+} from "@/surfboard/services/awsService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 import prisma from "@/lib/prisma";
 import {
@@ -54,13 +57,14 @@ export const GET = withAuth<SurfboardRole>(
       const isUserOwnPrefix = key.startsWith(`surfboard/${userId}/`);
 
       if (!isUserOwnPrefix) {
-        // 2. Check if the file is attached to a plan owned by or shared with the user
+        // 2. Check if the file is attached to a plan the user OWNS. A plan shared
+        // with the user does not hand over its files here: the survey plan(s)
+        // and the Certificate open only as watermarked pages
+        // (`plans/{id}/files/{n}/pages`), the record copy and the drawings not
+        // at all (TASK-0015 in the app repo).
         const matchingPlan = await prisma.surfboardPlan.findFirst({
           where: {
-            OR: [
-              { userId },
-              { sharedTo: { has: userId } },
-            ],
+            userId,
             AND: [
               {
                 OR: [
@@ -78,16 +82,18 @@ export const GET = withAuth<SurfboardRole>(
         });
 
         // 3. Check viewer attachments
-        const matchingAttachment = await prisma.surfboardPlanViewerAttachment.findFirst({
-          where: {
-            OR: [
-              { viewerId: userId },
-              { plan: { userId } },
-            ],
-            url: { endsWith: key },
-          },
-          select: { id: true, viewerId: true, plan: { select: { userId: true } } },
-        });
+        const matchingAttachment =
+          await prisma.surfboardPlanViewerAttachment.findFirst({
+            where: {
+              OR: [{ viewerId: userId }, { plan: { userId } }],
+              url: { endsWith: key },
+            },
+            select: {
+              id: true,
+              viewerId: true,
+              plan: { select: { userId: true } },
+            },
+          });
 
         // 4. Payment receipts on a batch the surveyor submitted. Staff upload
         // these into their own folder and surveyors cannot edit the field, so
@@ -117,6 +123,28 @@ export const GET = withAuth<SurfboardRole>(
           ]);
 
         if (!planOk && !attachmentOk && !matchingBatch) {
+          // Say so when the file is one a shared plan holds, so a client can show the right words.
+          const sharedFile = await prisma.surfboardPlan.findFirst({
+            where: {
+              sharedTo: { has: userId },
+              OR: [
+                { pdfFilePaths: { has: target } },
+                { cadFilePaths: { has: target } },
+                { certificateFilePaths: { has: target } },
+              ],
+            },
+            select: { id: true },
+          });
+          if (sharedFile) {
+            return NextResponse.json(
+              {
+                success: false,
+                error: "This file opens only in the protected view",
+                code: "FILE_PROTECTED",
+              },
+              { status: 403 }
+            );
+          }
           return NextResponse.json(
             { success: false, error: "Access denied to requested file" },
             { status: 403 }
