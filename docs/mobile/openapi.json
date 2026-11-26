@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Surfboard mobile API",
-    "version": "1.7.0",
+    "version": "1.8.0",
     "description": "The calls the Surfboard mobile app makes. Generated from `lib/mobile/contract` in the API repository: do not edit by hand. Every success is `{ success: true, data }`; every failure is `{ success: false, error, code?, details? }`. Dates are ISO 8601 in UTC. Objects are open: a newer server may add a field, and an app must ignore what it does not know."
   },
   "servers": [
@@ -20,6 +20,9 @@
     },
     {
       "name": "Push"
+    },
+    {
+      "name": "Diagnostics"
     },
     {
       "name": "Plans"
@@ -2472,6 +2475,255 @@
             },
             "x-error-codes": [
               "APP_UPDATE_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "/api/v1/surfboard/diagnostics/reports": {
+      "post": {
+        "operationId": "postCrashReport",
+        "tags": [
+          "Diagnostics"
+        ],
+        "summary": "Post one crash report",
+        "description": "Sent after the app closed unexpectedly (with the person's say; automatically only in test builds). Words and counts only: the app and the server both scrub the text, and the report is NOT linked to the account (the sign-in only authorises the post and counts against 10 reports an hour). An unknown key is refused. A body over 8 KB is a 413. Answers `{}`; nothing is echoed. Off unless the server has reports switched on: then a 404, and the app stops sending for that run. Also open to an unverified account.\n\nA signed-in surveyor (role USER). Allowed while the email is unverified.",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppVersion"
+          },
+          {
+            "$ref": "#/components/parameters/AppPlatform"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "v": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "unexpected-close",
+                      "caught-error"
+                    ]
+                  },
+                  "appVersion": {
+                    "type": "string",
+                    "maxLength": 32
+                  },
+                  "platform": {
+                    "type": "string",
+                    "enum": [
+                      "ios",
+                      "android"
+                    ]
+                  },
+                  "osVersion": {
+                    "type": "string",
+                    "maxLength": 16
+                  },
+                  "screen": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "aliveAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "memoryWarnings": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "error": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "maxLength": 60
+                      },
+                      "message": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "fatal": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "message",
+                      "fatal"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "trail": {
+                    "maxItems": 24,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 90
+                    }
+                  }
+                },
+                "required": [
+                  "v",
+                  "kind",
+                  "appVersion",
+                  "platform",
+                  "screen",
+                  "at",
+                  "trail"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "v": 1,
+                "kind": "unexpected-close",
+                "appVersion": "1.0.0",
+                "platform": "ios",
+                "osVersion": "18.3",
+                "screen": "Home",
+                "at": "2026-11-26T13:51:54.000Z",
+                "aliveAt": "2026-11-26T13:51:50.000Z",
+                "memoryWarnings": 0,
+                "trail": [
+                  "13:51:54.100 map tap, zoom 18",
+                  "13:51:54.140 map tap found 5 plans"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Empty"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_ERROR`: A parameter or body field is missing or not valid. `details` names the fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: No valid access token (missing, expired or for another platform).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "403": {
+            "description": "`FORBIDDEN`: The signed-in role may not use this route.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "description": "`NOT_FOUND`: Unknown, deleted or someone else's record (these look the same on purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "413": {
+            "description": "`PAYLOAD_TOO_LARGE`: The body is over the size the route accepts (a crash report is capped at 8 KB).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "426": {
+            "description": "`APP_UPDATE_REQUIRED`: This build is below the minimum for its store. `details` is `{ platform, minimumVersion, storeUrl }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "APP_UPDATE_REQUIRED"
+            ]
+          },
+          "429": {
+            "description": "`RATE_LIMITED`: Too many tries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
             ]
           }
         }
@@ -7822,6 +8074,11 @@
       "status": 502,
       "meaning": "The paid subscription could not be cancelled (the payment provider did not answer), so the account was not closed.",
       "appDoes": "Says nothing was closed and asks the person to try again."
+    },
+    "PAYLOAD_TOO_LARGE": {
+      "status": 413,
+      "meaning": "The body is over the size the route accepts (a crash report is capped at 8 KB).",
+      "appDoes": "Drops the report; it is never retried."
     },
     "RATE_LIMITED": {
       "status": 429,

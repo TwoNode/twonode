@@ -51,6 +51,17 @@ describe("canAccessRoute — admin panel", () => {
     ).toBe(false);
   });
 
+  it("restricts /app-reports (the crash reports the app posts) to SUPERADMIN, and shows it in their sidebar only", () => {
+    const path = "/surfboard-restricted/dashboard/app-reports";
+    expect(canAccessRoute(path, SurfboardRole.SUPERADMIN)).toBe(true);
+    expect(canAccessRoute(path, SurfboardRole.ADMIN)).toBe(false);
+    expect(canAccessRoute(path, SurfboardRole.USER)).toBe(false);
+    const labels = (role: SurfboardRole) =>
+      getNavItemsForRole(role, "admin").map((item) => item.label);
+    expect(labels(SurfboardRole.SUPERADMIN)).toContain("App Reports");
+    expect(labels(SurfboardRole.ADMIN)).not.toContain("App Reports");
+  });
+
   it("resolves a nested id page (.../surf-plans/update/[id]) to its parent entry's role requirement", () => {
     expect(
       canAccessRoute(
