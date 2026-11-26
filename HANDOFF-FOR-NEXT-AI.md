@@ -138,7 +138,7 @@ flowchart LR
 
 ## 4. S3 Bucket Privacy & Key Layout Architecture
 
-### 4.1 Bucket Policy State (Policy v4 Live)
+### 4.1 Bucket Policy State (Policy v4 Live; confirmed by anonymous requests 2026-11-26)
 
 - S3 Bucket: `reva-store` (eu-north-1)
 - **Public Read (`s3:GetObject` allowed anonymously):**
@@ -151,7 +151,8 @@ flowchart LR
   - `private/reva/*`
   - `private/gbc/*` (including ticket QR codes)
   - `uploads/*` and `PrivateSurveyPlans/*`
-  - `archive/*`
+  - `archive/*` (planned; nothing is stored there yet)
+  - `GBC2/qrcodes/*` and `reva/uploads/*` (old copies, still stored, refused anonymously)
 
 ### 4.2 S3 Phase 4 Archival Strategy
 
@@ -164,7 +165,7 @@ flowchart LR
 
 ### 4.3 S3 follow-ups found 2026-11-03
 
-- Which bucket policy is live is recorded inconsistently across the docs (different files name v1, v2 or v4 as the latest applied). Read it from AWS before relying on section 4.1.
+- Which bucket policy is live was recorded inconsistently; **settled 2026-11-26: v4**, by anonymous requests (the CLI identity cannot read the policy text). Only the four public prefixes in 4.1 answer anonymously; `GBC2/qrcodes/*`, `reva/*`, `private/*`, `surfboard/*`, `uploads/*` and a bucket listing answer 403. Re-run `out/aws/bucket-probe.sh <prefix>…` after any policy change. Still open: save the policy text itself (`docs/tasks/current-tasks.md`).
 - With SDK 3.985.0 the Surfboard adapter's presigned PUT (viewer attachments) carries CRC32 checksum parameters; test an upload on staging.
 - Nothing cleans up unreferenced stored files, and the three server upload routes check neither size nor type.
 - Details and owners: the three items under "Follow-ups found 2026-11-03" in `docs/tasks/0011-s3-privacy-and-key-layout.md` and the TASK-0011 batch in `docs/tasks/current-tasks.md`.

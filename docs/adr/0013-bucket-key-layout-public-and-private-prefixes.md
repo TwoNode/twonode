@@ -1,6 +1,6 @@
 # 0013. The bucket is private by default; public files live under `public/`
 
-- **Status:** Accepted 2026-10-13 (roji-tech's go on Phases 1 to 3). Implemented so far: bucket policy v1 applied; REVA uploads and the existing REVA files under `private/reva/<reference>/`; GBC QR codes private (`private/gbc/<edition>/qrcodes/`, signed links). Still to do: policy v2 (drop `reva/*`), move the GBC QR files and the public GBC images, delete the old REVA files after a grace period.
+- **Status:** Accepted 2026-10-13 (roji-tech's go on Phases 1 to 3). Implemented: bucket policy v1 applied 2026-10-13, then v2 (2026-10-16) and v4 (public read only on `public/gbc/*` and `GBC2/{gallery,speakers,logos}/*`), **v4 confirmed live in behaviour on 2026-11-26** (anonymous requests; the policy text itself was not readable); also REVA uploads and the existing REVA files under `private/reva/<reference>/`; GBC QR codes private (`private/gbc/<edition>/qrcodes/`, signed links). Still to do: delete the old copies that are private but still stored (`reva/uploads/*`, the legacy `uploads/*` files, `GBC2/qrcodes/*`) after the grace period, and the Phase 4 clean-up.
 - **Date:** 2026-10-12
 - **Decided by:** roji-tech (to accept)
 - **Related:** [ADR-0012](./0012-multi-provider-storage-and-surveyor-file-privacy.md), [TASK-0011](../tasks/0011-s3-privacy-and-key-layout.md), I-004, I-019 to I-023 in the [issues register](../issues/index.md), `gbc/utils/aws-s3.ts`, `app/(projects)/(reva)/reva/actions/awsActions.ts`, `lib/storage/utils.ts`
