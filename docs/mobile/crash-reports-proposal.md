@@ -1,6 +1,6 @@
 # Crash reports from the Surfboard app: the server half (PROPOSAL, 2026-11-26)
 
-**Status: D1 to D7 ANSWERED by the maintainer on 2026-11-26 (see the next section); the build waits for their "go". Nothing is built, no migration, no environment variable is set.** Where this page says "phase 1: the log only" and "a staff-only list route is possible later", the answers below supersede it.
+**Status: D1 to D7 ANSWERED by the maintainer on 2026-11-26 (see the next section) and the server half BUILT the same night at their "go build it" (this PR, unmerged, nothing deployed): the table and migration `20261126180000_app_reports`, the route, the scrub, the purge, the superadmin App Reports page, contract 1.8.0. No environment variable is set anywhere: `APP_REPORTS_ENABLED` is off.** The table is `SurfboardAppReport` (`surfboard_app_reports`), not `AppReport`. Where the sections below say "phase 1: the log only" they are superseded by D5. Where this page says "phase 1: the log only" and "a staff-only list route is possible later", the answers below supersede it.
 
 ## Decisions (2026-11-26, the maintainer, one question at a time)
 

@@ -6,6 +6,11 @@ import type {
 } from "@/lib/api/adminInvitationTypes";
 import type { ApiResult } from "@/lib/api/types";
 import { createAuditLogApi } from "@/lib/api/auditLogClient";
+import type {
+  AppReportEntry,
+  AppReportFilterOptions,
+  AppReportQuery,
+} from "@/lib/diagnostics/appReportTypes";
 import type { QREarningsSettingsData } from "@/surfboard/services/qrEarningsService";
 import type {
   BatchLockRole,
@@ -346,6 +351,30 @@ export const surfboardApi = {
     },
 
     auditLogs: createAuditLogApi(`${BASE}/admin/audit-logs`),
+
+    /** Crash reports the app posted (superadmin only; read-only same-origin GETs). */
+    appReports: {
+      list: async (query: AppReportQuery = {}) => {
+        const qs = new URLSearchParams();
+        if (query.page) qs.set("page", String(query.page));
+        if (query.pageSize) qs.set("pageSize", String(query.pageSize));
+        if (query.kind) qs.set("kind", query.kind);
+        if (query.platform) qs.set("platform", query.platform);
+        if (query.appVersion) qs.set("appVersion", query.appVersion);
+        if (query.search) qs.set("search", query.search);
+        return jsonFetch<{
+          data: AppReportEntry[];
+          pagination: {
+            page: number;
+            pageSize: number;
+            total: number;
+            totalPages: number;
+          };
+        }>(`${BASE}/admin/app-reports?${qs.toString()}`);
+      },
+      filters: () =>
+        jsonFetch<AppReportFilterOptions>(`${BASE}/admin/app-reports/filters`),
+    },
 
     invitations: {
       list: () => jsonFetch<AdminInvitationRow[]>(`${BASE}/admin/invitations`),

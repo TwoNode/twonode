@@ -113,6 +113,18 @@ What the app is promised, written once: see [`docs/mobile/api-contract.md`](../m
 
 `scripts/mobile/contract-live-check.ts` (`npm run contract:live`, read only) signs in to a running server (`API_BASE`, `CHECK_EMAIL`, `CHECK_PASSWORD`) and checks every read route's answer against these schemas.
 
+## `lib/diagnostics/` — crash reports from the Surfboard app (ADR-0014 / app TASK-0016)
+
+Off unless `APP_REPORTS_ENABLED=1` (see `.env.example` §13). Words and counts only; **no account id is stored or logged** with a report (D3). Route: `app/api/v1/surfboard/diagnostics/reports/route.ts`.
+
+| File                  | Description                                                                                                                                                                                                                                                                                                                              |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `appReportTypes.ts`   | Types and constants only (safe in a client component): `APP_REPORT_KINDS`, `APP_REPORT_PLATFORMS`, `APP_REPORT_LIMITS` (8 KB body, 10 an hour, 30 days kept, 24 trail steps of 90 characters, field lengths), `AppReportEntry` (one stored report as the admin page gets it), `AppReportQuery`, `AppReportFilterOptions`.               |
+| `scrubReport.ts`      | `scrubReportText(input, limit)`: control characters become spaces; a URL with a query, a Bearer token, a JWT, a UUID, an email, a decimal with 4 or more places (a coordinate) and any run of 7 or more digits become "…"; cut to `limit` without splitting an emoji. Never throws, never longer. `scrubOptional` keeps absent as null. |
+| `appReports.ts`       | `appReportsEnabled(env)`; `appReportSchema` (zod, `.strict()` everywhere); `scrubAppReport` (scrubs every text field again); `storeAppReport(input, random?)` (writes a `surfboard_app_reports` row and one `app-report` log line, no account id, and about one write in twenty also calls `purgeOldAppReports`); `purgeOldAppReports(now?)` (deletes rows older than 30 days, never throws); `listAppReports(query)` (newest first, filters `kind`, `platform`, `appVersion`, `search`, paginated) and `getAppReportFilterOptions()` for the superadmin page. |
+
+The routes: `POST /api/v1/surfboard/diagnostics/reports` (the app; signed in, an unverified account too; flag, then CSRF, then a declared size over 8 KB is a 413, then `consumeRateLimit("app-report:<account>", 10 an hour)`, then the real size, then the strict body, then `storeAppReport`; answers `{}`), `GET /api/v1/surfboard/admin/app-reports` and `.../filters` (superadmin only). The page is `components/admin/AppReportsViewer.tsx` at `/surfboard-restricted/dashboard/app-reports` (sidebar "App Reports", Insights section, `SURFBOARD_ROUTES` in `surfboard/access/routes.ts`; `surfboardApi.admin.appReports`).
+
 ## `lib/` — other
 
 | File                                         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |

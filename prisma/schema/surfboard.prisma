@@ -710,3 +710,32 @@ model SurfboardPlanComment {
   @@index([planId])
   @@map("surfboard_plan_comments")
 }
+
+/// A crash report the Surfboard app posted after it closed unexpectedly (ADR-0014 in the app
+/// repository, TASK-0016; D5: a table from day one). Words and counts only: the app scrubs the text
+/// and the server scrubs it again, and there is NO account id here on purpose (D3: not linked to the
+/// person). Kept 30 days and purged on write (`storeAppReport`). Read by superadmins on the Surfboard
+/// admin website's "App Reports" page.
+model SurfboardAppReport {
+  id             String    @id @default(uuid())
+  receivedAt     DateTime  @default(now())
+  /// "unexpected-close" or "caught-error".
+  kind           String
+  appVersion     String
+  /// "ios" or "android".
+  platform       String
+  osVersion      String?
+  /// The screen the app was on (a route name, never an id).
+  screen         String
+  occurredAt     DateTime
+  aliveAt        DateTime?
+  memoryWarnings Int?
+  errorName      String?
+  errorMessage   String?
+  fatal          Boolean?
+  /// Up to 24 short strings: the app's own trail of steps, oldest first.
+  trail          Json
+
+  @@index([receivedAt])
+  @@map("surfboard_app_reports")
+}
