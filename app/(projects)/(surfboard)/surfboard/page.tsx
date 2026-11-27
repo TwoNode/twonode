@@ -1030,6 +1030,11 @@ export default function SurfboardLandingPage() {
               <li>
                 <Link href="/surfboard/terms">Terms of Use</Link>
               </li>
+              <li>
+                <Link href="/surfboard/support">
+                  Support and account deletion
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
