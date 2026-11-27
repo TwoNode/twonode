@@ -9,12 +9,15 @@ export function LegalDocument({
   backLabel,
   otherHref,
   otherLabel,
+  showEffectiveDate = true,
 }: {
   doc: LegalDoc;
   backHref: string;
   backLabel: string;
   otherHref: string;
   otherLabel: string;
+  /** A policy has an effective date; a help page does not. */
+  showEffectiveDate?: boolean;
 }) {
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-10 text-slate-800 dark:text-slate-200">
@@ -27,9 +30,11 @@ export function LegalDocument({
       <h1 className="mt-6 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
         {doc.title}
       </h1>
-      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-        Effective {LEGAL_EFFECTIVE_DATE}
-      </p>
+      {showEffectiveDate && (
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          Effective {LEGAL_EFFECTIVE_DATE}
+        </p>
+      )}
       <p className="mt-6 leading-7">{doc.intro}</p>
 
       {doc.sections.map((section, index) => (

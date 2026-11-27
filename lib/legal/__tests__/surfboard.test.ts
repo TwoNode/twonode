@@ -1,12 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
+  ACCOUNT_CLOSURE_BLOCKED,
+  ACCOUNT_CLOSURE_ERASED_AND_KEPT,
   LEGAL_CONTACT_EMAIL,
   LEGAL_VERSION,
   SURFBOARD_PRIVACY,
   SURFBOARD_PRIVACY_PATH,
+  SURFBOARD_SUPPORT_PATH,
   SURFBOARD_TERMS,
   SURFBOARD_TERMS_PATH,
 } from "../surfboard";
+import {
+  SURFBOARD_SUPPORT,
+  SURFBOARD_SUPPORT_DELETE_SUBJECT,
+} from "../surfboardSupport";
 
 describe("Surfboard legal text", () => {
   it.each([
@@ -66,5 +73,65 @@ describe("Surfboard legal text", () => {
     expect(SURFBOARD_PRIVACY_PATH).toBe("/surfboard/privacy");
     expect(SURFBOARD_TERMS_PATH).toBe("/surfboard/terms");
     expect(LEGAL_VERSION).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("the support page is where the stores and the footer point", () => {
+    expect(SURFBOARD_SUPPORT_PATH).toBe("/surfboard/support");
+  });
+
+  describe("the support page (Apple's support address, Google Play's account-deletion address; I-063)", () => {
+    const text = JSON.stringify(SURFBOARD_SUPPORT);
+    const sectionText = (heading: string) => {
+      const section = SURFBOARD_SUPPORT.sections.find(
+        (s) => s.heading === heading
+      );
+      expect(section).toBeDefined();
+      return [...(section?.paragraphs ?? []), ...(section?.items ?? [])];
+    };
+
+    it("names the app and the company, and gives the support email", () => {
+      expect(SURFBOARD_SUPPORT.title).toContain("Surfboard");
+      expect(SURFBOARD_SUPPORT.intro).toContain("TwoNode Technologies Ltd.");
+      expect(text).toContain(LEGAL_CONTACT_EMAIL);
+    });
+
+    it("walks through deleting the account in the app with the app's own labels", () => {
+      const steps = sectionText("Delete your account in the app").join("\n");
+      expect(steps).toContain("Profile");
+      expect(steps).toContain("Account section");
+      expect(steps).toContain("Delete account");
+      expect(steps).toContain("password");
+      // The checkbox and the final button of src/app/delete-account.tsx in the app.
+      expect(steps).toContain(
+        "I understand my account will be deleted for good."
+      );
+      expect(steps).toContain("Delete my account");
+    });
+
+    it("uses the Privacy Policy's own words for what is erased, what is kept and what blocks it", () => {
+      const said = sectionText("What deleting erases, and what we keep");
+      expect(said).toEqual([
+        ACCOUNT_CLOSURE_ERASED_AND_KEPT,
+        ACCOUNT_CLOSURE_BLOCKED,
+      ]);
+      const privacy = SURFBOARD_PRIVACY.sections.flatMap((s) => [
+        ...(s.paragraphs ?? []),
+        ...(s.items ?? []),
+      ]);
+      expect(privacy).toContain(ACCOUNT_CLOSURE_ERASED_AND_KEPT);
+      expect(privacy).toContain(ACCOUNT_CLOSURE_BLOCKED);
+    });
+
+    it("tells someone who cannot open the app how to ask for deletion by email", () => {
+      const how = sectionText("If you cannot open the app").join("\n");
+      expect(how).toContain(LEGAL_CONTACT_EMAIL);
+      expect(how).toContain(SURFBOARD_SUPPORT_DELETE_SUBJECT);
+      expect(how).toContain("confirm it is you");
+    });
+
+    it("has no placeholder left and points to the Privacy Policy for the other rights", () => {
+      expect(text).not.toMatch(/TODO|TBD|XXX|lorem/i);
+      expect(text).toContain(SURFBOARD_PRIVACY_PATH);
+    });
   });
 });
