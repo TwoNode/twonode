@@ -13,6 +13,17 @@ export const LEGAL_CONTACT_EMAIL = "info@twonodetechnologies.com";
 
 export const SURFBOARD_PRIVACY_PATH = "/surfboard/privacy";
 export const SURFBOARD_TERMS_PATH = "/surfboard/terms";
+export const SURFBOARD_SUPPORT_PATH = "/surfboard/support";
+
+/**
+ * What closing an account erases and keeps, and what stops it. One text for the Privacy Policy and
+ * for the support page (`surfboardSupport.ts`), which Google Play and Apple point people to, so the
+ * two can never disagree.
+ */
+export const ACCOUNT_CLOSURE_ERASED_AND_KEPT =
+  "If you close your account (in the app: Profile, then Delete account), we erase your name, email address, phone number, address, company details, logo, signature, bank details, sign-ins and devices, and we cancel any subscription. We keep the survey plans on your account, including plans you never submitted, and payment and withdrawal records and audit entries, with no personal details attached to the account. Plans you shared stay shared with the people you shared them with. A record we keep may still contain names you typed into it, such as a plan's title or a client's name.";
+export const ACCOUNT_CLOSURE_BLOCKED =
+  "We cannot close an account while it holds money in the wallet or a withdrawal that has not been paid out; withdraw the money first.";
 
 export type LegalSection = {
   heading: string;
@@ -89,8 +100,8 @@ export const SURFBOARD_PRIVACY: LegalDoc = {
       heading: "How long we keep it",
       items: [
         "Account and plan data: for as long as your account is open, and afterwards for as long as we need it to meet legal, accounting and record-keeping duties or to resolve disputes.",
-        "If you close your account (in the app: Profile, then Delete account), we erase your name, email address, phone number, address, company details, logo, signature, bank details, sign-ins and devices, and we cancel any subscription. We keep the survey plans on your account, including plans you never submitted, and payment and withdrawal records and audit entries, with no personal details attached to the account. Plans you shared stay shared with the people you shared them with. A record we keep may still contain names you typed into it, such as a plan's title or a client's name.",
-        "We cannot close an account while it holds money in the wallet or a withdrawal that has not been paid out; withdraw the money first.",
+        ACCOUNT_CLOSURE_ERASED_AND_KEPT,
+        ACCOUNT_CLOSURE_BLOCKED,
         "Sign-in attempt and security records are kept for a limited period for security and then removed.",
         "Verification codes and pending registrations expire within minutes and are removed after use or expiry.",
       ],
