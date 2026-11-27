@@ -399,9 +399,32 @@ describe("when Google cannot be used", () => {
   ];
 
   it.each(calls)(
+    "%s: the map's own key alone is enough, and wins over the server key (I-066)",
+    async (_name, run) => {
+      delete process.env.GOOGLE_MAPS_SERVER_API_KEY;
+      process.env.GOOGLE_MAPS_MAP_API_KEY = "map-only-key";
+      try {
+        const { calls: made, fetchImpl } = google({});
+        await run(fetchImpl).catch(() => undefined);
+        expect(made).toHaveLength(1);
+        expect(JSON.stringify(made[0])).toContain("map-only-key");
+        // and with both set, the map's own key is the one used
+        process.env.GOOGLE_MAPS_SERVER_API_KEY = KEY;
+        const second = google({});
+        await run(second.fetchImpl).catch(() => undefined);
+        expect(JSON.stringify(second.calls[0])).toContain("map-only-key");
+        expect(JSON.stringify(second.calls[0])).not.toContain(KEY);
+      } finally {
+        delete process.env.GOOGLE_MAPS_MAP_API_KEY;
+      }
+    }
+  );
+
+  it.each(calls)(
     "%s: no key set is a 503 and Google is never asked",
     async (_name, run) => {
       delete process.env.GOOGLE_MAPS_SERVER_API_KEY;
+      delete process.env.GOOGLE_MAPS_MAP_API_KEY;
       const { calls: made, fetchImpl } = google({});
       await expect(run(fetchImpl)).rejects.toMatchObject({
         status: 503,

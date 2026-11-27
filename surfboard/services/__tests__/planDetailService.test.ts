@@ -285,6 +285,7 @@ describe("getPlanDetail: files", () => {
         name: "LA_2026_0412",
         format: "",
         viewable: false,
+        protected: false,
         ref: "https://b/surfboard/o/pdf/noext",
       },
     ]);
@@ -309,14 +310,38 @@ describe("getPlanDetail: a plan shared with the caller (I-037)", () => {
   it("says a record copy exists but offers neither its link nor a file entry for it", async () => {
     const d = await getPlanDetail("viewer-1", PLAN_ID);
     expect(d.hasRecordCopy).toBe(true);
-    expect(d.files.map((f) => f.kind)).toEqual(["SURVEY_PLAN", "DRAWING"]);
+    expect(d.files.map((f) => f.kind)).toEqual(["SURVEY_PLAN"]);
     expect(JSON.stringify(d)).not.toContain(RECORD_COPY);
     expect(JSON.stringify(d)).not.toContain("redcopy");
   });
 
-  it("still shares the plan's own files, as the file gateway does", async () => {
+  it("gives a recipient the survey plan(s) and the Certificate only, as protected files, and never the drawing (TASK-0015)", async () => {
+    mocks.findFirst.mockResolvedValue(
+      shared({ certificateFilePaths: ["https://b/surfboard/o/cert/c.pdf"] })
+    );
     const d = await getPlanDetail("viewer-1", PLAN_ID);
-    expect(d.files.map((f) => f.ref)).toEqual([PDF, DWG]);
+    expect(d.files.map((f) => [f.kind, f.protected])).toEqual([
+      ["SURVEY_PLAN", true],
+      ["CERTIFICATE", true],
+    ]);
+    expect(d.files.map((f) => f.kind)).not.toContain("DRAWING");
+    expect(d.files.map((f) => f.kind)).not.toContain("RECORD_COPY");
+  });
+
+  it("never tells a recipient where the original is stored", async () => {
+    mocks.findFirst.mockResolvedValue(
+      shared({ certificateFilePaths: ["https://b/surfboard/o/cert/c.pdf"] })
+    );
+    const d = await getPlanDetail("viewer-1", PLAN_ID);
+    expect(d.files.every((f) => f.ref === "")).toBe(true);
+    expect(JSON.stringify(d)).not.toContain(PDF);
+    expect(JSON.stringify(d)).not.toContain("cert/c.pdf");
+  });
+
+  it("keeps the owner's own files as they were: drawing included, none protected", async () => {
+    const d = await getPlanDetail("owner-1", PLAN_ID);
+    expect(d.files.some((f) => f.kind === "DRAWING")).toBe(true);
+    expect(d.files.every((f) => f.protected === false)).toBe(true);
   });
 
   it("names the owner and nothing else about them or the other viewers", async () => {

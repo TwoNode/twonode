@@ -37,6 +37,20 @@ export async function consumeRateLimit(
   return count <= (opts.max ?? MAX_ATTEMPTS);
 }
 
+/**
+ * How many attempts are recorded under `identifier` in the window. Counts only:
+ * it records nothing, so a refused request does not extend its own lock.
+ */
+export async function countAttempts(
+  identifier: string,
+  windowMs: number = WINDOW_MS
+): Promise<number> {
+  const since = new Date(Date.now() - windowMs);
+  return prisma.loginAttempt.count({
+    where: { identifier, createdAt: { gt: since } },
+  });
+}
+
 export async function recordAttempt(identifier: string, userId?: string) {
   await prisma.loginAttempt.create({ data: { identifier, userId } });
 }

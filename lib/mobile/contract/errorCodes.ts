@@ -95,11 +95,23 @@ export const ERROR_CODES = {
     meaning: "The file is a drawing or another format a phone cannot open.",
     appDoes: "Says the file cannot be opened on a phone.",
   },
+  FILE_PROTECTED: {
+    status: 403,
+    meaning:
+      "The file belongs to a plan shared with the caller (the survey plan or the Certificate): its original is never handed over; it opens only as watermarked pages.",
+    appDoes: "Opens the protected viewer instead of the phone's browser.",
+  },
   SUBSCRIPTION_CANCEL_FAILED: {
     status: 502,
     meaning:
       "The paid subscription could not be cancelled (the payment provider did not answer), so the account was not closed.",
     appDoes: "Says nothing was closed and asks the person to try again.",
+  },
+  PAYLOAD_TOO_LARGE: {
+    status: 413,
+    meaning:
+      "The body is over the size the route accepts (a crash report is capped at 8 KB).",
+    appDoes: "Drops the report; it is never retried.",
   },
   RATE_LIMITED: {
     status: 429,

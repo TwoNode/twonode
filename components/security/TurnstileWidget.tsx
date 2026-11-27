@@ -23,6 +23,7 @@ type TurnstileRenderOptions = {
   sitekey: string;
   action: string;
   theme?: "auto" | "light" | "dark";
+  size?: "normal" | "compact";
   callback: (token: string) => void;
   "expired-callback"?: () => void;
   "error-callback"?: () => void;
@@ -40,6 +41,9 @@ declare global {
     turnstile?: TurnstileApi;
   }
 }
+
+/** Width in px of Cloudflare's normal-size widget. */
+const NORMAL_WIDGET_WIDTH = 300;
 
 export type TurnstileHandle = {
   /** Ask for a fresh token (call after every submit attempt) and clear the current one. */
@@ -71,10 +75,16 @@ export const TurnstileWidget = forwardRef<TurnstileHandle, Props>(
       ) {
         return;
       }
+      // The normal widget is 300 px wide; on a narrower column (a 320 pt phone)
+      // it would be cut off, so use Cloudflare's compact size (150 px) there.
+      const narrow =
+        container.current.clientWidth > 0 &&
+        container.current.clientWidth < NORMAL_WIDGET_WIDTH;
       widgetId.current = window.turnstile.render(container.current, {
         sitekey: siteKey,
         action,
         theme: "auto",
+        size: narrow ? "compact" : "normal",
         callback: (token) => onTokenRef.current(token),
         "expired-callback": () => onTokenRef.current(""),
         "error-callback": () => onTokenRef.current(""),
