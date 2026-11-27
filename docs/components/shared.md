@@ -191,6 +191,10 @@ Used by every product's dashboard shell (GBC/REVA/Surfboard).
 | `signup/EffortlessTracking.tsx`         | Signup page marketing section            |
 | `signup/SurfBoardSubscriptionPlans.tsx` | Signup page subscription plans section   |
 
+## `components/legal/`
+
+- `LegalDocument.tsx`: a plain server-rendered page for a legal or help text (`LegalDoc`: title, intro, numbered sections of paragraphs and bullet items). Used by `/surfboard/privacy`, `/surfboard/terms` and `/surfboard/support`. `showEffectiveDate` (default true) turns the "Effective ..." line off for the support page, which has no effective date. Test: `components/legal/__tests__/LegalDocument.test.ts`.
+
 ## `providers/`
 
 | File                    | Description                           |
