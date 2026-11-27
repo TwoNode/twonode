@@ -55,6 +55,9 @@ vi.mock("@/lib/api/mobileApp", async (original) => ({
   assertMobileSignInEnabled: vi.fn(),
 }));
 
+// The crash-report route is off unless the server switches it on; these tests need it answering.
+vi.stubEnv("APP_REPORTS_ENABLED", "1");
+
 const { ENDPOINTS } = await import("@/lib/mobile/contract/endpoints");
 const { ERROR_CODES } = await import("@/lib/mobile/contract/errorCodes");
 const errors = await import("@/lib/api/errors");
@@ -105,6 +108,8 @@ const ROUTES: Record<string, () => Promise<Record<string, unknown>>> = {
     import("@/app/api/v1/auth/mobile/push-token/route"),
   "app/api/v1/surfboard/push/preferences/route.ts": () =>
     import("@/app/api/v1/surfboard/push/preferences/route"),
+  "app/api/v1/surfboard/diagnostics/reports/route.ts": () =>
+    import("@/app/api/v1/surfboard/diagnostics/reports/route"),
   "app/api/v1/surfboard/plans/summary/route.ts": () =>
     import("@/app/api/v1/surfboard/plans/summary/route"),
   "app/api/v1/surfboard/plans/counts/route.ts": () =>

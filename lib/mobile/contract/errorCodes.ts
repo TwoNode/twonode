@@ -107,6 +107,12 @@ export const ERROR_CODES = {
       "The paid subscription could not be cancelled (the payment provider did not answer), so the account was not closed.",
     appDoes: "Says nothing was closed and asks the person to try again.",
   },
+  PAYLOAD_TOO_LARGE: {
+    status: 413,
+    meaning:
+      "The body is over the size the route accepts (a crash report is capped at 8 KB).",
+    appDoes: "Drops the report; it is never retried.",
+  },
   RATE_LIMITED: {
     status: 429,
     meaning: "Too many tries.",

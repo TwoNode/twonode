@@ -58,6 +58,7 @@ export type Endpoint = {
     | "Money"
     | "Files"
     | "Push"
+    | "Diagnostics"
     | "Map";
   summary: string;
   description?: string;
@@ -709,6 +710,122 @@ export const ENDPOINTS: Endpoint[] = [
     data: S.PushPreferencesData,
     errors: ["VALIDATION_ERROR"],
     routeFile: "app/api/v1/surfboard/push/preferences/route.ts",
+  },
+
+  // ----------------------------------------------------- diagnostics
+  {
+    operationId: "postCrashReport",
+    method: "post",
+    path: "/api/v1/surfboard/diagnostics/reports",
+    tag: "Diagnostics",
+    summary: "Post one crash report",
+    description:
+      "Sent after the app closed unexpectedly (with the person's say; automatically only in test builds). Words and counts only: the app and the server both scrub the text, and the report is NOT linked to the account (the sign-in only authorises the post and counts against 10 reports an hour). An unknown key is refused. A body over 8 KB is a 413. Answers `{}`; nothing is echoed. Off unless the server has reports switched on: then a 404, and the app stops sending for that run. Also open to an unverified account.",
+    access: "surveyor-unverified",
+    versionGate: true,
+    body: {
+      schema: z.strictObject({
+        v: z.literal(1),
+        kind: z.enum(["unexpected-close", "caught-error"]),
+        appVersion: z.string().max(32),
+        platform: z.enum(["ios", "android"]),
+        osVersion: z.string().max(16).optional(),
+        screen: z.string().max(60),
+        at: z.iso.datetime({ offset: true }),
+        aliveAt: z.iso.datetime({ offset: true }).optional(),
+        memoryWarnings: z.number().int().min(0).max(1000).optional(),
+        error: z
+          .strictObject({
+            name: z.string().max(60),
+            message: z.string().max(200),
+            fatal: z.boolean(),
+          })
+          .optional(),
+        trail: z.array(z.string().max(90)).max(24),
+      }),
+      example: {
+        v: 1,
+        kind: "unexpected-close",
+        appVersion: "1.0.0",
+        platform: "ios",
+        osVersion: "18.3",
+        screen: "Home",
+        at: "2026-11-26T13:51:54.000Z",
+        aliveAt: "2026-11-26T13:51:50.000Z",
+        memoryWarnings: 0,
+        trail: [
+          "13:51:54.100 map tap, zoom 18",
+          "13:51:54.140 map tap found 5 plans",
+        ],
+      },
+      invalid: [
+        {},
+        { v: 2 },
+        {
+          v: 1,
+          kind: "unexpected-close",
+          appVersion: "1.0.0",
+          platform: "ios",
+          screen: "Home",
+          at: "2026-11-26T13:51:54.000Z",
+          trail: [],
+          accountId: "not allowed",
+        },
+        {
+          v: 1,
+          kind: "crash",
+          appVersion: "1.0.0",
+          platform: "ios",
+          screen: "Home",
+          at: "2026-11-26T13:51:54.000Z",
+          trail: [],
+        },
+        {
+          v: 1,
+          kind: "caught-error",
+          appVersion: "1.0.0",
+          platform: "windows",
+          screen: "Home",
+          at: "2026-11-26T13:51:54.000Z",
+          trail: [],
+        },
+        {
+          v: 1,
+          kind: "caught-error",
+          appVersion: "1.0.0",
+          platform: "android",
+          screen: "Home",
+          at: "yesterday",
+          trail: [],
+        },
+        {
+          v: 1,
+          kind: "caught-error",
+          appVersion: "1.0.0",
+          platform: "android",
+          screen: "Home",
+          at: "2026-11-26T13:51:54.000Z",
+          trail: Array.from({ length: 25 }, () => "step"),
+        },
+        {
+          v: 1,
+          kind: "caught-error",
+          appVersion: "1.0.0",
+          platform: "android",
+          screen: "Home",
+          at: "2026-11-26T13:51:54.000Z",
+          trail: ["x".repeat(91)],
+        },
+      ],
+    },
+    data: S.Empty,
+    errors: [
+      "VALIDATION_ERROR",
+      "NOT_FOUND",
+      "PAYLOAD_TOO_LARGE",
+      "RATE_LIMITED",
+    ],
+    routeFile: "app/api/v1/surfboard/diagnostics/reports/route.ts",
   },
 
   // ----------------------------------------------------------- plans
