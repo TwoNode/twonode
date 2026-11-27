@@ -127,6 +127,11 @@ Off unless `APP_REPORTS_ENABLED=1` (see `.env.example` §13). Words and counts o
 
 The routes: `POST /api/v1/surfboard/diagnostics/reports` (the app; signed in, an unverified account too; flag, then CSRF, then a declared size over 8 KB is a 413, then `consumeRateLimit("app-report:<account>", 10 an hour)`, then the real size, then the strict body, then `storeAppReport`; answers `{}`), `GET /api/v1/surfboard/admin/app-reports` and `.../filters` (superadmin only). The page is `components/admin/AppReportsViewer.tsx` at `/surfboard-restricted/dashboard/app-reports` (sidebar "App Reports", Insights section, `SURFBOARD_ROUTES` in `surfboard/access/routes.ts`; `surfboardApi.admin.appReports`).
 
+## `lib/legal/` — Surfboard's legal and support text
+
+- `surfboard.ts`: `SURFBOARD_PRIVACY`, `SURFBOARD_TERMS` (drafts until counsel has read them), the paths `SURFBOARD_PRIVACY_PATH`, `SURFBOARD_TERMS_PATH`, `SURFBOARD_SUPPORT_PATH` (`/surfboard/support`), `LEGAL_VERSION`, `LEGAL_CONTACT_EMAIL`, and the shared sentences `ACCOUNT_CLOSURE_ERASED_AND_KEPT` and `ACCOUNT_CLOSURE_BLOCKED` (what closing an account erases, keeps and what stops it; used by the Privacy Policy and the support page so they cannot disagree).
+- `surfboardSupport.ts`: `SURFBOARD_SUPPORT` (the support page's text: contact, forgotten password, deleting the account in the app with the app's own labels, what is erased and kept, deletion by email for someone who cannot open the app, other data rights) and `SURFBOARD_SUPPORT_DELETE_SUBJECT`. Tests: `lib/legal/__tests__/surfboard.test.ts`.
+
 ## `lib/` — other
 
 | File                                         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
